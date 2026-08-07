@@ -157,17 +157,21 @@ export const GameDashboardView: React.FC = () => {
       <div className="w-full px-6 sm:px-10 py-3 flex items-center justify-between">
         <button
           onClick={() => setCurrentView('CHANGE_GAME')}
-          className="px-5 py-2 bg-gold-metallic text-black font-black text-base rounded-lg shadow hover:opacity-90 transition-opacity flex items-center gap-2"
+          className="px-4 py-2 bg-gold-metallic text-black font-black text-base rounded-xl shadow-lg hover:opacity-90 transition-opacity flex items-center gap-3 border border-gold-dark"
         >
-          <img src="/assets/gold-calendar.png" alt="Calendar" className="w-6 h-6 object-contain" />
+          <div className="w-8 h-8 rounded-full bg-black p-1.5 flex items-center justify-center shrink-0 border border-gold/90 shadow">
+            <img src="/assets/gold-calendar.png" alt="Calendar" className="w-full h-full object-contain filter drop-shadow" />
+          </div>
           <span>{activeGameSlot}</span>
         </button>
 
         <button
           onClick={() => setShowHowToPlay(true)}
-          className="text-white hover:text-gold underline font-bold text-sm sm:text-base flex items-center gap-1.5"
+          className="text-white hover:text-gold underline font-bold text-sm sm:text-base flex items-center gap-2"
         >
-          <img src="/assets/gold-question.png" alt="Help" className="w-5 h-5 object-contain" />
+          <div className="w-7 h-7 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/70 shadow">
+            <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
+          </div>
           <span>How to Play the Game?</span>
         </button>
       </div>
