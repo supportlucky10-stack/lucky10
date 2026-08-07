@@ -177,7 +177,10 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialRouteView = (): ViewType => {
     const path = window.location.pathname.toLowerCase();
-    if (path.startsWith('/admin')) {
+    const search = window.location.search.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+
+    if (path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin')) {
       return 'ADMIN_SIGN_IN';
     }
     return 'USER_SIGN_IN';
@@ -187,7 +190,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [viewHistory, setViewHistory] = useState<ViewType[]>([initialRouteView()]);
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    return window.location.pathname.toLowerCase().startsWith('/admin');
+    const path = window.location.pathname.toLowerCase();
+    const search = window.location.search.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    return path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin');
   });
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('lucky10_registered_users');
@@ -209,7 +215,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handlePopState = () => {
       const path = window.location.pathname.toLowerCase();
-      if (path.startsWith('/admin')) {
+      const search = window.location.search.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+
+      if (path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin')) {
         setCurrentViewInternal((prev) => (prev.startsWith('ADMIN_') ? prev : 'ADMIN_SIGN_IN'));
       } else {
         setCurrentViewInternal((prev) => (!prev.startsWith('ADMIN_') ? prev : 'USER_SIGN_IN'));
@@ -241,7 +250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         window.history.pushState({}, '', '/admin');
       }
     } else {
-      if (window.location.pathname.toLowerCase().startsWith('/admin')) {
+      if (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin')) {
         window.history.pushState({}, '', '/');
       }
     }
