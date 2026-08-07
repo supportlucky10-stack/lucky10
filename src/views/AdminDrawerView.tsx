@@ -7,11 +7,11 @@ export const AdminDrawerView: React.FC = () => {
   const { logout, setCurrentView } = useApp();
 
   const menuItems = [
-    { label: 'Users List', action: () => setCurrentView('ADMIN_USERS_LIST') },
-    { label: 'Result Management', action: () => setCurrentView('ADMIN_USERS_LIST') },
-    { label: 'Reports', action: () => setCurrentView('ADMIN_REPORTS') },
-    { label: 'Payouts', action: () => setCurrentView('ADMIN_PAYOUTS') },
-    { label: 'Transaction Logs', action: () => setCurrentView('ADMIN_TRANSACTION_LOGS') },
+    { label: 'Users List', icon: '/assets/gold-ticket.png', action: () => setCurrentView('ADMIN_USERS_LIST') },
+    { label: 'Result Management', icon: '/assets/gold-calendar.png', action: () => setCurrentView('ADMIN_USERS_LIST') },
+    { label: 'Reports', icon: '/assets/gold-question.png', action: () => setCurrentView('ADMIN_REPORTS') },
+    { label: 'Payouts', icon: '/assets/gold-bank.png', action: () => setCurrentView('ADMIN_PAYOUTS') },
+    { label: 'Transaction Logs', icon: '/assets/gold-trophy.png', action: () => setCurrentView('ADMIN_TRANSACTION_LOGS') },
   ];
 
   return (
@@ -27,15 +27,20 @@ export const AdminDrawerView: React.FC = () => {
           </div>
         </div>
 
-        {/* Menu Items matching Page 13 */}
-        <div className="px-6 pt-8 space-y-4">
+        {/* Menu Items with Gold Logo Icons */}
+        <div className="px-6 pt-8 space-y-3.5">
           {menuItems.map((item, index) => (
             <button
               key={index}
               onClick={item.action}
-              className="w-full text-left py-3 border-b border-neutral-800 text-white hover:text-gold font-bold text-lg tracking-wide transition-colors flex items-center justify-between group"
+              className="w-full text-left py-2.5 border-b border-neutral-800 text-white hover:text-gold font-bold text-lg tracking-wide transition-colors flex items-center justify-between group"
             >
-              <span>{item.label}</span>
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-full bg-black p-1.5 flex items-center justify-center shrink-0 border border-gold/80 shadow group-hover:scale-105 transition-transform">
+                  <img src={item.icon} alt={item.label} className="w-full h-full object-contain filter drop-shadow" />
+                </div>
+                <span>{item.label}</span>
+              </div>
               <ChevronRight className="w-5 h-5 text-neutral-600 group-hover:text-gold transition-colors" />
             </button>
           ))}

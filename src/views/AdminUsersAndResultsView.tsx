@@ -44,8 +44,11 @@ export const AdminUsersAndResultsView: React.FC = () => {
       <div className="px-6 py-6 space-y-6 max-w-5xl mx-auto w-full">
         {/* Result Publish Section matching Page 14 */}
         <div className="bg-neutral-900 border border-gold/30 p-5 rounded-xl space-y-3">
-          <h2 className="text-lg font-black text-white tracking-wide border-b border-neutral-800 pb-2">
-            Result Publish
+          <h2 className="text-lg font-black text-white tracking-wide border-b border-neutral-800 pb-2 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/80 shadow">
+              <img src="/assets/gold-calendar.png" alt="Calendar" className="w-full h-full object-contain filter drop-shadow" />
+            </div>
+            <span>Result Publish</span>
           </h2>
 
           <form onSubmit={handlePublish} className="space-y-3">
@@ -120,7 +123,12 @@ export const AdminUsersAndResultsView: React.FC = () => {
         {/* Results History Search Option matching Page 14 */}
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-black text-white">Results History</h2>
+            <h2 className="text-base font-black text-white flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/70 shadow">
+                <img src="/assets/gold-trophy.png" alt="Trophy" className="w-full h-full object-contain filter drop-shadow" />
+              </div>
+              <span>Results History</span>
+            </h2>
             <span className="text-xs text-neutral-400">Search Option (daily &amp; previous dates)</span>
           </div>
 
@@ -138,7 +146,12 @@ export const AdminUsersAndResultsView: React.FC = () => {
         {/* Registered Users Table with Delete All & Individual Delete */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-black text-white">Registered Users ({registeredUsers.length})</h2>
+            <h2 className="text-lg font-black text-white flex items-center gap-2">
+              <div className="w-7 h-7 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/80 shadow">
+                <img src="/assets/gold-ticket.png" alt="Users" className="w-full h-full object-contain filter drop-shadow" />
+              </div>
+              <span>Registered Users ({registeredUsers.length})</span>
+            </h2>
             
             {registeredUsers.length > 0 && (
               <button
