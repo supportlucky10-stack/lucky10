@@ -24,9 +24,11 @@ export const TodaysWinningNumbersView: React.FC = () => {
           <button
             key={slot}
             onClick={() => handleSelectSlot(slot)}
-            className="w-full py-5 bg-gold-metallic text-black font-black text-xl sm:text-2xl tracking-wider rounded-2xl shadow-2xl hover:opacity-95 transition-transform active:scale-98 uppercase flex items-center justify-center gap-3.5"
+            className="w-full py-4 px-6 bg-gold-metallic text-black font-black text-xl sm:text-2xl tracking-wider rounded-2xl shadow-2xl hover:opacity-95 transition-transform active:scale-98 uppercase flex items-center justify-center gap-4"
           >
-            <img src="/assets/gold-trophy.png" alt="Trophy" className="w-8 h-8 object-contain" />
+            <div className="w-11 h-11 rounded-full bg-black p-2 flex items-center justify-center shrink-0 border-2 border-gold/90 shadow">
+              <img src="/assets/gold-trophy.png" alt="Trophy" className="w-full h-full object-contain filter drop-shadow" />
+            </div>
             <span>{slot}</span>
           </button>
         ))}

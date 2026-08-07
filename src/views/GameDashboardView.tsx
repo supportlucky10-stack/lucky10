@@ -354,48 +354,7 @@ export const GameDashboardView: React.FC = () => {
 
       </div>
 
-      {/* 100% Full Width Fixed Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 w-full bg-black/95 backdrop-blur-md border-t border-neutral-900 py-3 px-8 flex items-center justify-around z-40">
-        <button
-          onClick={() => setCurrentView('USER_DRAWER')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <img src="/assets/gold-ticket.png" alt="Play Report" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-xs font-extrabold">Play Report</span>
-        </button>
 
-        <button
-          onClick={() => setCurrentView('CHANGE_GAME')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <img src="/assets/gold-calendar.png" alt="Change Game" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-xs font-extrabold">Change Game</span>
-        </button>
-
-        <button
-          onClick={() => setCurrentView('TODAYS_WINNING_NUMBERS')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <img src="/assets/gold-trophy.png" alt="Today's Result" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-xs font-extrabold">Today's Result</span>
-        </button>
-
-        <button
-          onClick={() => setCurrentView('TODAYS_WINNING_NUMBERS')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
-            <img src="/assets/gold-trophy.png" alt="Today Winners" className="w-full h-full object-contain" />
-          </div>
-          <span className="text-xs font-extrabold">Today Winners</span>
-        </button>
-      </div>
 
       {/* How to Play Modal */}
       {showHowToPlay && (
