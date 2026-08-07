@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Menu, Trash2, FileText, RefreshCw, Trophy, Award } from 'lucide-react';
+import { Menu, Trash2 } from 'lucide-react';
 import { Lucky10Logo } from '../components/Lucky10Logo';
 
 export const GameDashboardView: React.FC = () => {
@@ -157,16 +157,18 @@ export const GameDashboardView: React.FC = () => {
       <div className="w-full px-6 sm:px-10 py-3 flex items-center justify-between">
         <button
           onClick={() => setCurrentView('CHANGE_GAME')}
-          className="px-5 py-2 bg-gold-metallic text-black font-black text-base rounded-lg shadow hover:opacity-90 transition-opacity"
+          className="px-5 py-2 bg-gold-metallic text-black font-black text-base rounded-lg shadow hover:opacity-90 transition-opacity flex items-center gap-2"
         >
-          {activeGameSlot}
+          <img src="/assets/gold-calendar.png" alt="Calendar" className="w-6 h-6 object-contain" />
+          <span>{activeGameSlot}</span>
         </button>
 
         <button
           onClick={() => setShowHowToPlay(true)}
-          className="text-white hover:text-gold underline font-bold text-sm sm:text-base"
+          className="text-white hover:text-gold underline font-bold text-sm sm:text-base flex items-center gap-1.5"
         >
-          How to Play the Game?
+          <img src="/assets/gold-question.png" alt="Help" className="w-5 h-5 object-contain" />
+          <span>How to Play the Game?</span>
         </button>
       </div>
 
@@ -356,40 +358,40 @@ export const GameDashboardView: React.FC = () => {
       <div className="fixed bottom-0 left-0 right-0 w-full bg-black/95 backdrop-blur-md border-t border-neutral-900 py-3 px-8 flex items-center justify-around z-40">
         <button
           onClick={() => setCurrentView('USER_DRAWER')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors"
+          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
         >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient text-black flex items-center justify-center font-bold shadow">
-            <FileText className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+            <img src="/assets/gold-ticket.png" alt="Play Report" className="w-full h-full object-contain" />
           </div>
           <span className="text-xs font-extrabold">Play Report</span>
         </button>
 
         <button
           onClick={() => setCurrentView('CHANGE_GAME')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors"
+          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
         >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient text-black flex items-center justify-center font-bold shadow">
-            <RefreshCw className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+            <img src="/assets/gold-calendar.png" alt="Change Game" className="w-full h-full object-contain" />
           </div>
           <span className="text-xs font-extrabold">Change Game</span>
         </button>
 
         <button
           onClick={() => setCurrentView('TODAYS_WINNING_NUMBERS')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors"
+          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
         >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient text-black flex items-center justify-center font-bold shadow">
-            <Trophy className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+            <img src="/assets/gold-trophy.png" alt="Today's Result" className="w-full h-full object-contain" />
           </div>
           <span className="text-xs font-extrabold">Today's Result</span>
         </button>
 
         <button
           onClick={() => setCurrentView('TODAYS_WINNING_NUMBERS')}
-          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors"
+          className="flex flex-col items-center gap-1.5 text-neutral-300 hover:text-gold transition-colors group"
         >
-          <div className="w-10 h-10 rounded-full bg-gold-gradient text-black flex items-center justify-center font-bold shadow">
-            <Award className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-full bg-gold-gradient p-1.5 flex items-center justify-center shadow group-hover:scale-110 transition-transform">
+            <img src="/assets/gold-trophy.png" alt="Today Winners" className="w-full h-full object-contain" />
           </div>
           <span className="text-xs font-extrabold">Today Winners</span>
         </button>
@@ -399,6 +401,9 @@ export const GameDashboardView: React.FC = () => {
       {showHowToPlay && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border border-gold rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex justify-center">
+              <img src="/assets/gold-question.png" alt="How to Play" className="w-14 h-14 object-contain" />
+            </div>
             <h3 className="text-gold font-extrabold text-xl text-center border-b border-neutral-800 pb-2">
               How to Play LUCKY 10
             </h3>

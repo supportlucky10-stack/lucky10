@@ -27,11 +27,12 @@ export const ChangeGameView: React.FC = () => {
             <button
               key={slot}
               onClick={() => handleSelect(slot)}
-              className={`w-full py-5 rounded-2xl font-black text-xl sm:text-2xl tracking-wider shadow-2xl transition-transform active:scale-98 uppercase ${
+              className={`w-full py-5 rounded-2xl font-black text-xl sm:text-2xl tracking-wider shadow-2xl transition-transform active:scale-98 uppercase flex items-center justify-center gap-3.5 ${
                 isCurrent ? 'bg-gold-banner ring-4 ring-gold/50 text-black' : 'bg-gold-metallic text-black hover:opacity-95'
               }`}
             >
-              {slot}
+              <img src="/assets/gold-calendar.png" alt="Calendar" className="w-8 h-8 object-contain" />
+              <span>{slot}</span>
             </button>
           );
         })}

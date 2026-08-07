@@ -13,8 +13,9 @@ export const PayoutStructureView: React.FC = () => {
           {/* Direct Section */}
           <div className="bg-neutral-950 p-7 sm:p-8 rounded-3xl border-2 border-neutral-800 shadow-2xl space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide">
-                Direct
+              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide flex items-center justify-center gap-3">
+                <img src="/assets/gold-ticket.png" alt="Direct" className="w-8 h-8 object-contain" />
+                <span>Direct</span>
               </div>
               <p className="text-sm sm:text-base italic text-gray-200 text-center font-normal pt-3">
                 Match the winning number in the exact order.
@@ -58,8 +59,9 @@ export const PayoutStructureView: React.FC = () => {
           {/* Shuffle Section */}
           <div className="bg-neutral-950 p-7 sm:p-8 rounded-3xl border-2 border-neutral-800 shadow-2xl space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide">
-                Shuffle
+              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide flex items-center justify-center gap-3">
+                <img src="/assets/gold-calendar.png" alt="Shuffle" className="w-8 h-8 object-contain" />
+                <span>Shuffle</span>
               </div>
               <p className="text-sm sm:text-base italic text-gray-200 text-center font-normal pt-3">
                 Match the winning numbers in any order. Based on the 1st Prize Number
@@ -89,8 +91,9 @@ export const PayoutStructureView: React.FC = () => {
           {/* Pair Section */}
           <div className="bg-neutral-950 p-7 sm:p-8 rounded-3xl border-2 border-neutral-800 shadow-2xl space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide">
-                Pair
+              <div className="w-full py-3.5 bg-gold-banner text-black font-black text-2xl sm:text-3xl text-center rounded-xl shadow-lg uppercase tracking-wide flex items-center justify-center gap-3">
+                <img src="/assets/gold-trophy.png" alt="Pair" className="w-8 h-8 object-contain" />
+                <span>Pair</span>
               </div>
               <p className="text-sm sm:text-base italic text-gray-200 text-center font-normal pt-3">
                 Match two specific digits in their exact positions. Based on the 1st Prize Number

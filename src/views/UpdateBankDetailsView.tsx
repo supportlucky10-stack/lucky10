@@ -37,7 +37,11 @@ export const UpdateBankDetailsView: React.FC = () => {
       <HeaderBanner title="Update Your Bank Details" />
 
       {/* Form Fields matching Page 11 */}
-      <form onSubmit={handleSubmit} className="px-6 py-8 space-y-5 max-w-sm mx-auto w-full">
+      <form onSubmit={handleSubmit} className="px-6 py-8 space-y-5 max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
+        <div className="flex flex-col items-center justify-center pb-2">
+          <img src="/assets/gold-bank.png" alt="Bank Logo" className="w-16 h-16 object-contain drop-shadow" />
+          <p className="text-gold font-bold text-sm tracking-wide mt-2">Secure Payout Bank Account</p>
+        </div>
         <div>
           <input
             type="text"

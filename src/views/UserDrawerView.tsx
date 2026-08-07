@@ -6,13 +6,13 @@ export const UserDrawerView: React.FC = () => {
   const { currentUser, logout, setCurrentView } = useApp();
 
   const menuItems = [
-    { label: 'Payout Structure', action: () => setCurrentView('PAYOUT_STRUCTURE') },
-    { label: 'Change Game', action: () => setCurrentView('CHANGE_GAME') },
-    { label: 'My Play Report', action: () => setCurrentView('GAME_DASHBOARD') },
-    { label: "Today's Winning Numbers", action: () => setCurrentView('TODAYS_WINNING_NUMBERS') },
-    { label: 'Today Winners', action: () => setCurrentView('TODAYS_WINNING_NUMBERS') },
-    { label: 'Winners Price Transactions', action: () => setCurrentView('PAYOUT_STRUCTURE') },
-    { label: 'Update Your Bank Account', action: () => setCurrentView('UPDATE_BANK_DETAILS') },
+    { label: 'Payout Structure', icon: '/assets/gold-question.png', action: () => setCurrentView('PAYOUT_STRUCTURE') },
+    { label: 'Change Game', icon: '/assets/gold-calendar.png', action: () => setCurrentView('CHANGE_GAME') },
+    { label: 'My Play Report', icon: '/assets/gold-ticket.png', action: () => setCurrentView('GAME_DASHBOARD') },
+    { label: "Today's Winning Numbers", icon: '/assets/gold-trophy.png', action: () => setCurrentView('TODAYS_WINNING_NUMBERS') },
+    { label: 'Today Winners', icon: '/assets/gold-trophy.png', action: () => setCurrentView('TODAYS_WINNING_NUMBERS') },
+    { label: 'Winners Price Transactions', icon: '/assets/gold-trophy.png', action: () => setCurrentView('PAYOUT_STRUCTURE') },
+    { label: 'Update Your Bank Account', icon: '/assets/gold-bank.png', action: () => setCurrentView('UPDATE_BANK_DETAILS') },
   ];
 
   return (
@@ -23,20 +23,21 @@ export const UserDrawerView: React.FC = () => {
           <h2 className="text-[#3b82f6] sm:text-black font-extrabold text-xl sm:text-2xl tracking-tight">
             {currentUser?.name || 'User Name'}
           </h2>
-          <div className="scale-75 origin-right">
+          <div className="scale-75 origin-right flex items-center gap-2">
             <Lucky10Logo size="sm" showSubtitle={false} />
           </div>
         </div>
 
-        {/* Menu Items matching Page 5 */}
-        <div className="px-6 pt-6 space-y-4">
+        {/* Menu Items with Gold Logo Icons */}
+        <div className="px-6 pt-6 space-y-3.5">
           {menuItems.map((item, index) => (
             <button
               key={index}
               onClick={item.action}
-              className="w-full text-left pb-2 border-b border-gray-300 text-white hover:text-gold font-bold text-lg tracking-wide transition-colors"
+              className="w-full flex items-center gap-3.5 pb-2.5 border-b border-neutral-800 text-left text-white hover:text-gold font-bold text-lg tracking-wide transition-colors group"
             >
-              {item.label}
+              <img src={item.icon} alt={item.label} className="w-7 h-7 object-contain group-hover:scale-110 transition-transform shrink-0" />
+              <span>{item.label}</span>
             </button>
           ))}
         </div>

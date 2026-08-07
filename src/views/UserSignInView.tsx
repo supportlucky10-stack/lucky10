@@ -25,13 +25,9 @@ export const UserSignInView: React.FC = () => {
 
           <div className="space-y-3 sm:space-y-4 text-xs sm:text-sm leading-snug">
             {/* Bullet 1 */}
-            <div className="flex items-start gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-neutral-800">
-              <div className="text-gold shrink-0 pt-0.5">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="6" width="20" height="12" rx="2" />
-                  <circle cx="12" cy="12" r="3" />
-                  <path d="M6 12h.01M18 12h.01" />
-                </svg>
+            <div className="flex items-start gap-3 sm:gap-3.5 pb-2.5 sm:pb-3 border-b border-neutral-800">
+              <div className="shrink-0 pt-0.5">
+                <img src="/assets/gold-ticket.png" alt="Gold Ticket Logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow" />
               </div>
               <p className="text-white">
                 <strong className="font-extrabold text-white">Lucky10</strong> is an exciting{' '}
@@ -40,16 +36,9 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 2 */}
-            <div className="flex items-start gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-neutral-800">
-              <div className="text-gold shrink-0 pt-0.5">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-                  <path d="M4 22h16" />
-                  <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-                  <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-                  <path d="M18 2H6v7a6 6 0 0 0 12 0V2z" />
-                </svg>
+            <div className="flex items-start gap-3 sm:gap-3.5 pb-2.5 sm:pb-3 border-b border-neutral-800">
+              <div className="shrink-0 pt-0.5">
+                <img src="/assets/gold-trophy.png" alt="Gold Trophy Logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow" />
               </div>
               <p className="text-white">
                 Play from <strong className="font-extrabold text-white">just ₹10 up to ₹200</strong> &amp; stand a chance to{' '}
@@ -58,17 +47,9 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 3 */}
-            <div className="flex items-start gap-2.5 sm:gap-3 pb-2.5 sm:pb-3 border-b border-neutral-800">
-              <div className="text-gold shrink-0 pt-0.5 relative">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center pt-1 text-[7px] sm:text-[8px] font-black text-gold">
-                  4
-                </span>
+            <div className="flex items-start gap-3 sm:gap-3.5 pb-2.5 sm:pb-3 border-b border-neutral-800">
+              <div className="shrink-0 pt-0.5">
+                <img src="/assets/gold-calendar.png" alt="Gold Calendar Logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow" />
               </div>
               <p className="text-white">
                 <strong className="font-extrabold text-white">4 games every day</strong>, there's always a new chance to play, win &amp; enjoy the excitement.
@@ -76,12 +57,9 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 4 */}
-            <div className="flex items-start gap-2.5 sm:gap-3">
-              <div className="text-gold shrink-0 pt-0.5">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="5" width="20" height="14" rx="2" />
-                  <line x1="2" y1="10" x2="22" y2="10" />
-                </svg>
+            <div className="flex items-start gap-3 sm:gap-3.5">
+              <div className="shrink-0 pt-0.5">
+                <img src="/assets/gold-bank.png" alt="Gold Bank Logo" className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow" />
               </div>
               <p className="text-white">
                 <strong className="font-extrabold text-white">Cash prizes</strong> are credited to the winners accounts on the <strong className="font-extrabold text-white">same day</strong>.
