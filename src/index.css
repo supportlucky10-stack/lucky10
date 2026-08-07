@@ -1,0 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  font-family: 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Metallic Gold Gradients matching PDF screenshots */
+.bg-gold-gradient {
+  background: linear-gradient(180deg, #d4af37 0%, #b8860b 100%) !important;
+  color: #000000 !important;
+}
+
+.bg-gold-metallic {
+  background: linear-gradient(180deg, #d9a738 0%, #a67c1e 100%) !important;
+  color: #000000 !important;
+}
+
+.bg-gold-banner {
+  background: linear-gradient(180deg, #d9a738 0%, #a67c1e 100%) !important;
+  color: #000000 !important;
+}
+
+.text-gold {
+  color: #d4af37 !important;
+}
+
+.border-gold {
+  border-color: #d4af37 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 3px;
+}
