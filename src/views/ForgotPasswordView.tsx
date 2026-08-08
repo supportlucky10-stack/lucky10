@@ -23,7 +23,7 @@ export const ForgotPasswordView: React.FC = () => {
         
         <Lucky10Logo size="lg" showSubtitle={true} />
 
-        <h2 className="text-base sm:text-2xl font-bold text-white tracking-wide mt-3 sm:mt-6">
+        <h2 className="text-lg sm:text-2xl font-extrabold text-white tracking-wide mt-3 sm:mt-6">
           Forgot your Password?
         </h2>
 
@@ -42,9 +42,9 @@ export const ForgotPasswordView: React.FC = () => {
           <div className="pt-1 sm:pt-2">
             <button
               type="submit"
-              className="w-full py-2.5 sm:py-3.5 bg-gold-metallic text-black font-black text-xs sm:text-base tracking-wide rounded-lg shadow-lg uppercase hover:opacity-95 transition-transform active:scale-98"
+              className="w-full py-3 bg-gold-metallic text-black font-extrabold text-sm sm:text-base tracking-wider rounded-lg shadow-lg uppercase hover:opacity-95 transition-transform active:scale-98"
             >
-              Reset Your Password
+              RESET YOUR PASSWORD
             </button>
           </div>
         </form>
