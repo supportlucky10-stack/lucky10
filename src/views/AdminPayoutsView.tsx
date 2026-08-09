@@ -16,7 +16,7 @@ export const AdminPayoutsView: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 bg-black text-white flex flex-col justify-start overflow-y-auto pb-8">
+    <div className="w-full flex-1 bg-black text-white flex flex-col justify-start overflow-y-auto pb-32 sm:pb-36">
       {/* Gold Header matching Page 16 */}
       <HeaderBanner title="Payouts" />
 

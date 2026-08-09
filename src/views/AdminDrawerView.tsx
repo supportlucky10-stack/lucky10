@@ -15,7 +15,7 @@ export const AdminDrawerView: React.FC = () => {
   ];
 
   return (
-    <div className="w-full flex-1 bg-black text-white flex flex-col justify-between overflow-y-auto">
+    <div className="w-full flex-1 bg-black text-white flex flex-col justify-between overflow-y-auto pb-32 sm:pb-36">
       <div>
         {/* Top Gold Banner Header matching Page 13 */}
         <div className="w-full bg-gold-banner px-6 py-4 flex items-center justify-between shadow-md">
