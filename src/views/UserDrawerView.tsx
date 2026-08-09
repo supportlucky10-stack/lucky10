@@ -1,9 +1,10 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { Lucky10Logo } from '../components/Lucky10Logo';
+import { ArrowLeft } from 'lucide-react';
 
 export const UserDrawerView: React.FC = () => {
-  const { currentUser, logout, setCurrentView } = useApp();
+  const { logout, setCurrentView } = useApp();
 
   const menuItems = [
     { label: 'Payout Structure', icon: '/assets/gold-question.png', action: () => setCurrentView('PAYOUT_STRUCTURE') },
@@ -18,11 +19,16 @@ export const UserDrawerView: React.FC = () => {
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto pb-32 sm:pb-36">
       <div>
-        {/* Top Gold Banner Header matching Page 5 */}
-        <div className="w-full bg-gold-banner px-5 py-4 flex items-center justify-between shadow-md">
-          <h2 className="text-[#3b82f6] sm:text-black font-extrabold text-xl sm:text-2xl tracking-tight">
-            {currentUser?.name || 'User Name'}
-          </h2>
+        {/* Top Gold Banner Header */}
+        <div className="w-full bg-gold-banner px-5 py-3.5 flex items-center justify-between shadow-md">
+          <button
+            onClick={() => setCurrentView('GAME_DASHBOARD')}
+            className="flex items-center gap-2 text-black hover:opacity-80 font-black text-lg sm:text-xl tracking-tight transition-opacity"
+            title="Back to Dashboard"
+          >
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
+            <span>Back</span>
+          </button>
           <div className="scale-75 origin-right flex items-center gap-2">
             <Lucky10Logo size="sm" showSubtitle={false} />
           </div>

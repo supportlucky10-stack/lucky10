@@ -23,22 +23,22 @@ export const BottomNavigation: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 w-full bg-black/95 backdrop-blur-md border-t border-neutral-900/90 py-2 px-1 sm:px-4 z-40 shadow-2xl">
-      <div className="grid grid-cols-4 max-w-md mx-auto w-full items-center justify-items-center">
+    <div className="fixed bottom-0 left-0 right-0 w-full bg-black/95 backdrop-blur-md border-t border-neutral-900/90 py-1.5 px-2 sm:px-4 z-40 shadow-2xl">
+      <div className="grid grid-cols-4 max-w-sm sm:max-w-md mx-auto w-full items-center justify-items-center">
         {navItems.map((item) => {
           const isActive = currentView === item.view;
           return (
             <button
               key={item.label}
               onClick={() => setCurrentView(item.view)}
-              className={`w-full flex flex-col items-center justify-center text-center gap-1 transition-all group py-0.5 ${
+              className={`w-full flex flex-col items-center justify-center text-center gap-0.5 transition-all group py-0.5 ${
                 isActive ? 'text-gold scale-105' : 'text-neutral-400 hover:text-white'
               }`}
             >
               <div
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-black p-1.5 flex items-center justify-center shrink-0 transition-all ${
+                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-black p-1 flex items-center justify-center shrink-0 transition-all ${
                   isActive
-                    ? 'border-2 border-gold shadow-[0_0_12px_rgba(212,175,55,0.6)] bg-neutral-950'
+                    ? 'border-2 border-gold shadow-[0_0_10px_rgba(212,175,55,0.6)] bg-neutral-950'
                     : 'border border-neutral-800 group-hover:border-gold/60 group-hover:scale-105'
                 }`}
               >
@@ -48,7 +48,7 @@ export const BottomNavigation: React.FC = () => {
                   className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
-              <span className={`text-[10px] sm:text-xs font-black tracking-wide leading-none text-center truncate w-full px-0.5 ${isActive ? 'text-gold' : ''}`}>
+              <span className={`text-[9px] sm:text-[11px] font-black tracking-tight leading-tight text-center truncate w-full px-0.5 ${isActive ? 'text-gold' : ''}`}>
                 {item.label}
               </span>
             </button>

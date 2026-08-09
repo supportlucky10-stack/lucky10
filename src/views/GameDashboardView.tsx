@@ -5,6 +5,7 @@ import { Lucky10Logo } from '../components/Lucky10Logo';
 
 export const GameDashboardView: React.FC = () => {
   const {
+    currentUser,
     activeGameSlot,
     betSlip,
     addToBetSlip,
@@ -145,8 +146,8 @@ export const GameDashboardView: React.FC = () => {
             >
               <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
             </button>
-            <h1 className="font-black text-sm sm:text-xl text-white tracking-wide uppercase">
-              LUCKY 10 DASHBOARD
+            <h1 className="font-black text-sm sm:text-lg text-white tracking-wide uppercase">
+              Hello {currentUser?.name || currentUser?.username || 'User'}
             </h1>
           </div>
 
@@ -160,11 +161,8 @@ export const GameDashboardView: React.FC = () => {
           {/* Game Slot Switcher */}
           <button
             onClick={() => setCurrentView('CHANGE_GAME')}
-            className="px-2.5 py-1 bg-gold-metallic text-black font-extrabold text-xs rounded-lg shadow hover:opacity-90 transition-opacity flex items-center gap-1.5 border border-gold-dark shrink-0"
+            className="px-3 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold shadow animate-gold-blink flex items-center justify-center text-center shrink-0 uppercase tracking-wide"
           >
-            <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold">
-              <img src="/assets/gold-calendar.png" alt="Slot" className="w-full h-full object-contain filter drop-shadow" />
-            </div>
             <span>{activeGameSlot}</span>
           </button>
 
@@ -172,18 +170,6 @@ export const GameDashboardView: React.FC = () => {
           <div className="text-gold font-extrabold text-[11px] sm:text-xs tracking-tight text-center">
             Min ₹10 • Max ₹200
           </div>
-
-          {/* How to Play Help Link */}
-          <button
-            onClick={() => setShowHowToPlay(true)}
-            className="text-neutral-300 hover:text-gold underline font-bold text-[11px] sm:text-xs flex items-center gap-1 shrink-0"
-          >
-            <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold/70">
-              <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
-            </div>
-            <span className="hidden sm:inline">How to Play?</span>
-            <span className="sm:hidden">Help</span>
-          </button>
         </div>
 
         {/* Responsive Grid Layout */}
@@ -191,8 +177,17 @@ export const GameDashboardView: React.FC = () => {
           
           {/* Left Column (5/12): Bet Entry Form Card */}
           <div className="lg:col-span-5 bg-neutral-950/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-neutral-800/80 shadow-lg space-y-2.5 sm:space-y-4">
-            <h3 className="text-gold font-extrabold text-xs sm:text-sm border-b border-neutral-800/80 pb-1.5 uppercase tracking-wide">
-              Select Bet Mode &amp; Entry
+            <h3 className="text-gold font-extrabold text-xs sm:text-sm border-b border-neutral-800/80 pb-1.5 uppercase tracking-wide flex items-center justify-start">
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className="text-gold hover:text-white underline font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors"
+              >
+                <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold">
+                  <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
+                </div>
+                <span>How to play the game?</span>
+              </button>
             </h3>
 
             {/* Direct Input Row */}
@@ -245,46 +240,63 @@ export const GameDashboardView: React.FC = () => {
               </button>
             </div>
 
-            {/* Pair Input Row */}
-            <div className="grid grid-cols-12 gap-1.5 items-center bg-black/80 p-2 rounded-lg border border-neutral-900 shadow">
-              <div className="col-span-8 grid grid-cols-3 gap-1">
-                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
-                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">AB</span>
+            {/* Pair Input Row with White Input Boxes */}
+            <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-center">
+              <div className="col-span-8 grid grid-cols-3 gap-1 sm:gap-1.5">
+                {/* AB Pair Box */}
+                <div className="grid grid-cols-2 gap-1">
                   <input
                     type="text"
+                    maxLength={2}
+                    placeholder="AB"
+                    value={pairAB}
+                    onChange={(e) => setPairAB(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
+                  />
+                  <input
+                    type="number"
                     placeholder="Cnt"
                     value={pairABCount}
-                    onChange={(e) => {
-                      setPairAB('12');
-                      setPairABCount(e.target.value);
-                    }}
-                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                    onChange={(e) => setPairABCount(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
                   />
                 </div>
-                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
-                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">BC</span>
+
+                {/* BC Pair Box */}
+                <div className="grid grid-cols-2 gap-1">
                   <input
                     type="text"
+                    maxLength={2}
+                    placeholder="BC"
+                    value={pairBC}
+                    onChange={(e) => setPairBC(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
+                  />
+                  <input
+                    type="number"
                     placeholder="Cnt"
                     value={pairBCCount}
-                    onChange={(e) => {
-                      setPairBC('34');
-                      setPairBCCount(e.target.value);
-                    }}
-                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                    onChange={(e) => setPairBCCount(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
                   />
                 </div>
-                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
-                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">AC</span>
+
+                {/* AC Pair Box */}
+                <div className="grid grid-cols-2 gap-1">
                   <input
                     type="text"
+                    maxLength={2}
+                    placeholder="AC"
+                    value={pairAC}
+                    onChange={(e) => setPairAC(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
+                  />
+                  <input
+                    type="number"
                     placeholder="Cnt"
                     value={pairACCount}
-                    onChange={(e) => {
-                      setPairAC('56');
-                      setPairACCount(e.target.value);
-                    }}
-                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                    onChange={(e) => setPairACCount(e.target.value)}
+                    className="w-full px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg text-center shadow border-0 focus:outline-none focus:ring-1 focus:ring-gold"
                   />
                 </div>
               </div>
@@ -314,7 +326,7 @@ export const GameDashboardView: React.FC = () => {
               <div className="divide-y divide-gray-200 max-h-24 sm:max-h-48 overflow-y-auto text-xs sm:text-sm font-bold">
                 {betSlip.length === 0 ? (
                   <div className="py-5 text-center text-neutral-400 italic font-normal text-xs sm:text-sm">
-                    No tickets added to slip yet
+                    No numbers added to slip yet
                   </div>
                 ) : (
                   betSlip.map((item) => (
@@ -375,7 +387,7 @@ export const GameDashboardView: React.FC = () => {
               <img src="/assets/gold-question.png" alt="How to Play" className="w-12 h-12 object-contain" />
             </div>
             <h3 className="text-gold font-extrabold text-lg text-center border-b border-neutral-800 pb-2">
-              How to Play LUCKY 10
+              How to play the game?
             </h3>
             <div className="space-y-2.5 text-xs text-neutral-200 leading-relaxed">
               <p>
