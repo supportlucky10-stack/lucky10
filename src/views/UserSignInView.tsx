@@ -27,7 +27,7 @@ export const UserSignInView: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-2.5 sm:px-6 py-2 sm:py-6 flex flex-col justify-center items-center overflow-hidden overscroll-none touch-none select-none z-50">
+    <div className="relative w-full min-h-screen bg-black text-white px-3 sm:px-6 py-4 sm:py-10 flex flex-col justify-center items-center overflow-y-auto select-none">
       
       {/* Background Radial Light Gold Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -90,11 +90,11 @@ export const UserSignInView: React.FC = () => {
         </div>
 
         {/* Right Column (7 cols on Desktop): Form Container */}
-        <div className="md:col-span-7 bg-gradient-to-tl from-[#1a160d] via-black to-[#0e0c07] p-3.5 sm:p-8 flex flex-col items-center justify-center">
+        <div className="md:col-span-7 bg-gradient-to-tl from-[#1a160d] via-black to-[#0e0c07] p-5 sm:p-8 flex flex-col items-center justify-center">
           <div className="w-full max-w-sm flex flex-col items-center">
             <Lucky10Logo size="lg" showSubtitle={true} />
 
-            <form onSubmit={handleSubmit} className="w-full space-y-2.5 sm:space-y-4 mt-2.5 sm:mt-5">
+            <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4 mt-3 sm:mt-5">
               <div>
                 <input
                   type="text"
