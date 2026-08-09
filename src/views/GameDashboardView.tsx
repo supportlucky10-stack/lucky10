@@ -132,245 +132,252 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto relative pb-24">
-      {/* 100% Full Webpage Width Header Bar */}
-      <div className="w-full px-6 sm:px-10 py-4 bg-black flex items-center justify-between border-b border-neutral-900">
-        <div className="flex items-center gap-4">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto relative pb-20 sm:pb-24">
+      
+      <div>
+        {/* Top Header Bar */}
+        <div className="w-full px-3 sm:px-8 py-2.5 bg-black/90 flex items-center justify-between border-b border-neutral-900">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentView('USER_DRAWER')}
+              className="p-1.5 text-gold hover:opacity-80 transition-opacity bg-neutral-950 rounded-lg border border-neutral-800 shadow"
+              title="Open Menu"
+            >
+              <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            </button>
+            <h1 className="font-black text-sm sm:text-xl text-white tracking-wide uppercase">
+              LUCKY 10 DASHBOARD
+            </h1>
+          </div>
+
+          <div className="scale-75 origin-right">
+            <Lucky10Logo size="sm" showSubtitle={false} />
+          </div>
+        </div>
+
+        {/* Combined Sub-Header Info Ribbon */}
+        <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-between gap-2 text-xs sm:text-sm">
+          {/* Game Slot Switcher */}
           <button
-            onClick={() => setCurrentView('USER_DRAWER')}
-            className="p-2 text-gold hover:opacity-80 transition-opacity bg-neutral-950 rounded-lg border border-neutral-800 shadow"
-            title="Open Menu"
+            onClick={() => setCurrentView('CHANGE_GAME')}
+            className="px-2.5 py-1 bg-gold-metallic text-black font-extrabold text-xs rounded-lg shadow hover:opacity-90 transition-opacity flex items-center gap-1.5 border border-gold-dark shrink-0"
           >
-            <Menu className="w-7 h-7 stroke-[2.5]" />
-          </button>
-          <h1 className="font-black text-xl sm:text-2xl text-white tracking-wide hidden sm:block">
-            LUCKY 10 GAME DASHBOARD
-          </h1>
-        </div>
-
-        <div className="scale-90 origin-right">
-          <Lucky10Logo size="sm" showSubtitle={false} />
-        </div>
-      </div>
-
-      {/* Sub Header Bar - 100% Full Width */}
-      <div className="w-full px-6 sm:px-10 py-3 flex items-center justify-between">
-        <button
-          onClick={() => setCurrentView('CHANGE_GAME')}
-          className="px-4 py-2 bg-gold-metallic text-black font-black text-base rounded-xl shadow-lg hover:opacity-90 transition-opacity flex items-center gap-3 border border-gold-dark"
-        >
-          <div className="w-8 h-8 rounded-full bg-black p-1.5 flex items-center justify-center shrink-0 border border-gold/90 shadow">
-            <img src="/assets/gold-calendar.png" alt="Calendar" className="w-full h-full object-contain filter drop-shadow" />
-          </div>
-          <span>{activeGameSlot}</span>
-        </button>
-
-        <button
-          onClick={() => setShowHowToPlay(true)}
-          className="text-white hover:text-gold underline font-bold text-sm sm:text-base flex items-center gap-2"
-        >
-          <div className="w-7 h-7 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/70 shadow">
-            <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
-          </div>
-          <span>How to Play the Game?</span>
-        </button>
-      </div>
-
-      {/* Min / Max Info Bar - 100% Full Width */}
-      <div className="w-full px-6 sm:px-10 py-2 flex items-center justify-between text-gold font-extrabold text-base border-b border-neutral-900">
-        <span>Minimum ₹10</span>
-        <span>Maximum ₹200</span>
-      </div>
-
-      {/* 100% Full Width Web Grid Layout */}
-      <div className="w-full px-6 sm:px-10 my-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start flex-1">
-        
-        {/* Left Column (5/12): Bet Entry Form Card */}
-        <div className="lg:col-span-5 bg-neutral-950 p-6 sm:p-7 rounded-2xl border border-neutral-800 shadow-xl space-y-5">
-          <h3 className="text-gold font-extrabold text-lg border-b border-neutral-800 pb-2">
-            Select Bet Mode &amp; Entry
-          </h3>
-
-          {/* Direct Input Row */}
-          <div className="grid grid-cols-12 gap-2.5 items-center">
-            <input
-              type="text"
-              maxLength={3}
-              placeholder="Number [ABC]"
-              value={directNum}
-              onChange={(e) => setDirectNum(e.target.value)}
-              className="col-span-6 px-4 py-3 bg-white text-black text-sm font-semibold placeholder-gray-500 rounded-lg focus:outline-none shadow"
-            />
-            <input
-              type="number"
-              placeholder="Count"
-              value={directCount}
-              onChange={(e) => setDirectCount(e.target.value)}
-              className="col-span-2 px-2 py-3 bg-white text-black text-sm font-semibold placeholder-gray-500 rounded-lg focus:outline-none text-center shadow"
-            />
-            <button
-              onClick={handleAddDirect}
-              className="col-span-4 py-3 bg-gold-metallic text-black text-sm font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
-            >
-              Direct
-            </button>
-          </div>
-
-          {/* Shuffle Input Row */}
-          <div className="grid grid-cols-12 gap-2.5 items-center">
-            <input
-              type="text"
-              maxLength={3}
-              placeholder="Number [ABC, BCA, ACB] etc."
-              value={shuffleNum}
-              onChange={(e) => setShuffleNum(e.target.value)}
-              className="col-span-6 px-4 py-3 bg-white text-black text-sm font-semibold placeholder-gray-500 rounded-lg focus:outline-none shadow"
-            />
-            <input
-              type="number"
-              placeholder="Count"
-              value={shuffleCount}
-              onChange={(e) => setShuffleCount(e.target.value)}
-              className="col-span-2 px-2 py-3 bg-white text-black text-sm font-semibold placeholder-gray-500 rounded-lg focus:outline-none text-center shadow"
-            />
-            <button
-              onClick={handleAddShuffle}
-              className="col-span-4 py-3 bg-gold-metallic text-black text-sm font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
-            >
-              Shuffle
-            </button>
-          </div>
-
-          {/* Pair Input Row */}
-          <div className="grid grid-cols-12 gap-2 items-center bg-black p-3 rounded-xl border border-neutral-900 shadow">
-            <div className="col-span-8 grid grid-cols-3 gap-1.5">
-              <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-2">
-                <span className="text-xs text-gray-500 font-bold">AB</span>
-                <input
-                  type="text"
-                  placeholder="Count"
-                  value={pairABCount}
-                  onChange={(e) => {
-                    setPairAB('12');
-                    setPairABCount(e.target.value);
-                  }}
-                  className="w-full text-black text-xs font-semibold text-center outline-none bg-transparent"
-                />
-              </div>
-              <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-2">
-                <span className="text-xs text-gray-500 font-bold">BC</span>
-                <input
-                  type="text"
-                  placeholder="Count"
-                  value={pairBCCount}
-                  onChange={(e) => {
-                    setPairBC('34');
-                    setPairBCCount(e.target.value);
-                  }}
-                  className="w-full text-black text-xs font-semibold text-center outline-none bg-transparent"
-                />
-              </div>
-              <div className="flex items-center gap-1 bg-white rounded-lg px-2 py-2">
-                <span className="text-xs text-gray-500 font-bold">AC</span>
-                <input
-                  type="text"
-                  placeholder="Count"
-                  value={pairACCount}
-                  onChange={(e) => {
-                    setPairAC('56');
-                    setPairACCount(e.target.value);
-                  }}
-                  className="w-full text-black text-xs font-semibold text-center outline-none bg-transparent"
-                />
-              </div>
+            <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold">
+              <img src="/assets/gold-calendar.png" alt="Slot" className="w-full h-full object-contain filter drop-shadow" />
             </div>
+            <span>{activeGameSlot}</span>
+          </button>
 
-            <div className="col-span-4">
+          {/* Min / Max Info Badge */}
+          <div className="text-gold font-extrabold text-[11px] sm:text-xs tracking-tight text-center">
+            Min ₹10 • Max ₹200
+          </div>
+
+          {/* How to Play Help Link */}
+          <button
+            onClick={() => setShowHowToPlay(true)}
+            className="text-neutral-300 hover:text-gold underline font-bold text-[11px] sm:text-xs flex items-center gap-1 shrink-0"
+          >
+            <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold/70">
+              <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
+            </div>
+            <span className="hidden sm:inline">How to Play?</span>
+            <span className="sm:hidden">Help</span>
+          </button>
+        </div>
+
+        {/* Responsive Grid Layout */}
+        <div className="w-full px-3 sm:px-8 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
+          
+          {/* Left Column (5/12): Bet Entry Form Card */}
+          <div className="lg:col-span-5 bg-neutral-950/90 p-3 sm:p-5 rounded-xl sm:rounded-2xl border border-neutral-800/80 shadow-lg space-y-2.5 sm:space-y-4">
+            <h3 className="text-gold font-extrabold text-xs sm:text-sm border-b border-neutral-800/80 pb-1.5 uppercase tracking-wide">
+              Select Bet Mode &amp; Entry
+            </h3>
+
+            {/* Direct Input Row */}
+            <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-center">
+              <input
+                type="text"
+                maxLength={3}
+                placeholder="Direct (ABC)"
+                value={directNum}
+                onChange={(e) => setDirectNum(e.target.value)}
+                className="col-span-6 px-2.5 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold shadow"
+              />
+              <input
+                type="number"
+                placeholder="Count"
+                value={directCount}
+                onChange={(e) => setDirectCount(e.target.value)}
+                className="col-span-2 px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg focus:outline-none text-center shadow"
+              />
               <button
-                onClick={handleAddPair}
-                className="w-full py-3 bg-gold-metallic text-black text-sm font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
+                onClick={handleAddDirect}
+                className="col-span-4 py-1.5 sm:py-2 bg-gold-metallic text-black text-xs font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
               >
-                Pair
+                Direct
               </button>
             </div>
-          </div>
-        </div>
 
-        {/* Right Column (7/12): Ticket Table Display & Action Controls */}
-        <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
-          <div className="w-full border-2 border-white rounded-2xl overflow-hidden bg-white text-black min-h-[300px] shadow-2xl">
-            <div className="grid grid-cols-12 bg-white border-b-2 border-black font-extrabold text-lg py-3.5 px-4 text-center">
-              <span className="col-span-4 border-r-2 border-black">Number</span>
-              <span className="col-span-4 border-r-2 border-black">Count</span>
-              <span className="col-span-4">Type</span>
+            {/* Shuffle Input Row */}
+            <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-center">
+              <input
+                type="text"
+                maxLength={3}
+                placeholder="Shuffle (ABC)"
+                value={shuffleNum}
+                onChange={(e) => setShuffleNum(e.target.value)}
+                className="col-span-6 px-2.5 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg focus:outline-none focus:ring-1 focus:ring-gold shadow"
+              />
+              <input
+                type="number"
+                placeholder="Count"
+                value={shuffleCount}
+                onChange={(e) => setShuffleCount(e.target.value)}
+                className="col-span-2 px-1 py-1.5 sm:py-2 bg-white text-black text-xs font-semibold placeholder-gray-500 rounded-lg focus:outline-none text-center shadow"
+              />
+              <button
+                onClick={handleAddShuffle}
+                className="col-span-4 py-1.5 sm:py-2 bg-gold-metallic text-black text-xs font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
+              >
+                Shuffle
+              </button>
             </div>
 
-            <div className="divide-y divide-gray-200 max-h-[260px] overflow-y-auto text-base font-bold">
-              {betSlip.length === 0 ? (
-                <div className="py-20 text-center text-neutral-400 italic font-normal text-base">
-                  No tickets added to slip yet
+            {/* Pair Input Row */}
+            <div className="grid grid-cols-12 gap-1.5 items-center bg-black/80 p-2 rounded-lg border border-neutral-900 shadow">
+              <div className="col-span-8 grid grid-cols-3 gap-1">
+                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
+                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">AB</span>
+                  <input
+                    type="text"
+                    placeholder="Cnt"
+                    value={pairABCount}
+                    onChange={(e) => {
+                      setPairAB('12');
+                      setPairABCount(e.target.value);
+                    }}
+                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                  />
                 </div>
-              ) : (
-                betSlip.map((item) => (
-                  <div key={item.id} className="grid grid-cols-12 py-3 px-4 items-center text-center">
-                    <span className="col-span-4 font-mono text-lg text-black border-r border-gray-200">
-                      {item.number}
-                    </span>
-                    <span className="col-span-4 font-mono text-lg text-black border-r border-gray-200">
-                      {item.count}
-                    </span>
-                    <span className="col-span-3 text-black font-bold">{item.type}</span>
-                    <button
-                      onClick={() => removeFromBetSlip(item.id)}
-                      className="col-span-1 text-red-600 hover:text-red-800 flex justify-center"
-                      title="Remove"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                ))
-              )}
+                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
+                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">BC</span>
+                  <input
+                    type="text"
+                    placeholder="Cnt"
+                    value={pairBCCount}
+                    onChange={(e) => {
+                      setPairBC('34');
+                      setPairBCCount(e.target.value);
+                    }}
+                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                  />
+                </div>
+                <div className="flex items-center gap-0.5 bg-white rounded px-1.5 py-1">
+                  <span className="text-[10px] sm:text-xs text-gray-600 font-bold">AC</span>
+                  <input
+                    type="text"
+                    placeholder="Cnt"
+                    value={pairACCount}
+                    onChange={(e) => {
+                      setPairAC('56');
+                      setPairACCount(e.target.value);
+                    }}
+                    className="w-full text-black text-[11px] sm:text-xs font-semibold text-center outline-none bg-transparent"
+                  />
+                </div>
+              </div>
+
+              <div className="col-span-4">
+                <button
+                  onClick={handleAddPair}
+                  className="w-full py-1.5 sm:py-2 bg-gold-metallic text-black text-xs font-black rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-98"
+                >
+                  Pair
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* TOTAL AMOUNT Banner */}
-          <div className="bg-white text-black font-black text-xl py-4 px-6 rounded-2xl border-2 border-black flex justify-between items-center shadow-lg">
-            <span>TOTAL AMOUNT :</span>
-            <span className="text-3xl font-black text-black">₹{totalAmount}</span>
+          {/* Right Column (7/12): Ticket Table Display & Action Controls */}
+          <div className="lg:col-span-7 flex flex-col justify-between space-y-2.5 sm:space-y-4">
+            
+            {/* Slip Table */}
+            <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
+              <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
+                <span className="col-span-4 border-r border-gray-300">Number</span>
+                <span className="col-span-4 border-r border-gray-300">Count</span>
+                <span className="col-span-4">Type</span>
+              </div>
+
+              <div className="divide-y divide-gray-200 max-h-24 sm:max-h-48 overflow-y-auto text-xs sm:text-sm font-bold">
+                {betSlip.length === 0 ? (
+                  <div className="py-5 text-center text-neutral-400 italic font-normal text-xs sm:text-sm">
+                    No tickets added to slip yet
+                  </div>
+                ) : (
+                  betSlip.map((item) => (
+                    <div key={item.id} className="grid grid-cols-12 py-1.5 px-3 items-center text-center">
+                      <span className="col-span-4 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                        {item.number}
+                      </span>
+                      <span className="col-span-4 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                        {item.count}
+                      </span>
+                      <span className="col-span-3 text-black font-bold text-xs sm:text-sm">{item.type}</span>
+                      <button
+                        onClick={() => removeFromBetSlip(item.id)}
+                        className="col-span-1 text-red-600 hover:text-red-800 flex justify-center"
+                        title="Remove"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* TOTAL AMOUNT & Action Controls in a Compact Row */}
+            <div className="bg-neutral-950 p-2.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-extrabold text-neutral-300">TOTAL:</span>
+                <span className="text-lg sm:text-2xl font-black text-gold">₹{totalAmount}</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={saveTicket}
+                  className="px-4 py-2 bg-neutral-800 text-white hover:text-gold font-extrabold text-xs sm:text-sm tracking-wider rounded-lg border border-neutral-700 shadow uppercase hover:opacity-95 transition-transform active:scale-95"
+                >
+                  SAVE
+                </button>
+                <button
+                  onClick={payTicket}
+                  className="px-5 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow-md uppercase hover:opacity-95 transition-transform active:scale-95"
+                >
+                  PAY
+                </button>
+              </div>
+            </div>
+
           </div>
 
-          {/* SAVE & PAY Buttons */}
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={saveTicket}
-              className="w-full py-4 bg-gold-metallic text-black font-black text-lg tracking-wider rounded-xl shadow-lg uppercase hover:opacity-95 transition-transform active:scale-98"
-            >
-              SAVE
-            </button>
-            <button
-              onClick={payTicket}
-              className="w-full py-4 bg-gold-metallic text-black font-black text-lg tracking-wider rounded-xl shadow-lg uppercase hover:opacity-95 transition-transform active:scale-98"
-            >
-              PAY
-            </button>
-          </div>
         </div>
-
       </div>
-
-
 
       {/* How to Play Modal */}
       {showHowToPlay && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-900 border border-gold rounded-2xl p-6 max-w-md w-full space-y-4 shadow-2xl">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-gold rounded-2xl p-5 max-w-md w-full space-y-3.5 shadow-2xl">
             <div className="flex justify-center">
-              <img src="/assets/gold-question.png" alt="How to Play" className="w-14 h-14 object-contain" />
+              <img src="/assets/gold-question.png" alt="How to Play" className="w-12 h-12 object-contain" />
             </div>
-            <h3 className="text-gold font-extrabold text-xl text-center border-b border-neutral-800 pb-2">
+            <h3 className="text-gold font-extrabold text-lg text-center border-b border-neutral-800 pb-2">
               How to Play LUCKY 10
             </h3>
-            <div className="space-y-3 text-sm text-neutral-200">
+            <div className="space-y-2.5 text-xs text-neutral-200 leading-relaxed">
               <p>
                 <strong className="text-gold">Direct Mode:</strong> Match the 3-digit winning number
                 in exact order (e.g. 742). Win up to ₹1,00,000!
@@ -381,12 +388,12 @@ export const GameDashboardView: React.FC = () => {
               </p>
               <p>
                 <strong className="text-gold">Pair Mode:</strong> Select specific digit pairs (AB, BC,
-                or AC) in exact position. Win up to ₹10,000!
+                or AC) in exact position. Win up to ₹1,0000!
               </p>
             </div>
             <button
               onClick={() => setShowHowToPlay(false)}
-              className="w-full py-3 bg-gold-metallic text-black font-bold text-sm rounded-lg"
+              className="w-full py-2.5 bg-gold-metallic text-black font-bold text-xs rounded-lg"
             >
               CLOSE
             </button>
