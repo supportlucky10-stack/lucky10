@@ -62,7 +62,7 @@ export const ForgotPasswordView: React.FC = () => {
           <div className="pt-2 sm:pt-4 flex justify-center">
             <button
               type="submit"
-              className="w-48 sm:w-56 py-2.5 sm:py-3.5 bg-gold-metallic text-black font-black text-xs sm:text-base tracking-wider rounded-lg shadow-[0_4px_25px_rgba(212,175,55,0.35)] uppercase hover:opacity-95 transition-all active:scale-98 whitespace-nowrap text-center"
+              className="w-52 sm:w-60 py-2.5 sm:py-3 px-3 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow-[0_4px_25px_rgba(212,175,55,0.35)] uppercase hover:opacity-95 transition-all active:scale-98 whitespace-nowrap text-center flex items-center justify-center"
             >
               RESET YOUR PASSWORD
             </button>
