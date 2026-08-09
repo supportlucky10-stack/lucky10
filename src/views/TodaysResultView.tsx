@@ -23,7 +23,7 @@ export const TodaysResultView: React.FC = () => {
   const slotTitle = activeGameSlot.replace(' Game', '') + ' Result';
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 sm:pb-24">
+    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-16 select-none">
       {/* Gold Header Banner */}
       <HeaderBanner title={slotTitle} />
 
