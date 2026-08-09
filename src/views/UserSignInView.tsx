@@ -13,7 +13,7 @@ export const UserSignInView: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-black text-white px-3 sm:px-6 py-3 sm:py-8 flex flex-col justify-between overflow-y-auto">
+    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-3 sm:px-6 py-2 sm:py-8 flex flex-col justify-center items-center overflow-hidden overscroll-none select-none">
       
       {/* Background Radial Light Gold Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -23,16 +23,16 @@ export const UserSignInView: React.FC = () => {
       {/* Unified 2-in-1 Container Box with Light Gold Outer Glow & Metallic Border */}
       <div className="relative max-w-4xl mx-auto w-full my-auto rounded-2xl sm:rounded-3xl border border-gold/40 bg-neutral-950/90 shadow-[0_0_60px_rgba(212,175,55,0.22)] overflow-hidden grid grid-cols-1 md:grid-cols-12 transition-all duration-300">
 
-        {/* Left Column (5 cols on Desktop): "Why Play LUCKY 10?" with Rich Inside Gradient */}
-        <div className="md:col-span-5 bg-gradient-to-br from-[#1c180e] via-neutral-950 to-black p-4 sm:p-7 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gold/20 space-y-3 sm:space-y-4">
+        {/* Left Column (5 cols on Desktop, Top on Mobile): "Why Play LUCKY 10?" */}
+        <div className="md:col-span-5 bg-gradient-to-br from-[#1c180e] via-neutral-950 to-black p-3.5 sm:p-7 flex flex-col justify-center border-b md:border-b-0 md:border-r border-gold/20 space-y-2 sm:space-y-4">
           
-          <h3 className="text-gold font-extrabold text-xs sm:text-base border-b border-gold/20 pb-2 flex items-center gap-2 tracking-wide uppercase">
-            <span className="text-gold text-sm sm:text-base">✨</span> Why Play LUCKY 10?
+          <h3 className="text-gold font-extrabold text-xs sm:text-base border-b border-gold/20 pb-1.5 sm:pb-2 flex items-center gap-2 tracking-wide uppercase">
+            <span className="text-gold text-xs sm:text-base">✨</span> Why Play LUCKY 10?
           </h3>
 
-          <div className="space-y-2.5 sm:space-y-4 text-[11px] sm:text-xs leading-snug">
+          <div className="space-y-2 sm:space-y-4 text-[11px] sm:text-xs leading-snug">
             {/* Bullet 1 */}
-            <div className="flex items-center sm:items-start gap-2.5 sm:gap-3 pb-2 sm:pb-3 border-b border-neutral-800/80 group">
+            <div className="flex items-center sm:items-start gap-2 sm:gap-3 pb-1.5 sm:pb-3 border-b border-neutral-800/80 group">
               <div className="shrink-0 p-1 rounded-lg bg-black/80 border border-gold/40 shadow-[0_0_10px_rgba(212,175,55,0.2)] group-hover:scale-105 transition-transform">
                 <img src="/assets/gold-ticket.png" alt="Gold Ticket" className="w-4 h-4 sm:w-5 sm:h-5 object-contain filter drop-shadow" />
               </div>
@@ -43,7 +43,7 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 2 */}
-            <div className="flex items-center sm:items-start gap-2.5 sm:gap-3 pb-2 sm:pb-3 border-b border-neutral-800/80 group">
+            <div className="flex items-center sm:items-start gap-2 sm:gap-3 pb-1.5 sm:pb-3 border-b border-neutral-800/80 group">
               <div className="shrink-0 p-1 rounded-lg bg-black/80 border border-gold/40 shadow-[0_0_10px_rgba(212,175,55,0.2)] group-hover:scale-105 transition-transform">
                 <img src="/assets/gold-trophy.png" alt="Gold Trophy" className="w-4 h-4 sm:w-5 sm:h-5 object-contain filter drop-shadow" />
               </div>
@@ -54,7 +54,7 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 3 */}
-            <div className="flex items-center sm:items-start gap-2.5 sm:gap-3 pb-2 sm:pb-3 border-b border-neutral-800/80 group">
+            <div className="flex items-center sm:items-start gap-2 sm:gap-3 pb-1.5 sm:pb-3 border-b border-neutral-800/80 group">
               <div className="shrink-0 p-1 rounded-lg bg-black/80 border border-gold/40 shadow-[0_0_10px_rgba(212,175,55,0.2)] group-hover:scale-105 transition-transform">
                 <img src="/assets/gold-calendar.png" alt="Gold Calendar" className="w-4 h-4 sm:w-5 sm:h-5 object-contain filter drop-shadow" />
               </div>
@@ -64,7 +64,7 @@ export const UserSignInView: React.FC = () => {
             </div>
 
             {/* Bullet 4 */}
-            <div className="flex items-center sm:items-start gap-2.5 sm:gap-3 group">
+            <div className="flex items-center sm:items-start gap-2 sm:gap-3 group">
               <div className="shrink-0 p-1 rounded-lg bg-black/80 border border-gold/40 shadow-[0_0_10px_rgba(212,175,55,0.2)] group-hover:scale-105 transition-transform">
                 <img src="/assets/gold-bank.png" alt="Gold Bank" className="w-4 h-4 sm:w-5 sm:h-5 object-contain filter drop-shadow" />
               </div>
@@ -75,19 +75,19 @@ export const UserSignInView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column (7 cols on Desktop): Form Container with Matching Inside Gradient */}
-        <div className="md:col-span-7 bg-gradient-to-tl from-[#1a160d] via-black to-[#0e0c07] p-4 sm:p-8 flex flex-col items-center justify-center">
+        {/* Right Column (7 cols on Desktop): Form Container */}
+        <div className="md:col-span-7 bg-gradient-to-tl from-[#1a160d] via-black to-[#0e0c07] p-3.5 sm:p-8 flex flex-col items-center justify-center">
           <div className="w-full max-w-sm flex flex-col items-center">
             <Lucky10Logo size="lg" showSubtitle={true} />
 
-            <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4 mt-3 sm:mt-5">
+            <form onSubmit={handleSubmit} className="w-full space-y-2.5 sm:space-y-4 mt-2.5 sm:mt-5">
               <div>
                 <input
                   type="text"
                   placeholder="Username"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-2.5 sm:py-3.5 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
+                  className="w-full px-3.5 py-2.5 sm:py-3.5 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
                   required
                 />
               </div>
@@ -98,7 +98,7 @@ export const UserSignInView: React.FC = () => {
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 sm:py-3.5 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
+                  className="w-full px-3.5 py-2.5 sm:py-3.5 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
                   required
                 />
               </div>
@@ -132,11 +132,6 @@ export const UserSignInView: React.FC = () => {
           </div>
         </div>
 
-      </div>
-
-      {/* Footer Info */}
-      <div className="relative text-center pt-2 pb-1 border-t border-neutral-900/80 flex justify-center items-center text-[10px] sm:text-xs text-neutral-500 max-w-4xl mx-auto w-full shrink-0">
-        <span>Demo Credentials: demo / 123456</span>
       </div>
     </div>
   );
