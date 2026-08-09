@@ -192,6 +192,24 @@ html, body {
   border-color: #d4af37 !important;
 }
 
+/* Continuous Glowing Gold Blink Effect */
+@keyframes goldBlink {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(212, 175, 55, 0.6), 0 0 25px rgba(212, 175, 55, 0.5);
+    filter: brightness(1);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.95), 0 0 50px rgba(255, 215, 0, 0.85);
+    filter: brightness(1.25);
+    opacity: 0.85;
+  }
+}
+
+.animate-gold-blink {
+  animation: goldBlink 1.2s infinite ease-in-out;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
