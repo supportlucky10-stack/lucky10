@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lucky10Logo } from '../components/Lucky10Logo';
 import { useApp } from '../context/AppContext';
 
@@ -7,13 +7,27 @@ export const UserSignInView: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
+  // Lock iOS Safari rubber-band scrolling while login view is active
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const originalTouchAction = document.body.style.touchAction;
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.touchAction = originalTouchAction;
+    };
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loginUser(username, password);
   };
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-3 sm:px-6 py-2 sm:py-8 flex flex-col justify-center items-center overflow-hidden overscroll-none select-none">
+    <div className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-2.5 sm:px-6 py-2 sm:py-6 flex flex-col justify-center items-center overflow-hidden overscroll-none touch-none select-none z-50">
       
       {/* Background Radial Light Gold Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
