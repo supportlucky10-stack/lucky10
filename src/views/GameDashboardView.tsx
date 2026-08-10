@@ -133,7 +133,7 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden relative pb-16 select-none">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-x-hidden relative pb-20 sm:pb-24 select-none">
       
       <div>
         {/* Top Header Bar */}
@@ -146,7 +146,7 @@ export const GameDashboardView: React.FC = () => {
             >
               <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
             </button>
-            <h1 className="font-black text-sm sm:text-lg text-white tracking-wide uppercase">
+            <h1 className="font-black text-sm sm:text-lg text-white tracking-wide">
               Hello {currentUser?.name || currentUser?.username || 'User'}
             </h1>
           </div>
@@ -158,12 +158,14 @@ export const GameDashboardView: React.FC = () => {
 
         {/* Combined Sub-Header Info Ribbon */}
         <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-between gap-2 text-xs sm:text-sm">
-          {/* Game Slot Switcher */}
+          {/* Game Slot Switcher - Glow on Text Only */}
           <button
             onClick={() => setCurrentView('CHANGE_GAME')}
-            className="px-3 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold shadow animate-gold-blink flex items-center justify-center text-center shrink-0 uppercase tracking-wide"
+            className="px-3.5 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold/90 shadow-md flex items-center justify-center text-center shrink-0 uppercase tracking-wide hover:opacity-95 transition-all active:scale-95"
           >
-            <span>{activeGameSlot}</span>
+            <span className="animate-text-gold-glow inline-block">
+              {activeGameSlot}
+            </span>
           </button>
 
           {/* Min / Max Info Badge */}

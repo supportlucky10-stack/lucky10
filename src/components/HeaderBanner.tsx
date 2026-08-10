@@ -25,18 +25,18 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
   };
 
   return (
-    <div className="relative w-full bg-gold-banner px-6 py-4 min-h-[85px] flex items-center justify-between shadow-lg select-none border-b-2 border-[#aa771c]">
-      <div className="flex items-center gap-3 max-w-[70%]">
+    <div className="relative w-full bg-gold-banner px-3.5 sm:px-6 py-2.5 sm:py-3.5 min-h-[56px] sm:min-h-[70px] flex items-center justify-between shadow-md select-none border-b border-[#aa771c]">
+      <div className="flex items-center gap-2 sm:gap-3 max-w-[75%]">
         {showBack && (
           <button
             onClick={handleBack}
-            className="p-1.5 text-black hover:bg-black/15 rounded-full transition-colors"
+            className="p-1 text-black hover:bg-black/15 rounded-full transition-colors shrink-0"
             title="Go Back"
           >
-            <ArrowLeft className="w-7 h-7 stroke-[3]" />
+            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
           </button>
         )}
-        <h1 className="text-black font-black text-xl sm:text-2xl tracking-tight leading-tight truncate uppercase">
+        <h1 className="text-black font-black text-sm sm:text-xl tracking-tight leading-tight truncate uppercase">
           {title}
         </h1>
       </div>

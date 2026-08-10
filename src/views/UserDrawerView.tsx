@@ -17,16 +17,16 @@ export const UserDrawerView: React.FC = () => {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto pb-32 sm:pb-36">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto pb-24 sm:pb-32">
       <div>
         {/* Top Gold Banner Header */}
-        <div className="w-full bg-gold-banner px-5 py-3.5 flex items-center justify-between shadow-md">
+        <div className="w-full bg-gold-banner px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-md">
           <button
             onClick={() => setCurrentView('GAME_DASHBOARD')}
-            className="flex items-center gap-2 text-black hover:opacity-80 font-black text-lg sm:text-xl tracking-tight transition-opacity"
+            className="flex items-center gap-1.5 text-black hover:opacity-80 font-black text-sm sm:text-lg tracking-tight transition-opacity"
             title="Back to Dashboard"
           >
-            <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 stroke-[3]" />
             <span>Back</span>
           </button>
           <div className="scale-75 origin-right flex items-center gap-2">
@@ -35,25 +35,25 @@ export const UserDrawerView: React.FC = () => {
         </div>
 
         {/* Menu Items with Gold Logo Icons */}
-        <div className="px-6 pt-6 space-y-3.5">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 space-y-2.5 sm:space-y-3.5">
           {menuItems.map((item, index) => (
             <button
               key={index}
               onClick={item.action}
-              className="w-full flex items-center gap-3.5 pb-2.5 border-b border-neutral-800 text-left text-white hover:text-gold font-bold text-lg tracking-wide transition-colors group"
+              className="w-full flex items-center gap-2.5 sm:gap-3.5 pb-2 sm:pb-2.5 border-b border-neutral-800/90 text-left text-white hover:text-gold font-extrabold text-xs sm:text-base tracking-normal transition-colors group"
             >
-              <img src={item.icon} alt={item.label} className="w-7 h-7 object-contain group-hover:scale-110 transition-transform shrink-0" />
-              <span>{item.label}</span>
+              <img src={item.icon} alt={item.label} className="w-5 h-5 sm:w-6 sm:h-6 object-contain group-hover:scale-110 transition-transform shrink-0" />
+              <span className="truncate">{item.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Logout Button at bottom left matching Page 5 */}
-      <div className="px-6 pb-8 pt-6">
+      <div className="px-4 sm:px-6 pb-6 sm:pb-8 pt-4 sm:pt-6">
         <button
           onClick={logout}
-          className="px-6 py-2.5 bg-gold-metallic text-black font-extrabold text-base rounded tracking-wide shadow-md hover:opacity-95"
+          className="px-5 py-2 sm:py-2.5 bg-gold-metallic text-black font-extrabold text-xs sm:text-sm rounded tracking-wide shadow-md hover:opacity-95"
         >
           Logout
         </button>
