@@ -153,7 +153,7 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-x-hidden relative pb-20 sm:pb-24 select-none">
+    <div className="w-full h-full flex-1 bg-black text-white flex flex-col justify-between overflow-y-auto pb-16 relative select-none">
       
       <div>
         {/* Top Header Bar */}

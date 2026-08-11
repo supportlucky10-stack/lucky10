@@ -3,7 +3,7 @@ import { HeaderBanner } from '../components/HeaderBanner';
 
 export const PayoutStructureView: React.FC = () => {
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-32 sm:pb-36">
+    <div className="w-full h-full flex-1 bg-black text-white flex flex-col justify-start overflow-y-auto pb-16">
       {/* Gold Header Banner */}
       <HeaderBanner title="Payout Structure" />
 
