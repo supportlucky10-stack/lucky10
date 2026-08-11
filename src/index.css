@@ -279,4 +279,42 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0;
 }
 
+/* iOS Safari Mobile Momentum Scroll & Viewport Fixes */
+html {
+  height: -webkit-fill-available;
+  -webkit-text-size-adjust: 100%;
+}
 
+body {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure smooth inertial touch scrolling for all scroll containers */
+.overflow-y-auto,
+.overflow-auto,
+[class*="overflow-y-auto"] {
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent double-tap zoom delay and touch blockage on inputs and buttons */
+input, textarea, select, button, a {
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
+  touch-action: manipulation;
+}

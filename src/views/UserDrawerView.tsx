@@ -40,12 +40,12 @@ export const UserDrawerView: React.FC = () => {
     },
     {
       label: 'Update Bank Account',
-      icon: icon05,
+      icon: icon06,
       action: () => setCurrentView('UPDATE_BANK_DETAILS'),
     },
     {
       label: 'My Play Report',
-      icon: icon06,
+      icon: icon05,
       action: () => setCurrentView('MY_PLAY_REPORT'),
     },
     {
@@ -63,7 +63,7 @@ export const UserDrawerView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-16 select-none">
+    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-y-auto pb-24 sm:pb-32 antialiased">
       <div>
         {/* Top Gold Banner Header */}
         <div className="w-full bg-gold-banner px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-md border-b border-[#b88928]/40">

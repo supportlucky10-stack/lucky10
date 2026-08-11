@@ -18,7 +18,7 @@ export const PreviousWinningNumbersView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-16 select-none">
+    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-y-auto pb-24 sm:pb-32 antialiased">
       {/* Gold Header matching Page 10 */}
       <HeaderBanner title="Previous Winning Numbers" />
 
