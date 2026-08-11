@@ -270,3 +270,13 @@ html, body {
   animation: dropFromTop 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+/* Hide duplicate native webkit calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+

@@ -233,15 +233,24 @@ export const MyPlayReportView: React.FC = () => {
           <div className="space-y-4">
             {/* Archive Date Selector */}
             <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-              <span className="flex items-center gap-2 font-extrabold text-gold">
-                <Calendar className="w-4 h-4" /> Filter Archive Date:
+              <span className="flex items-center gap-2 font-extrabold text-gold uppercase tracking-wider text-xs">
+                <Calendar className="w-4 h-4 text-gold shrink-0" /> Select Date:
               </span>
-              <input
-                type="date"
-                value={historyDate}
-                onChange={(e) => setHistoryDate(e.target.value)}
-                className="bg-black border border-neutral-700 text-white font-mono text-xs px-2.5 py-1 rounded focus:outline-none focus:border-gold"
-              />
+              <div
+                onClick={(e) => {
+                  const input = e.currentTarget.querySelector('input');
+                  input?.showPicker?.();
+                }}
+                className="flex items-center gap-2 bg-black border border-neutral-700 hover:border-gold/80 px-3 py-1.5 rounded-lg cursor-pointer transition-all shadow-inner group"
+              >
+                <input
+                  type="date"
+                  value={historyDate}
+                  onChange={(e) => setHistoryDate(e.target.value)}
+                  className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
+                />
+                <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform cursor-pointer shrink-0" />
+              </div>
             </div>
 
             {/* Previous Tickets List */}
