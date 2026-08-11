@@ -280,100 +280,100 @@ export const GameDashboardView: React.FC = () => {
                 <div className="h-[1.5px] flex-1 bg-gradient-to-l from-transparent via-[#c49727] to-[#c49727]" />
               </div>
 
-              {/* 2x2 Grid of Pair Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 mb-4">
+              {/* 2x2 Grid of Pair Inputs - Always 2 Columns on Mobile & Desktop */}
+              <div className="grid grid-cols-2 gap-1.5 sm:gap-3.5 mb-4">
                 {/* Left Column Pair 1: AB */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
                     AB
                   </span>
-                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                  <div className="grid grid-cols-12 gap-1 flex-1">
                     <input
                       type="text"
                       maxLength={2}
                       placeholder="Number"
                       value={pairAB}
                       onChange={(e) => setPairAB(e.target.value)}
-                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                     <input
                       type="number"
                       placeholder="Count"
                       value={pairABCount}
                       onChange={(e) => setPairABCount(e.target.value)}
-                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                   </div>
                 </div>
 
                 {/* Right Column Pair 1: BC */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
                     BC
                   </span>
-                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                  <div className="grid grid-cols-12 gap-1 flex-1">
                     <input
                       type="text"
                       maxLength={2}
                       placeholder="Number"
                       value={pairBC}
                       onChange={(e) => setPairBC(e.target.value)}
-                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                     <input
                       type="number"
                       placeholder="Count"
                       value={pairBCCount}
                       onChange={(e) => setPairBCCount(e.target.value)}
-                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                   </div>
                 </div>
 
                 {/* Left Column Pair 2: AC */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
                     AC
                   </span>
-                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                  <div className="grid grid-cols-12 gap-1 flex-1">
                     <input
                       type="text"
                       maxLength={2}
                       placeholder="Number"
                       value={pairAC}
                       onChange={(e) => setPairAC(e.target.value)}
-                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                     <input
                       type="number"
                       placeholder="Count"
                       value={pairACCount}
                       onChange={(e) => setPairACCount(e.target.value)}
-                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                   </div>
                 </div>
 
                 {/* Right Column Pair 2: CA */}
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
                     CA
                   </span>
-                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                  <div className="grid grid-cols-12 gap-1 flex-1">
                     <input
                       type="text"
                       maxLength={2}
                       placeholder="Number"
                       value={pairCA}
                       onChange={(e) => setPairCA(e.target.value)}
-                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                     <input
                       type="number"
                       placeholder="Count"
                       value={pairCACount}
                       onChange={(e) => setPairCACount(e.target.value)}
-                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                     />
                   </div>
                 </div>
