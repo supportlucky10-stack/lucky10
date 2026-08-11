@@ -95,10 +95,10 @@ const initialResults: Record<GameSlot, GameResult> = {
     ],
     publishedAt: new Date().toISOString(),
   },
-  '4 PM Game': {
+  '3 PM Game': {
     id: 'res_2',
     date: new Date().toISOString().split('T')[0],
-    gameSlot: '4 PM Game',
+    gameSlot: '3 PM Game',
     prize1: '512',
     prize2: '934',
     prize3: '601',

@@ -11,7 +11,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const todayWinners = [
     { id: 'W-101', user: 'Rahul S.', slot: '1 PM Game', prize: '1st Prize (Direct 742)', winAmount: '₹5,000', time: '1:05 PM' },
     { id: 'W-102', user: 'Vikram M.', slot: '1 PM Game', prize: '2nd Prize (742)', winAmount: '₹5,000', time: '1:05 PM' },
-    { id: 'W-103', user: 'Ankit P.', slot: '4 PM Game', prize: 'Shuffle Winner (427)', winAmount: '₹3,000', time: '4:06 PM' },
+    { id: 'W-103', user: 'Ankit P.', slot: '3 PM Game', prize: 'Shuffle Winner (427)', winAmount: '₹3,000', time: '3:06 PM' },
     { id: 'W-104', user: 'Priya K.', slot: '6 PM Game', prize: 'Pair Winner (AB:74)', winAmount: '₹500', time: '6:04 PM' },
     { id: 'W-105', user: 'Suresh B.', slot: '8 PM Game', prize: '1st Prize (Direct 819)', winAmount: '₹5,000', time: '8:05 PM' },
   ];
@@ -19,7 +19,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const priceTransactions = [
     { id: 'TXN-901', user: 'Rahul S.', bank: 'HDFC Bank (•••• 4312)', amount: '₹5,000', status: 'SUCCESS', date: 'Today, 1:20 PM' },
     { id: 'TXN-902', user: 'Vikram M.', bank: 'SBI (•••• 8819)', amount: '₹5,000', status: 'SUCCESS', date: 'Today, 1:25 PM' },
-    { id: 'TXN-903', user: 'Ankit P.', bank: 'ICICI (•••• 1029)', amount: '₹3,000', status: 'SUCCESS', date: 'Today, 4:15 PM' },
+    { id: 'TXN-903', user: 'Ankit P.', bank: 'ICICI (•••• 1029)', amount: '₹3,000', status: 'SUCCESS', date: 'Today, 3:15 PM' },
     { id: 'TXN-904', user: 'Priya K.', bank: 'Axis Bank (•••• 9940)', amount: '₹500', status: 'PROCESSING', date: 'Today, 6:10 PM' },
   ];
 
@@ -27,7 +27,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
     { date: 'Yesterday', slot: '8 PM Game', number: '742', totalPayout: '₹18,500', winnerCount: 14 },
     { date: 'Yesterday', slot: '6 PM Game', number: '350', totalPayout: '₹12,000', winnerCount: 9 },
     { date: '10 Aug 2026', slot: '8 PM Game', number: '194', totalPayout: '₹22,000', winnerCount: 18 },
-    { date: '10 Aug 2026', slot: '4 PM Game', number: '819', totalPayout: '₹15,500', winnerCount: 11 },
+    { date: '10 Aug 2026', slot: '3 PM Game', number: '819', totalPayout: '₹15,500', winnerCount: 11 },
   ];
 
   return (

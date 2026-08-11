@@ -10,7 +10,7 @@ export const PreviousWinningNumbersView: React.FC = () => {
     new Date(Date.now() - 86400000).toISOString().split('T')[0]
   );
 
-  const games: GameSlot[] = ['1 PM Game', '4 PM Game', '6 PM Game', '8 PM Game'];
+  const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
   const handleSelectSlot = (slot: GameSlot) => {
     setActiveGameSlot(slot);

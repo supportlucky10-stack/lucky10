@@ -62,7 +62,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                 className="w-full px-3 py-2 bg-black border border-neutral-700 text-gold font-bold text-sm rounded-md"
               >
                 <option value="1 PM Game">1 PM Game</option>
-                <option value="4 PM Game">4 PM Game</option>
+                <option value="3 PM Game">3 PM Game</option>
                 <option value="6 PM Game">6 PM Game</option>
                 <option value="8 PM Game">8 PM Game</option>
               </select>

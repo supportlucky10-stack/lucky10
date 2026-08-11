@@ -17,7 +17,7 @@ export type ViewType =
   | 'ADMIN_PAYOUTS'
   | 'ADMIN_TRANSACTION_LOGS';
 
-export type GameSlot = '1 PM Game' | '4 PM Game' | '6 PM Game' | '8 PM Game';
+export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 
 export interface UserAccount {
   id: string;

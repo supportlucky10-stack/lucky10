@@ -85,7 +85,7 @@ export const AdminReportsView: React.FC = () => {
               <span className="font-mono font-bold text-white">₹ 4,200</span>
             </div>
             <div className="flex justify-between py-1">
-              <span className="text-neutral-300">4 PM Game Sales:</span>
+              <span className="text-neutral-300">3 PM Game Sales:</span>
               <span className="font-mono font-bold text-white">₹ 3,800</span>
             </div>
             <div className="flex justify-between py-1">

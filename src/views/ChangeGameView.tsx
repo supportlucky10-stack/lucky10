@@ -6,7 +6,7 @@ import type { GameSlot } from '../types';
 export const ChangeGameView: React.FC = () => {
   const { setActiveGameSlot, setCurrentView, activeGameSlot, addToast } = useApp();
 
-  const games: GameSlot[] = ['1 PM Game', '4 PM Game', '6 PM Game', '8 PM Game'];
+  const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
   const handleSelect = (slot: GameSlot) => {
     setActiveGameSlot(slot);
