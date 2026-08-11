@@ -267,7 +267,7 @@ html, body {
 }
 
 .animate-drop-in {
-  animation: dropFromTop 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: dropFromTop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Hide duplicate native webkit calendar icon */

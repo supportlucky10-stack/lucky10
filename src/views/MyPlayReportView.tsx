@@ -20,7 +20,7 @@ export const MyPlayReportView: React.FC = () => {
     (t) => t.placedAt.startsWith(todayStr) || t.placedAt.includes('Today')
   );
 
-  // Mock Previous Tickets
+  // Mock Previous Tickets (Only winning/active records)
   const previousTickets = [
     {
       id: 'TKT-77102',
@@ -33,16 +33,6 @@ export const MyPlayReportView: React.FC = () => {
       placedAt: 'Yesterday, 7:45 PM',
       status: 'WON' as const,
       winAmount: 5000,
-    },
-    {
-      id: 'TKT-77098',
-      gameSlot: '6 PM Game' as GameSlot,
-      items: [
-        { id: '3', number: 'AB: 81', count: 3, type: 'Pair' as const, unitPrice: 10, totalAmount: 30 },
-      ],
-      totalAmount: 30,
-      placedAt: 'Yesterday, 5:50 PM',
-      status: 'LOST' as const,
     },
     {
       id: 'TKT-76541',
@@ -152,74 +142,76 @@ export const MyPlayReportView: React.FC = () => {
         {/* ================= TAB 1: TODAY'S GAMES ================= */}
         {activeSubTab === 'TODAYS_GAMES' && (
           <div className="space-y-4">
-            {/* Quick Summary Badge */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-neutral-950 p-3 sm:p-4 rounded-xl border border-neutral-800 shadow">
-                <span className="text-neutral-400 text-xs font-semibold block">Total Bets Today</span>
-                <span className="text-white font-mono font-black text-base sm:text-xl">
-                  ₹ {todaysTickets.reduce((sum, t) => sum + t.totalAmount, 0)}
-                </span>
-              </div>
-              <div className="bg-neutral-950 p-3 sm:p-4 rounded-xl border border-neutral-800 shadow">
-                <span className="text-neutral-400 text-xs font-semibold block">Total Won Today</span>
-                <span className="text-gold font-mono font-black text-base sm:text-xl">
-                  ₹ {todaysTickets.reduce((sum, t) => sum + (t.winAmount || 0), 0)}
-                </span>
-              </div>
-            </div>
-
             {/* List of Today's Tickets */}
-            {todaysTickets.length === 0 ? (
+            {todaysTickets.filter((t) => t.status !== 'LOST').length === 0 ? (
               <div className="bg-neutral-950 p-8 rounded-2xl border border-neutral-800 text-center space-y-2">
                 <Ticket className="w-10 h-10 text-neutral-600 mx-auto" />
                 <p className="text-neutral-300 font-extrabold text-sm sm:text-base">No bets placed today yet</p>
                 <p className="text-neutral-500 text-xs">Select a game slot on the home screen to place your bets.</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {todaysTickets.map((tkt) => (
+              <div className="space-y-4">
+                {todaysTickets.filter((t) => t.status !== 'LOST').map((tkt) => (
                   <div
                     key={tkt.id}
                     className="bg-neutral-950 p-3.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md space-y-3 hover:border-gold/40 transition-colors"
                   >
+                    {/* Ticket Header */}
                     <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                       <div className="flex items-center gap-2">
                         <span className="bg-gold-metallic text-black font-black text-xs px-2.5 py-0.5 rounded uppercase">
                           {tkt.gameSlot}
                         </span>
-                        <span className="text-neutral-400 font-mono text-xs">{tkt.id}</span>
                       </div>
 
-                      <span
-                        className={`text-xs font-black px-2 py-0.5 rounded ${
-                          tkt.status === 'WON'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : tkt.status === 'PENDING'
-                            ? 'bg-amber-950 text-amber-400 border border-amber-800'
-                            : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
-                        }`}
-                      >
-                        {tkt.status === 'WON' ? `WON ₹${tkt.winAmount}` : tkt.status}
-                      </span>
+                      {tkt.status !== 'LOST' && (
+                        <span
+                          className={`text-xs font-black px-2.5 py-0.5 rounded ${
+                            tkt.status === 'WON'
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : 'bg-amber-950 text-amber-400 border border-amber-800'
+                          }`}
+                        >
+                          {tkt.status === 'WON' ? `WON ₹${tkt.winAmount}` : 'PENDING'}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Items List */}
-                    <div className="space-y-1.5 text-xs">
-                      {tkt.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between text-neutral-300">
-                          <span>
-                            <strong className="text-white font-extrabold">{item.type}</strong> ({item.number}) x {item.count} count
-                          </span>
-                          <span className="font-mono text-white font-bold">₹ {item.totalAmount}</span>
-                        </div>
-                      ))}
+                    {/* Table matching Home Page: Number | Count | Type | Amount */}
+                    <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
+                      <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
+                        <span className="col-span-3 border-r border-gray-300">Number</span>
+                        <span className="col-span-3 border-r border-gray-300">Count</span>
+                        <span className="col-span-3 border-r border-gray-300">Type</span>
+                        <span className="col-span-3">Amount</span>
+                      </div>
+
+                      <div className="divide-y divide-gray-200 text-xs sm:text-sm font-bold">
+                        {tkt.items.map((item, idx) => (
+                          <div key={idx} className="grid grid-cols-12 py-2 px-3 items-center text-center">
+                            <span className="col-span-3 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
+                              {item.number}
+                            </span>
+                            <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                              {item.count}
+                            </span>
+                            <span className="col-span-3 text-black font-bold text-xs sm:text-sm border-r border-gray-200">
+                              {item.type}
+                            </span>
+                            <span className="col-span-3 font-mono font-black text-xs sm:text-sm text-black">
+                              ₹{item.totalAmount}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-2 border-t border-neutral-900 text-xs">
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-1 text-xs">
                       <span className="text-neutral-500 flex items-center gap-1">
                         <Clock className="w-3.5 h-3.5" /> {tkt.placedAt}
                       </span>
-                      <span className="text-gold font-mono font-black text-sm">Total: ₹ {tkt.totalAmount}</span>
+                      <span className="text-gold font-mono font-black text-sm">Total: ₹{tkt.totalAmount}</span>
                     </div>
                   </div>
                 ))}
@@ -254,7 +246,7 @@ export const MyPlayReportView: React.FC = () => {
             </div>
 
             {/* Previous Tickets List */}
-            <div className="space-y-3">
+            <div className="space-y-4">
               {previousTickets.map((tkt) => (
                 <div
                   key={tkt.id}
@@ -265,36 +257,49 @@ export const MyPlayReportView: React.FC = () => {
                       <span className="bg-gold-banner text-black font-black text-xs px-2.5 py-0.5 rounded uppercase">
                         {tkt.gameSlot}
                       </span>
-                      <span className="text-neutral-400 font-mono text-xs">{tkt.id}</span>
                     </div>
 
-                    <span
-                      className={`text-xs font-black px-2.5 py-0.5 rounded ${
-                        tkt.status === 'WON'
-                          ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                          : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
-                      }`}
-                    >
-                      {tkt.status === 'WON' ? `WON ₹${tkt.winAmount}` : 'LOST'}
-                    </span>
+                    {tkt.status === 'WON' && (
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+                        WON ₹{tkt.winAmount}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="space-y-1.5 text-xs">
-                    {tkt.items.map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-neutral-300">
-                        <span>
-                          <strong className="text-white font-extrabold">{item.type}</strong> ({item.number}) x {item.count} count
-                        </span>
-                        <span className="font-mono text-white font-bold">₹ {item.totalAmount}</span>
-                      </div>
-                    ))}
+                  {/* Table matching Home Page: Number | Count | Type | Amount */}
+                  <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
+                    <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
+                      <span className="col-span-3 border-r border-gray-300">Number</span>
+                      <span className="col-span-3 border-r border-gray-300">Count</span>
+                      <span className="col-span-3 border-r border-gray-300">Type</span>
+                      <span className="col-span-3">Amount</span>
+                    </div>
+
+                    <div className="divide-y divide-gray-200 text-xs sm:text-sm font-bold">
+                      {tkt.items.map((item, idx) => (
+                        <div key={idx} className="grid grid-cols-12 py-2 px-3 items-center text-center">
+                          <span className="col-span-3 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
+                            {item.number}
+                          </span>
+                          <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                            {item.count}
+                          </span>
+                          <span className="col-span-3 text-black font-bold text-xs sm:text-sm border-r border-gray-200">
+                            {item.type}
+                          </span>
+                          <span className="col-span-3 font-mono font-black text-xs sm:text-sm text-black">
+                            ₹{item.totalAmount}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-neutral-900 text-xs">
+                  <div className="flex items-center justify-between pt-1 text-xs">
                     <span className="text-neutral-500 flex items-center gap-1">
                       <Clock className="w-3.5 h-3.5" /> {tkt.placedAt}
                     </span>
-                    <span className="text-gold font-mono font-black text-sm">Total: ₹ {tkt.totalAmount}</span>
+                    <span className="text-gold font-mono font-black text-sm">Total: ₹{tkt.totalAmount}</span>
                   </div>
                 </div>
               ))}

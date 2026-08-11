@@ -133,6 +133,7 @@ export const TodaysResultView: React.FC = () => {
           {/* 1st Prize Card - Featured Bigger on Top */}
           <div
             key={`prize-1-${activeTab}-${activeDate}-${activeGameSlot}`}
+            style={{ animationDelay: '0ms' }}
             className="flex items-center justify-between bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 p-3.5 sm:p-4 rounded-2xl border-2 border-gold/70 shadow-[0_0_20px_rgba(237,209,119,0.2)] animate-drop-in hover:border-gold transition-all"
           >
             <div className="flex items-center gap-3">
@@ -155,15 +156,16 @@ export const TodaysResultView: React.FC = () => {
             </div>
           </div>
 
-          {/* 2nd, 3rd, 4th Prize Cards - 3-Column Grid Below (Fall down at same time) */}
+          {/* 2nd, 3rd, 4th Prize Cards - 3-Column Grid Below (Fall down one by one) */}
           <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
             {[
-              { id: 2, label: '2nd Prize', val: currentResult.prize2 },
-              { id: 3, label: '3rd Prize', val: currentResult.prize3 },
-              { id: 4, label: '4th Prize', val: currentResult.prize4 },
+              { id: 2, label: '2nd Prize', val: currentResult.prize2, delay: '120ms' },
+              { id: 3, label: '3rd Prize', val: currentResult.prize3, delay: '240ms' },
+              { id: 4, label: '4th Prize', val: currentResult.prize4, delay: '360ms' },
             ].map((item) => (
               <div
                 key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
+                style={{ animationDelay: item.delay }}
                 className="flex flex-col items-center justify-center bg-neutral-950 p-2.5 sm:p-3 rounded-xl border border-neutral-800 shadow animate-drop-in hover:border-gold/40 transition-colors text-center"
               >
                 <div className="w-6 h-6 bg-white text-black font-black text-xs flex items-center justify-center rounded-md border border-black shrink-0 shadow mb-1">
