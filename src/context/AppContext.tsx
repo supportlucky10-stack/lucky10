@@ -24,6 +24,7 @@ interface AppContextType {
   removeFromBetSlip: (id: string) => void;
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
+  userTickets: PlacedTicket[];
   saveTicket: () => boolean;
   payTicket: () => boolean;
   bankDetails: BankDetails | null;
@@ -539,6 +540,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeFromBetSlip,
         clearBetSlip,
         placedTickets,
+        userTickets: currentUser ? placedTickets.filter((t) => t.userId === currentUser.id) : placedTickets,
         saveTicket,
         payTicket,
         bankDetails,

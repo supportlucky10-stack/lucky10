@@ -14,6 +14,7 @@ import { TodaysWinningNumbersView } from './views/TodaysWinningNumbersView';
 import { TodaysResultView } from './views/TodaysResultView';
 import { PreviousWinningNumbersView } from './views/PreviousWinningNumbersView';
 import { UpdateBankDetailsView } from './views/UpdateBankDetailsView';
+import { MyPlayReportView } from './views/MyPlayReportView';
 
 import { AdminSignInView } from './views/AdminSignInView';
 import { AdminDrawerView } from './views/AdminDrawerView';
@@ -53,6 +54,8 @@ const ViewRouter: React.FC = () => {
         return <PreviousWinningNumbersView />;
       case 'UPDATE_BANK_DETAILS':
         return <UpdateBankDetailsView />;
+      case 'MY_PLAY_REPORT':
+        return <MyPlayReportView />;
       case 'ADMIN_SIGN_IN':
         return <AdminSignInView />;
       case 'ADMIN_DRAWER':

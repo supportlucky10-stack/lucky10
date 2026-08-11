@@ -94,9 +94,13 @@ export const TodaysResultView: React.FC = () => {
                 { id: 2, label: '2nd Prize', val: currentResult.prize2 },
                 { id: 3, label: '3rd Prize', val: currentResult.prize3 },
                 { id: 4, label: '4th Prize', val: currentResult.prize4 },
-              ].map((item) => (
-                <div key={item.id} className="flex items-center gap-2 bg-neutral-950 p-2 rounded-xl border border-neutral-800 shadow">
-                  <div className="w-7 h-7 bg-white text-black font-black text-xs flex items-center justify-center rounded-lg border border-black shrink-0">
+              ].map((item, index) => (
+                <div
+                  key={`${activeGameSlot}-${item.id}`}
+                  style={{ animationDelay: `${index * 130}ms` }}
+                  className="flex items-center gap-2 bg-neutral-950 p-2.5 rounded-xl border border-neutral-800 shadow opacity-0 animate-drop-in hover:border-gold/40 transition-colors"
+                >
+                  <div className="w-7 h-7 bg-white text-black font-black text-xs flex items-center justify-center rounded-lg border border-black shrink-0 shadow">
                     {item.id}
                   </div>
                   <div className="flex-1 text-center">
@@ -110,7 +114,11 @@ export const TodaysResultView: React.FC = () => {
             </div>
 
             {/* Compliments Matrix Table */}
-            <div className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2">
+            <div
+              key={`compliments-${activeGameSlot}`}
+              style={{ animationDelay: '580ms' }}
+              className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 opacity-0 animate-drop-in"
+            >
               <h3 className="font-extrabold text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wide">
                 Compliments
               </h3>

@@ -30,7 +30,7 @@ export const UserDrawerView: React.FC = () => {
     {
       label: 'My Play Report',
       icon: icon03,
-      action: () => setCurrentView('GAME_DASHBOARD'),
+      action: () => setCurrentView('MY_PLAY_REPORT'),
     },
     {
       label: 'Results',
