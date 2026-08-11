@@ -61,9 +61,9 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Shuffle</span>
               </div>
-              <div className="text-xs sm:text-sm italic text-center font-bold pt-2 sm:pt-3 space-y-0.5 animate-text-gold-white">
-                <p className="block">Match the winning numbers in any order.</p>
-                <p className="block">Based on the 1st Prize Number</p>
+              <div className="text-xs sm:text-sm italic text-center pt-2 sm:pt-3 space-y-0.5">
+                <p className="block text-gray-200 font-normal">Match the winning numbers in any order.</p>
+                <p className="block font-bold animate-text-gold-white">Based on the 1st Prize Number</p>
               </div>
 
               <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-6 text-xs sm:text-base font-bold">
@@ -93,9 +93,9 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Pair</span>
               </div>
-              <div className="text-xs sm:text-sm italic text-center font-bold pt-2 sm:pt-3 space-y-0.5 animate-text-gold-white">
-                <p className="block">Match two specific digits in their exact positions.</p>
-                <p className="block">Based on the 1st Prize Number</p>
+              <div className="text-xs sm:text-sm italic text-center pt-2 sm:pt-3 space-y-0.5">
+                <p className="block text-gray-200 font-normal">Match two specific digits in their exact positions.</p>
+                <p className="block font-bold animate-text-gold-white">Based on the 1st Prize Number</p>
               </div>
 
               <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-6 text-xs sm:text-base font-bold">
