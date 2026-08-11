@@ -218,20 +218,20 @@ html, body {
   animation: goldBlink 1.2s infinite ease-in-out;
 }
 
-/* Continuous Glowing Gold Text-Only Effect */
-@keyframes textGoldGlow {
+/* Continuous White & Gold Text-Only Blink Effect */
+@keyframes slotTextWhiteGold {
   0%, 100% {
-    text-shadow: 0 0 3px #ffffff, 0 0 8px #ffe57f, 0 0 15px #ffd700;
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.9));
+    color: #ffffff !important;
+    text-shadow: 0 0 6px #ffffff, 0 0 12px #ffffff, 0 0 18px #ffd700;
   }
   50% {
-    text-shadow: 0 0 6px #ffffff, 0 0 14px #ffffff, 0 0 22px #ffc107;
-    filter: drop-shadow(0 0 8px rgba(255, 235, 59, 1));
+    color: #ffd700 !important;
+    text-shadow: 0 0 4px #7a5200, 0 0 10px #3d2900, 0 0 16px #ffd700;
   }
 }
 
-.animate-text-gold-glow {
-  animation: textGoldGlow 1.2s infinite ease-in-out;
+.slot-blinking-text {
+  animation: slotTextWhiteGold 0.8s infinite ease-in-out !important;
 }
 
 /* Scrollbar */

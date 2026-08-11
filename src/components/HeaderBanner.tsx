@@ -42,7 +42,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
       </div>
 
       <div className="flex items-center shrink-0">
-        <Lucky10Logo size="sm" showSubtitle={false} />
+        <Lucky10Logo size="sm" showSubtitle={false} variant="black" />
       </div>
     </div>
   );
