@@ -16,9 +16,9 @@ export const BottomNavigation: React.FC = () => {
   }
 
   const navItems: { label: string; view: ViewType; icon: string }[] = [
-    { label: 'Play', view: 'GAME_DASHBOARD', icon: '/assets/gold-report.png' },
-    { label: 'Change Game', view: 'CHANGE_GAME', icon: '/assets/gold-gamepad.png' },
-    { label: "Today's Result", view: 'TODAYS_RESULT', icon: '/assets/gold-calendar.png' },
+    { label: 'Play', view: 'GAME_DASHBOARD', icon: '/assets/gold-ticket.png' },
+    { label: 'Change Game', view: 'CHANGE_GAME', icon: '/assets/gold-calendar.png' },
+    { label: "Today's Result", view: 'TODAYS_RESULT', icon: '/assets/gold-trophy.png' },
     { label: 'Today Winners', view: 'TODAYS_WINNING_NUMBERS', icon: '/assets/gold-trophy.png' },
   ];
 
@@ -36,16 +36,16 @@ export const BottomNavigation: React.FC = () => {
               }`}
             >
               <div
-                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-black p-1 flex items-center justify-center shrink-0 transition-all ${
                   isActive
-                    ? 'scale-110 drop-shadow-[0_0_10px_rgba(212,175,55,0.9)]'
-                    : 'opacity-85 group-hover:opacity-100 group-hover:scale-105'
+                    ? 'border-2 border-gold shadow-[0_0_10px_rgba(212,175,55,0.6)] bg-neutral-950'
+                    : 'border border-neutral-800 group-hover:border-gold/60 group-hover:scale-105'
                 }`}
               >
                 <img
                   src={item.icon}
                   alt={item.label}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain filter drop-shadow"
                 />
               </div>
               <span className={`text-[9px] sm:text-[11px] font-black tracking-tight leading-tight text-center truncate w-full px-0.5 ${isActive ? 'text-gold' : ''}`}>

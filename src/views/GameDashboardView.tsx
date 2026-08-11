@@ -16,21 +16,18 @@ export const GameDashboardView: React.FC = () => {
     addToast,
   } = useApp();
 
-  // 3 DIGIT GAME State
-  const [num3Digit, setNum3Digit] = useState('');
-  const [count3Digit, setCount3Digit] = useState('');
+  // 3 Digit Game State
+  const [threeDigitNum, setThreeDigitNum] = useState('');
+  const [threeDigitCount, setThreeDigitCount] = useState('');
 
-  // 2 DIGIT GAME State (AB, BC, AC, CA)
-  const [pairABNum, setPairABNum] = useState('');
+  // 2 Digit Game State
+  const [pairAB, setPairAB] = useState('');
   const [pairABCount, setPairABCount] = useState('');
-
-  const [pairBCNum, setPairBCNum] = useState('');
+  const [pairBC, setPairBC] = useState('');
   const [pairBCCount, setPairBCCount] = useState('');
-
-  const [pairACNum, setPairACNum] = useState('');
+  const [pairAC, setPairAC] = useState('');
   const [pairACCount, setPairACCount] = useState('');
-
-  const [pairCANum, setPairCANum] = useState('');
+  const [pairCA, setPairCA] = useState('');
   const [pairCACount, setPairCACount] = useState('');
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
@@ -38,82 +35,85 @@ export const GameDashboardView: React.FC = () => {
   const unitPrice = 10; // ₹10 per count
 
   const handleAddDirect = () => {
-    if (!num3Digit || num3Digit.length !== 3 || isNaN(Number(num3Digit))) {
+    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
       addToast('Please enter a valid 3-digit number (ABC)', 'error');
       return;
     }
-    const count = parseInt(count3Digit);
+    const count = parseInt(threeDigitCount);
     if (!count || count < 1 || count > 20) {
       addToast('Please enter valid count (1-20)', 'error');
       return;
     }
     addToBetSlip({
-      number: num3Digit,
+      number: threeDigitNum,
       count,
       type: 'Direct',
       unitPrice,
       totalAmount: count * unitPrice,
     });
-    setNum3Digit('');
-    setCount3Digit('');
+    setThreeDigitNum('');
+    setThreeDigitCount('');
   };
 
   const handleAddShuffle = () => {
-    if (!num3Digit || num3Digit.length !== 3 || isNaN(Number(num3Digit))) {
-      addToast('Please enter a valid 3-digit number to shuffle', 'error');
+    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
+      addToast('Please enter a valid 3-digit number (ABC)', 'error');
       return;
     }
-    const count = parseInt(count3Digit);
+    const count = parseInt(threeDigitCount);
     if (!count || count < 1 || count > 20) {
       addToast('Please enter valid count (1-20)', 'error');
       return;
     }
     addToBetSlip({
-      number: num3Digit,
+      number: threeDigitNum,
       count,
       type: 'Shuffle',
       unitPrice,
       totalAmount: count * unitPrice,
     });
-    setNum3Digit('');
-    setCount3Digit('');
+    setThreeDigitNum('');
+    setThreeDigitCount('');
   };
 
   const handleAddBoth = () => {
-    if (!num3Digit || num3Digit.length !== 3 || isNaN(Number(num3Digit))) {
-      addToast('Please enter a valid 3-digit number for Both', 'error');
+    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
+      addToast('Please enter a valid 3-digit number (ABC)', 'error');
       return;
     }
-    const count = parseInt(count3Digit);
+    const count = parseInt(threeDigitCount);
     if (!count || count < 1 || count > 20) {
       addToast('Please enter valid count (1-20)', 'error');
       return;
     }
+    // Add Direct
     addToBetSlip({
-      number: num3Digit,
+      number: threeDigitNum,
       count,
       type: 'Direct',
       unitPrice,
       totalAmount: count * unitPrice,
     });
+    // Add Shuffle
     addToBetSlip({
-      number: num3Digit,
+      number: threeDigitNum,
       count,
       type: 'Shuffle',
       unitPrice,
       totalAmount: count * unitPrice,
     });
-    setNum3Digit('');
-    setCount3Digit('');
+    addToast('Added Direct & Shuffle to slip!', 'success');
+    setThreeDigitNum('');
+    setThreeDigitCount('');
   };
 
   const handleAddPair = () => {
     let addedCount = 0;
 
-    const processPair = (label: string, num: string, cnt: string) => {
-      if (num && num.length === 2 && !isNaN(Number(num))) {
-        const c = parseInt(cnt);
-        if (c > 0 && c <= 20) {
+    const checkAndAdd = (num: string, cntStr: string, label: string) => {
+      if (num && cntStr) {
+        const c = parseInt(cntStr);
+        if (c > 0 && num.length === 2 && !isNaN(Number(num))) {
           addToBetSlip({
             number: `${label}:${num}`,
             count: c,
@@ -128,32 +128,25 @@ export const GameDashboardView: React.FC = () => {
       return false;
     };
 
-    if (processPair('AB', pairABNum, pairABCount)) {
-      setPairABNum('');
-      setPairABCount('');
-    }
-    if (processPair('BC', pairBCNum, pairBCCount)) {
-      setPairBCNum('');
-      setPairBCCount('');
-    }
-    if (processPair('AC', pairACNum, pairACCount)) {
-      setPairACNum('');
-      setPairACCount('');
-    }
-    if (processPair('CA', pairCANum, pairCACount)) {
-      setPairCANum('');
-      setPairCACount('');
-    }
+    const abAdded = checkAndAdd(pairAB, pairABCount, 'AB');
+    const bcAdded = checkAndAdd(pairBC, pairBCCount, 'BC');
+    const acAdded = checkAndAdd(pairAC, pairACCount, 'AC');
+    const caAdded = checkAndAdd(pairCA, pairCACount, 'CA');
 
     if (addedCount === 0) {
       addToast('Please enter valid 2-digit number and count for at least one pair (AB, BC, AC, CA)', 'error');
+    } else {
+      if (abAdded) { setPairAB(''); setPairABCount(''); }
+      if (bcAdded) { setPairBC(''); setPairBCCount(''); }
+      if (acAdded) { setPairAC(''); setPairACCount(''); }
+      if (caAdded) { setPairCA(''); setPairCACount(''); }
     }
   };
 
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full h-full flex-1 bg-black text-white flex flex-col justify-between overflow-y-auto pb-16 relative select-none">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-x-hidden relative pb-20 sm:pb-24 select-none">
       
       <div>
         {/* Top Header Bar */}
@@ -171,8 +164,8 @@ export const GameDashboardView: React.FC = () => {
             </h1>
           </div>
 
-          <div className="flex items-center">
-            <Lucky10Logo size="sm" showSubtitle={false} variant="gold" />
+          <div className="scale-75 origin-right">
+            <Lucky10Logo size="sm" showSubtitle={false} />
           </div>
         </div>
 
@@ -181,9 +174,9 @@ export const GameDashboardView: React.FC = () => {
           {/* Game Slot Switcher - Glow on Text Only */}
           <button
             onClick={() => setCurrentView('CHANGE_GAME')}
-            className="px-4 py-1.5 bg-gradient-to-b from-[#d9a738] to-[#a67c1e] rounded-xl border border-gold/90 shadow-md flex items-center justify-center text-center shrink-0 uppercase tracking-wide hover:opacity-95 transition-all active:scale-95"
+            className="px-3.5 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold/90 shadow-md flex items-center justify-center text-center shrink-0 uppercase tracking-wide hover:opacity-95 transition-all active:scale-95"
           >
-            <span className="slot-blinking-text inline-block font-black text-xs sm:text-sm">
+            <span className="animate-text-gold-glow inline-block">
               {activeGameSlot}
             </span>
           </button>
@@ -194,78 +187,82 @@ export const GameDashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* How to Play Banner Header - Left Aligned */}
-        <div className="w-full px-3 sm:px-8 pt-3 pb-1 flex justify-start items-center">
-          <button
-            type="button"
-            onClick={() => setShowHowToPlay(true)}
-            className="text-gold hover:text-white font-extrabold text-xs sm:text-sm flex items-center gap-2 transition-all hover:translate-x-0.5 group"
-          >
-            <div className="w-5 h-5 rounded-full bg-neutral-950 p-1 flex items-center justify-center shrink-0 border border-gold shadow">
-              <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain" />
-            </div>
-            <span className="underline decoration-gold/80 underline-offset-4 tracking-wide group-hover:text-white">
-              How to play the game?
-            </span>
-          </button>
-        </div>
-
         {/* Responsive Grid Layout */}
-        <div className="w-full px-3 sm:px-8 py-3 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+        <div className="w-full px-3 sm:px-8 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
           
-          {/* Left Column (6/12): Exact 3 DIGIT & 2 DIGIT Game Design Cards */}
-          <div className="lg:col-span-6 space-y-6">
+          {/* Left Column (5/12): Bet Entry Cards */}
+          <div className="lg:col-span-5 space-y-4">
             
+            {/* How to play trigger button */}
+            <div className="flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setShowHowToPlay(true)}
+                className="text-gold hover:text-white underline font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors"
+              >
+                <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold">
+                  <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
+                </div>
+                <span>How to play the game?</span>
+              </button>
+            </div>
+
             {/* 3 DIGIT GAME CARD */}
-            <div className="relative border border-[#d4af37] rounded-2xl p-3.5 sm:p-5 pt-6 bg-black shadow-xl">
-              {/* Floating Section Title */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-black px-2.5 sm:px-3 flex items-center gap-1.5 sm:gap-2 z-10">
-                <span className="w-5 sm:w-10 h-[1.5px] bg-[#d4af37]"></span>
-                <span className="text-[#d4af37] font-black text-xs sm:text-sm tracking-widest uppercase whitespace-nowrap">
+            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)]">
+              {/* Header Title with Lines */}
+              <div className="flex items-center justify-center gap-3 mb-3.5 sm:mb-4">
+                <div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[#c49727] to-[#c49727]" />
+                <h2 className="text-[#e2b847] font-black text-sm sm:text-base tracking-widest uppercase whitespace-nowrap drop-shadow-sm">
                   3 DIGIT GAME
-                </span>
-                <span className="w-5 sm:w-10 h-[1.5px] bg-[#d4af37]"></span>
+                </h2>
+                <div className="h-[1.5px] flex-1 bg-gradient-to-l from-transparent via-[#c49727] to-[#c49727]" />
               </div>
 
-              {/* Row 1: Number & Count Inputs (100% width grid, no overflow) */}
-              <div className="grid grid-cols-12 gap-2 mb-3.5 w-full">
-                <input
-                  type="text"
-                  maxLength={3}
-                  placeholder="Number"
-                  value={num3Digit}
-                  onChange={(e) => setNum3Digit(e.target.value)}
-                  className="col-span-7 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2.5 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                />
-                <input
-                  type="number"
-                  placeholder="Count"
-                  value={count3Digit}
-                  onChange={(e) => setCount3Digit(e.target.value)}
-                  className="col-span-5 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2.5 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                />
+              {/* Inputs Row */}
+              <div className="grid grid-cols-12 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
+                {/* Number Input (Col 8) */}
+                <div className="col-span-8">
+                  <input
+                    type="text"
+                    maxLength={3}
+                    placeholder="Number"
+                    value={threeDigitNum}
+                    onChange={(e) => setThreeDigitNum(e.target.value)}
+                    className="w-full px-3 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner transition-all"
+                  />
+                </div>
+                {/* Count Input (Col 4) */}
+                <div className="col-span-4">
+                  <input
+                    type="number"
+                    placeholder="Count"
+                    value={threeDigitCount}
+                    onChange={(e) => setThreeDigitCount(e.target.value)}
+                    className="w-full px-2 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner transition-all"
+                  />
+                </div>
               </div>
 
-              {/* Row 2: Direct, Shuffle, Both Gold Buttons */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 w-full">
+              {/* Buttons Row */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={handleAddDirect}
-                  className="py-2.5 sm:py-3 px-1 bg-gradient-to-b from-[#f3ca65] via-[#d4af37] to-[#b8860b] text-black font-black text-[11px] sm:text-sm rounded-xl uppercase shadow hover:brightness-110 active:scale-95 transition-all tracking-wider text-center"
+                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
                 >
                   Direct
                 </button>
                 <button
                   type="button"
                   onClick={handleAddShuffle}
-                  className="py-2.5 sm:py-3 px-1 bg-gradient-to-b from-[#f3ca65] via-[#d4af37] to-[#b8860b] text-black font-black text-[11px] sm:text-sm rounded-xl uppercase shadow hover:brightness-110 active:scale-95 transition-all tracking-wider text-center"
+                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
                 >
                   Shuffle
                 </button>
                 <button
                   type="button"
                   onClick={handleAddBoth}
-                  className="py-2.5 sm:py-3 px-1 bg-gradient-to-b from-[#f3ca65] via-[#d4af37] to-[#b8860b] text-black font-black text-[11px] sm:text-sm rounded-xl uppercase shadow hover:brightness-110 active:scale-95 transition-all tracking-wider text-center"
+                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
                 >
                   Both
                 </button>
@@ -273,105 +270,121 @@ export const GameDashboardView: React.FC = () => {
             </div>
 
             {/* 2 DIGIT GAME CARD */}
-            <div className="relative border border-[#d4af37] rounded-2xl p-3.5 sm:p-5 pt-6 bg-black shadow-xl">
-              {/* Floating Section Title */}
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-black px-2.5 sm:px-3 flex items-center gap-1.5 sm:gap-2 z-10">
-                <span className="w-5 sm:w-10 h-[1.5px] bg-[#d4af37]"></span>
-                <span className="text-[#d4af37] font-black text-xs sm:text-sm tracking-widest uppercase whitespace-nowrap">
+            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)]">
+              {/* Header Title with Lines */}
+              <div className="flex items-center justify-center gap-3 mb-3.5 sm:mb-4">
+                <div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[#c49727] to-[#c49727]" />
+                <h2 className="text-[#e2b847] font-black text-sm sm:text-base tracking-widest uppercase whitespace-nowrap drop-shadow-sm">
                   2 DIGIT GAME
-                </span>
-                <span className="w-5 sm:w-10 h-[1.5px] bg-[#d4af37]"></span>
+                </h2>
+                <div className="h-[1.5px] flex-1 bg-gradient-to-l from-transparent via-[#c49727] to-[#c49727]" />
               </div>
 
-              {/* 4 Pairs Grid (AB, BC, AC, CA) - Responsive 12-col layout */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 w-full">
-                {/* AB Pair */}
-                <div className="grid grid-cols-12 gap-1.5 items-center w-full">
-                  <span className="col-span-2 text-white font-black text-xs sm:text-base text-center">AB</span>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="Number"
-                    value={pairABNum}
-                    onChange={(e) => setPairABNum(e.target.value)}
-                    className="col-span-6 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Count"
-                    value={pairABCount}
-                    onChange={(e) => setPairABCount(e.target.value)}
-                    className="col-span-4 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
+              {/* 2x2 Grid of Pair Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 mb-4">
+                {/* Left Column Pair 1: AB */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                    AB
+                  </span>
+                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                    <input
+                      type="text"
+                      maxLength={2}
+                      placeholder="Number"
+                      value={pairAB}
+                      onChange={(e) => setPairAB(e.target.value)}
+                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Count"
+                      value={pairABCount}
+                      onChange={(e) => setPairABCount(e.target.value)}
+                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                  </div>
                 </div>
 
-                {/* BC Pair */}
-                <div className="grid grid-cols-12 gap-1.5 items-center w-full">
-                  <span className="col-span-2 text-white font-black text-xs sm:text-base text-center">BC</span>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="Number"
-                    value={pairBCNum}
-                    onChange={(e) => setPairBCNum(e.target.value)}
-                    className="col-span-6 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Count"
-                    value={pairBCCount}
-                    onChange={(e) => setPairBCCount(e.target.value)}
-                    className="col-span-4 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
+                {/* Right Column Pair 1: BC */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                    BC
+                  </span>
+                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                    <input
+                      type="text"
+                      maxLength={2}
+                      placeholder="Number"
+                      value={pairBC}
+                      onChange={(e) => setPairBC(e.target.value)}
+                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Count"
+                      value={pairBCCount}
+                      onChange={(e) => setPairBCCount(e.target.value)}
+                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                  </div>
                 </div>
 
-                {/* AC Pair */}
-                <div className="grid grid-cols-12 gap-1.5 items-center w-full">
-                  <span className="col-span-2 text-white font-black text-xs sm:text-base text-center">AC</span>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="Number"
-                    value={pairACNum}
-                    onChange={(e) => setPairACNum(e.target.value)}
-                    className="col-span-6 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Count"
-                    value={pairACCount}
-                    onChange={(e) => setPairACCount(e.target.value)}
-                    className="col-span-4 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
+                {/* Left Column Pair 2: AC */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                    AC
+                  </span>
+                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                    <input
+                      type="text"
+                      maxLength={2}
+                      placeholder="Number"
+                      value={pairAC}
+                      onChange={(e) => setPairAC(e.target.value)}
+                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Count"
+                      value={pairACCount}
+                      onChange={(e) => setPairACCount(e.target.value)}
+                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                  </div>
                 </div>
 
-                {/* CA Pair */}
-                <div className="grid grid-cols-12 gap-1.5 items-center w-full">
-                  <span className="col-span-2 text-white font-black text-xs sm:text-base text-center">CA</span>
-                  <input
-                    type="text"
-                    maxLength={2}
-                    placeholder="Number"
-                    value={pairCANum}
-                    onChange={(e) => setPairCANum(e.target.value)}
-                    className="col-span-6 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Count"
-                    value={pairCACount}
-                    onChange={(e) => setPairCACount(e.target.value)}
-                    className="col-span-4 w-full min-w-0 bg-white text-black font-semibold text-center text-xs sm:text-sm rounded-xl py-2 px-2 placeholder:text-neutral-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#d4af37] shadow"
-                  />
+                {/* Right Column Pair 2: CA */}
+                <div className="flex items-center gap-2">
+                  <span className="text-white font-black text-lg sm:text-xl min-w-[30px] text-center shrink-0">
+                    CA
+                  </span>
+                  <div className="grid grid-cols-12 gap-1.5 flex-1">
+                    <input
+                      type="text"
+                      maxLength={2}
+                      placeholder="Number"
+                      value={pairCA}
+                      onChange={(e) => setPairCA(e.target.value)}
+                      className="col-span-7 px-2 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Count"
+                      value={pairCACount}
+                      onChange={(e) => setPairCACount(e.target.value)}
+                      className="col-span-5 px-1 py-1.5 sm:py-2 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Centered Pair Gold Button */}
+              {/* Centered Pair Button */}
               <div className="flex justify-center">
                 <button
                   type="button"
                   onClick={handleAddPair}
-                  className="px-10 sm:px-14 py-2.5 sm:py-3 bg-gradient-to-b from-[#f3ca65] via-[#d4af37] to-[#b8860b] text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow hover:brightness-110 active:scale-95 transition-all tracking-wider text-center"
+                  className="w-36 sm:w-44 py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 text-center"
                 >
                   Pair
                 </button>
@@ -380,8 +393,8 @@ export const GameDashboardView: React.FC = () => {
 
           </div>
 
-          {/* Right Column (6/12): Ticket Table Display & Action Controls */}
-          <div className="lg:col-span-6 flex flex-col justify-between space-y-2.5 sm:space-y-4">
+          {/* Right Column (7/12): Ticket Table Display & Action Controls */}
+          <div className="lg:col-span-7 flex flex-col justify-between space-y-2.5 sm:space-y-4">
             
             {/* Slip Table */}
             <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
@@ -419,19 +432,25 @@ export const GameDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* TOTAL AMOUNT & Single SAVE & PAY Button */}
+            {/* TOTAL AMOUNT & Action Controls in a Compact Row */}
             <div className="bg-neutral-950 p-2.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="text-xs sm:text-sm font-extrabold text-neutral-300">TOTAL:</span>
                 <span className="text-lg sm:text-2xl font-black text-gold">₹{totalAmount}</span>
               </div>
 
-              <div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={saveTicket}
+                  className="px-4 py-2 bg-neutral-800 text-white hover:text-gold font-extrabold text-xs sm:text-sm tracking-wider rounded-lg border border-neutral-700 shadow uppercase hover:opacity-95 transition-transform active:scale-95"
+                >
+                  SAVE
+                </button>
                 <button
                   onClick={payTicket}
-                  className="px-6 sm:px-8 py-2.5 bg-gradient-to-b from-[#f3ca65] via-[#d4af37] to-[#b8860b] text-black font-black text-xs sm:text-sm tracking-wider rounded-xl shadow-lg uppercase hover:brightness-110 active:scale-95 transition-transform"
+                  className="px-5 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow-md uppercase hover:opacity-95 transition-transform active:scale-95"
                 >
-                  SAVE & PAY
+                  PAY
                 </button>
               </div>
             </div>
