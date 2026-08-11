@@ -128,38 +128,58 @@ export const TodaysResultView: React.FC = () => {
           })}
         </div>
 
-        {/* 4 Winning Number Cards (1st, 2nd, 3rd, 4th Prize) */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
-          {[
-            { id: 1, label: '1st Prize', val: currentResult.prize1 },
-            { id: 2, label: '2nd Prize', val: currentResult.prize2 },
-            { id: 3, label: '3rd Prize', val: currentResult.prize3 },
-            { id: 4, label: '4th Prize', val: currentResult.prize4 },
-          ].map((item, index) => (
-            <div
-              key={`${activeTab}-${activeDate}-${activeGameSlot}-${item.id}`}
-              style={{ animationDelay: `${index * 130}ms` }}
-              className="flex items-center gap-2 bg-neutral-950 p-2.5 rounded-xl border border-neutral-800 shadow opacity-0 animate-drop-in hover:border-gold/40 transition-colors"
-            >
-              <div className="w-7 h-7 bg-white text-black font-black text-xs flex items-center justify-center rounded-lg border border-black shrink-0 shadow">
-                {item.id}
+        {/* 4 Winning Number Cards (1st Prize Featured Top, 2nd-4th Below) */}
+        <div className="space-y-2.5 sm:space-y-3">
+          {/* 1st Prize Card - Featured Bigger on Top */}
+          <div
+            key={`prize-1-${activeTab}-${activeDate}-${activeGameSlot}`}
+            className="flex items-center justify-between bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 p-3.5 sm:p-4 rounded-2xl border-2 border-gold/70 shadow-[0_0_20px_rgba(237,209,119,0.2)] animate-drop-in hover:border-gold transition-all"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gold-metallic text-black font-black text-sm sm:text-base flex items-center justify-center rounded-xl border border-black shrink-0 shadow">
+                1
               </div>
-              <div className="flex-1 text-center">
-                <span className="text-[10px] text-gray-400 block font-bold uppercase">{item.label}</span>
-                <span className="text-white font-black text-base font-mono tracking-widest block">
-                  {item.val || '---'}
+              <div>
+                <span className="text-xs text-gold font-black uppercase tracking-wider block">
+                  1st Prize
+                </span>
+                <span className="text-gold font-black text-xl sm:text-2xl font-mono tracking-widest block">
+                  {currentResult.prize1 || '---'}
                 </span>
               </div>
             </div>
-          ))}
+            <div className="px-3 py-1 bg-gold/10 border border-gold/40 rounded-lg">
+              <span className="text-[10px] sm:text-xs text-gold font-mono font-black uppercase tracking-wide">
+                TOP WINNER
+              </span>
+            </div>
+          </div>
+
+          {/* 2nd, 3rd, 4th Prize Cards - 3-Column Grid Below (Fall down at same time) */}
+          <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+            {[
+              { id: 2, label: '2nd Prize', val: currentResult.prize2 },
+              { id: 3, label: '3rd Prize', val: currentResult.prize3 },
+              { id: 4, label: '4th Prize', val: currentResult.prize4 },
+            ].map((item) => (
+              <div
+                key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
+                className="flex flex-col items-center justify-center bg-neutral-950 p-2.5 sm:p-3 rounded-xl border border-neutral-800 shadow animate-drop-in hover:border-gold/40 transition-colors text-center"
+              >
+                <div className="w-6 h-6 bg-white text-black font-black text-xs flex items-center justify-center rounded-md border border-black shrink-0 shadow mb-1">
+                  {item.id}
+                </div>
+                <span className="text-[10px] text-gray-400 font-bold uppercase">{item.label}</span>
+                <span className="text-white font-black text-sm sm:text-base font-mono tracking-wider block mt-0.5">
+                  {item.val || '---'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Compliments Matrix Table */}
-        <div
-          key={`compliments-${activeTab}-${activeDate}-${activeGameSlot}`}
-          style={{ animationDelay: '580ms' }}
-          className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 opacity-0 animate-drop-in"
-        >
+        {/* Compliments Matrix Table - Fixed, No Animation */}
+        <div className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2">
           <h3 className="font-extrabold text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wide">
             Compliments
           </h3>
