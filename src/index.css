@@ -218,20 +218,23 @@ html, body {
   animation: goldBlink 1.2s infinite ease-in-out;
 }
 
-/* Continuous Glowing Gold Text-Only Effect */
-@keyframes textGoldGlow {
+/* Continuous Text Color Alternating Between Gold and White (No Blur/Glow) */
+@keyframes textGoldWhite {
   0%, 100% {
-    text-shadow: 0 0 3px #ffffff, 0 0 8px #ffe57f, 0 0 15px #ffd700;
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.9));
+    color: #ffffff;
+    text-shadow: none;
+    filter: none;
   }
   50% {
-    text-shadow: 0 0 6px #ffffff, 0 0 14px #ffffff, 0 0 22px #ffc107;
-    filter: drop-shadow(0 0 8px rgba(255, 235, 59, 1));
+    color: #ffd700;
+    text-shadow: none;
+    filter: none;
   }
 }
 
-.animate-text-gold-glow {
-  animation: textGoldGlow 1.2s infinite ease-in-out;
+.animate-text-gold-glow,
+.animate-text-gold-white {
+  animation: textGoldWhite 1s infinite ease-in-out;
 }
 
 /* Scrollbar */

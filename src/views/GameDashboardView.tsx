@@ -194,7 +194,7 @@ export const GameDashboardView: React.FC = () => {
           <div className="lg:col-span-5 space-y-4">
             
             {/* How to play trigger button */}
-            <div className="flex items-center justify-end">
+            <div className="flex items-center justify-start">
               <button
                 type="button"
                 onClick={() => setShowHowToPlay(true)}
