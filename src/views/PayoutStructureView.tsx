@@ -61,7 +61,7 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Shuffle</span>
               </div>
-              <p className="text-xs sm:text-base italic text-gray-200 text-center font-normal pt-2 sm:pt-3">
+              <p className="text-xs sm:text-base italic text-center font-bold pt-2 sm:pt-3 animate-text-gold-white">
                 Match the winning numbers in any order. Based on the 1st Prize Number
               </p>
 
@@ -92,7 +92,7 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Pair</span>
               </div>
-              <p className="text-xs sm:text-base italic text-gray-200 text-center font-normal pt-2 sm:pt-3">
+              <p className="text-xs sm:text-base italic text-center font-bold pt-2 sm:pt-3 animate-text-gold-white">
                 Match two specific digits in their exact positions. Based on the 1st Prize Number
               </p>
 
