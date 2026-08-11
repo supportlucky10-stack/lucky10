@@ -31,15 +31,15 @@ export const PayoutStructureView: React.FC = () => {
                 </div>
                 <div className="flex justify-between border-b border-gray-800 pb-1.5">
                   <span className="text-white font-extrabold">2nd Prize</span>
-                  <span className="text-white font-black font-mono">₹ 5,000/-</span>
+                  <span className="text-white font-black font-mono">₹ 500/-</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-800 pb-1.5">
                   <span className="text-white font-extrabold">3rd Prize</span>
-                  <span className="text-white font-black font-mono">₹ 2,500/-</span>
+                  <span className="text-white font-black font-mono">₹ 250/-</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-800 pb-1.5">
                   <span className="text-white font-extrabold">4th Prize</span>
-                  <span className="text-white font-black font-mono">₹ 1,000/-</span>
+                  <span className="text-white font-black font-mono">₹ 100/-</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-800 pb-1.5 text-xs sm:text-base">
                   <span className="text-white font-extrabold">Complements</span>
@@ -61,9 +61,10 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Shuffle</span>
               </div>
-              <p className="text-xs sm:text-base italic text-center font-bold pt-2 sm:pt-3 animate-text-gold-white">
-                Match the winning numbers in any order. Based on the 1st Prize Number
-              </p>
+              <div className="text-xs sm:text-sm italic text-center font-bold pt-2 sm:pt-3 space-y-0.5 animate-text-gold-white">
+                <p className="block">Match the winning numbers in any order.</p>
+                <p className="block">Based on the 1st Prize Number</p>
+              </div>
 
               <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-6 text-xs sm:text-base font-bold">
                 <div className="flex justify-between text-gold border-b border-gray-400 pb-1.5 font-black text-xs sm:text-lg">
@@ -92,9 +93,10 @@ export const PayoutStructureView: React.FC = () => {
               <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Pair</span>
               </div>
-              <p className="text-xs sm:text-base italic text-center font-bold pt-2 sm:pt-3 animate-text-gold-white">
-                Match two specific digits in their exact positions. Based on the 1st Prize Number
-              </p>
+              <div className="text-xs sm:text-sm italic text-center font-bold pt-2 sm:pt-3 space-y-0.5 animate-text-gold-white">
+                <p className="block">Match two specific digits in their exact positions.</p>
+                <p className="block">Based on the 1st Prize Number</p>
+              </div>
 
               <div className="space-y-2 sm:space-y-3 pt-3 sm:pt-6 text-xs sm:text-base font-bold">
                 <div className="flex justify-between text-gold border-b border-gray-400 pb-1.5 font-black text-xs sm:text-lg">
