@@ -279,15 +279,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0;
 }
 
-/* iOS Safari Mobile Momentum Scroll & Viewport Fixes */
+/* iOS Safari Mobile Viewport & Safe Area Alignment */
 html, body, #root {
   min-height: 100%;
-  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
+  background-color: #000000;
+  color: #ffffff;
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Ensure smooth inertial touch scrolling across touch browsers */
