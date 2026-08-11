@@ -14,6 +14,7 @@ import icon07 from '../assets/sidebar images/07.png';
 export const UserDrawerView: React.FC = () => {
   const { logout, setCurrentView, addToast } = useApp();
   const [showReportModal, setShowReportModal] = useState(false);
+  const [reportCategory, setReportCategory] = useState('Payment Issues');
 
   const menuItems = [
     {
@@ -32,7 +33,7 @@ export const UserDrawerView: React.FC = () => {
       action: () => setCurrentView('GAME_DASHBOARD'),
     },
     {
-      label: 'Result',
+      label: 'Results',
       icon: icon04,
       action: () => setCurrentView('TODAYS_RESULT'),
     },
@@ -47,7 +48,7 @@ export const UserDrawerView: React.FC = () => {
       action: () => setCurrentView('UPDATE_BANK_DETAILS'),
     },
     {
-      label: 'Report Issue',
+      label: 'Report an Issue',
       icon: icon07,
       action: () => setShowReportModal(true),
     },
@@ -124,13 +125,38 @@ export const UserDrawerView: React.FC = () => {
 
             <form onSubmit={handleSendReport} className="space-y-3">
               <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1.5">
+                  Select Issue Type:
+                </label>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[
+                    'Payment Issues',
+                    'Game Related',
+                    'Account Issues',
+                    'Other Queries',
+                  ].map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => setReportCategory(category)}
+                      className={`py-2 px-2.5 rounded-lg text-xs font-bold border transition-all text-center ${
+                        reportCategory === category
+                          ? 'bg-gold-metallic text-black border-gold shadow'
+                          : 'bg-black text-neutral-300 border-neutral-800 hover:border-gold/50'
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+
                 <label className="block text-xs font-bold text-neutral-300 mb-1">
                   Describe your problem or query:
                 </label>
                 <textarea
                   required
-                  rows={4}
-                  placeholder="Explain issue with ticket, payment, or app..."
+                  rows={3}
+                  placeholder={`Explain details regarding ${reportCategory}...`}
                   className="w-full p-3 bg-black text-white text-xs rounded-xl border border-neutral-700 focus:outline-none focus:ring-1 focus:ring-gold"
                 />
               </div>
