@@ -134,7 +134,7 @@ export const TodaysResultView: React.FC = () => {
           <div
             key={`prize-1-${activeTab}-${activeDate}-${activeGameSlot}`}
             style={{ animationDelay: '0ms' }}
-            className="flex items-center justify-between bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 p-3.5 sm:p-4 rounded-2xl border-2 border-gold/70 shadow-[0_0_20px_rgba(237,209,119,0.2)] animate-drop-in hover:border-gold transition-all"
+            className="flex items-center justify-start bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 p-3.5 sm:p-4 rounded-2xl border-2 border-gold/70 shadow-[0_0_20px_rgba(237,209,119,0.2)] animate-drop-in hover:border-gold transition-all"
           >
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gold-metallic text-black font-black text-sm sm:text-base flex items-center justify-center rounded-xl border border-black shrink-0 shadow">
@@ -148,11 +148,6 @@ export const TodaysResultView: React.FC = () => {
                   {currentResult.prize1 || '---'}
                 </span>
               </div>
-            </div>
-            <div className="px-3 py-1 bg-gold/10 border border-gold/40 rounded-lg">
-              <span className="text-[10px] sm:text-xs text-gold font-mono font-black uppercase tracking-wide">
-                TOP WINNER
-              </span>
             </div>
           </div>
 
