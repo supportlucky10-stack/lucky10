@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../components/HeaderBanner';
 import { useApp } from '../context/AppContext';
+import { Building2, ShieldCheck, Edit3, Save, X } from 'lucide-react';
 
 export const UpdateBankDetailsView: React.FC = () => {
-  const { bankDetails, updateBankDetails, addToast, setCurrentView } = useApp();
+  const { bankDetails, updateBankDetails, addToast } = useApp();
+
+  const [isEditing, setIsEditing] = useState<boolean>(!bankDetails?.accountNo);
 
   const [accountHolderName, setAccountHolderName] = useState(
     bankDetails?.accountHolderName || ''
@@ -15,97 +18,200 @@ export const UpdateBankDetailsView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accountHolderName || !accountNo || !bankName || !ifsc || !branchName) {
+    if (!accountHolderName.trim() || !accountNo.trim() || !bankName.trim() || !ifsc.trim() || !branchName.trim()) {
       addToast('Please fill out all bank account fields', 'error');
       return;
     }
 
     updateBankDetails({
-      accountHolderName,
-      accountNo,
-      bankName,
-      ifsc,
-      branchName,
+      accountHolderName: accountHolderName.trim(),
+      accountNo: accountNo.trim(),
+      bankName: bankName.trim(),
+      ifsc: ifsc.trim().toUpperCase(),
+      branchName: branchName.trim(),
     });
 
-    setCurrentView('USER_DRAWER');
+    setIsEditing(false);
   };
 
   return (
-    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-16 select-none">
-      {/* Gold Header matching Page 11 */}
-      <HeaderBanner title="Update Your Bank Details" />
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-24 sm:pb-32 select-none">
+      {/* Header Banner */}
+      <HeaderBanner title="Bank Details" />
 
-      {/* Form Fields matching Page 11 */}
-      <form onSubmit={handleSubmit} className="px-4 sm:px-6 py-4 sm:py-8 space-y-3 sm:space-y-5 max-w-sm mx-auto w-full flex-1 flex flex-col justify-center">
-        <div className="flex flex-col items-center justify-center pb-1 sm:pb-2">
-          <img src="/assets/gold-bank.png" alt="Bank Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain drop-shadow" />
-          <p className="text-gold font-bold text-xs sm:text-sm tracking-wide mt-1 sm:mt-2">Secure Payout Bank Account</p>
-        </div>
-        <div>
-          <input
-            type="text"
-            placeholder="Account Holder Name"
-            value={accountHolderName}
-            onChange={(e) => setAccountHolderName(e.target.value)}
-            className="w-full px-3.5 py-2 sm:py-3 rounded-md bg-white text-black placeholder-neutral-500 font-medium focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
-            required
-          />
-        </div>
-
-        <div>
-          <input
-            type="text"
-            placeholder="Account No."
-            value={accountNo}
-            onChange={(e) => setAccountNo(e.target.value)}
-            className="w-full px-3.5 py-2 sm:py-3 rounded-md bg-white text-black placeholder-neutral-500 font-medium focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
-            required
-          />
+      <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-5">
+        
+        {/* Top Icon & Badge Header */}
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <div className="w-14 h-14 bg-neutral-950 border border-gold/40 rounded-2xl flex items-center justify-center shadow-lg">
+            <Building2 className="w-7 h-7 text-gold" />
+          </div>
+          <div>
+            <h2 className="text-gold font-black text-base sm:text-lg tracking-wide uppercase">
+              Secure Payout Bank Account
+            </h2>
+            <p className="text-neutral-400 text-xs mt-0.5">
+              Winning payouts will be credited to this account
+            </p>
+          </div>
         </div>
 
-        <div>
-          <input
-            type="text"
-            placeholder="Bank Name"
-            value={bankName}
-            onChange={(e) => setBankName(e.target.value)}
-            className="w-full px-3.5 py-2 sm:py-3 rounded-md bg-white text-black placeholder-neutral-500 font-medium focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
-            required
-          />
-        </div>
+        {/* ================= VIEW MODE ================= */}
+        {!isEditing && bankDetails && (
+          <div className="bg-neutral-950 rounded-2xl border border-neutral-800 p-4 sm:p-5 space-y-4 shadow-xl">
+            {/* Status Badge */}
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <span className="text-neutral-400 text-xs font-bold uppercase">Account Status</span>
+              <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/80 px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5" /> Verified & Active
+              </span>
+            </div>
 
-        <div>
-          <input
-            type="text"
-            placeholder="IFSC"
-            value={ifsc}
-            onChange={(e) => setIfsc(e.target.value)}
-            className="w-full px-3.5 py-2 sm:py-3 rounded-md bg-white text-black placeholder-neutral-500 font-medium focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
-            required
-          />
-        </div>
+            {/* Bank Details Table Card */}
+            <div className="space-y-3 text-xs sm:text-sm">
+              <div className="flex justify-between items-center border-b border-neutral-900 pb-2">
+                <span className="text-neutral-400 font-medium">Account Holder</span>
+                <span className="text-white font-extrabold">{bankDetails.accountHolderName}</span>
+              </div>
 
-        <div>
-          <input
-            type="text"
-            placeholder="Branch Name"
-            value={branchName}
-            onChange={(e) => setBranchName(e.target.value)}
-            className="w-full px-3.5 py-2 sm:py-3 rounded-md bg-white text-black placeholder-neutral-500 font-medium focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
-            required
-          />
-        </div>
+              <div className="flex justify-between items-center border-b border-neutral-900 pb-2">
+                <span className="text-neutral-400 font-medium">Account No.</span>
+                <span className="text-gold font-mono font-black tracking-wider">{bankDetails.accountNo}</span>
+              </div>
 
-        <div className="pt-2 sm:pt-4 flex justify-center">
-          <button
-            type="submit"
-            className="w-32 sm:w-36 py-2 sm:py-3 btn-gold font-black text-xs sm:text-sm tracking-wider shadow-lg"
-          >
-            SUBMIT
-          </button>
-        </div>
-      </form>
+              <div className="flex justify-between items-center border-b border-neutral-900 pb-2">
+                <span className="text-neutral-400 font-medium">Bank Name</span>
+                <span className="text-white font-bold">{bankDetails.bankName}</span>
+              </div>
+
+              <div className="flex justify-between items-center border-b border-neutral-900 pb-2">
+                <span className="text-neutral-400 font-medium">IFSC Code</span>
+                <span className="text-gold font-mono font-bold">{bankDetails.ifsc}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-neutral-400 font-medium">Branch Name</span>
+                <span className="text-white font-bold">{bankDetails.branchName}</span>
+              </div>
+            </div>
+
+            {/* Edit Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(true)}
+                className="w-full py-3 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-xl shadow-md hover:opacity-95 active:scale-98 uppercase flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4" /> Edit Bank Details
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= EDIT FORM MODE ================= */}
+        {isEditing && (
+          <form onSubmit={handleSubmit} className="bg-neutral-950 rounded-2xl border border-neutral-800 p-4 sm:p-5 space-y-4 shadow-xl">
+            <div className="border-b border-neutral-800 pb-2">
+              <h3 className="text-white font-extrabold text-sm uppercase">Enter Account Information</h3>
+              <p className="text-neutral-400 text-xs">Fill in your bank details below</p>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-neutral-400 text-[11px] font-bold block mb-1 uppercase">
+                  Account Holder Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Adithyan Pavithran"
+                  value={accountHolderName}
+                  onChange={(e) => setAccountHolderName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-neutral-400 text-[11px] font-bold block mb-1 uppercase">
+                  Account Number
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 98765432101234"
+                  value={accountNo}
+                  onChange={(e) => setAccountNo(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-neutral-400 text-[11px] font-bold block mb-1 uppercase">
+                  Bank Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. State Bank of India"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-neutral-400 text-[11px] font-bold block mb-1 uppercase">
+                  IFSC Code
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. SBIN0004321"
+                  value={ifsc}
+                  onChange={(e) => setIfsc(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow uppercase"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-neutral-400 text-[11px] font-bold block mb-1 uppercase">
+                  Branch Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Kasaragod Main Branch"
+                  value={branchName}
+                  onChange={(e) => setBranchName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons: Save & Cancel */}
+            <div className="pt-2 space-y-2">
+              <button
+                type="submit"
+                className="w-full py-3 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-xl shadow-lg hover:opacity-95 active:scale-98 uppercase flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <Save className="w-4 h-4" /> Save Bank Details
+              </button>
+
+              {bankDetails?.accountNo && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  className="w-full py-2.5 bg-neutral-900 text-neutral-300 border border-neutral-800 font-bold text-xs rounded-xl hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" /> Cancel
+                </button>
+              )}
+            </div>
+          </form>
+        )}
+
+      </div>
     </div>
   );
 };
+
