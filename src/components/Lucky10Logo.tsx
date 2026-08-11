@@ -3,9 +3,10 @@ import React from 'react';
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   showSubtitle?: boolean;
+  variant?: 'gold' | 'black';
 }
 
-export const Lucky10Logo: React.FC<LogoProps> = ({ size = 'lg', showSubtitle = true }) => {
+export const Lucky10Logo: React.FC<LogoProps> = ({ size = 'lg', showSubtitle = true, variant = 'gold' }) => {
   const dimensions = {
     sm: { imgClass: 'w-12 sm:w-16', titleSize: 'text-[10px] sm:text-xs', subtitleSize: 'text-[9px] sm:text-[10px]' },
     md: { imgClass: 'w-20 sm:w-28', titleSize: 'text-xs sm:text-sm', subtitleSize: 'text-xs sm:text-sm' },
@@ -13,11 +14,13 @@ export const Lucky10Logo: React.FC<LogoProps> = ({ size = 'lg', showSubtitle = t
     xl: { imgClass: 'w-28 sm:w-44', titleSize: 'text-base sm:text-xl', subtitleSize: 'text-lg sm:text-3xl' },
   }[size];
 
+  const logoSrc = variant === 'black' ? '/assets/lucky10-black-logo.png' : '/assets/lucky10-logo.png';
+
   return (
     <div className="flex flex-col items-center justify-center select-none py-0.5 sm:py-1 transition-transform hover:scale-105 duration-300">
       <div className="relative flex items-center justify-center">
         <img
-          src="/assets/lucky10-logo.png"
+          src={logoSrc}
           alt="LUCKY 10 Logo"
           className={`${dimensions.imgClass} h-auto object-contain filter drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]`}
         />
@@ -36,4 +39,3 @@ export const Lucky10Logo: React.FC<LogoProps> = ({ size = 'lg', showSubtitle = t
     </div>
   );
 };
-

@@ -60,7 +60,7 @@ export const UserDrawerView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto pb-24 sm:pb-32 select-none">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-24 sm:pb-32 select-none">
       <div>
         {/* Top Gold Banner Header */}
         <div className="w-full bg-gold-banner px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-md border-b border-[#b88928]/40">
@@ -73,7 +73,7 @@ export const UserDrawerView: React.FC = () => {
             <span>Back</span>
           </button>
           <div className="scale-75 origin-right flex items-center gap-2">
-            <Lucky10Logo size="sm" showSubtitle={false} />
+            <Lucky10Logo size="sm" showSubtitle={false} variant="black" />
           </div>
         </div>
 
@@ -93,17 +93,17 @@ export const UserDrawerView: React.FC = () => {
               <span className="truncate">{item.label}</span>
             </button>
           ))}
-        </div>
-      </div>
 
-      {/* Logout Button */}
-      <div className="px-5 sm:px-8 pb-6 sm:pb-8 pt-4">
-        <button
-          onClick={logout}
-          className="px-6 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 transition-all uppercase tracking-wide"
-        >
-          Logout
-        </button>
+          {/* Logout Button positioned suitable and a little up */}
+          <div className="pt-6 sm:pt-8 pb-10">
+            <button
+              onClick={logout}
+              className="px-6 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 transition-all uppercase tracking-wide"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Report Issue Modal */}
