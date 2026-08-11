@@ -63,7 +63,7 @@ export const UserDrawerView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-y-auto pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-between pb-24 sm:pb-32 antialiased">
       <div>
         {/* Top Gold Banner Header */}
         <div className="w-full bg-gold-banner px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-md border-b border-[#b88928]/40">

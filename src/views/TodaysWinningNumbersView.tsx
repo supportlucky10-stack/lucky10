@@ -46,7 +46,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const filteredPreviousWinners = getPreviousWinners(selectedDate, selectedSlot);
 
   return (
-    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-start overflow-y-auto pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
       {/* Header Banner */}
       <HeaderBanner title="Winning Report" />
 
