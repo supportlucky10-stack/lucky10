@@ -218,10 +218,10 @@ html, body {
   animation: goldBlink 1.2s infinite ease-in-out;
 }
 
-/* Continuous Text Color Alternating Between Gold and White (No Blur/Glow) */
-@keyframes textGoldWhite {
+/* Continuous Text Color Alternating Between Black and Gold (No Blur/Glow) */
+@keyframes textBlackGold {
   0%, 100% {
-    color: #ffffff;
+    color: #000000;
     text-shadow: none;
     filter: none;
   }
@@ -232,9 +232,10 @@ html, body {
   }
 }
 
+.animate-text-black-gold,
 .animate-text-gold-glow,
 .animate-text-gold-white {
-  animation: textGoldWhite 1s infinite ease-in-out;
+  animation: textBlackGold 1s infinite ease-in-out;
 }
 
 /* Scrollbar */

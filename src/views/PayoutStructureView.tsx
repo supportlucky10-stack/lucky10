@@ -13,8 +13,7 @@ export const PayoutStructureView: React.FC = () => {
           {/* Direct Section */}
           <div className="bg-neutral-950 p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-xl space-y-3 sm:space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center gap-2 sm:gap-3">
-                <img src="/assets/gold-ticket.png" alt="Direct" className="w-5 h-5 sm:w-8 sm:h-8 object-contain brightness-0" />
+              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Direct</span>
               </div>
               <p className="text-xs sm:text-base italic text-gray-200 text-center font-normal pt-2 sm:pt-3">
@@ -59,8 +58,7 @@ export const PayoutStructureView: React.FC = () => {
           {/* Shuffle Section */}
           <div className="bg-neutral-950 p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-xl space-y-3 sm:space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center gap-2 sm:gap-3">
-                <img src="/assets/gold-calendar.png" alt="Shuffle" className="w-5 h-5 sm:w-8 sm:h-8 object-contain brightness-0" />
+              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Shuffle</span>
               </div>
               <p className="text-xs sm:text-base italic text-gray-200 text-center font-normal pt-2 sm:pt-3">
@@ -91,8 +89,7 @@ export const PayoutStructureView: React.FC = () => {
           {/* Pair Section */}
           <div className="bg-neutral-950 p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-xl space-y-3 sm:space-y-4 flex flex-col justify-between hover:border-gold/40 transition-colors">
             <div>
-              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center gap-2 sm:gap-3">
-                <img src="/assets/gold-trophy.png" alt="Pair" className="w-5 h-5 sm:w-8 sm:h-8 object-contain brightness-0" />
+              <div className="w-full py-2 sm:py-3.5 bg-gold-banner text-black font-black text-lg sm:text-2xl text-center rounded-lg sm:rounded-xl shadow uppercase tracking-wide flex items-center justify-center">
                 <span>Pair</span>
               </div>
               <p className="text-xs sm:text-base italic text-gray-200 text-center font-normal pt-2 sm:pt-3">
@@ -105,7 +102,7 @@ export const PayoutStructureView: React.FC = () => {
                   <span className="underline">Payout (per ₹10)</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-800 pb-1.5">
-                  <span className="text-white font-extrabold">AB • BC • AC</span>
+                  <span className="text-white font-extrabold">AB • BC • AC • CA</span>
                   <span className="text-white font-black font-mono">₹ 500/-</span>
                 </div>
               </div>
