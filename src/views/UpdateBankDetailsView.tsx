@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../components/HeaderBanner';
 import { useApp } from '../context/AppContext';
-import { Building2, ShieldCheck, Edit3, Save, X } from 'lucide-react';
+import { Building2, ShieldCheck, Edit3, Save, X, PlusCircle } from 'lucide-react';
 
 export const UpdateBankDetailsView: React.FC = () => {
   const { bankDetails, updateBankDetails, addToast } = useApp();
 
-  const [isEditing, setIsEditing] = useState<boolean>(!bankDetails?.accountNo);
+  const hasSavedBank = Boolean(bankDetails?.accountNo);
+  const [isEditing, setIsEditing] = useState<boolean>(!hasSavedBank);
 
   const [accountHolderName, setAccountHolderName] = useState(
     bankDetails?.accountHolderName || ''
@@ -31,6 +32,12 @@ export const UpdateBankDetailsView: React.FC = () => {
       branchName: branchName.trim(),
     });
 
+    addToast(
+      hasSavedBank
+        ? 'Bank account details updated successfully!'
+        : 'Bank account linked successfully!',
+      'success'
+    );
     setIsEditing(false);
   };
 
@@ -41,23 +48,25 @@ export const UpdateBankDetailsView: React.FC = () => {
 
       <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-5">
         
-        {/* Top Icon & Badge Header */}
+        {/* Top Icon & Header Title */}
         <div className="flex flex-col items-center justify-center text-center space-y-2">
           <div className="w-14 h-14 bg-neutral-950 border border-gold/40 rounded-2xl flex items-center justify-center shadow-lg">
             <Building2 className="w-7 h-7 text-gold" />
           </div>
           <div>
             <h2 className="text-gold font-black text-base sm:text-lg tracking-wide uppercase">
-              Secure Payout Bank Account
+              {hasSavedBank ? 'Secure Payout Bank Account' : 'Add Your Bank Account Details'}
             </h2>
             <p className="text-neutral-400 text-xs mt-0.5">
-              Winning payouts will be credited to this account
+              {hasSavedBank
+                ? 'Winning payouts will be credited directly to this account'
+                : 'Enter your bank details to enable direct withdrawal payout transfers'}
             </p>
           </div>
         </div>
 
-        {/* ================= VIEW MODE ================= */}
-        {!isEditing && bankDetails && (
+        {/* ================= 1. SAVED SUMMARY CARD MODE (When bank details exist & not editing) ================= */}
+        {!isEditing && hasSavedBank && bankDetails && (
           <div className="bg-neutral-950 rounded-2xl border border-neutral-800 p-4 sm:p-5 space-y-4 shadow-xl">
             {/* Status Badge */}
             <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
@@ -108,12 +117,26 @@ export const UpdateBankDetailsView: React.FC = () => {
           </div>
         )}
 
-        {/* ================= EDIT FORM MODE ================= */}
+        {/* ================= 2. ADD / EDIT FORM MODE ================= */}
         {isEditing && (
           <form onSubmit={handleSubmit} className="bg-neutral-950 rounded-2xl border border-neutral-800 p-4 sm:p-5 space-y-4 shadow-xl">
             <div className="border-b border-neutral-800 pb-2">
-              <h3 className="text-white font-extrabold text-sm uppercase">Enter Account Information</h3>
-              <p className="text-neutral-400 text-xs">Fill in your bank details below</p>
+              <h3 className="text-white font-extrabold text-sm uppercase flex items-center gap-2">
+                {hasSavedBank ? (
+                  <>
+                    <Edit3 className="w-4 h-4 text-gold" /> Edit Bank Account Details
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="w-4 h-4 text-gold" /> Add Your Bank Account Details
+                  </>
+                )}
+              </h3>
+              <p className="text-neutral-400 text-xs mt-0.5">
+                {hasSavedBank
+                  ? 'Update your existing bank account information below'
+                  : 'Fill in your bank account details below to link your payout account'}
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -188,16 +211,17 @@ export const UpdateBankDetailsView: React.FC = () => {
               </div>
             </div>
 
-            {/* Action Buttons: Save & Cancel */}
+            {/* Action Buttons */}
             <div className="pt-2 space-y-2">
               <button
                 type="submit"
                 className="w-full py-3 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-xl shadow-lg hover:opacity-95 active:scale-98 uppercase flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Save className="w-4 h-4" /> Save Bank Details
+                <Save className="w-4 h-4" />
+                {hasSavedBank ? 'Save Changes' : 'Save & Link Bank Account'}
               </button>
 
-              {bankDetails?.accountNo && (
+              {hasSavedBank && (
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
