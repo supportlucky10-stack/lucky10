@@ -42,7 +42,7 @@ export const UpdateBankDetailsView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
       {/* Header Banner */}
       <HeaderBanner title="Bank Details" />
 

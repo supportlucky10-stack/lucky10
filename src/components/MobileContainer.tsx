@@ -6,8 +6,8 @@ interface Props {
 
 export const MobileContainer: React.FC<Props> = ({ children }) => {
   return (
-    <div className="w-full min-h-[100dvh] min-h-screen bg-black text-white flex flex-col overflow-x-hidden selection:bg-yellow-500 selection:text-black antialiased">
-      <div className="flex-1 flex flex-col w-full min-h-full">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col selection:bg-yellow-500 selection:text-black antialiased">
+      <div className="flex-1 flex flex-col w-full">
         {children}
       </div>
     </div>

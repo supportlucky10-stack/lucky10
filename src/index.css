@@ -279,21 +279,34 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0;
 }
 
-/* iOS Safari Mobile Viewport & Safe Area Alignment */
-html, body, #root {
-  min-height: 100%;
+/* Standard Mobile Website Layout & Touch Scrolling */
+html {
   width: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
   background-color: #000000;
   color: #ffffff;
-  -webkit-overflow-scrolling: touch;
+  -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: #000000;
+  color: #ffffff;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Ensure smooth inertial touch scrolling across touch browsers */
