@@ -399,9 +399,10 @@ export const GameDashboardView: React.FC = () => {
             {/* Slip Table */}
             <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
               <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
-                <span className="col-span-4 border-r border-gray-300">Number</span>
-                <span className="col-span-4 border-r border-gray-300">Count</span>
-                <span className="col-span-4">Type</span>
+                <span className="col-span-3 border-r border-gray-300">Number</span>
+                <span className="col-span-3 border-r border-gray-300">Count</span>
+                <span className="col-span-3 border-r border-gray-300">Type</span>
+                <span className="col-span-3">Amount</span>
               </div>
 
               <div className="divide-y divide-gray-200 max-h-24 sm:max-h-48 overflow-y-auto text-xs sm:text-sm font-bold">
@@ -412,20 +413,27 @@ export const GameDashboardView: React.FC = () => {
                 ) : (
                   betSlip.map((item) => (
                     <div key={item.id} className="grid grid-cols-12 py-1.5 px-3 items-center text-center">
-                      <span className="col-span-4 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                      <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
                         {item.number}
                       </span>
-                      <span className="col-span-4 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
+                      <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
                         {item.count}
                       </span>
-                      <span className="col-span-3 text-black font-bold text-xs sm:text-sm">{item.type}</span>
-                      <button
-                        onClick={() => removeFromBetSlip(item.id)}
-                        className="col-span-1 text-red-600 hover:text-red-800 flex justify-center"
-                        title="Remove"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <span className="col-span-3 text-black font-bold text-xs sm:text-sm border-r border-gray-200">
+                        {item.type}
+                      </span>
+                      <div className="col-span-3 flex items-center justify-between pl-1 sm:pl-2">
+                        <span className="font-mono font-black text-xs sm:text-sm text-black">
+                          ₹{item.totalAmount ?? (item.count * (item.unitPrice || 10))}
+                        </span>
+                        <button
+                          onClick={() => removeFromBetSlip(item.id)}
+                          className="text-red-600 hover:text-red-800 p-0.5"
+                          title="Remove"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -524,7 +532,7 @@ export const GameDashboardView: React.FC = () => {
                     <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
                   </span>
                   <p className="text-neutral-300 text-xs">
-                    Enter <strong className="text-white font-mono bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-700">742</strong> → If the 1st Prize Winning Number is <strong className="text-gold font-mono font-black bg-neutral-950 px-1.5 py-0.5 rounded border border-gold/40">742</strong>, you win the 1st Prize payout!
+                    Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Winning Number is <strong className="text-gold font-mono font-black">742</strong>, you win the 1st Prize payout.
                   </p>
                 </div>
 
@@ -536,10 +544,10 @@ export const GameDashboardView: React.FC = () => {
                   </div>
                   <div className="flex justify-between items-center text-neutral-300 border-t border-neutral-900 pt-1.5">
                     <span className="font-bold text-gold">1st Prize Payout:</span>
-                    <strong className="text-gold font-mono font-black text-sm">₹500 – ₹1,00,000</strong>
+                    <strong className="text-gold font-mono font-black text-sm">₹5,000 – ₹1,00,000</strong>
                   </div>
                   <p className="text-[11px] text-neutral-400 pt-1.5 border-t border-neutral-900 font-semibold">
-                    2nd, 3rd & 4th Prize payouts: As per the Payout Structure.
+                    2nd, 3rd & 4th & Compliments Prize payouts: As per the Payout Structure.
                   </p>
                 </div>
 
@@ -569,7 +577,7 @@ export const GameDashboardView: React.FC = () => {
                     <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
                   </span>
                   <p className="text-neutral-300 text-xs">
-                    Enter <strong className="text-white font-mono bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-700">742</strong> → If 1st Prize Number is <strong className="text-gold font-mono font-black bg-neutral-950 px-1.5 py-0.5 rounded border border-gold/40">742</strong>, possible winning combinations are:
+                    Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Number is <strong className="text-gold font-mono font-black">742</strong>, the possible combinations are:
                   </p>
                   <div className="bg-neutral-950 p-2 rounded-lg border border-gold/30 text-center">
                     <p className="text-gold font-mono font-black tracking-widest text-xs sm:text-sm">
@@ -583,13 +591,13 @@ export const GameDashboardView: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                     <span className="text-gold font-black underline uppercase">Correct Digit</span>
                     <strong className="text-white font-mono font-bold text-xs">
-                      <span className="text-gold font-black">₹300</span> at ₹10 stake → <span className="text-gold font-black">₹60,000</span> at ₹200 stake
+                      <span className="text-gold font-black">₹3,000</span> at ₹10 stake → <span className="text-gold font-black">₹60,000</span> at ₹200 stake
                     </strong>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 border-t border-neutral-900 pt-2">
                     <span className="text-neutral-300 font-bold underline uppercase">Other Rotation</span>
                     <strong className="text-neutral-200 font-mono font-bold text-xs">
-                      <span className="text-white font-bold">₹80</span> at ₹10 stake → <span className="text-white font-bold">₹16,000</span> at ₹200 stake
+                      <span className="text-white font-bold">₹800</span> at ₹10 stake → <span className="text-white font-bold">₹16,000</span> at ₹200 stake
                     </strong>
                   </div>
                 </div>
@@ -616,7 +624,7 @@ export const GameDashboardView: React.FC = () => {
                     <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
                   </span>
                   <p className="text-neutral-300 text-xs">
-                    Enter <strong className="text-white font-mono bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-700">742</strong> → If 1st Prize Number is <strong className="text-gold font-mono font-black bg-neutral-950 px-1.5 py-0.5 rounded border border-gold/40">742</strong>:
+                    Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Number is <strong className="text-gold font-mono font-black">742</strong>
                   </p>
                   
                   {/* Pair Grid */}
@@ -645,7 +653,7 @@ export const GameDashboardView: React.FC = () => {
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
                     <span className="text-gold font-black uppercase shrink-0">Pair Prize Payout</span>
                     <strong className="text-white font-mono text-xs">
-                      <span className="text-gold font-black">₹50</span> at ₹10 stake → <span className="text-gold font-black">₹10,000</span> at ₹200 stake
+                      <span className="text-gold font-black">₹500</span> at ₹10 stake → <span className="text-gold font-black">₹10,000</span> at ₹200 stake
                     </strong>
                   </div>
                 </div>
