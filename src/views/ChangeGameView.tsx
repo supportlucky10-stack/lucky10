@@ -15,7 +15,7 @@ export const ChangeGameView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-20 select-none">
+    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden pb-16 select-none">
       {/* Gold Header Banner */}
       <HeaderBanner title="Change Game" />
 

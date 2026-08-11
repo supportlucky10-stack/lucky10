@@ -37,7 +37,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
   };
 
   return (
-    <div className="w-full flex-1 bg-black text-white flex flex-col justify-start overflow-y-auto pb-32 sm:pb-36">
+    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none">
       {/* Gold Header matching Page 14 */}
       <HeaderBanner title="Users List" />
 
