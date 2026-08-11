@@ -25,7 +25,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
   };
 
   return (
-    <div className="relative w-full bg-gold-banner px-3.5 sm:px-6 py-2.5 sm:py-3.5 min-h-[56px] sm:min-h-[70px] flex items-center justify-between shadow-md select-none border-b border-[#aa771c]">
+    <div className="sticky top-0 z-30 w-full bg-gold-banner px-3.5 sm:px-6 py-2.5 sm:py-3.5 min-h-[56px] sm:min-h-[70px] flex items-center justify-between shadow-md select-none border-b border-[#aa771c]">
       <div className="flex items-center gap-2 sm:gap-3 max-w-[75%]">
         {showBack && (
           <button

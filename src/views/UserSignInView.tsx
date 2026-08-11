@@ -29,7 +29,7 @@ export const UserSignInView: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-3 sm:px-6 py-2 sm:py-6 flex flex-col justify-center items-center overflow-hidden select-none">
+    <div className="relative w-full min-h-[100dvh] bg-black text-white px-3 sm:px-6 py-2 sm:py-6 flex flex-col justify-center items-center overflow-y-auto antialiased">
       
       {/* Background Radial Light Gold Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">

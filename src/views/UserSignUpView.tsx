@@ -19,7 +19,7 @@ export const UserSignUpView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100dvh] max-h-[100dvh] bg-black text-white px-4 sm:px-6 py-4 flex flex-col justify-center items-center overflow-hidden select-none">
+    <div className="w-full min-h-[100dvh] bg-black text-white px-4 sm:px-6 py-4 flex flex-col justify-center items-center overflow-y-auto antialiased">
       {/* Centered Web Card Box */}
       <div className="max-w-md mx-auto w-full my-auto bg-neutral-950 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-neutral-800 shadow-xl flex flex-col items-center">
         

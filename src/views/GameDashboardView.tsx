@@ -146,11 +146,11 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-between relative pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-[100dvh] bg-black text-white flex flex-col justify-start relative pb-24 sm:pb-32 antialiased">
       
       <div>
-        {/* Top Header Bar */}
-        <div className="w-full px-3 sm:px-8 py-2.5 bg-black/90 flex items-center justify-between border-b border-neutral-900">
+        {/* Top Header Bar - Sticky at Top */}
+        <div className="sticky top-0 z-30 w-full px-3 sm:px-8 py-2.5 bg-black border-b border-neutral-900 shadow-md flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setCurrentView('USER_DRAWER')}
@@ -169,8 +169,8 @@ export const GameDashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Combined Sub-Header Info Ribbon */}
-        <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-between gap-2 text-xs sm:text-sm">
+        {/* Combined Sub-Header Info Ribbon - Sticky Below Header */}
+        <div className="sticky top-[48px] sm:top-[56px] z-20 w-full px-3 sm:px-8 py-1.5 bg-neutral-950 border-b border-neutral-900 flex items-center justify-between gap-2 text-xs sm:text-sm">
           {/* Game Slot Switcher - Glow on Text Only */}
           <button
             onClick={() => setCurrentView('CHANGE_GAME')}
