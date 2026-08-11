@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Lucky10Logo } from '../components/Lucky10Logo';
-import { ArrowLeft, X, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, X, Upload, Paperclip } from 'lucide-react';
 
 import icon01 from '../assets/sidebar images/01.png';
 import icon02 from '../assets/sidebar images/02.png';
@@ -15,6 +15,7 @@ export const UserDrawerView: React.FC = () => {
   const { logout, setCurrentView, addToast } = useApp();
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportCategory, setReportCategory] = useState('Payment Issues');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
 
   const menuItems = [
     {
@@ -28,24 +29,24 @@ export const UserDrawerView: React.FC = () => {
       action: () => setCurrentView('CHANGE_GAME'),
     },
     {
-      label: 'My Play Report',
-      icon: icon03,
-      action: () => setCurrentView('MY_PLAY_REPORT'),
-    },
-    {
       label: 'Results',
-      icon: icon04,
+      icon: icon03,
       action: () => setCurrentView('TODAYS_RESULT'),
     },
     {
       label: 'Winning Report',
-      icon: icon05,
+      icon: icon04,
       action: () => setCurrentView('TODAYS_WINNING_NUMBERS'),
     },
     {
       label: 'Update Bank Account',
-      icon: icon06,
+      icon: icon05,
       action: () => setCurrentView('UPDATE_BANK_DETAILS'),
+    },
+    {
+      label: 'My Play Report',
+      icon: icon06,
+      action: () => setCurrentView('MY_PLAY_REPORT'),
     },
     {
       label: 'Report an Issue',
@@ -57,7 +58,8 @@ export const UserDrawerView: React.FC = () => {
   const handleSendReport = (e: React.FormEvent) => {
     e.preventDefault();
     setShowReportModal(false);
-    addToast('Your issue report has been submitted to support!', 'success');
+    setAttachedFile(null);
+    addToast('Your issue report with attachment proof has been submitted!', 'success');
   };
 
   return (
@@ -112,7 +114,10 @@ export const UserDrawerView: React.FC = () => {
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-900 border-2 border-gold rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl relative">
             <button
-              onClick={() => setShowReportModal(false)}
+              onClick={() => {
+                setShowReportModal(false);
+                setAttachedFile(null);
+              }}
               className="absolute top-4 right-4 text-neutral-400 hover:text-white"
             >
               <X className="w-5 h-5" />
@@ -161,22 +166,64 @@ export const UserDrawerView: React.FC = () => {
                 />
               </div>
 
-              <div className="text-[11px] text-neutral-400 bg-neutral-950 p-2.5 rounded-lg border border-neutral-800 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-gold shrink-0" />
-                <span>Helpline Support: support@lucky10.com | 1800-LUCKY10</span>
+              {/* Attach Screenshot / Document Proof Area */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-300 mb-1">
+                  Attach Screenshot or Document Proof:
+                </label>
+                <label className="relative flex flex-col items-center justify-center border border-dashed border-neutral-700 hover:border-gold/80 bg-black/60 rounded-xl p-3 cursor-pointer transition-colors group">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setAttachedFile(e.target.files[0]);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                  {attachedFile ? (
+                    <div className="flex items-center justify-between w-full text-xs">
+                      <div className="flex items-center gap-2 text-gold font-mono font-bold truncate max-w-[240px]">
+                        <Paperclip className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{attachedFile.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setAttachedFile(null);
+                        }}
+                        className="text-neutral-400 hover:text-red-400 p-1 transition-colors"
+                        title="Remove file"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-neutral-400 text-xs font-medium group-hover:text-gold transition-colors">
+                      <Upload className="w-4 h-4 text-gold shrink-0 group-hover:scale-110 transition-transform" />
+                      <span>Upload Screenshot / Document Proof</span>
+                    </div>
+                  )}
+                </label>
               </div>
 
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowReportModal(false)}
-                  className="flex-1 py-2.5 bg-neutral-800 text-white font-bold text-xs rounded-lg hover:bg-neutral-700"
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setAttachedFile(null);
+                  }}
+                  className="flex-1 py-2.5 bg-neutral-800 text-white font-bold text-xs rounded-lg hover:bg-neutral-700 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-gold-metallic text-black font-black text-xs rounded-lg uppercase shadow hover:opacity-95"
+                  className="flex-1 py-2.5 bg-gold-metallic text-black font-black text-xs rounded-lg uppercase shadow hover:opacity-95 cursor-pointer"
                 >
                   Submit
                 </button>
