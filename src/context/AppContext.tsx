@@ -434,7 +434,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: 'PENDING',
     };
     setPlacedTickets((prev) => [newTicket, ...prev]);
-    addToast(`Ticket ${newTicket.id} saved successfully!`, 'success');
+    addToast('Saved successfully!', 'success');
     return true;
   };
 
