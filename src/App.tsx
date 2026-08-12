@@ -16,15 +16,7 @@ import { PreviousWinningNumbersView } from './views/PreviousWinningNumbersView';
 import { UpdateBankDetailsView } from './views/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/MyPlayReportView';
 
-import { AdminSignInView } from './views/AdminSignInView';
-import { AdminDrawerView } from './views/AdminDrawerView';
-import { AdminUsersAndResultsView } from './views/AdminUsersAndResultsView';
-import { AdminReportsView } from './views/AdminReportsView';
-import { AdminPayoutsView } from './views/AdminPayoutsView';
-import { AdminTransactionLogsView } from './views/AdminTransactionLogsView';
-
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
-
 import { BottomNavigation } from './components/BottomNavigation';
 
 const ViewRouter: React.FC = () => {
@@ -56,18 +48,6 @@ const ViewRouter: React.FC = () => {
         return <UpdateBankDetailsView />;
       case 'MY_PLAY_REPORT':
         return <MyPlayReportView />;
-      case 'ADMIN_SIGN_IN':
-        return <AdminSignInView />;
-      case 'ADMIN_DRAWER':
-        return <AdminDrawerView />;
-      case 'ADMIN_USERS_LIST':
-        return <AdminUsersAndResultsView />;
-      case 'ADMIN_REPORTS':
-        return <AdminReportsView />;
-      case 'ADMIN_PAYOUTS':
-        return <AdminPayoutsView />;
-      case 'ADMIN_TRANSACTION_LOGS':
-        return <AdminTransactionLogsView />;
       default:
         return <UserSignInView />;
     }

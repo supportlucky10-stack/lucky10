@@ -149,7 +149,7 @@ export const UserSignInView: React.FC = () => {
               <div className="pt-1.5 sm:pt-4 flex justify-center">
                 <button
                   type="submit"
-                  className="w-32 sm:w-44 py-2 sm:py-3.5 bg-gold-metallic text-black font-black text-xs sm:text-base tracking-wider rounded-lg shadow-[0_4px_25px_rgba(212,175,55,0.35)] uppercase hover:opacity-95 transition-all active:scale-95"
+                  className="w-32 sm:w-44 py-2 sm:py-3.5 bg-gold-metallic text-black font-black text-xs sm:text-base tracking-wider rounded-lg shadow-[0_4px_25px_rgba(212,175,55,0.35)] uppercase hover:opacity-95 transition-all active:scale-95 cursor-pointer"
                 >
                   SIGN IN
                 </button>

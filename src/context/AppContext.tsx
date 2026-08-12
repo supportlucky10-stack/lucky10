@@ -15,7 +15,6 @@ interface AppContextType {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
   currentUser: UserAccount | null;
-  isAdminLoggedIn: boolean;
   registeredUsers: UserAccount[];
   activeGameSlot: GameSlot;
   setActiveGameSlot: (slot: GameSlot) => void;
@@ -37,7 +36,6 @@ interface AppContextType {
   deleteUser: (userId: string) => void;
   clearAllUsers: () => void;
   loginUser: (username: string, password?: string) => boolean;
-  loginAdmin: (username: string, password?: string) => boolean;
   logout: () => void;
   toasts: ToastMessage[];
   addToast: (text: string, type?: 'success' | 'error' | 'info') => void;
@@ -177,25 +175,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialRouteView = (): ViewType => {
-    const path = window.location.pathname.toLowerCase();
-    const search = window.location.search.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-
-    if (path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin')) {
-      return 'ADMIN_SIGN_IN';
-    }
     return 'USER_SIGN_IN';
   };
 
   const [currentView, setCurrentViewInternal] = useState<ViewType>(initialRouteView);
   const [viewHistory, setViewHistory] = useState<ViewType[]>([initialRouteView()]);
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(() => {
-    const path = window.location.pathname.toLowerCase();
-    const search = window.location.search.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-    return path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin');
-  });
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('lucky10_registered_users');
     return saved ? JSON.parse(saved) : initialUsers;
@@ -215,15 +200,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sync URL route on browser navigation (PopState)
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname.toLowerCase();
-      const search = window.location.search.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-
-      if (path.startsWith('/admin') || search.includes('view=admin') || hash.includes('admin')) {
-        setCurrentViewInternal((prev) => (prev.startsWith('ADMIN_') ? prev : 'ADMIN_SIGN_IN'));
-      } else {
-        setCurrentViewInternal((prev) => (!prev.startsWith('ADMIN_') ? prev : 'USER_SIGN_IN'));
-      }
+      setCurrentViewInternal('USER_SIGN_IN');
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -325,7 +302,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     // Automatically set current user to newly registered user
     setCurrentUser(newUser);
-    setIsAdminLoggedIn(false);
 
     addToast(`Account created! Welcome, ${newUser.name}! ₹1,000 added.`, 'success');
     return true;
@@ -356,7 +332,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (user) {
       setCurrentUser(user);
-      setIsAdminLoggedIn(false);
       if (user.bankDetails) setBankDetails(user.bankDetails);
       addToast(`Welcome back, ${user.name}!`, 'success');
       setCurrentView('GAME_DASHBOARD');
@@ -374,7 +349,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: '2026-08-07',
       };
       setCurrentUser(demoUser);
-      setIsAdminLoggedIn(false);
       addToast('Logged in as Demo Player!', 'success');
       setCurrentView('GAME_DASHBOARD');
       return true;
@@ -384,21 +358,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return false;
   };
 
-  const loginAdmin = (username: string, password?: string): boolean => {
-    if ((username.trim() === 'admin' || username.trim() === 'admin@lucky10.com') && password?.trim() === 'admin123') {
-      setIsAdminLoggedIn(true);
-      setCurrentUser(null);
-      addToast('Admin authenticated successfully', 'success');
-      setCurrentView('ADMIN_DRAWER');
-      return true;
-    }
-    addToast('Invalid admin credentials. Use admin / admin123', 'error');
-    return false;
-  };
-
   const logout = () => {
     setCurrentUser(null);
-    setIsAdminLoggedIn(false);
     setBetSlip([]);
     addToast('Logged out successfully', 'info');
     setCurrentView('USER_SIGN_IN');
@@ -550,7 +511,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentView,
         setCurrentView,
         currentUser,
-        isAdminLoggedIn,
         registeredUsers,
         activeGameSlot,
         setActiveGameSlot,
@@ -572,7 +532,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteUser,
         clearAllUsers,
         loginUser,
-        loginAdmin,
         logout,
         toasts,
         addToast,

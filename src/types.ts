@@ -10,13 +10,7 @@ export type ViewType =
   | 'TODAYS_RESULT'
   | 'PREVIOUS_WINNING_NUMBERS'
   | 'UPDATE_BANK_DETAILS'
-  | 'MY_PLAY_REPORT'
-  | 'ADMIN_SIGN_IN'
-  | 'ADMIN_DRAWER'
-  | 'ADMIN_USERS_LIST'
-  | 'ADMIN_REPORTS'
-  | 'ADMIN_PAYOUTS'
-  | 'ADMIN_TRANSACTION_LOGS';
+  | 'MY_PLAY_REPORT';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 
