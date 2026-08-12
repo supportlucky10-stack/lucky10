@@ -19,6 +19,11 @@ export const UserDrawerView: React.FC = () => {
 
   const menuItems = [
     {
+      label: 'My Play Report',
+      icon: icon05,
+      action: () => setCurrentView('MY_PLAY_REPORT'),
+    },
+    {
       label: 'Payout Structure',
       icon: icon01,
       action: () => setCurrentView('PAYOUT_STRUCTURE'),
@@ -42,11 +47,6 @@ export const UserDrawerView: React.FC = () => {
       label: 'Update Bank Account',
       icon: icon06,
       action: () => setCurrentView('UPDATE_BANK_DETAILS'),
-    },
-    {
-      label: 'My Play Report',
-      icon: icon05,
-      action: () => setCurrentView('MY_PLAY_REPORT'),
     },
     {
       label: 'Report an Issue',
@@ -85,7 +85,10 @@ export const UserDrawerView: React.FC = () => {
           {menuItems.map((item, index) => (
             <button
               key={index}
-              onClick={item.action}
+              onClick={() => {
+                item.action();
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
               className="w-full flex items-center gap-4 py-3.5 sm:py-4 border-b border-neutral-700/80 text-left text-white hover:text-gold font-extrabold text-sm sm:text-base md:text-lg tracking-wide transition-all group"
             >
               <img

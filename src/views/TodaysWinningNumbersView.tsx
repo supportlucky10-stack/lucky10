@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../components/HeaderBanner';
-import { Trophy, History, Calendar } from 'lucide-react';
+import { History, Calendar } from 'lucide-react';
 import type { GameSlot } from '../types';
 
 export const TodaysWinningNumbersView: React.FC = () => {
@@ -46,7 +46,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const filteredPreviousWinners = getPreviousWinners(selectedDate, selectedSlot);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased">
       {/* Header Banner */}
       <HeaderBanner title="Winning Report" />
 
@@ -55,19 +55,32 @@ export const TodaysWinningNumbersView: React.FC = () => {
         {/* Section Navigation Tabs: 2 Tabs */}
         <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold shadow">
           <button
-            onClick={() => setActiveTab('TODAYS_WINNERS')}
+            onClick={() => {
+              setActiveTab('TODAYS_WINNERS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
               activeTab === 'TODAYS_WINNERS'
                 ? 'bg-gold-metallic text-black shadow'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <Trophy className="w-4 h-4 shrink-0" />
+            <svg
+              className={`w-4 h-4 shrink-0 transition-colors ${
+                activeTab === 'TODAYS_WINNERS' ? 'fill-black' : 'fill-neutral-400'
+              }`}
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H8v2h8v-2h-3v-2.1a5.01 5.01 0 0 0 3.61-3.04C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
+            </svg>
             <span>Today's Winners</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('PREVIOUS_HISTORY')}
+            onClick={() => {
+              setActiveTab('PREVIOUS_HISTORY');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
               activeTab === 'PREVIOUS_HISTORY'
                 ? 'bg-gold-metallic text-black shadow'
@@ -111,7 +124,10 @@ export const TodaysWinningNumbersView: React.FC = () => {
             return (
               <button
                 key={opt}
-                onClick={() => setSelectedSlot(opt)}
+                onClick={() => {
+                  setSelectedSlot(opt);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
                 className={`py-2 px-1 text-[10px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all ${
                   isSelected
                     ? 'bg-gold-banner text-black border-gold shadow-md'
@@ -128,8 +144,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
         {activeTab === 'TODAYS_WINNERS' && (
           <div className="space-y-3">
             <h3 className="text-gold font-black text-xs sm:text-sm uppercase tracking-wide border-b border-neutral-800 pb-1 flex items-center justify-between">
-              <span>Today's Published Winners</span>
-              <span className="text-neutral-400 font-mono text-xs font-normal">Live Feed</span>
+              <span>Winners</span>
             </h3>
 
             {filteredTodayWinners.length === 0 ? (
@@ -154,7 +169,6 @@ export const TodaysWinningNumbersView: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-gold font-mono font-black text-base block">{winner.winAmount}</span>
-                      <span className="text-[10px] text-neutral-500">{winner.time}</span>
                     </div>
                   </div>
                 ))}
@@ -167,8 +181,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
         {activeTab === 'PREVIOUS_HISTORY' && (
           <div className="space-y-3">
             <h3 className="text-gold font-black text-xs sm:text-sm uppercase tracking-wide border-b border-neutral-800 pb-1 flex items-center justify-between">
-              <span>Published Winners Archive ({selectedDate})</span>
-              <span className="text-neutral-400 font-mono text-xs font-normal">Verified</span>
+              <span>Winners ({selectedDate})</span>
             </h3>
 
             {filteredPreviousWinners.length === 0 ? (
@@ -195,7 +208,6 @@ export const TodaysWinningNumbersView: React.FC = () => {
                     </div>
                     <div className="text-right">
                       <span className="text-gold font-mono font-black text-base block">{winner.winAmount}</span>
-                      <span className="text-[10px] text-neutral-500">{winner.time}</span>
                     </div>
                   </div>
                 ))}

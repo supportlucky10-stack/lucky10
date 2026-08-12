@@ -51,7 +51,7 @@ export const TodaysResultView: React.FC = () => {
   const slotTitle = activeGameSlot.replace(' Game', '') + ' Result';
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased">
       {/* Gold Header Banner */}
       <HeaderBanner title={slotTitle} />
 
@@ -60,7 +60,10 @@ export const TodaysResultView: React.FC = () => {
         {/* Results Section Tabs: Today & Previous */}
         <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold">
           <button
-            onClick={() => setActiveTab('TODAY')}
+            onClick={() => {
+              setActiveTab('TODAY');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
               activeTab === 'TODAY'
                 ? 'bg-gold-metallic text-black shadow'
@@ -72,7 +75,10 @@ export const TodaysResultView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('PREVIOUS')}
+            onClick={() => {
+              setActiveTab('PREVIOUS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
               activeTab === 'PREVIOUS'
                 ? 'bg-gold-metallic text-black shadow'
@@ -115,7 +121,10 @@ export const TodaysResultView: React.FC = () => {
             return (
               <button
                 key={slot}
-                onClick={() => setActiveGameSlot(slot)}
+                onClick={() => {
+                  setActiveGameSlot(slot);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
                 className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all ${
                   isSelected
                     ? 'bg-gold-banner text-black border-gold shadow-md'

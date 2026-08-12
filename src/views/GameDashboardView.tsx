@@ -146,7 +146,7 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start relative pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start relative pb-36 sm:pb-44 antialiased">
       
       <div>
         {/* Top Header Bar */}
@@ -523,13 +523,13 @@ export const GameDashboardView: React.FC = () => {
                 </div>
 
                 <p className="text-white font-extrabold text-xs sm:text-sm">
-                  Match the 3-digit winning number in the <span className="text-gold underline">exact order</span>.
+                  Match the 3-digit winning number in the exact order.
                 </p>
 
                 {/* Example Box */}
                 <div className="bg-black/90 p-3 rounded-xl border border-neutral-800 space-y-1.5">
                   <span className="text-gold font-black text-xs uppercase flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
+                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example
                   </span>
                   <p className="text-neutral-300 text-xs">
                     Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Winning Number is <strong className="text-gold font-mono font-black">742</strong>, you win the 1st Prize payout.
@@ -568,13 +568,13 @@ export const GameDashboardView: React.FC = () => {
                 </div>
 
                 <p className="text-white font-extrabold text-xs sm:text-sm">
-                  Match the 1st Prize winning number in <span className="text-gold underline">any order</span>.
+                  Match the 1st Prize winning number in any order.
                 </p>
 
                 {/* Example Box */}
                 <div className="bg-black/90 p-3 rounded-xl border border-neutral-800 space-y-2">
                   <span className="text-gold font-black text-xs uppercase flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
+                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example
                   </span>
                   <p className="text-neutral-300 text-xs">
                     Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Number is <strong className="text-gold font-mono font-black">742</strong>, the possible combinations are:
@@ -589,13 +589,13 @@ export const GameDashboardView: React.FC = () => {
                 {/* Payout Breakdown */}
                 <div className="space-y-2 text-xs bg-neutral-950 p-3 rounded-xl border border-neutral-800/80">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
-                    <span className="text-gold font-black underline uppercase">Correct Digit</span>
+                    <span className="text-white font-extrabold uppercase">Correct Digit</span>
                     <strong className="text-white font-mono font-bold text-xs">
                       <span className="text-gold font-black">₹3,000</span> at ₹10 stake → <span className="text-gold font-black">₹60,000</span> at ₹200 stake
                     </strong>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 border-t border-neutral-900 pt-2">
-                    <span className="text-neutral-300 font-bold underline uppercase">Other Rotation</span>
+                    <span className="text-white font-extrabold uppercase">Other Rotation</span>
                     <strong className="text-neutral-200 font-mono font-bold text-xs">
                       <span className="text-white font-bold">₹800</span> at ₹10 stake → <span className="text-white font-bold">₹16,000</span> at ₹200 stake
                     </strong>
@@ -615,13 +615,13 @@ export const GameDashboardView: React.FC = () => {
                 </div>
 
                 <p className="text-white font-extrabold text-xs sm:text-sm">
-                  Match two specific digits from the 1st Prize Number in their <span className="text-gold underline">exact positions</span>.
+                  Match two specific digits from the 1st Prize Number in their exact positions.
                 </p>
 
                 {/* Example Box */}
                 <div className="bg-black/90 p-3 rounded-xl border border-neutral-800 space-y-2">
                   <span className="text-gold font-black text-xs uppercase flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example:
+                    <CheckCircle2 className="w-3.5 h-3.5 text-gold" /> Example
                   </span>
                   <p className="text-neutral-300 text-xs">
                     Enter <strong className="text-white font-mono font-bold">742</strong> → If the 1st Prize Number is <strong className="text-gold font-mono font-black">742</strong>

@@ -245,6 +245,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setViewHistory((prev) => [...prev, view]);
     setCurrentViewInternal(view);
 
+    // Reset window scroll position to top instantly
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+
     // Update URL path for separate User and Admin links
     if (view.startsWith('ADMIN_')) {
       if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
@@ -258,12 +267,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const goBack = () => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    } catch (e) {
+      window.scrollTo(0, 0);
+    }
+
     if (viewHistory.length > 1) {
-      const newHist = [...viewHistory];
-      newHist.pop();
-      const prev = newHist[newHist.length - 1];
-      setViewHistory(newHist);
-      setCurrentViewInternal(prev);
+      const newHistory = [...viewHistory];
+      newHistory.pop(); // Remove current
+      const prevView = newHistory[newHistory.length - 1];
+      setViewHistory(newHistory);
+      setCurrentViewInternal(prevView);
+    } else {
+      setCurrentViewInternal('GAME_DASHBOARD');
     }
   };
 

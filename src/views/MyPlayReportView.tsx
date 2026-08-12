@@ -94,7 +94,7 @@ export const MyPlayReportView: React.FC = () => {
   });
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start pb-24 sm:pb-32 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased">
       {/* Gold Header Banner */}
       <HeaderBanner title="My Play Report" />
 
@@ -103,7 +103,10 @@ export const MyPlayReportView: React.FC = () => {
         {/* Navigation Sub-Tabs */}
         <div className="bg-neutral-950 p-1.5 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1 shadow-md">
           <button
-            onClick={() => setActiveSubTab('TODAYS_GAMES')}
+            onClick={() => {
+              setActiveSubTab('TODAYS_GAMES');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
               activeSubTab === 'TODAYS_GAMES'
                 ? 'bg-gold-banner text-black shadow-md'
@@ -115,7 +118,10 @@ export const MyPlayReportView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('PREVIOUS_HISTORY')}
+            onClick={() => {
+              setActiveSubTab('PREVIOUS_HISTORY');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
               activeSubTab === 'PREVIOUS_HISTORY'
                 ? 'bg-gold-banner text-black shadow-md'
@@ -127,7 +133,10 @@ export const MyPlayReportView: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSubTab('PAYMENTS')}
+            onClick={() => {
+              setActiveSubTab('PAYMENTS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
               activeSubTab === 'PAYMENTS'
                 ? 'bg-gold-banner text-black shadow-md'

@@ -31,7 +31,10 @@ export const BottomNavigation: React.FC = () => {
           return (
             <button
               key={item.label}
-              onClick={() => setCurrentView(item.view)}
+              onClick={() => {
+                setCurrentView(item.view);
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+              }}
               className={`w-full flex flex-col items-center justify-center text-center gap-1 transition-all group py-0.5 ${
                 isActive ? 'text-gold scale-105' : 'text-neutral-400 hover:text-white'
               }`}
