@@ -184,8 +184,12 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* Compliments Matrix Table - Fixed, No Animation */}
-        <div className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2">
+        {/* Compliments Matrix Table - Animated Drop In */}
+        <div
+          key={`compliments-${activeTab}-${activeDate}-${activeGameSlot}`}
+          style={{ animationDelay: '480ms' }}
+          className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 animate-drop-in hover:border-gold/40 transition-all"
+        >
           <h3 className="font-extrabold text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wide">
             Compliments
           </h3>
