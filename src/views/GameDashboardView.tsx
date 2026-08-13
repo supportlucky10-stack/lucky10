@@ -135,7 +135,7 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start relative pb-6 sm:pb-8 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start relative pb-6 sm:pb-8 antialiased select-none">
       <div>
         {/* Top Header Bar */}
         <div className="w-full px-3 sm:px-8 py-2.5 bg-black/90 flex items-center justify-between border-b border-neutral-900">
@@ -166,252 +166,230 @@ export const GameDashboardView: React.FC = () => {
           </div>
         </div>
 
-        {/* Responsive Layout Grid */}
-        <div className="w-full px-3 sm:px-8 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
+        {/* Main Layout Flow */}
+        <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto space-y-3 sm:space-y-4">
           
-          {/* Left Column (5/12): Entry Card */}
-          <div className="lg:col-span-5 space-y-3 sm:space-y-4">
-
-            {/* TABBED GAME ENTRY CARD (Original Dark Gold Design Aesthetic) */}
-            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)] space-y-3.5">
+          {/* TABBED GAME ENTRY CARD (Upper Controls Box) */}
+          <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)] space-y-3.5">
+            
+            {/* Mode Control Ribbon: Tabs (1,2,3) + Customer Name Box + Checkboxes */}
+            <div className="bg-neutral-950 p-2 sm:p-2.5 rounded-xl border border-neutral-800 flex flex-wrap items-center gap-2">
               
-              {/* Mode Control Ribbon: Tabs (1,2,3) + Customer Name Box + Checkboxes */}
-              <div className="bg-neutral-950 p-2 sm:p-2.5 rounded-xl border border-neutral-800 flex flex-wrap items-center gap-2">
-                
-                {/* Mode Selector Tabs (1, 2, 3) */}
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => {
-                        setActiveMode(m as 1 | 2 | 3);
-                        setInputNum('');
-                        setInputCount('');
-                        setBoxCount('');
-                      }}
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
-                        activeMode === m
-                          ? 'bg-gold-metallic text-black border border-gold shadow-md font-black'
-                          : 'bg-black text-gold border border-gold/40 hover:border-gold font-bold'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
+              {/* Mode Selector Tabs (1, 2, 3) */}
+              <div className="flex items-center gap-1">
+                {[1, 2, 3].map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      setActiveMode(m as 1 | 2 | 3);
+                      setInputNum('');
+                      setInputCount('');
+                      setBoxCount('');
+                    }}
+                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
+                      activeMode === m
+                        ? 'bg-gold-metallic text-black border border-gold shadow-md font-black'
+                        : 'bg-black text-gold border border-gold/40 hover:border-gold font-bold'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
 
-                {/* Customer Name Box */}
-                <div className="flex-1 min-w-[100px]">
+              {/* Customer Name Box */}
+              <div className="flex-1 min-w-[100px]">
+                <input
+                  type="text"
+                  placeholder="Customer Name"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
+                />
+              </div>
+
+              {/* Checkboxes: R & Set */}
+              <div className="flex items-center gap-2 pl-1">
+                <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
                   <input
-                    type="text"
-                    placeholder="Customer Name"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
+                    type="checkbox"
+                    checked={isReverse}
+                    onChange={(e) => setIsReverse(e.target.checked)}
+                    className="w-3.5 h-3.5 accent-amber-500 rounded"
                   />
-                </div>
+                  <span>R</span>
+                </label>
 
-                {/* Checkboxes: R & Set */}
-                <div className="flex items-center gap-2 pl-1">
+                {activeMode === 3 && (
                   <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      checked={isReverse}
-                      onChange={(e) => setIsReverse(e.target.checked)}
+                      checked={isSet}
+                      onChange={(e) => setIsSet(e.target.checked)}
                       className="w-3.5 h-3.5 accent-amber-500 rounded"
                     />
-                    <span>R</span>
+                    <span>Set</span>
                   </label>
+                )}
+              </div>
+            </div>
 
-                  {activeMode === 3 && (
-                    <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={isSet}
-                        onChange={(e) => setIsSet(e.target.checked)}
-                        className="w-3.5 h-3.5 accent-amber-500 rounded"
-                      />
-                      <span>Set</span>
-                    </label>
-                  )}
-                </div>
+            {/* Dynamic Inputs Row (Number, Count, Box Count) */}
+            <div className="grid grid-cols-12 gap-2 sm:gap-3">
+              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-8'}>
+                <input
+                  type="text"
+                  maxLength={activeMode}
+                  placeholder="Number"
+                  value={inputNum}
+                  onChange={(e) => setInputNum(e.target.value)}
+                  className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                />
               </div>
 
-              {/* Dynamic Inputs Row (Number, Count, Box Count) */}
-              <div className="grid grid-cols-12 gap-2 sm:gap-3">
-                <div className={activeMode === 3 ? 'col-span-4' : 'col-span-8'}>
-                  <input
-                    type="text"
-                    maxLength={activeMode}
-                    placeholder="Number"
-                    value={inputNum}
-                    onChange={(e) => setInputNum(e.target.value)}
-                    className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
-                  />
-                </div>
+              <div className="col-span-4">
+                <input
+                  type="number"
+                  placeholder="Count"
+                  value={inputCount}
+                  onChange={(e) => setInputCount(e.target.value)}
+                  className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                />
+              </div>
 
+              {activeMode === 3 && (
                 <div className="col-span-4">
                   <input
                     type="number"
-                    placeholder="Count"
-                    value={inputCount}
-                    onChange={(e) => setInputCount(e.target.value)}
-                    className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    placeholder="Box Count"
+                    value={boxCount}
+                    onChange={(e) => setBoxCount(e.target.value)}
+                    className="w-full px-2 py-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
+              )}
+            </div>
 
-                {activeMode === 3 && (
-                  <div className="col-span-4">
-                    <input
-                      type="number"
-                      placeholder="Box Count"
-                      value={boxCount}
-                      onChange={(e) => setBoxCount(e.target.value)}
-                      className="w-full px-2 py-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons Row matching selected Mode */}
-              <div>
-                {activeMode === 1 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {(['A', 'B', 'C', 'ALL'] as const).map((pos) => (
-                      <button
-                        key={pos}
-                        type="button"
-                        onClick={() => handleMode1Add(pos)}
-                        className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
-                      >
-                        {pos}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {activeMode === 2 && (
-                  <div className="grid grid-cols-4 gap-2">
-                    {(['AB', 'AC', 'BC', 'ALL'] as const).map((pair) => (
-                      <button
-                        key={pair}
-                        type="button"
-                        onClick={() => handleMode2Add(pair)}
-                        className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
-                      >
-                        {pair}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {activeMode === 3 && (
-                  <div className="grid grid-cols-3 gap-2">
+            {/* Action Buttons Row matching selected Mode */}
+            <div>
+              {activeMode === 1 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {(['A', 'B', 'C', 'ALL'] as const).map((pos) => (
                     <button
+                      key={pos}
                       type="button"
-                      onClick={() => handleMode3Add('BOTH')}
+                      onClick={() => handleMode1Add(pos)}
                       className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
                     >
-                      BOTH
+                      {pos}
                     </button>
+                  ))}
+                </div>
+              )}
+
+              {activeMode === 2 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {(['AB', 'AC', 'BC', 'ALL'] as const).map((pair) => (
                     <button
+                      key={pair}
                       type="button"
-                      onClick={() => handleMode3Add('BOX')}
+                      onClick={() => handleMode2Add(pair)}
                       className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
                     >
-                      BOX
+                      {pair}
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMode3Add('SUPER')}
-                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
-                    >
-                      SUPER
-                    </button>
-                  </div>
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
 
-              {/* Subtotal Summary Footer */}
-              <div className="bg-neutral-950 text-gold px-3.5 py-2 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm font-black tracking-wider uppercase shadow">
-                <span>COUNT: {totalCount}</span>
-                <span>TOTAL: ₹{totalAmount}</span>
-              </div>
-
+              {activeMode === 3 && (
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleMode3Add('BOTH')}
+                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                  >
+                    BOTH
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMode3Add('BOX')}
+                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                  >
+                    BOX
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMode3Add('SUPER')}
+                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                  >
+                    SUPER
+                  </button>
+                </div>
+              )}
             </div>
 
           </div>
 
-          {/* Right Column (7/12): Ticket Table Display (Matching Image 2 columns: Type, Number, Count, Amount, Action) */}
-          <div className="lg:col-span-7 flex flex-col justify-between space-y-2.5 sm:space-y-4">
-            
-            {/* Slip Table */}
-            <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
-              <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center">
-                <span className="border-r border-gray-300">Type</span>
-                <span className="border-r border-gray-300">Number</span>
-                <span className="border-r border-gray-300">Count</span>
-                <span className="border-r border-gray-300">Amount</span>
-                <span>Action</span>
-              </div>
+          {/* Subtotal Summary Bar (COUNT & TOTAL) Placed Down Below Entry Card */}
+          <div className="bg-neutral-950 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm font-black tracking-wider uppercase shadow">
+            <span>COUNT: {totalCount}</span>
+            <span>TOTAL: ₹{totalAmount}</span>
+          </div>
 
-              <div className="divide-y divide-gray-200 max-h-52 sm:max-h-72 overflow-y-auto text-xs sm:text-sm font-bold">
-                {betSlip.length === 0 ? (
-                  <div className="py-6 text-center text-neutral-400 italic font-normal text-xs sm:text-sm">
-                    No numbers added to slip yet
-                  </div>
-                ) : (
-                  betSlip.map((item) => {
-                    const displayType = item.number.includes(':')
-                      ? item.number.split(':')[0]
-                      : item.type === 'Direct'
-                      ? 'SUPER'
-                      : item.type === 'Shuffle'
-                      ? 'BOX'
-                      : item.type;
-                    const displayNumber = item.number.includes(':')
-                      ? item.number.split(':')[1]
-                      : item.number;
+          {/* Slip Table Placed Down Below Subtotal Bar */}
+          <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
+            <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center">
+              <span className="border-r border-gray-300">Type</span>
+              <span className="border-r border-gray-300">Number</span>
+              <span className="border-r border-gray-300">Count</span>
+              <span className="border-r border-gray-300">Amount</span>
+              <span>Action</span>
+            </div>
 
-                    return (
-                      <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center">
-                        <span className="font-extrabold text-xs sm:text-sm text-purple-700 uppercase border-r border-gray-200 truncate px-0.5">
-                          {displayType}
-                        </span>
-                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
-                          {displayNumber}
-                        </span>
-                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
-                          {item.count}
-                        </span>
-                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
-                          ₹{item.totalAmount ?? (item.count * (item.unitPrice || 10))}
-                        </span>
-                        <div className="flex items-center justify-center">
-                          <button
-                            onClick={() => removeFromBetSlip(item.id)}
-                            className="text-neutral-700 hover:text-red-600 p-0.5 cursor-pointer transition-colors"
-                            title="Remove item"
-                          >
-                            <CheckSquare className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-neutral-800 hover:text-red-600" />
-                          </button>
-                        </div>
+            <div className="divide-y divide-gray-200 min-h-[220px] sm:min-h-[320px] max-h-[450px] sm:max-h-[600px] overflow-y-auto text-xs sm:text-sm font-bold">
+              {betSlip.length === 0 ? null : (
+                betSlip.map((item) => {
+                  const displayType = item.number.includes(':')
+                    ? item.number.split(':')[0]
+                    : item.type === 'Direct'
+                    ? 'SUPER'
+                    : item.type === 'Shuffle'
+                    ? 'BOX'
+                    : item.type;
+                  const displayNumber = item.number.includes(':')
+                    ? item.number.split(':')[1]
+                    : item.number;
+
+                  return (
+                    <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center">
+                      <span className="font-extrabold text-xs sm:text-sm text-purple-700 uppercase border-r border-gray-200 truncate px-0.5">
+                        {displayType}
+                      </span>
+                      <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
+                        {displayNumber}
+                      </span>
+                      <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
+                        {item.count}
+                      </span>
+                      <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
+                        ₹{item.totalAmount ?? (item.count * (item.unitPrice || 10))}
+                      </span>
+                      <div className="flex items-center justify-center">
+                        <button
+                          onClick={() => removeFromBetSlip(item.id)}
+                          className="text-neutral-700 hover:text-red-600 p-0.5 cursor-pointer transition-colors"
+                          title="Remove item"
+                        >
+                          <CheckSquare className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-neutral-800 hover:text-red-600" />
+                        </button>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
-
-            {/* Total Summary Footer */}
-            <div className="bg-neutral-950 p-2.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-extrabold text-neutral-300">TOTAL:</span>
-                <span className="text-lg sm:text-2xl font-black text-gold">₹{totalAmount}</span>
-              </div>
-            </div>
-
           </div>
 
         </div>
