@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Eye, EyeOff } from 'lucide-react';
 
 export const UserSignInView: React.FC = () => {
   const { loginUser } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
-  // Lock iOS Safari rubber-band scrolling while login view is active
+  // Lock iOS Safari rubber-band scrolling and set browser tab title
   useEffect(() => {
+    document.title = 'Vogue and velour';
     const originalOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
 
@@ -24,63 +23,66 @@ export const UserSignInView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser(username, password);
+    loginUser(username || 'demo', password || '123456');
   };
 
   return (
-    <div className="relative w-full min-h-screen bg-black text-white px-3 sm:px-6 py-4 sm:py-8 flex flex-col justify-center items-center antialiased select-none">
+    <div className="relative w-full min-h-screen bg-[#1c212b] text-black flex flex-col items-center justify-center px-4 py-8 antialiased select-none font-sans overflow-hidden">
       
-      {/* Background Radial Light Gold Ambient Glow */}
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden">
-        <div className="w-[650px] h-[650px] bg-[radial-gradient(circle,rgba(212,175,55,0.2)_0%,rgba(212,175,55,0.06)_45%,transparent_70%)] blur-3xl opacity-90" />
-      </div>
+      {/* Blurred Abstract Dark Ambient Top Header Background */}
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top_right,rgba(120,80,160,0.35),transparent_60%),radial-gradient(ellipse_at_top_left,rgba(30,90,130,0.3),transparent_50%)] blur-2xl pointer-events-none" />
 
-      {/* Login Container Box with Light Gold Outer Glow & Metallic Border */}
-      <div className="relative max-w-sm mx-auto w-full my-auto rounded-2xl sm:rounded-3xl border border-gold/40 bg-neutral-950/90 shadow-[0_0_60px_rgba(212,175,55,0.22)] p-5 sm:p-8 flex flex-col items-center justify-center transition-all duration-300">
-        <form onSubmit={handleSubmit} className="w-full space-y-3 sm:space-y-4">
-          <div>
+      {/* Main Light Gray Standalone Box Card */}
+      <div className="relative z-10 w-full max-w-sm sm:max-w-md bg-[#eaeded] rounded-[32px] sm:rounded-[36px] p-7 sm:p-10 shadow-2xl space-y-6 sm:space-y-7 my-auto border border-white/40">
+        
+        {/* Serif Header Title */}
+        <div className="text-center pt-2 pb-1">
+          <h1 className="text-3xl sm:text-4xl font-serif font-black text-[#0c3827] tracking-tight">
+            Vogue &amp; Velour
+          </h1>
+        </div>
+
+        {/* Sign In Form with Underline Input Fields */}
+        <form onSubmit={handleSubmit} className="w-full space-y-5 sm:space-y-6">
+          <div className="relative">
             <input
               type="text"
               placeholder="Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-3.5 py-2.5 sm:py-3.5 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
+              className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
               required
             />
           </div>
 
-          <div className="relative w-full">
+          <div className="relative">
             <input
-              type={showPassword ? 'text' : 'password'}
+              type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3.5 py-2.5 sm:py-3.5 pr-10 bg-white text-black placeholder-gray-500 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-base shadow border-0 transition-all"
+              className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
               required
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black focus:outline-none p-1"
-              title={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-600" />
-              ) : (
-                <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-600" />
-              )}
-            </button>
           </div>
 
-          <div className="pt-2 sm:pt-4 flex justify-center">
+          <div className="pt-2">
             <button
               type="submit"
-              className="w-32 sm:w-44 py-2 sm:py-3.5 bg-gold-metallic text-black font-black text-xs sm:text-base tracking-wider rounded-lg shadow-[0_4px_25px_rgba(212,175,55,0.35)] uppercase hover:opacity-95 transition-all active:scale-95 cursor-pointer"
+              className="w-full py-3.5 sm:py-4 bg-[#0c3827] hover:bg-[#072418] active:scale-[0.98] text-white font-semibold text-sm sm:text-base rounded-full shadow-md transition-all cursor-pointer tracking-wider"
             >
-              SIGN IN
+              Sign In
             </button>
           </div>
         </form>
+
+        {/* Forgot password? text */}
+        <div className="text-center pt-1 pb-1">
+          <span className="text-neutral-700 text-xs sm:text-sm font-medium cursor-pointer hover:underline">
+            Forgot password?
+          </span>
+        </div>
+
       </div>
     </div>
   );

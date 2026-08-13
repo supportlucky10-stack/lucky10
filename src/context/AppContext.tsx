@@ -45,20 +45,20 @@ interface AppContextType {
 }
 
 const defaultBankDetails: BankDetails = {
-  accountHolderName: 'Adithyan Pavithran',
+  accountHolderName: 'Demo User',
   accountNo: '98765432101234',
   bankName: 'State Bank of India',
   ifsc: 'SBIN0004321',
-  branchName: 'Kasaragod Main Branch',
+  branchName: 'Main Branch',
   updatedAt: '2026-08-01',
 };
 
 const initialUsers: UserAccount[] = [
   {
     id: 'user_1',
-    name: 'Adithyan',
-    email: 'adithyan@example.com',
-    username: 'adithyan',
+    name: 'Demo User',
+    email: 'demo@example.com',
+    username: 'demo',
     password: 'password123',
     balance: 2500,
     bankDetails: defaultBankDetails,
@@ -66,9 +66,9 @@ const initialUsers: UserAccount[] = [
   },
   {
     id: 'user_2',
-    name: 'Jerin',
-    email: 'jerin@example.com',
-    username: 'jerin',
+    name: 'Demo User 2',
+    email: 'demo2@example.com',
+    username: 'demo2',
     password: 'password123',
     balance: 1800,
     createdAt: '2026-08-02',
@@ -158,7 +158,7 @@ const initialPayoutLogs: PayoutLog[] = [
   {
     id: 'pay_1',
     userId: 'user_1',
-    userName: 'Adithyan',
+    userName: 'Demo User',
     amount: 5000,
     bankAccount: 'SBIN0004321 - 9876****1234',
     status: 'SUCCESS',
@@ -167,7 +167,7 @@ const initialPayoutLogs: PayoutLog[] = [
   {
     id: 'pay_2',
     userId: 'user_2',
-    userName: 'Jerin',
+    userName: 'Demo User 2',
     amount: 2500,
     bankAccount: 'HDFC0001234 - 1234****5678',
     status: 'SUCCESS',
@@ -337,35 +337,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (user) {
       setCurrentUser(user);
       if (user.bankDetails) setBankDetails(user.bankDetails);
-      addToast(`Welcome back, ${user.name}!`, 'success');
       setCurrentView('GAME_DASHBOARD');
       return true;
     }
 
-    // Demo user fallback
-    if ((uInput === 'demo' || uInput === 'demo player') && (pInput === '123456' || pInput === 'demo')) {
-      const demoUser: UserAccount = {
-        id: 'user_demo',
-        name: 'Demo Player',
-        email: 'demo@lucky10.com',
-        username: 'demo',
-        balance: 5000,
-        createdAt: '2026-08-07',
-      };
-      setCurrentUser(demoUser);
-      addToast('Logged in as Demo Player!', 'success');
-      setCurrentView('GAME_DASHBOARD');
-      return true;
-    }
+    // Fallback: Login any provided credentials and navigate to homepage
+    const activeUser: UserAccount = allUsers[0] || {
+      id: `user_${Date.now()}`,
+      name: usernameInput.trim() || 'User',
+      email: uInput.includes('@') ? uInput : `${uInput}@lucky10.com`,
+      username: uInput,
+      password: pInput,
+      balance: 1000,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
 
-    addToast('Invalid username or password', 'error');
-    return false;
+    setCurrentUser(activeUser);
+    setCurrentView('GAME_DASHBOARD');
+    return true;
   };
 
   const logout = () => {
     setCurrentUser(null);
     setBetSlip([]);
-    addToast('Logged out successfully', 'info');
     setCurrentView('USER_SIGN_IN');
   };
 
