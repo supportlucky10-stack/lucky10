@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 
 export const UserSignInView: React.FC = () => {
-  const { loginUser } = useApp();
+  const { loginUser, setCurrentView } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -23,7 +23,7 @@ export const UserSignInView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser(username || 'demo', password || '123456');
+    loginUser(username, password);
   };
 
   return (
@@ -76,10 +76,32 @@ export const UserSignInView: React.FC = () => {
           </div>
         </form>
 
-        {/* Forgot password? text */}
-        <div className="text-center pt-1 pb-1">
-          <span className="text-neutral-700 text-xs sm:text-sm font-medium cursor-pointer hover:underline">
+        {/* Sign Up Navigation */}
+        <div className="text-center pt-1">
+          <span className="text-neutral-600 text-xs sm:text-sm">
+            Don't have an account?{' '}
+            <span
+              onClick={() => setCurrentView('USER_SIGN_UP')}
+              className="text-[#0c3827] font-bold cursor-pointer hover:underline"
+            >
+              Sign Up
+            </span>
+          </span>
+        </div>
+
+        {/* Links */}
+        <div className="flex items-center justify-between pt-1 pb-1 text-xs sm:text-sm font-medium border-t border-neutral-300">
+          <span
+            onClick={() => setCurrentView('FORGOT_PASSWORD')}
+            className="text-neutral-700 cursor-pointer hover:underline"
+          >
             Forgot password?
+          </span>
+          <span
+            onClick={() => setCurrentView('ADMIN_SIGN_IN')}
+            className="text-[#0c3827] font-bold cursor-pointer hover:underline"
+          >
+            Admin Portal &rarr;
           </span>
         </div>
 

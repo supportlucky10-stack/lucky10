@@ -1,4 +1,6 @@
 import React from 'react';
+import goldLogo from '../assets/lucky10-logo.png';
+import blackLogo from '../assets/lucky10-black-logo.png';
 
 interface LogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -14,7 +16,7 @@ export const Lucky10Logo: React.FC<LogoProps> = ({ size = 'lg', showSubtitle = t
     xl: { imgClass: 'w-28 sm:w-44', titleSize: 'text-base sm:text-xl', subtitleSize: 'text-lg sm:text-3xl' },
   }[size];
 
-  const logoSrc = variant === 'black' ? '/assets/lucky10-black-logo.png' : '/assets/lucky10-logo.png';
+  const logoSrc = variant === 'black' ? blackLogo : goldLogo;
 
   return (
     <div className="flex flex-col items-center justify-center select-none py-0.5 sm:py-1 transition-transform hover:scale-105 duration-300">

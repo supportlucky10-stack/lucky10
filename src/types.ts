@@ -11,7 +11,15 @@ export type ViewType =
   | 'PREVIOUS_WINNING_NUMBERS'
   | 'UPDATE_BANK_DETAILS'
   | 'MY_PLAY_REPORT'
-  | 'EDIT_DELETE_BILL';
+  | 'EDIT_DELETE_BILL'
+  | 'ADMIN_SIGN_IN'
+  | 'ADMIN_DRAWER'
+  | 'ADMIN_USERS_LIST'
+  | 'ADMIN_RESULT_MANAGEMENT'
+  | 'ADMIN_REPORTS'
+  | 'ADMIN_PAYOUTS'
+  | 'ADMIN_TRANSACTION_LOGS'
+  | 'ADMIN_ISSUES';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 

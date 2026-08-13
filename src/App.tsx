@@ -17,12 +17,27 @@ import { UpdateBankDetailsView } from './views/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/MyPlayReportView';
 import { EditDeleteBillView } from './views/EditDeleteBillView';
 
+// Admin View Imports
+import { AdminSignInView } from './views/AdminSignInView';
+import { AdminDrawerView } from './views/AdminDrawerView';
+import { AdminUsersAndResultsView } from './views/AdminUsersAndResultsView';
+import { AdminResultManagementView } from './views/AdminResultManagementView';
+import { AdminReportsView } from './views/AdminReportsView';
+import { AdminPayoutsView } from './views/AdminPayoutsView';
+import { AdminTransactionLogsView } from './views/AdminTransactionLogsView';
+import { AdminIssuesView } from './views/AdminIssuesView';
+
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
 const ViewRouter: React.FC = () => {
-  const { currentView, toasts, removeToast } = useApp();
+  const { currentView, toasts, removeToast, isAdminLoggedIn } = useApp();
 
   const renderView = () => {
+    // Auth Guard for Admin Routes
+    if (currentView.startsWith('ADMIN_') && currentView !== 'ADMIN_SIGN_IN' && !isAdminLoggedIn) {
+      return <AdminSignInView />;
+    }
+
     switch (currentView) {
       case 'USER_SIGN_IN':
         return <UserSignInView />;
@@ -50,6 +65,22 @@ const ViewRouter: React.FC = () => {
         return <MyPlayReportView />;
       case 'EDIT_DELETE_BILL':
         return <EditDeleteBillView />;
+      case 'ADMIN_SIGN_IN':
+        return <AdminSignInView />;
+      case 'ADMIN_DRAWER':
+        return <AdminDrawerView />;
+      case 'ADMIN_USERS_LIST':
+        return <AdminUsersAndResultsView />;
+      case 'ADMIN_RESULT_MANAGEMENT':
+        return <AdminResultManagementView />;
+      case 'ADMIN_REPORTS':
+        return <AdminReportsView />;
+      case 'ADMIN_PAYOUTS':
+        return <AdminPayoutsView />;
+      case 'ADMIN_TRANSACTION_LOGS':
+        return <AdminTransactionLogsView />;
+      case 'ADMIN_ISSUES':
+        return <AdminIssuesView />;
       default:
         return <UserSignInView />;
     }

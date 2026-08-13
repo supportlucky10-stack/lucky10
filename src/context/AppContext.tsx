@@ -15,6 +15,7 @@ interface AppContextType {
   currentView: ViewType;
   setCurrentView: (view: ViewType) => void;
   currentUser: UserAccount | null;
+  isAdminLoggedIn: boolean;
   registeredUsers: UserAccount[];
   activeGameSlot: GameSlot;
   setActiveGameSlot: (slot: GameSlot) => void;
@@ -36,6 +37,7 @@ interface AppContextType {
   deleteUser: (userId: string) => void;
   clearAllUsers: () => void;
   loginUser: (username: string, password?: string) => boolean;
+  loginAdmin: (username: string, password?: string) => boolean;
   logout: () => void;
   toasts: ToastMessage[];
   addToast: (text: string, type?: 'success' | 'error' | 'info') => void;
@@ -44,36 +46,9 @@ interface AppContextType {
   goBack: () => void;
 }
 
-const defaultBankDetails: BankDetails = {
-  accountHolderName: 'Demo User',
-  accountNo: '98765432101234',
-  bankName: 'State Bank of India',
-  ifsc: 'SBIN0004321',
-  branchName: 'Main Branch',
-  updatedAt: '2026-08-01',
-};
 
-const initialUsers: UserAccount[] = [
-  {
-    id: 'user_1',
-    name: 'Demo User',
-    email: 'demo@example.com',
-    username: 'demo',
-    password: 'password123',
-    balance: 2500,
-    bankDetails: defaultBankDetails,
-    createdAt: '2026-08-01',
-  },
-  {
-    id: 'user_2',
-    name: 'Demo User 2',
-    email: 'demo2@example.com',
-    username: 'demo2',
-    password: 'password123',
-    balance: 1800,
-    createdAt: '2026-08-02',
-  },
-];
+
+const initialUsers: UserAccount[] = [];
 
 const initialResults: Record<GameSlot, GameResult> = {
   '1 PM Game': {
@@ -154,37 +129,22 @@ const initialResults: Record<GameSlot, GameResult> = {
   },
 };
 
-const initialPayoutLogs: PayoutLog[] = [
-  {
-    id: 'pay_1',
-    userId: 'user_1',
-    userName: 'Demo User',
-    amount: 5000,
-    bankAccount: 'SBIN0004321 - 9876****1234',
-    status: 'SUCCESS',
-    date: '2026-08-06',
-  },
-  {
-    id: 'pay_2',
-    userId: 'user_2',
-    userName: 'Demo User 2',
-    amount: 2500,
-    bankAccount: 'HDFC0001234 - 1234****5678',
-    status: 'SUCCESS',
-    date: '2026-08-05',
-  },
-];
+const initialPayoutLogs: PayoutLog[] = [];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialRouteView = (): ViewType => {
+    if (typeof window !== 'undefined' && (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin'))) {
+      return 'ADMIN_SIGN_IN';
+    }
     return 'USER_SIGN_IN';
   };
 
   const [currentView, setCurrentViewInternal] = useState<ViewType>(initialRouteView);
   const [viewHistory, setViewHistory] = useState<ViewType[]>([initialRouteView()]);
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(() => {
     const saved = localStorage.getItem('lucky10_registered_users');
     return saved ? JSON.parse(saved) : initialUsers;
@@ -336,31 +296,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (user) {
       setCurrentUser(user);
+      setIsAdminLoggedIn(false);
       if (user.bankDetails) setBankDetails(user.bankDetails);
       setCurrentView('GAME_DASHBOARD');
+      addToast(`Welcome back, ${user.name}!`, 'success');
       return true;
     }
 
-    // Fallback: Login any provided credentials and navigate to homepage
-    const activeUser: UserAccount = allUsers[0] || {
-      id: `user_${Date.now()}`,
-      name: usernameInput.trim() || 'User',
-      email: uInput.includes('@') ? uInput : `${uInput}@lucky10.com`,
-      username: uInput,
-      password: pInput,
-      balance: 1000,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
+    addToast('Invalid username or password. Please sign up if you don\'t have an account.', 'error');
+    return false;
+  };
 
-    setCurrentUser(activeUser);
-    setCurrentView('GAME_DASHBOARD');
-    return true;
+  const loginAdmin = (username: string, password?: string): boolean => {
+    if ((username.trim() === 'admin' || username.trim() === 'admin@lucky10.com') && password?.trim() === 'admin123') {
+      setIsAdminLoggedIn(true);
+      setCurrentUser(null);
+      addToast('Admin authenticated successfully', 'success');
+      setCurrentView('ADMIN_DRAWER');
+      return true;
+    }
+    addToast('Invalid admin credentials. Use admin / admin123', 'error');
+    return false;
   };
 
   const logout = () => {
     setCurrentUser(null);
+    setIsAdminLoggedIn(false);
     setBetSlip([]);
-    setCurrentView('USER_SIGN_IN');
+    addToast('Logged out successfully', 'info');
+    if (currentView.startsWith('ADMIN_')) {
+      setCurrentView('ADMIN_SIGN_IN');
+    } else {
+      setCurrentView('USER_SIGN_IN');
+    }
   };
 
   const addToBetSlip = (item: Omit<BetSlipItem, 'id'>) => {
@@ -509,6 +477,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         currentView,
         setCurrentView,
         currentUser,
+        isAdminLoggedIn,
         registeredUsers,
         activeGameSlot,
         setActiveGameSlot,
@@ -530,6 +499,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteUser,
         clearAllUsers,
         loginUser,
+        loginAdmin,
         logout,
         toasts,
         addToast,
