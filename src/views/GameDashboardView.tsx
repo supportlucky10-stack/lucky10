@@ -2,6 +2,105 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Menu, CheckSquare } from 'lucide-react';
 
+interface SlotTheme {
+  name: string;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  cardBorder: string;
+  cardShadow: string;
+  buttonGradient: string;
+  buttonText: string;
+  buttonBorder: string;
+  activeTabBg: string;
+  activeTabText: string;
+  activeTabBorder: string;
+  inactiveTabText: string;
+  inactiveTabBorder: string;
+  menuIconText: string;
+  saveBtnBg: string;
+  saveBtnText: string;
+}
+
+const slotThemes: Record<string, SlotTheme> = {
+  '1 PM Game': {
+    name: '1 PM Game',
+    badgeBg: 'bg-gradient-to-r from-amber-500 to-amber-600',
+    badgeText: 'text-black',
+    badgeBorder: 'border-amber-400',
+    cardBorder: 'border-amber-500',
+    cardShadow: 'shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+    buttonGradient: 'bg-gradient-to-b from-amber-300 via-amber-500 to-amber-700',
+    buttonText: 'text-black',
+    buttonBorder: 'border-amber-300/40',
+    activeTabBg: 'bg-gradient-to-r from-amber-400 to-amber-500',
+    activeTabText: 'text-black',
+    activeTabBorder: 'border-amber-400',
+    inactiveTabText: 'text-amber-400',
+    inactiveTabBorder: 'border-amber-500/40 hover:border-amber-400',
+    menuIconText: 'text-amber-400',
+    saveBtnBg: 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600',
+    saveBtnText: 'text-black',
+  },
+  '3 PM Game': {
+    name: '3 PM Game',
+    badgeBg: 'bg-gold-metallic',
+    badgeText: 'text-black',
+    badgeBorder: 'border-gold/90',
+    cardBorder: 'border-[#b88928]',
+    cardShadow: 'shadow-[0_0_15px_rgba(184,137,40,0.2)]',
+    buttonGradient: 'bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19]',
+    buttonText: 'text-black',
+    buttonBorder: 'border-[#f5e396]/40',
+    activeTabBg: 'bg-gold-metallic',
+    activeTabText: 'text-black',
+    activeTabBorder: 'border-gold',
+    inactiveTabText: 'text-gold',
+    inactiveTabBorder: 'border-gold/40 hover:border-gold',
+    menuIconText: 'text-gold',
+    saveBtnBg: 'bg-gold-metallic',
+    saveBtnText: 'text-black',
+  },
+  '6 PM Game': {
+    name: '6 PM Game',
+    badgeBg: 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600',
+    badgeText: 'text-white',
+    badgeBorder: 'border-fuchsia-400',
+    cardBorder: 'border-fuchsia-500',
+    cardShadow: 'shadow-[0_0_15px_rgba(217,70,239,0.3)]',
+    buttonGradient: 'bg-gradient-to-b from-fuchsia-400 via-pink-600 to-rose-700',
+    buttonText: 'text-white',
+    buttonBorder: 'border-fuchsia-300/40',
+    activeTabBg: 'bg-gradient-to-r from-fuchsia-500 to-pink-600',
+    activeTabText: 'text-white',
+    activeTabBorder: 'border-fuchsia-400',
+    inactiveTabText: 'text-fuchsia-400',
+    inactiveTabBorder: 'border-fuchsia-500/40 hover:border-fuchsia-400',
+    menuIconText: 'text-fuchsia-400',
+    saveBtnBg: 'bg-gradient-to-r from-fuchsia-500 via-pink-600 to-rose-600',
+    saveBtnText: 'text-white',
+  },
+  '8 PM Game': {
+    name: '8 PM Game',
+    badgeBg: 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600',
+    badgeText: 'text-black',
+    badgeBorder: 'border-teal-400',
+    cardBorder: 'border-teal-500',
+    cardShadow: 'shadow-[0_0_15px_rgba(20,184,166,0.3)]',
+    buttonGradient: 'bg-gradient-to-b from-emerald-300 via-teal-500 to-cyan-700',
+    buttonText: 'text-black',
+    buttonBorder: 'border-teal-300/40',
+    activeTabBg: 'bg-gradient-to-r from-emerald-400 to-teal-500',
+    activeTabText: 'text-black',
+    activeTabBorder: 'border-teal-400',
+    inactiveTabText: 'text-teal-400',
+    inactiveTabBorder: 'border-teal-500/40 hover:border-teal-400',
+    menuIconText: 'text-teal-400',
+    saveBtnBg: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600',
+    saveBtnText: 'text-black',
+  },
+};
+
 export const GameDashboardView: React.FC = () => {
   const {
     activeGameSlot,
@@ -12,6 +111,8 @@ export const GameDashboardView: React.FC = () => {
     setCurrentView,
     addToast,
   } = useApp();
+
+  const theme = slotThemes[activeGameSlot] || slotThemes['3 PM Game'];
 
   // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 3
   const [activeMode, setActiveMode] = useState<1 | 2 | 3>(3);
@@ -142,7 +243,7 @@ export const GameDashboardView: React.FC = () => {
           {/* Left: Drawer Menu Button */}
           <button
             onClick={() => setCurrentView('USER_DRAWER')}
-            className="p-1.5 text-gold hover:opacity-80 transition-opacity bg-neutral-950 rounded-lg border border-neutral-800 shadow cursor-pointer"
+            className={`p-1.5 ${theme.menuIconText} hover:opacity-80 transition-opacity bg-neutral-950 rounded-lg border border-neutral-800 shadow cursor-pointer`}
             title="Open Menu"
           >
             <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
@@ -151,16 +252,16 @@ export const GameDashboardView: React.FC = () => {
           {/* Right: SAVE Button */}
           <button
             onClick={saveTicket}
-            className="px-5 py-1.5 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer"
+            className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer`}
           >
             SAVE
           </button>
         </div>
 
-        {/* Sub-Header Ribbon: 1 PM GAME Badge directly below drawer header line */}
+        {/* Sub-Header Ribbon: Dynamic Slot Color Badge */}
         <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm">
-          <div className="px-3.5 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold/90 shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none">
-            <span className="animate-text-gold-glow inline-block">
+          <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none transition-all`}>
+            <span className="inline-block">
               {activeGameSlot}
             </span>
           </div>
@@ -169,8 +270,8 @@ export const GameDashboardView: React.FC = () => {
         {/* Main Layout Flow */}
         <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto space-y-3 sm:space-y-4">
           
-          {/* TABBED GAME ENTRY CARD (Upper Controls Box) */}
-          <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)] space-y-3.5">
+          {/* TABBED GAME ENTRY CARD (Upper Controls Box with Dynamic Slot Border & Glow) */}
+          <div className={`relative border-2 ${theme.cardBorder} bg-black rounded-2xl p-3.5 sm:p-4 ${theme.cardShadow} space-y-3.5 transition-all`}>
             
             {/* Mode Control Ribbon: Tabs (1,2,3) + Customer Name Box + Checkboxes */}
             <div className="bg-neutral-950 p-2 sm:p-2.5 rounded-xl border border-neutral-800 flex flex-wrap items-center gap-2">
@@ -189,8 +290,8 @@ export const GameDashboardView: React.FC = () => {
                     }}
                     className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
                       activeMode === m
-                        ? 'bg-gold-metallic text-black border border-gold shadow-md font-black'
-                        : 'bg-black text-gold border border-gold/40 hover:border-gold font-bold'
+                        ? `${theme.activeTabBg} ${theme.activeTabText} border ${theme.activeTabBorder} shadow-md font-black`
+                        : `bg-black ${theme.inactiveTabText} border ${theme.inactiveTabBorder} font-bold`
                     }`}
                   >
                     {m}
@@ -211,7 +312,7 @@ export const GameDashboardView: React.FC = () => {
 
               {/* Checkboxes: R & Set */}
               <div className="flex items-center gap-2 pl-1">
-                <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
+                <label className={`flex items-center gap-1 text-xs font-bold ${theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
                     checked={isReverse}
@@ -222,7 +323,7 @@ export const GameDashboardView: React.FC = () => {
                 </label>
 
                 {activeMode === 3 && (
-                  <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
+                  <label className={`flex items-center gap-1 text-xs font-bold ${theme.inactiveTabText} cursor-pointer select-none`}>
                     <input
                       type="checkbox"
                       checked={isSet}
@@ -235,26 +336,26 @@ export const GameDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Dynamic Inputs Row (Number, Count, Box Count) */}
+            {/* Dynamic Inputs Row (Number, Count, Box Count) - Equal Size & Height */}
             <div className="grid grid-cols-12 gap-2 sm:gap-3">
-              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-8'}>
+              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                 <input
                   type="text"
                   maxLength={activeMode}
                   placeholder="Number"
                   value={inputNum}
                   onChange={(e) => setInputNum(e.target.value)}
-                  className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                 />
               </div>
 
-              <div className="col-span-4">
+              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                 <input
                   type="number"
                   placeholder="Count"
                   value={inputCount}
                   onChange={(e) => setInputCount(e.target.value)}
-                  className="w-full px-3 py-2 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                 />
               </div>
 
@@ -265,13 +366,13 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Box Count"
                     value={boxCount}
                     onChange={(e) => setBoxCount(e.target.value)}
-                    className="w-full px-2 py-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
               )}
             </div>
 
-            {/* Action Buttons Row matching selected Mode */}
+            {/* Action Buttons Row matching selected Mode - Dynamic Slot Colors */}
             <div>
               {activeMode === 1 && (
                 <div className="grid grid-cols-4 gap-2">
@@ -280,7 +381,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
                     >
                       {pos}
                     </button>
@@ -295,7 +396,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
                     >
                       {pair}
                     </button>
@@ -308,21 +409,21 @@ export const GameDashboardView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOTH')}
-                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
                   >
                     BOTH
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOX')}
-                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
                   >
                     BOX
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('SUPER')}
-                    className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
                   >
                     SUPER
                   </button>

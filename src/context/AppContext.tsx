@@ -185,7 +185,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const saved = localStorage.getItem('lucky10_registered_users');
     return saved ? JSON.parse(saved) : initialUsers;
   });
-  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
