@@ -2,34 +2,31 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.routers import auth, customer, admin
 
-# Create DB tables at import time (safe for serverless)
+# ── DB Init & Seed at import time (works in serverless where lifespan may not fire) ──
 try:
     Base.metadata.create_all(bind=engine)
+    print("[Lucky10] DB tables ensured")
 except Exception as e:
     print(f"[Lucky10] DB init warning: {e}")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Seed default admin, demo user, games, and results on startup
-    try:
-        from app.initial_seed import seed_db
-        seed_db()
-    except Exception as e:
-        print(f"[Lucky10] Seed warning: {e}")
-    yield
+try:
+    from app.initial_seed import seed_db
+    seed_db()
+    print("[Lucky10] Seed complete")
+except Exception as e:
+    print(f"[Lucky10] Seed warning: {e}")
 
+# ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    description="Full-stack FastAPI backend for Lucky10 Customer and Admin domains",
+    description="Full-stack FastAPI backend for Lucky10",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 # Configure CORS
@@ -49,8 +46,8 @@ app.include_router(admin.router)
 
 @app.get("/api/health")
 def health():
-    return {"message": "Lucky10 FastAPI Backend Operating Normally", "status": "active"}
+    return {"message": "Lucky10 Backend OK", "status": "active"}
 
 @app.get("/")
 def root():
-    return {"message": "Lucky10 FastAPI Backend Operating Normally", "status": "active"}
+    return {"message": "Lucky10 Backend OK", "status": "active"}
