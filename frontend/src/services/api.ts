@@ -1,4 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const isProd = import.meta.env.PROD;
+const defaultBaseUrl = isProd ? '' : 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : defaultBaseUrl;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('lucky10_jwt_token');
