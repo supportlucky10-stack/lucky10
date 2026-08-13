@@ -13,6 +13,34 @@ export const TodaysResultView: React.FC = () => {
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
+  // Game slot specific color themes
+  const slotThemeStyles: Record<GameSlot, { pillActive: string; cardBorder: string; badgeActive: string; textActive: string }> = {
+    '1 PM Game': {
+      pillActive: 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_12px_rgba(59,130,246,0.5)]',
+      cardBorder: 'border-2 border-sky-400/90 shadow-[0_0_15px_rgba(59,130,246,0.25)]',
+      badgeActive: 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-sky-300',
+      textActive: 'text-sky-300',
+    },
+    '3 PM Game': {
+      pillActive: 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_12px_rgba(184,137,40,0.5)]',
+      cardBorder: 'border-2 border-gold/90 shadow-[0_0_15px_rgba(184,137,40,0.25)]',
+      badgeActive: 'bg-gold-metallic text-black border-black',
+      textActive: 'text-gold',
+    },
+    '6 PM Game': {
+      pillActive: 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_12px_rgba(217,70,239,0.5)]',
+      cardBorder: 'border-2 border-fuchsia-400/90 shadow-[0_0_15px_rgba(217,70,239,0.25)]',
+      badgeActive: 'bg-gradient-to-r from-fuchsia-500 to-rose-600 text-white border-fuchsia-300',
+      textActive: 'text-fuchsia-300',
+    },
+    '8 PM Game': {
+      pillActive: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600 text-black border-2 border-teal-300 shadow-[0_0_12px_rgba(20,184,166,0.5)]',
+      cardBorder: 'border-2 border-teal-400/90 shadow-[0_0_15px_rgba(20,184,166,0.25)]',
+      badgeActive: 'bg-gradient-to-r from-emerald-400 to-teal-500 text-black border-black',
+      textActive: 'text-teal-300',
+    },
+  };
+
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string) => {
     const todayStr = new Date().toISOString().split('T')[0];
     if (dateStr === todayStr && gameResults[slot]) {
@@ -52,6 +80,7 @@ export const TodaysResultView: React.FC = () => {
     : selectedDate;
 
   const currentResult = getResultForSlotAndDate(activeGameSlot, activeDate);
+  const currentTheme = slotThemeStyles[activeGameSlot];
 
   const handleShareToWhatsApp = () => {
     const formattedDate = activeTab === 'TODAY'
@@ -77,7 +106,7 @@ export const TodaysResultView: React.FC = () => {
     }
     const formattedCompliments = complimentRows.join('\n');
 
-    const text = `🏆 *LUCKY 10 - RESULT REPORT* 🏆\n📅 *Date:* ${formattedDate}\n⏰ *Game Slot:* ${activeGameSlot}\n\n🥇 *1st Prize:* ${currentResult.prize1 || '---'}\n🥈 *2nd Prize:* ${currentResult.prize2 || '---'}\n🥉 *3rd Prize:* ${currentResult.prize3 || '---'}\n🏅 *4th Prize:* ${currentResult.prize4 || '---'}\n🏅 *5th Prize:* ${currentResult.prize5 || '408'}\n\n🎁 *COMPLIMENTS (30 NUMBERS):*\n${formattedCompliments}\n\n✨ Check live results on Lucky 10 App!`;
+    const text = `🏆 *LUCKY 10 - RESULT REPORT* 🏆\n📅 *Date:* ${formattedDate}\n⏰ *Game Slot:* ${activeGameSlot}\n\n1: ${currentResult.prize1 || '---'}\n2: ${currentResult.prize2 || '---'}\n3: ${currentResult.prize3 || '---'}\n4: ${currentResult.prize4 || '---'}\n5: ${currentResult.prize5 || '408'}\n\n🎁 *COMPLIMENTS (30 NUMBERS):*\n${formattedCompliments}\n\n✨ Check live results on Lucky 10 App!`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
@@ -149,10 +178,11 @@ export const TodaysResultView: React.FC = () => {
           </div>
         )}
 
-        {/* Slot Switcher Pills (1 PM, 3 PM, 6 PM, 8 PM) - Single View Grid */}
+        {/* Slot Switcher Pills with Dynamic Game Colors (1 PM, 3 PM, 6 PM, 8 PM) */}
         <div className="grid grid-cols-4 gap-1.5 w-full">
           {games.map((slot) => {
             const isSelected = slot === activeGameSlot;
+            const theme = slotThemeStyles[slot];
             return (
               <button
                 key={slot}
@@ -160,10 +190,10 @@ export const TodaysResultView: React.FC = () => {
                   setActiveGameSlot(slot);
                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }}
-                className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all ${
+                className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all cursor-pointer ${
                   isSelected
-                    ? 'bg-gold-banner text-black border-gold shadow-md'
-                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-gold/40'
+                    ? theme.pillActive
+                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
                 }`}
               >
                 <span className="truncate block">{slot}</span>
@@ -172,49 +202,40 @@ export const TodaysResultView: React.FC = () => {
           })}
         </div>
 
-        {/* 5 Winning Number Cards (1st Prize Featured Large, 2nd-5th Smaller Below) */}
+        {/* 5 Winning Number Cards (Text labels "1st Prize", "2nd Prize" etc. removed) */}
         <div className="space-y-2 sm:space-y-2.5">
           {[
-            { id: 1, label: '1st Prize', val: currentResult.prize1, delay: '0ms', isFirst: true },
-            { id: 2, label: '2nd Prize', val: currentResult.prize2, delay: '120ms', isFirst: false },
-            { id: 3, label: '3rd Prize', val: currentResult.prize3, delay: '240ms', isFirst: false },
-            { id: 4, label: '4th Prize', val: currentResult.prize4, delay: '360ms', isFirst: false },
-            { id: 5, label: '5th Prize', val: currentResult.prize5 || '408', delay: '480ms', isFirst: false },
+            { id: 1, val: currentResult.prize1, delay: '0ms', isFirst: true },
+            { id: 2, val: currentResult.prize2, delay: '120ms', isFirst: false },
+            { id: 3, val: currentResult.prize3, delay: '240ms', isFirst: false },
+            { id: 4, val: currentResult.prize4, delay: '360ms', isFirst: false },
+            { id: 5, val: currentResult.prize5 || '408', delay: '480ms', isFirst: false },
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
               style={{ animationDelay: item.delay }}
               className={`flex items-center justify-start rounded-2xl animate-drop-in transition-all ${
                 item.isFirst
-                  ? 'p-3 sm:p-3.5 bg-neutral-950 border-2 border-gold/80 shadow'
-                  : 'p-2.5 sm:p-3 bg-neutral-950 border border-neutral-800 shadow'
+                  ? `p-3.5 sm:p-4 bg-neutral-950 ${currentTheme.cardBorder}`
+                  : 'p-3 sm:p-3.5 bg-neutral-950 border border-neutral-800 shadow'
               }`}
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 w-full">
                 <div
                   className={`flex items-center justify-center rounded-xl border shrink-0 font-black aspect-square ${
                     item.isFirst
-                      ? 'w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] max-w-[36px] max-h-[36px] sm:min-w-[40px] sm:min-h-[40px] bg-gold-metallic text-black text-sm sm:text-base border-black'
-                      : 'w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] sm:min-w-[32px] sm:min-h-[32px] bg-white text-black text-xs sm:text-sm border-black'
+                      ? `w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] ${currentTheme.badgeActive}`
+                      : 'w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] bg-white text-black text-xs sm:text-sm border-black'
                   }`}
                 >
                   {item.id}
                 </div>
-                <div>
-                  <span
-                    className={`font-black uppercase tracking-wider block ${
-                      item.isFirst
-                        ? 'text-xs text-gold'
-                        : 'text-[10px] sm:text-xs text-neutral-400'
-                    }`}
-                  >
-                    {item.label}
-                  </span>
+                <div className="flex items-center flex-1">
                   <span
                     className={`font-black font-mono tracking-widest block ${
                       item.isFirst
-                        ? 'text-gold text-lg sm:text-xl font-extrabold mt-0.5'
-                        : 'text-neutral-100 text-sm sm:text-base font-bold mt-0.5'
+                        ? `${currentTheme.textActive} text-xl sm:text-2xl font-extrabold`
+                        : 'text-neutral-100 text-base sm:text-lg font-bold'
                     }`}
                   >
                     {item.val || '---'}

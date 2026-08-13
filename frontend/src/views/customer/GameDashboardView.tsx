@@ -117,117 +117,143 @@ export const GameDashboardView: React.FC = () => {
   // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 3
   const [activeMode, setActiveMode] = useState<1 | 2 | 3>(3);
   const [customerName, setCustomerName] = useState('');
-  const [isReverse, setIsReverse] = useState(false);
+  const [isReverse, setIsReverse] = useState(false); // Checkbox 'R' (Range Mode)
   const [isSet, setIsSet] = useState(false);
 
-  // Common Form State
+  // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');
   const [boxCount, setBoxCount] = useState('');
 
+  // Range Mode Inputs (Start, End, 1 / Step)
+  const [startRange, setStartRange] = useState('');
+  const [endRange, setEndRange] = useState('');
+  const [stepVal, setStepVal] = useState('1');
+
   const unitPrice = 10; // ₹10 per count
+
+  // Helper to generate range numbers
+  const getRangeNumbers = (padLength: number): string[] => {
+    const s = parseInt(startRange);
+    const e = parseInt(endRange);
+    const step = parseInt(stepVal) || 1;
+    if (isNaN(s) || isNaN(e) || s > e) return [];
+    const list: string[] = [];
+    for (let i = s; i <= e; i += step) {
+      list.push(String(i).padStart(padLength, '0'));
+    }
+    return list;
+  };
 
   // Mode 1 Handlers (A, B, C, ALL)
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
-    if (!inputNum || inputNum.length !== 1 || isNaN(Number(inputNum))) {
-      addToast('Please enter a valid 1-digit number (0-9)', 'error');
-      return;
-    }
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 1 || cnt > 50) {
       addToast('Please enter valid count (1-50)', 'error');
+      return;
+    }
+
+    const targetNums = isReverse ? getRangeNumbers(1) : [inputNum];
+    if (targetNums.length === 0 || targetNums.some((n) => n.length !== 1 || isNaN(Number(n)))) {
+      addToast('Please enter a valid 1-digit number or range', 'error');
       return;
     }
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
-    positions.forEach((p) => {
-      addToBetSlip({
-        number: `${p}:${inputNum}`,
-        count: cnt,
-        type: 'Pair',
-        unitPrice,
-        totalAmount: cnt * unitPrice,
-      });
-    });
-
-    addToast(`Added Mode 1 (${pos}) bet for ${inputNum}`, 'success');
-    setInputNum('');
-    setInputCount('');
-  };
-
-  // Mode 2 Handlers (AB, AC, BC, ALL)
-  const handleMode2Add = (pair: 'AB' | 'AC' | 'BC' | 'ALL') => {
-    if (!inputNum || inputNum.length !== 2 || isNaN(Number(inputNum))) {
-      addToast('Please enter a valid 2-digit number (00-99)', 'error');
-      return;
-    }
-    const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1 || cnt > 50) {
-      addToast('Please enter valid count (1-50)', 'error');
-      return;
-    }
-
-    const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
-    pairs.forEach((pr) => {
-      addToBetSlip({
-        number: `${pr}:${inputNum}`,
-        count: cnt,
-        type: 'Pair',
-        unitPrice,
-        totalAmount: cnt * unitPrice,
-      });
-      if (isReverse) {
-        const rev = inputNum.split('').reverse().join('');
+    targetNums.forEach((n) => {
+      positions.forEach((p) => {
         addToBetSlip({
-          number: `${pr}:${rev}`,
+          number: `${p}:${n}`,
           count: cnt,
           type: 'Pair',
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
-      }
+      });
     });
 
-    addToast(`Added Mode 2 (${pair}) bet for ${inputNum}`, 'success');
+    addToast(`Added Mode 1 (${pos}) bets for ${targetNums.length} item(s)`, 'success');
     setInputNum('');
+    setStartRange('');
+    setEndRange('');
     setInputCount('');
   };
 
-  // Mode 3 Handlers (BOTH, BOX, SUPER)
-  const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
-    if (!inputNum || inputNum.length !== 3 || isNaN(Number(inputNum))) {
-      addToast('Please enter a valid 3-digit number (ABC)', 'error');
-      return;
-    }
+  // Mode 2 Handlers (AB, AC, BC, ALL)
+  const handleMode2Add = (pair: 'AB' | 'AC' | 'BC' | 'ALL') => {
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 1 || cnt > 50) {
       addToast('Please enter valid count (1-50)', 'error');
       return;
     }
 
-    if (modeType === 'SUPER' || modeType === 'BOTH') {
-      addToBetSlip({
-        number: inputNum,
-        count: cnt,
-        type: 'Direct',
-        unitPrice,
-        totalAmount: cnt * unitPrice,
-      });
+    const targetNums = isReverse ? getRangeNumbers(2) : [inputNum];
+    if (targetNums.length === 0 || targetNums.some((n) => n.length !== 2 || isNaN(Number(n)))) {
+      addToast('Please enter a valid 2-digit number or range', 'error');
+      return;
     }
 
-    if (modeType === 'BOX' || modeType === 'BOTH') {
-      const bCnt = parseInt(boxCount) || cnt;
-      addToBetSlip({
-        number: inputNum,
-        count: bCnt,
-        type: 'Shuffle',
-        unitPrice,
-        totalAmount: bCnt * unitPrice,
+    const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
+    targetNums.forEach((n) => {
+      pairs.forEach((pr) => {
+        addToBetSlip({
+          number: `${pr}:${n}`,
+          count: cnt,
+          type: 'Pair',
+          unitPrice,
+          totalAmount: cnt * unitPrice,
+        });
       });
-    }
+    });
 
-    addToast(`Added Mode 3 (${modeType}) bet for ${inputNum}`, 'success');
+    addToast(`Added Mode 2 (${pair}) bets for ${targetNums.length} item(s)`, 'success');
     setInputNum('');
+    setStartRange('');
+    setEndRange('');
+    setInputCount('');
+  };
+
+  // Mode 3 Handlers (BOTH, BOX, SUPER)
+  const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
+    const cnt = parseInt(inputCount);
+    if (!cnt || cnt < 1 || cnt > 50) {
+      addToast('Please enter valid count (1-50)', 'error');
+      return;
+    }
+
+    const targetNums = isReverse ? getRangeNumbers(3) : [inputNum];
+    if (targetNums.length === 0 || targetNums.some((n) => n.length !== 3 || isNaN(Number(n)))) {
+      addToast('Please enter a valid 3-digit number or range (000-999)', 'error');
+      return;
+    }
+
+    targetNums.forEach((n) => {
+      if (modeType === 'SUPER' || modeType === 'BOTH') {
+        addToBetSlip({
+          number: n,
+          count: cnt,
+          type: 'Direct',
+          unitPrice,
+          totalAmount: cnt * unitPrice,
+        });
+      }
+
+      if (modeType === 'BOX' || modeType === 'BOTH') {
+        const bCnt = parseInt(boxCount) || cnt;
+        addToBetSlip({
+          number: n,
+          count: bCnt,
+          type: 'Shuffle',
+          unitPrice,
+          totalAmount: bCnt * unitPrice,
+        });
+      }
+    });
+
+    addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
+    setInputNum('');
+    setStartRange('');
+    setEndRange('');
     setInputCount('');
     setBoxCount('');
   };
@@ -285,6 +311,8 @@ export const GameDashboardView: React.FC = () => {
                     onClick={() => {
                       setActiveMode(m as 1 | 2 | 3);
                       setInputNum('');
+                      setStartRange('');
+                      setEndRange('');
                       setInputCount('');
                       setBoxCount('');
                     }}
@@ -300,35 +328,35 @@ export const GameDashboardView: React.FC = () => {
               </div>
 
               {/* Customer Name Box */}
-              <div className="flex-1 min-w-[100px]">
+              <div className="flex-1 min-w-[90px]">
                 <input
                   type="text"
-                  placeholder="Customer Name"
+                  placeholder="Customer"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
                   className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                 />
               </div>
 
-              {/* Checkboxes: R & Set */}
+              {/* Checkboxes: R (Range Mode) & Set */}
               <div className="flex items-center gap-2 pl-1">
-                <label className={`flex items-center gap-1 text-xs font-bold ${theme.inactiveTabText} cursor-pointer select-none`}>
+                <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
                     checked={isReverse}
                     onChange={(e) => setIsReverse(e.target.checked)}
-                    className="w-3.5 h-3.5 accent-amber-500 rounded"
+                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                   />
                   <span>R</span>
                 </label>
 
                 {activeMode === 3 && (
-                  <label className={`flex items-center gap-1 text-xs font-bold ${theme.inactiveTabText} cursor-pointer select-none`}>
+                  <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                     <input
                       type="checkbox"
                       checked={isSet}
                       onChange={(e) => setIsSet(e.target.checked)}
-                      className="w-3.5 h-3.5 accent-amber-500 rounded"
+                      className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                     />
                     <span>Set</span>
                   </label>
@@ -336,41 +364,99 @@ export const GameDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Dynamic Inputs Row (Number, Count, Box Count) - Equal Size & Height */}
-            <div className="grid grid-cols-12 gap-2 sm:gap-3">
-              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
-                <input
-                  type="text"
-                  maxLength={activeMode}
-                  placeholder="Number"
-                  value={inputNum}
-                  onChange={(e) => setInputNum(e.target.value)}
-                  className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
-                />
-              </div>
+            {/* Dynamic Inputs Row (Normal vs Range Mode [R]) */}
+            {isReverse ? (
+              /* Range Mode (5 inputs: Start, End, 1, Count, Box Count) matching Photo 2 */
+              <div className="grid grid-cols-5 gap-1 sm:gap-2">
+                <div>
+                  <input
+                    type="text"
+                    maxLength={activeMode}
+                    placeholder="Start"
+                    value={startRange}
+                    onChange={(e) => setStartRange(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
 
-              <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
-                <input
-                  type="number"
-                  placeholder="Count"
-                  value={inputCount}
-                  onChange={(e) => setInputCount(e.target.value)}
-                  className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
-                />
-              </div>
+                <div>
+                  <input
+                    type="text"
+                    maxLength={activeMode}
+                    placeholder="End"
+                    value={endRange}
+                    onChange={(e) => setEndRange(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
 
-              {activeMode === 3 && (
-                <div className="col-span-4">
+                <div>
+                  <input
+                    type="number"
+                    placeholder="1"
+                    value={stepVal}
+                    onChange={(e) => setStepVal(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="number"
+                    placeholder="Count"
+                    value={inputCount}
+                    onChange={(e) => setInputCount(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <div>
                   <input
                     type="number"
                     placeholder="Box Count"
                     value={boxCount}
                     onChange={(e) => setBoxCount(e.target.value)}
-                    className="w-full h-10 sm:h-11 px-2.5 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-400 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              /* Normal Mode (3 inputs: NO., Count, Box Count) matching Photo 1 */
+              <div className="grid grid-cols-12 gap-2 sm:gap-3">
+                <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
+                  <input
+                    type="text"
+                    maxLength={activeMode}
+                    placeholder="NO."
+                    value={inputNum}
+                    onChange={(e) => setInputNum(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
+                  <input
+                    type="number"
+                    placeholder="Count"
+                    value={inputCount}
+                    onChange={(e) => setInputCount(e.target.value)}
+                    className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
+
+                {activeMode === 3 && (
+                  <div className="col-span-4">
+                    <input
+                      type="number"
+                      placeholder="Box Count"
+                      value={boxCount}
+                      onChange={(e) => setBoxCount(e.target.value)}
+                      className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons Row matching selected Mode - Dynamic Slot Colors */}
             <div>

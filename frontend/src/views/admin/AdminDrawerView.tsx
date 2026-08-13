@@ -5,12 +5,6 @@ import { useApp } from '../../context/AppContext';
 import a1Icon from '../../assets/admin logo/a1.png';
 import a2Icon from '../../assets/admin logo/a2.png';
 import a3Icon from '../../assets/admin logo/a3.png';
-import a4Icon from '../../assets/admin logo/a4.png';
-import a5Icon from '../../assets/admin logo/a5.png';
-import a6Icon from '../../assets/admin logo/a6.png';
-
-// Import exact Lucky 10 Black Logo
-import lucky10BlackLogo from '../../assets/lucky10-black-logo.png';
 
 export const AdminDrawerView: React.FC = () => {
   const { logout, setCurrentView } = useApp();
@@ -19,29 +13,16 @@ export const AdminDrawerView: React.FC = () => {
     { label: 'Users List', icon: a1Icon, action: () => setCurrentView('ADMIN_USERS_LIST') },
     { label: 'Result Management', icon: a2Icon, action: () => setCurrentView('ADMIN_RESULT_MANAGEMENT') },
     { label: 'Reports', icon: a3Icon, action: () => setCurrentView('ADMIN_REPORTS') },
-    { label: 'Payouts', icon: a4Icon, action: () => setCurrentView('ADMIN_PAYOUTS') },
-    { label: 'Transaction Logs', icon: a5Icon, action: () => setCurrentView('ADMIN_TRANSACTION_LOGS') },
-    { label: 'Issues', icon: a6Icon, action: () => setCurrentView('ADMIN_ISSUES') },
   ];
 
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none">
       <div>
-        {/* Top Gold Banner Header */}
-        <div className="w-full bg-gold-banner px-5 py-3 sm:py-3.5 flex items-center justify-between shadow-md border-b border-[#aa771c]">
-          <h1 className="text-black font-black italic text-base sm:text-lg tracking-wide">
-            Hello Admin
-          </h1>
-          <div className="flex items-center shrink-0">
-            <img
-              src={lucky10BlackLogo}
-              alt="Lucky 10 Logo"
-              className="w-12 h-12 sm:w-16 sm:h-16 object-contain filter drop-shadow"
-            />
-          </div>
+        {/* Top Gold Banner Header (Hello Admin and Logo removed as requested) */}
+        <div className="w-full bg-gold-banner px-5 py-4 sm:py-5 flex items-center justify-between shadow-md border-b border-[#aa771c] min-h-[48px]">
         </div>
 
-        {/* Menu Items List */}
+        {/* Menu Items List (Payouts, Transaction Logs, Issues removed as requested) */}
         <div className="pt-2 divide-y divide-neutral-800">
           {menuItems.map((item, index) => (
             <button
@@ -59,7 +40,7 @@ export const AdminDrawerView: React.FC = () => {
           ))}
         </div>
 
-        {/* Logout Button Positioned Suitable and Moved Up */}
+        {/* Logout Button */}
         <div className="pt-6 sm:pt-8 px-6 pb-10">
           <button
             onClick={logout}
@@ -72,5 +53,3 @@ export const AdminDrawerView: React.FC = () => {
     </div>
   );
 };
-
-

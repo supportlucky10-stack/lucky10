@@ -1,5 +1,4 @@
 import React from 'react';
-import { Lucky10Logo } from './Lucky10Logo';
 import { ArrowLeft } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -26,7 +25,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
 
   return (
     <div className="relative w-full bg-gold-banner px-3.5 sm:px-6 py-2.5 sm:py-3.5 min-h-[56px] sm:min-h-[70px] flex items-center justify-between shadow-md select-none border-b border-[#aa771c]">
-      <div className="flex items-center gap-2 sm:gap-3 max-w-[75%]">
+      <div className="flex items-center gap-2 sm:gap-3 max-w-full">
         {showBack && (
           <button
             onClick={handleBack}
@@ -39,10 +38,6 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
         <h1 className="text-black font-black text-sm sm:text-xl tracking-tight leading-tight truncate uppercase">
           {title}
         </h1>
-      </div>
-
-      <div className="flex items-center shrink-0">
-        <Lucky10Logo size="sm" showSubtitle={false} variant="black" />
       </div>
     </div>
   );
