@@ -10,7 +10,8 @@ export type ViewType =
   | 'TODAYS_RESULT'
   | 'PREVIOUS_WINNING_NUMBERS'
   | 'UPDATE_BANK_DETAILS'
-  | 'MY_PLAY_REPORT';
+  | 'MY_PLAY_REPORT'
+  | 'EDIT_DELETE_BILL';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 
@@ -62,6 +63,7 @@ export interface GameResult {
   prize2: string;
   prize3: string;
   prize4: string;
+  prize5?: string;
   compliments: string[][];
   publishedAt: string;
 }

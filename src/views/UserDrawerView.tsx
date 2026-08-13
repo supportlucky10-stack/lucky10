@@ -2,12 +2,15 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 
 export const UserDrawerView: React.FC = () => {
-  const { logout, setCurrentView } = useApp();
+  const { logout, setCurrentView, setActiveGameSlot } = useApp();
 
   const menuItems = [
     {
       label: 'Home',
-      action: () => setCurrentView('GAME_DASHBOARD'),
+      action: () => {
+        setActiveGameSlot('3 PM Game');
+        setCurrentView('GAME_DASHBOARD');
+      },
     },
     {
       label: 'Change Game',
@@ -23,7 +26,7 @@ export const UserDrawerView: React.FC = () => {
     },
     {
       label: 'Edit, Delete Bill',
-      action: () => setCurrentView('MY_PLAY_REPORT'),
+      action: () => setCurrentView('EDIT_DELETE_BILL'),
     },
     {
       label: 'Result View',

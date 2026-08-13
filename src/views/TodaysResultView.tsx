@@ -13,45 +13,80 @@ export const TodaysResultView: React.FC = () => {
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
-  // Helper to resolve results for any date & slot
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string) => {
     const todayStr = new Date().toISOString().split('T')[0];
     if (dateStr === todayStr && gameResults[slot]) {
       return gameResults[slot];
     }
-    // Deterministic mock data for previous dates based on seed
-    const seed = (slot + dateStr).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const p1 = String((seed * 37) % 900 + 100);
-    const p2 = String((seed * 53) % 900 + 100);
-    const p3 = String((seed * 71) % 900 + 100);
-    const p4 = String((seed * 97) % 900 + 100);
+
+    const p1 = String((dateStr.charCodeAt(8) * 11 + slot.charCodeAt(0) * 7) % 900 + 100);
+    const p2 = String((dateStr.charCodeAt(9) * 13 + slot.charCodeAt(0) * 9) % 900 + 100);
+    const p3 = String((dateStr.charCodeAt(7) * 17 + slot.charCodeAt(1) * 5) % 900 + 100);
+    const p4 = String((dateStr.charCodeAt(6) * 19 + slot.charCodeAt(2) * 3) % 900 + 100);
 
     const compliments = [
-      [String(Number(p1) + 1), String(Number(p1) - 1), String(Number(p1) + 2), String(Number(p1) - 2)],
-      [String(Number(p2) + 1), String(Number(p2) - 1), String(Number(p2) + 2), String(Number(p2) - 2)],
-      [String(Number(p3) + 1), String(Number(p3) - 1), String(Number(p3) + 2), String(Number(p3) - 2)],
-      [String(Number(p4) + 1), String(Number(p4) - 1), String(Number(p4) + 2), String(Number(p4) - 2)],
-      ['529', '631', '412', '908'],
-      ['111', '222', '333', '444'],
+      [String(Number(p1) + 1), String(Number(p1) - 1), String(Number(p1) + 2), String(Number(p1) - 2), String(Number(p1) + 3)],
+      [String(Number(p2) + 1), String(Number(p2) - 1), String(Number(p2) + 2), String(Number(p2) - 2), String(Number(p2) + 3)],
+      [String(Number(p3) + 1), String(Number(p3) - 1), String(Number(p3) + 2), String(Number(p3) - 2), String(Number(p3) + 3)],
+      [String(Number(p4) + 1), String(Number(p4) - 1), String(Number(p4) + 2), String(Number(p4) - 2), String(Number(p4) + 3)],
+      ['529', '631', '412', '908', '216'],
+      ['111', '222', '333', '444', '555'],
     ];
 
     return {
+      id: `res-${dateStr}-${slot}`,
+      date: dateStr,
+      gameSlot: slot,
       prize1: p1,
       prize2: p2,
       prize3: p3,
       prize4: p4,
-      compliments,
+      prize5: '408',
+      compliments: compliments,
+      publishedAt: '1:00 PM',
     };
   };
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const activeDate = activeTab === 'TODAY' ? todayStr : selectedDate;
+  const activeDate = activeTab === 'TODAY'
+    ? new Date().toISOString().split('T')[0]
+    : selectedDate;
+
   const currentResult = getResultForSlotAndDate(activeGameSlot, activeDate);
+
+  const handleShareToWhatsApp = () => {
+    const formattedDate = activeTab === 'TODAY'
+      ? new Date().toLocaleDateString('en-GB')
+      : activeDate.split('-').reverse().join('/');
+
+    const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
+    const fallbackList = [
+      '743', '741', '744', '740', '820',
+      '818', '821', '817', '351', '349',
+      '352', '348', '195', '193', '196',
+      '192', '529', '631', '412', '908',
+      '111', '222', '333', '444', '555',
+      '666', '777', '888', '999', '100'
+    ];
+    const compliments30 = Array.from({ length: 30 }, (_, index) => {
+      return rawList[index] || fallbackList[index];
+    });
+
+    const complimentRows: string[] = [];
+    for (let i = 0; i < 30; i += 5) {
+      complimentRows.push(compliments30.slice(i, i + 5).join('  '));
+    }
+    const formattedCompliments = complimentRows.join('\n');
+
+    const text = `🏆 *LUCKY 10 - RESULT REPORT* 🏆\n📅 *Date:* ${formattedDate}\n⏰ *Game Slot:* ${activeGameSlot}\n\n🥇 *1st Prize:* ${currentResult.prize1 || '---'}\n🥈 *2nd Prize:* ${currentResult.prize2 || '---'}\n🥉 *3rd Prize:* ${currentResult.prize3 || '---'}\n🏅 *4th Prize:* ${currentResult.prize4 || '---'}\n🏅 *5th Prize:* ${currentResult.prize5 || '408'}\n\n🎁 *COMPLIMENTS (30 NUMBERS):*\n${formattedCompliments}\n\n✨ Check live results on Lucky 10 App!`;
+
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
   const slotTitle = activeGameSlot.replace(' Game', '') + ' Result';
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased">
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none">
       {/* Gold Header Banner */}
       <HeaderBanner title={slotTitle} />
 
@@ -93,8 +128,8 @@ export const TodaysResultView: React.FC = () => {
         {/* Date Selector for Previous Tab */}
         {activeTab === 'PREVIOUS' && (
           <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-            <span className="flex items-center gap-2 font-black text-gold uppercase tracking-wider text-xs">
-              <Calendar className="w-4 h-4 text-gold shrink-0" /> Select Date:
+            <span className="font-black text-gold uppercase tracking-wider text-xs">
+              SELECT DATE
             </span>
             <div
               onClick={(e) => {
@@ -137,79 +172,115 @@ export const TodaysResultView: React.FC = () => {
           })}
         </div>
 
-        {/* 4 Winning Number Cards (1st Prize Featured Top, 2nd-4th Below) */}
-        <div className="space-y-2.5 sm:space-y-3">
-          {/* 1st Prize Card - Featured Bigger on Top */}
-          <div
-            key={`prize-1-${activeTab}-${activeDate}-${activeGameSlot}`}
-            style={{ animationDelay: '0ms' }}
-            className="flex items-center justify-start bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 p-3.5 sm:p-4 rounded-2xl border-2 border-gold/70 shadow-[0_0_20px_rgba(237,209,119,0.2)] animate-drop-in hover:border-gold transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gold-metallic text-black font-black text-sm sm:text-base flex items-center justify-center rounded-xl border border-black shrink-0 shadow">
-                1
-              </div>
-              <div>
-                <span className="text-xs text-gold font-black uppercase tracking-wider block">
-                  1st Prize
-                </span>
-                <span className="text-gold font-black text-xl sm:text-2xl font-mono tracking-widest block">
-                  {currentResult.prize1 || '---'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* 2nd, 3rd, 4th Prize Cards - 3-Column Grid Below (Fall down one by one) */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
-            {[
-              { id: 2, label: '2nd Prize', val: currentResult.prize2, delay: '120ms' },
-              { id: 3, label: '3rd Prize', val: currentResult.prize3, delay: '240ms' },
-              { id: 4, label: '4th Prize', val: currentResult.prize4, delay: '360ms' },
-            ].map((item) => (
-              <div
-                key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
-                style={{ animationDelay: item.delay }}
-                className="flex flex-col items-center justify-center bg-neutral-950 p-2.5 sm:p-3 rounded-xl border border-neutral-800 shadow animate-drop-in hover:border-gold/40 transition-colors text-center"
-              >
-                <div className="w-6 h-6 bg-white text-black font-black text-xs flex items-center justify-center rounded-md border border-black shrink-0 shadow mb-1">
+        {/* 5 Winning Number Cards (1st Prize Featured Large, 2nd-5th Smaller Below) */}
+        <div className="space-y-2 sm:space-y-2.5">
+          {[
+            { id: 1, label: '1st Prize', val: currentResult.prize1, delay: '0ms', isFirst: true },
+            { id: 2, label: '2nd Prize', val: currentResult.prize2, delay: '120ms', isFirst: false },
+            { id: 3, label: '3rd Prize', val: currentResult.prize3, delay: '240ms', isFirst: false },
+            { id: 4, label: '4th Prize', val: currentResult.prize4, delay: '360ms', isFirst: false },
+            { id: 5, label: '5th Prize', val: currentResult.prize5 || '408', delay: '480ms', isFirst: false },
+          ].map((item) => (
+            <div
+              key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
+              style={{ animationDelay: item.delay }}
+              className={`flex items-center justify-start rounded-2xl animate-drop-in transition-all ${
+                item.isFirst
+                  ? 'p-3 sm:p-3.5 bg-neutral-950 border-2 border-gold/80 shadow'
+                  : 'p-2.5 sm:p-3 bg-neutral-950 border border-neutral-800 shadow'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex items-center justify-center rounded-xl border shrink-0 font-black aspect-square ${
+                    item.isFirst
+                      ? 'w-9 h-9 sm:w-10 sm:h-10 min-w-[36px] min-h-[36px] max-w-[36px] max-h-[36px] sm:min-w-[40px] sm:min-h-[40px] bg-gold-metallic text-black text-sm sm:text-base border-black'
+                      : 'w-7 h-7 sm:w-8 sm:h-8 min-w-[28px] min-h-[28px] max-w-[28px] max-h-[28px] sm:min-w-[32px] sm:min-h-[32px] bg-white text-black text-xs sm:text-sm border-black'
+                  }`}
+                >
                   {item.id}
                 </div>
-                <span className="text-[10px] text-gray-400 font-bold uppercase">{item.label}</span>
-                <span className="text-white font-black text-sm sm:text-base font-mono tracking-wider block mt-0.5">
-                  {item.val || '---'}
-                </span>
+                <div>
+                  <span
+                    className={`font-black uppercase tracking-wider block ${
+                      item.isFirst
+                        ? 'text-xs text-gold'
+                        : 'text-[10px] sm:text-xs text-neutral-400'
+                    }`}
+                  >
+                    {item.label}
+                  </span>
+                  <span
+                    className={`font-black font-mono tracking-widest block ${
+                      item.isFirst
+                        ? 'text-gold text-lg sm:text-xl font-extrabold mt-0.5'
+                        : 'text-neutral-100 text-sm sm:text-base font-bold mt-0.5'
+                    }`}
+                  >
+                    {item.val || '---'}
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* Compliments Matrix Table - Animated Drop In */}
-        <div
-          key={`compliments-${activeTab}-${activeDate}-${activeGameSlot}`}
-          style={{ animationDelay: '480ms' }}
-          className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 animate-drop-in hover:border-gold/40 transition-all"
-        >
-          <h3 className="font-extrabold text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wide">
-            Compliments
-          </h3>
+        {/* Compliments Matrix Table (30 total boxes: 5 columns x 6 rows) */}
+        {(() => {
+          const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
+          const fallbackList = [
+            '743', '741', '744', '740', '820',
+            '818', '821', '817', '351', '349',
+            '352', '348', '195', '193', '196',
+            '192', '529', '631', '412', '908',
+            '111', '222', '333', '444', '555',
+            '666', '777', '888', '999', '100'
+          ];
+          const compliments30 = Array.from({ length: 30 }, (_, index) => {
+            return rawList[index] || fallbackList[index];
+          });
 
-          <div className="grid grid-cols-4 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden">
-            {currentResult.compliments.flatMap((row, rIdx) =>
-              row.map((val, cIdx) => (
-                <div
-                  key={`${rIdx}-${cIdx}`}
-                  className="bg-black py-1.5 text-center text-xs font-mono font-bold text-neutral-200"
-                >
-                  {val}
-                </div>
-              ))
-            )}
-          </div>
+          return (
+            <div
+              key={`compliments-${activeTab}-${activeDate}-${activeGameSlot}`}
+              style={{ animationDelay: '600ms' }}
+              className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 animate-drop-in hover:border-gold/40 transition-all"
+            >
+              <h3 className="font-black text-sm sm:text-base text-gold text-center border-b border-neutral-800 pb-1.5 uppercase tracking-wider">
+                Compliments
+              </h3>
+
+              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden">
+                {compliments30.map((val, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-black py-2 sm:py-2.5 text-center text-sm sm:text-base font-mono font-extrabold text-neutral-100 tracking-wide"
+                  >
+                    {val}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Full-width WhatsApp Share Action Button */}
+        <div className="pt-3 pb-4 w-full flex justify-center">
+          <button
+            onClick={handleShareToWhatsApp}
+            className="w-full py-3 sm:py-3.5 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2.5 transition-all cursor-pointer group"
+          >
+            <svg
+              className="w-5 h-5 sm:w-6 sm:h-6 fill-white shrink-0 group-hover:rotate-6 transition-transform"
+              viewBox="0 0 24 24"
+            >
+              <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
+            </svg>
+            <span>SHARE RESULT TO WHATSAPP</span>
+          </button>
         </div>
 
       </div>
     </div>
   );
 };
-

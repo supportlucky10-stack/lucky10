@@ -15,6 +15,7 @@ import { TodaysResultView } from './views/TodaysResultView';
 import { PreviousWinningNumbersView } from './views/PreviousWinningNumbersView';
 import { UpdateBankDetailsView } from './views/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/MyPlayReportView';
+import { EditDeleteBillView } from './views/EditDeleteBillView';
 
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
@@ -47,6 +48,8 @@ const ViewRouter: React.FC = () => {
         return <UpdateBankDetailsView />;
       case 'MY_PLAY_REPORT':
         return <MyPlayReportView />;
+      case 'EDIT_DELETE_BILL':
+        return <EditDeleteBillView />;
       default:
         return <UserSignInView />;
     }

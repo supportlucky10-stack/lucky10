@@ -4,14 +4,14 @@ import { useApp } from '../context/AppContext';
 import type { GameSlot } from '../types';
 
 export const ChangeGameView: React.FC = () => {
-  const { setActiveGameSlot, setCurrentView, activeGameSlot, addToast } = useApp();
+  const { setActiveGameSlot, setCurrentView, activeGameSlot } = useApp();
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
   const slotButtonStyles: Record<GameSlot, { active: string; inactive: string }> = {
     '1 PM Game': {
-      active: 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 text-black border-2 border-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.4)]',
-      inactive: 'bg-gradient-to-r from-amber-600/80 to-amber-700/80 text-black hover:brightness-110 border border-amber-500/50',
+      active: 'bg-gradient-to-r from-blue-500 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]',
+      inactive: 'bg-gradient-to-r from-blue-700/80 to-indigo-800/80 text-white hover:brightness-110 border border-blue-500/50',
     },
     '3 PM Game': {
       active: 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_15px_rgba(184,137,40,0.4)]',
@@ -29,7 +29,6 @@ export const ChangeGameView: React.FC = () => {
 
   const handleSelect = (slot: GameSlot) => {
     setActiveGameSlot(slot);
-    addToast(`Selected ${slot}`, 'success');
     setCurrentView('GAME_DASHBOARD');
   };
 

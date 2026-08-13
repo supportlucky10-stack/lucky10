@@ -1,408 +1,253 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../components/HeaderBanner';
 import { useApp } from '../context/AppContext';
-import { Calendar, Ticket, CreditCard, Clock, CheckCircle2, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
-import type { GameSlot } from '../types';
+import {
+  ClipboardList,
+  Trophy,
+  BarChart3,
+  Calendar,
+  ChevronRight,
+  ArrowLeft,
+} from 'lucide-react';
+
+type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets } = useApp();
-  const [activeSubTab, setActiveSubTab] = useState<'TODAYS_GAMES' | 'PREVIOUS_HISTORY' | 'PAYMENTS'>('TODAYS_GAMES');
-  const [historyDate, setHistoryDate] = useState(
-    new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  );
-  const [paymentFilter, setPaymentFilter] = useState<'ALL' | 'BET' | 'PAYOUT'>('ALL');
+  const { userTickets, setCurrentView } = useApp();
+  const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Today's Date String
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Filter Today's Tickets
-  const todaysTickets = userTickets.filter(
-    (t) => t.placedAt.startsWith(todayStr) || t.placedAt.includes('Today')
-  );
+  // Aggregate user sales & winning data
+  const totalSales = userTickets.reduce((acc, t) => acc + t.totalAmount, 0);
+  const totalWinning = userTickets
+    .filter((t) => t.status === 'WON')
+    .reduce((acc, t) => acc + (t.winAmount || 0), 0);
 
-  // Mock Previous Tickets (Only winning/active records)
-  const previousTickets = [
+  const reportItems = [
     {
-      id: 'TKT-77102',
-      gameSlot: '8 PM Game' as GameSlot,
-      items: [
-        { id: '1', number: '742', count: 2, type: 'Direct' as const, unitPrice: 10, totalAmount: 20 },
-        { id: '2', number: '350', count: 1, type: 'Shuffle' as const, unitPrice: 10, totalAmount: 10 },
-      ],
-      totalAmount: 30,
-      placedAt: 'Yesterday, 7:45 PM',
-      status: 'WON' as const,
-      winAmount: 5000,
+      id: 'SALES',
+      title: 'SALES REPORT',
+      icon: ClipboardList,
+      description: 'View sales breakdown by game slot and ticket types',
+      action: () => setActiveSection('SALES'),
     },
     {
-      id: 'TKT-76541',
-      gameSlot: '3 PM Game' as GameSlot,
-      items: [
-        { id: '4', number: '819', count: 5, type: 'Direct' as const, unitPrice: 10, totalAmount: 50 },
-      ],
-      totalAmount: 50,
-      placedAt: '10 Aug 2026, 2:40 PM',
-      status: 'WON' as const,
-      winAmount: 15500,
+      id: 'WINNING',
+      title: 'WINNING REPORT',
+      icon: Trophy,
+      description: 'View winning tickets and total payout amounts',
+      action: () => setActiveSection('WINNING'),
+    },
+    {
+      id: 'COUNT',
+      title: 'COUNT REPORT',
+      icon: BarChart3,
+      description: 'View total count matrix for games (Super, Box, Pair)',
+      action: () => setCurrentView('TODAYS_WINNING_NUMBERS'),
+    },
+    {
+      id: 'DAILY',
+      title: 'DAILY REPORT',
+      icon: Calendar,
+      description: 'View daily opening balance, total sales, and net summary',
+      action: () => setActiveSection('DAILY'),
     },
   ];
-
-  // Mock Payments / Transactions
-  const paymentHistory = [
-    {
-      id: 'TXN-99812',
-      title: 'Game Bet Payment (1 PM Game)',
-      amount: -120,
-      method: 'Wallet Balance',
-      status: 'SUCCESS',
-      timestamp: 'Today, 12:45 PM',
-      type: 'BET',
-    },
-    {
-      id: 'TXN-99754',
-      title: 'Winning Payout Received',
-      amount: +5000,
-      method: 'Bank Transfer (HDFC Bank •••• 4312)',
-      status: 'SUCCESS',
-      timestamp: 'Today, 1:15 PM',
-      type: 'PAYOUT',
-    },
-    {
-      id: 'TXN-99610',
-      title: 'Game Bet Payment (8 PM Game)',
-      amount: -50,
-      method: 'Wallet Balance',
-      status: 'SUCCESS',
-      timestamp: 'Yesterday, 7:50 PM',
-      type: 'BET',
-    },
-    {
-      id: 'TXN-99580',
-      title: 'Winning Payout Received',
-      amount: +15500,
-      method: 'Bank Transfer (SBI •••• 8819)',
-      status: 'SUCCESS',
-      timestamp: '10 Aug 2026, 3:30 PM',
-      type: 'PAYOUT',
-    },
-  ];
-
-  const filteredPayments = paymentHistory.filter((p) => {
-    if (paymentFilter === 'BET') return p.type === 'BET';
-    if (paymentFilter === 'PAYOUT') return p.type === 'PAYOUT';
-    return true;
-  });
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased">
-      {/* Gold Header Banner */}
-      <HeaderBanner title="My Play Report" />
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
+      {/* Header Banner */}
+      <HeaderBanner
+        title={
+          activeSection === 'HUB'
+            ? 'Report'
+            : activeSection === 'SALES'
+            ? 'Sales Report'
+            : activeSection === 'WINNING'
+            ? 'Winning Report'
+            : 'Daily Report'
+        }
+        showBack={true}
+        onBackClick={
+          activeSection !== 'HUB'
+            ? () => setActiveSection('HUB')
+            : undefined
+        }
+      />
 
-      <div className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4">
+      <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
         
-        {/* Navigation Sub-Tabs */}
-        <div className="bg-neutral-950 p-1.5 rounded-xl border border-neutral-800 grid grid-cols-3 gap-1 shadow-md">
-          <button
-            onClick={() => {
-              setActiveSubTab('TODAYS_GAMES');
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            }}
-            className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
-              activeSubTab === 'TODAYS_GAMES'
-                ? 'bg-gold-banner text-black shadow-md'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Ticket className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Today's Games</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveSubTab('PREVIOUS_HISTORY');
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            }}
-            className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
-              activeSubTab === 'PREVIOUS_HISTORY'
-                ? 'bg-gold-banner text-black shadow-md'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Previous History</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setActiveSubTab('PAYMENTS');
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-            }}
-            className={`py-2 px-2 rounded-lg font-black text-[11px] sm:text-sm tracking-tight flex items-center justify-center gap-1.5 transition-all ${
-              activeSubTab === 'PAYMENTS'
-                ? 'bg-gold-banner text-black shadow-md'
-                : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            <span className="truncate">Payments</span>
-          </button>
-        </div>
-
-        {/* ================= TAB 1: TODAY'S GAMES ================= */}
-        {activeSubTab === 'TODAYS_GAMES' && (
-          <div className="space-y-4">
-            {/* List of Today's Tickets */}
-            {todaysTickets.filter((t) => t.status !== 'LOST').length === 0 ? (
-              <div className="bg-neutral-950 p-8 rounded-2xl border border-neutral-800 text-center space-y-2">
-                <Ticket className="w-10 h-10 text-neutral-600 mx-auto" />
-                <p className="text-neutral-300 font-extrabold text-sm sm:text-base">No bets placed today yet</p>
-                <p className="text-neutral-500 text-xs">Select a game slot on the home screen to place your bets.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {todaysTickets.filter((t) => t.status !== 'LOST').map((tkt) => (
-                  <div
-                    key={tkt.id}
-                    className="bg-neutral-950 p-3.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md space-y-3 hover:border-gold/40 transition-colors"
-                  >
-                    {/* Ticket Header */}
-                    <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="bg-gold-metallic text-black font-black text-xs px-2.5 py-0.5 rounded uppercase">
-                          {tkt.gameSlot}
-                        </span>
-                      </div>
-
-                      {tkt.status !== 'LOST' && (
-                        <span
-                          className={`text-xs font-black px-2.5 py-0.5 rounded ${
-                            tkt.status === 'WON'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                              : 'bg-amber-950 text-amber-400 border border-amber-800'
-                          }`}
-                        >
-                          {tkt.status === 'WON' ? `WON ₹${tkt.winAmount}` : 'PENDING'}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Table matching Home Page: Number | Count | Type | Amount */}
-                    <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
-                      <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
-                        <span className="col-span-3 border-r border-gray-300">Number</span>
-                        <span className="col-span-3 border-r border-gray-300">Count</span>
-                        <span className="col-span-3 border-r border-gray-300">Type</span>
-                        <span className="col-span-3">Amount</span>
-                      </div>
-
-                      <div className="divide-y divide-gray-200 text-xs sm:text-sm font-bold">
-                        {tkt.items.map((item, idx) => (
-                          <div key={idx} className="grid grid-cols-12 py-2 px-3 items-center text-center">
-                            <span className="col-span-3 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
-                              {item.number}
-                            </span>
-                            <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
-                              {item.count}
-                            </span>
-                            <span className="col-span-3 text-black font-bold text-xs sm:text-sm border-r border-gray-200">
-                              {item.type}
-                            </span>
-                            <span className="col-span-3 font-mono font-black text-xs sm:text-sm text-black">
-                              ₹{item.totalAmount}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Footer */}
-                    <div className="flex items-center justify-between pt-1 text-xs">
-                      <span className="text-neutral-500 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" /> {tkt.placedAt}
-                      </span>
-                      <span className="text-gold font-mono font-black text-sm">Total: ₹{tkt.totalAmount}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= TAB 2: PREVIOUS HISTORY ================= */}
-        {activeSubTab === 'PREVIOUS_HISTORY' && (
-          <div className="space-y-4">
-            {/* Archive Date Selector */}
-            <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-              <span className="flex items-center gap-2 font-extrabold text-gold uppercase tracking-wider text-xs">
-                <Calendar className="w-4 h-4 text-gold shrink-0" /> Select Date:
-              </span>
-              <div
-                onClick={(e) => {
-                  const input = e.currentTarget.querySelector('input');
-                  input?.showPicker?.();
-                }}
-                className="flex items-center gap-2 bg-black border border-neutral-700 hover:border-gold/80 px-3 py-1.5 rounded-lg cursor-pointer transition-all shadow-inner group"
-              >
-                <input
-                  type="date"
-                  value={historyDate}
-                  onChange={(e) => setHistoryDate(e.target.value)}
-                  className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
-                />
-                <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform cursor-pointer shrink-0" />
-              </div>
-            </div>
-
-            {/* Previous Tickets List */}
-            <div className="space-y-4">
-              {previousTickets.map((tkt) => (
-                <div
-                  key={tkt.id}
-                  className="bg-neutral-950 p-3.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md space-y-3"
+        {/* ================= 1. MAIN REPORT HUB MENU (Matching User Image Layout in Gold Theme) ================= */}
+        {activeSection === 'HUB' && (
+          <div className="space-y-3.5 animate-drop-in">
+            {reportItems.map((item) => {
+              const IconComp = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={item.action}
+                  className="w-full bg-neutral-950 p-4 sm:p-4.5 rounded-2xl border border-neutral-800 flex items-center justify-between shadow-md hover:border-gold/60 hover:bg-neutral-900/80 active:scale-[0.98] transition-all cursor-pointer group"
                 >
-                  <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-gold-banner text-black font-black text-xs px-2.5 py-0.5 rounded uppercase">
-                        {tkt.gameSlot}
+                  <div className="flex items-center gap-3.5">
+                    {/* Metallic Gold Square Badge matching our design system */}
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gold-metallic text-black rounded-xl border border-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                      <IconComp className="w-5 h-5 stroke-[2.5]" />
+                    </div>
+
+                    <div className="text-left">
+                      <span className="text-sm sm:text-base font-black text-gold tracking-wide uppercase block">
+                        {item.title}
                       </span>
                     </div>
-
-                    {tkt.status === 'WON' && (
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
-                        WON ₹{tkt.winAmount}
-                      </span>
-                    )}
                   </div>
 
-                  {/* Table matching Home Page: Number | Count | Type | Amount */}
-                  <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
-                    <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
-                      <span className="col-span-3 border-r border-gray-300">Number</span>
-                      <span className="col-span-3 border-r border-gray-300">Count</span>
-                      <span className="col-span-3 border-r border-gray-300">Type</span>
-                      <span className="col-span-3">Amount</span>
-                    </div>
-
-                    <div className="divide-y divide-gray-200 text-xs sm:text-sm font-bold">
-                      {tkt.items.map((item, idx) => (
-                        <div key={idx} className="grid grid-cols-12 py-2 px-3 items-center text-center">
-                          <span className="col-span-3 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
-                            {item.number}
-                          </span>
-                          <span className="col-span-3 font-mono text-xs sm:text-sm text-black border-r border-gray-200">
-                            {item.count}
-                          </span>
-                          <span className="col-span-3 text-black font-bold text-xs sm:text-sm border-r border-gray-200">
-                            {item.type}
-                          </span>
-                          <span className="col-span-3 font-mono font-black text-xs sm:text-sm text-black">
-                            ₹{item.totalAmount}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1 text-xs">
-                    <span className="text-neutral-500 flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {tkt.placedAt}
-                    </span>
-                    <span className="text-gold font-mono font-black text-sm">Total: ₹{tkt.totalAmount}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-gold group-hover:translate-x-1 transition-all shrink-0" />
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* ================= TAB 3: PAYMENTS ================= */}
-        {activeSubTab === 'PAYMENTS' && (
-          <div className="space-y-4">
-            {/* Filter Pills */}
-            <div className="flex items-center gap-2 text-xs">
-              <button
-                onClick={() => setPaymentFilter('ALL')}
-                className={`px-3 py-1 rounded-full font-extrabold transition-colors ${
-                  paymentFilter === 'ALL'
-                    ? 'bg-gold-banner text-black'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white'
-                }`}
-              >
-                All Payments
-              </button>
-              <button
-                onClick={() => setPaymentFilter('BET')}
-                className={`px-3 py-1 rounded-full font-extrabold transition-colors ${
-                  paymentFilter === 'BET'
-                    ? 'bg-gold-banner text-black'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white'
-                }`}
-              >
-                Bets Placed
-              </button>
-              <button
-                onClick={() => setPaymentFilter('PAYOUT')}
-                className={`px-3 py-1 rounded-full font-extrabold transition-colors ${
-                  paymentFilter === 'PAYOUT'
-                    ? 'bg-gold-banner text-black'
-                    : 'bg-neutral-900 text-neutral-400 hover:text-white'
-                }`}
-              >
-                Payout Credits
-              </button>
+        {/* ================= 2. SALES REPORT SUB-VIEW ================= */}
+        {activeSection === 'SALES' && (
+          <div className="space-y-4 animate-drop-in">
+            {/* Sales Summary Card */}
+            <div className="bg-neutral-950 p-4 rounded-2xl border border-gold/60 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <span className="text-xs font-black text-neutral-400 uppercase">TOTAL SALES</span>
+                <span className="text-xl font-black text-gold font-mono">₹{totalSales}</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-black p-2.5 rounded-xl border border-neutral-850">
+                  <span className="text-neutral-400 block text-[10px] uppercase font-bold">Total Tickets</span>
+                  <span className="text-white font-mono font-black text-sm">{userTickets.length}</span>
+                </div>
+                <div className="bg-black p-2.5 rounded-xl border border-neutral-850">
+                  <span className="text-neutral-400 block text-[10px] uppercase font-bold">Status</span>
+                  <span className="text-emerald-400 font-black text-xs uppercase">Active</span>
+                </div>
+              </div>
             </div>
 
-            {/* Payments List */}
-            <div className="space-y-3">
-              {filteredPayments.map((p) => {
-                const isCredit = p.amount > 0;
-                return (
-                  <div
-                    key={p.id}
-                    className="bg-neutral-950 p-3.5 sm:p-4 rounded-xl border border-neutral-800 shadow-md flex items-center justify-between gap-3 hover:border-gold/30 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${
-                          isCredit
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-neutral-900 text-neutral-400 border border-neutral-800'
-                        }`}
-                      >
-                        {isCredit ? (
-                          <ArrowDownLeft className="w-5 h-5" />
-                        ) : (
-                          <ArrowUpRight className="w-5 h-5" />
-                        )}
-                      </div>
+            {/* Sales Breakdown by Game Slot Table */}
+            <div className="border border-neutral-800 rounded-xl overflow-hidden bg-neutral-950 text-xs font-bold">
+              <div className="grid grid-cols-3 bg-neutral-900 border-b border-neutral-800 text-gold font-black py-2.5 px-3 text-center uppercase">
+                <span>GAME SLOT</span>
+                <span>TICKETS</span>
+                <span>AMOUNT</span>
+              </div>
+              <div className="divide-y divide-neutral-850 text-center">
+                {['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'].map((slot) => {
+                  const slotTkts = userTickets.filter((t) => t.gameSlot === slot);
+                  const slotAmt = slotTkts.reduce((sum, t) => sum + t.totalAmount, 0);
+                  return (
+                    <div key={slot} className="grid grid-cols-3 py-3 px-3 items-center">
+                      <span className="text-left font-black text-white pl-2">{slot.replace(' Game', '')}</span>
+                      <span className="font-mono text-neutral-300">{slotTkts.length}</span>
+                      <span className="font-mono text-gold">₹{slotAmt}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
+            <button
+              onClick={() => setActiveSection('HUB')}
+              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Reports</span>
+            </button>
+          </div>
+        )}
+
+        {/* ================= 3. WINNING REPORT SUB-VIEW ================= */}
+        {activeSection === 'WINNING' && (
+          <div className="space-y-4 animate-drop-in">
+            <div className="bg-neutral-950 p-4 rounded-2xl border border-gold/60 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <span className="text-xs font-black text-neutral-400 uppercase">TOTAL WINNING PAYOUT</span>
+                <span className="text-xl font-black text-gold font-mono">₹{totalWinning}</span>
+              </div>
+
+              <p className="text-xs text-neutral-400">
+                Winning tickets are credited automatically to your account balance upon draw publication.
+              </p>
+            </div>
+
+            {/* List of Winning Tickets */}
+            <div className="space-y-2">
+              {userTickets.filter((t) => t.status === 'WON').length === 0 ? (
+                <div className="bg-neutral-950 p-6 rounded-xl border border-neutral-800 text-center text-neutral-400 text-xs font-semibold">
+                  No winning tickets found yet.
+                </div>
+              ) : (
+                userTickets
+                  .filter((t) => t.status === 'WON')
+                  .map((tkt) => (
+                    <div
+                      key={tkt.id}
+                      className="bg-neutral-950 p-3.5 rounded-xl border border-emerald-800/60 flex items-center justify-between shadow"
+                    >
                       <div>
-                        <h4 className="text-white font-extrabold text-xs sm:text-sm">{p.title}</h4>
-                        <div className="flex items-center gap-2 text-[11px] text-neutral-400 mt-0.5">
-                          <span>{p.method}</span>
-                          <span>•</span>
-                          <span>{p.timestamp}</span>
-                        </div>
+                        <span className="text-xs font-black text-white uppercase block">{tkt.gameSlot}</span>
+                        <span className="text-[10px] text-neutral-400 font-mono">ID: {tkt.id}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-emerald-400 font-black text-sm block font-mono">
+                          +₹{tkt.winAmount || 0}
+                        </span>
+                        <span className="text-[10px] text-emerald-500 font-extrabold uppercase">WON</span>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <span
-                        className={`font-mono font-black text-xs sm:text-base block ${
-                          isCredit ? 'text-emerald-400' : 'text-white'
-                        }`}
-                      >
-                        {isCredit ? `+ ₹ ${p.amount.toLocaleString()}` : `- ₹ ${Math.abs(p.amount).toLocaleString()}`}
-                      </span>
-                      <span className="text-[10px] text-emerald-500 font-bold flex items-center justify-end gap-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> {p.status}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
+                  ))
+              )}
             </div>
+
+            <button
+              onClick={() => setActiveSection('HUB')}
+              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Reports</span>
+            </button>
+          </div>
+        )}
+
+        {/* ================= 4. DAILY REPORT SUB-VIEW ================= */}
+        {activeSection === 'DAILY' && (
+          <div className="space-y-4 animate-drop-in">
+            <div className="bg-neutral-950 p-4 rounded-2xl border border-gold/60 space-y-3 shadow-lg">
+              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
+                <span className="text-xs font-black text-gold uppercase">DAILY SUMMARY ({todayStr})</span>
+              </div>
+
+              <div className="space-y-2 text-xs font-bold">
+                <div className="flex justify-between py-1 border-b border-neutral-850">
+                  <span className="text-neutral-400">Total Sales</span>
+                  <span className="text-white font-mono">₹{totalSales}</span>
+                </div>
+                <div className="flex justify-between py-1 border-b border-neutral-850">
+                  <span className="text-neutral-400">Total Payouts</span>
+                  <span className="text-rose-400 font-mono">₹{totalWinning}</span>
+                </div>
+                <div className="flex justify-between py-1 pt-2 font-black text-sm">
+                  <span className="text-gold">NET REVENUE</span>
+                  <span className="text-gold font-mono">₹{totalSales - totalWinning}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setActiveSection('HUB')}
+              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Reports</span>
+            </button>
           </div>
         )}
 
