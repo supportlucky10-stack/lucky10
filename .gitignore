@@ -10,7 +10,7 @@ __pycache__/
 *.pyd
 .Python
 *.egg-info/
-dist/
+backend/dist/
 
 # Logs
 logs
