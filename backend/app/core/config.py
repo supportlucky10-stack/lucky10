@@ -1,12 +1,14 @@
 import os
+import tempfile
 
 # Detect Vercel environment
 is_vercel = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("VERCEL_URL"))
 raw_db_url = os.getenv("DATABASE_URL", "").strip()
 
-# On Vercel: always use /tmp SQLite (only writable path in serverless)
+# On Vercel: use temp directory SQLite (only writable path in serverless)
 if is_vercel:
-    _db_url = "sqlite:////tmp/lucky10.db"
+    tmp_file = os.path.join(tempfile.gettempdir(), "lucky10.db").replace("\\", "/")
+    _db_url = f"sqlite:///{tmp_file}" if tmp_file.startswith("/") else f"sqlite:///{tmp_file}"
 elif raw_db_url:
     _db_url = raw_db_url
 else:
