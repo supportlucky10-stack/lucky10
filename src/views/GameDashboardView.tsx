@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Menu, Trash2, HelpCircle, X, CheckCircle2 } from 'lucide-react';
-import { Lucky10Logo } from '../components/Lucky10Logo';
 
 export const GameDashboardView: React.FC = () => {
   const {
@@ -11,138 +10,131 @@ export const GameDashboardView: React.FC = () => {
     addToBetSlip,
     removeFromBetSlip,
     saveTicket,
-    payTicket,
     setCurrentView,
     addToast,
   } = useApp();
 
-  // 3 Digit Game State
-  const [threeDigitNum, setThreeDigitNum] = useState('');
-  const [threeDigitCount, setThreeDigitCount] = useState('');
+  // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 3
+  const [activeMode, setActiveMode] = useState<1 | 2 | 3>(3);
+  const [customerName, setCustomerName] = useState(currentUser?.name || '');
+  const [isReverse, setIsReverse] = useState(false);
+  const [isSet, setIsSet] = useState(false);
 
-  // 2 Digit Game State
-  const [pairAB, setPairAB] = useState('');
-  const [pairABCount, setPairABCount] = useState('');
-  const [pairBC, setPairBC] = useState('');
-  const [pairBCCount, setPairBCCount] = useState('');
-  const [pairAC, setPairAC] = useState('');
-  const [pairACCount, setPairACCount] = useState('');
-  const [pairCA, setPairCA] = useState('');
-  const [pairCACount, setPairCACount] = useState('');
+  // Common Form State
+  const [inputNum, setInputNum] = useState('');
+  const [inputCount, setInputCount] = useState('');
+  const [boxCount, setBoxCount] = useState('');
 
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   const unitPrice = 10; // ₹10 per count
 
-  const handleAddDirect = () => {
-    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
-      addToast('Please enter a valid 3-digit number (ABC)', 'error');
+  // Mode 1 Handlers (A, B, C, ALL)
+  const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
+    if (!inputNum || inputNum.length !== 1 || isNaN(Number(inputNum))) {
+      addToast('Please enter a valid 1-digit number (0-9)', 'error');
       return;
     }
-    const count = parseInt(threeDigitCount);
-    if (!count || count < 1 || count > 20) {
-      addToast('Please enter valid count (1-20)', 'error');
+    const cnt = parseInt(inputCount);
+    if (!cnt || cnt < 1 || cnt > 50) {
+      addToast('Please enter valid count (1-50)', 'error');
       return;
     }
-    addToBetSlip({
-      number: threeDigitNum,
-      count,
-      type: 'Direct',
-      unitPrice,
-      totalAmount: count * unitPrice,
+
+    const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
+    positions.forEach((p) => {
+      addToBetSlip({
+        number: `${p}:${inputNum}`,
+        count: cnt,
+        type: 'Pair',
+        unitPrice,
+        totalAmount: cnt * unitPrice,
+      });
     });
-    setThreeDigitNum('');
-    setThreeDigitCount('');
+
+    addToast(`Added Mode 1 (${pos}) bet for ${inputNum}`, 'success');
+    setInputNum('');
+    setInputCount('');
   };
 
-  const handleAddShuffle = () => {
-    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
-      addToast('Please enter a valid 3-digit number (ABC)', 'error');
+  // Mode 2 Handlers (AB, AC, BC, ALL)
+  const handleMode2Add = (pair: 'AB' | 'AC' | 'BC' | 'ALL') => {
+    if (!inputNum || inputNum.length !== 2 || isNaN(Number(inputNum))) {
+      addToast('Please enter a valid 2-digit number (00-99)', 'error');
       return;
     }
-    const count = parseInt(threeDigitCount);
-    if (!count || count < 1 || count > 20) {
-      addToast('Please enter valid count (1-20)', 'error');
+    const cnt = parseInt(inputCount);
+    if (!cnt || cnt < 1 || cnt > 50) {
+      addToast('Please enter valid count (1-50)', 'error');
       return;
     }
-    addToBetSlip({
-      number: threeDigitNum,
-      count,
-      type: 'Shuffle',
-      unitPrice,
-      totalAmount: count * unitPrice,
-    });
-    setThreeDigitNum('');
-    setThreeDigitCount('');
-  };
 
-  const handleAddBoth = () => {
-    if (!threeDigitNum || threeDigitNum.length !== 3 || isNaN(Number(threeDigitNum))) {
-      addToast('Please enter a valid 3-digit number (ABC)', 'error');
-      return;
-    }
-    const count = parseInt(threeDigitCount);
-    if (!count || count < 1 || count > 20) {
-      addToast('Please enter valid count (1-20)', 'error');
-      return;
-    }
-    // Add Direct
-    addToBetSlip({
-      number: threeDigitNum,
-      count,
-      type: 'Direct',
-      unitPrice,
-      totalAmount: count * unitPrice,
-    });
-    // Add Shuffle
-    addToBetSlip({
-      number: threeDigitNum,
-      count,
-      type: 'Shuffle',
-      unitPrice,
-      totalAmount: count * unitPrice,
-    });
-    addToast('Added Direct & Shuffle to slip!', 'success');
-    setThreeDigitNum('');
-    setThreeDigitCount('');
-  };
-
-  const handleAddPair = () => {
-    let addedCount = 0;
-
-    const checkAndAdd = (num: string, cntStr: string, label: string) => {
-      if (num && cntStr) {
-        const c = parseInt(cntStr);
-        if (c > 0 && num.length === 2 && !isNaN(Number(num))) {
-          addToBetSlip({
-            number: `${label}:${num}`,
-            count: c,
-            type: 'Pair',
-            unitPrice,
-            totalAmount: c * unitPrice,
-          });
-          addedCount++;
-          return true;
-        }
+    const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
+    pairs.forEach((pr) => {
+      addToBetSlip({
+        number: `${pr}:${inputNum}`,
+        count: cnt,
+        type: 'Pair',
+        unitPrice,
+        totalAmount: cnt * unitPrice,
+      });
+      if (isReverse) {
+        const rev = inputNum.split('').reverse().join('');
+        addToBetSlip({
+          number: `${pr}:${rev}`,
+          count: cnt,
+          type: 'Pair',
+          unitPrice,
+          totalAmount: cnt * unitPrice,
+        });
       }
-      return false;
-    };
+    });
 
-    const abAdded = checkAndAdd(pairAB, pairABCount, 'AB');
-    const bcAdded = checkAndAdd(pairBC, pairBCCount, 'BC');
-    const acAdded = checkAndAdd(pairAC, pairACCount, 'AC');
-    const caAdded = checkAndAdd(pairCA, pairCACount, 'CA');
-
-    if (addedCount === 0) {
-      addToast('Please enter valid 2-digit number and count for at least one pair (AB, BC, AC, CA)', 'error');
-    } else {
-      if (abAdded) { setPairAB(''); setPairABCount(''); }
-      if (bcAdded) { setPairBC(''); setPairBCCount(''); }
-      if (acAdded) { setPairAC(''); setPairACCount(''); }
-      if (caAdded) { setPairCA(''); setPairCACount(''); }
-    }
+    addToast(`Added Mode 2 (${pair}) bet for ${inputNum}`, 'success');
+    setInputNum('');
+    setInputCount('');
   };
 
+  // Mode 3 Handlers (BOTH, BOX, SUPER)
+  const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
+    if (!inputNum || inputNum.length !== 3 || isNaN(Number(inputNum))) {
+      addToast('Please enter a valid 3-digit number (ABC)', 'error');
+      return;
+    }
+    const cnt = parseInt(inputCount);
+    if (!cnt || cnt < 1 || cnt > 50) {
+      addToast('Please enter valid count (1-50)', 'error');
+      return;
+    }
+
+    if (modeType === 'SUPER' || modeType === 'BOTH') {
+      addToBetSlip({
+        number: inputNum,
+        count: cnt,
+        type: 'Direct',
+        unitPrice,
+        totalAmount: cnt * unitPrice,
+      });
+    }
+
+    if (modeType === 'BOX' || modeType === 'BOTH') {
+      const bCnt = parseInt(boxCount) || cnt;
+      addToBetSlip({
+        number: inputNum,
+        count: bCnt,
+        type: 'Shuffle',
+        unitPrice,
+        totalAmount: bCnt * unitPrice,
+      });
+    }
+
+    addToast(`Added Mode 3 (${modeType}) bet for ${inputNum}`, 'success');
+    setInputNum('');
+    setInputCount('');
+    setBoxCount('');
+  };
+
+  const totalCount = betSlip.reduce((sum, item) => sum + item.count, 0);
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
@@ -163,232 +155,194 @@ export const GameDashboardView: React.FC = () => {
               Hello {currentUser?.name || currentUser?.username || 'User'}
             </h1>
           </div>
-
-          <div className="scale-75 origin-right">
-            <Lucky10Logo size="sm" showSubtitle={false} />
-          </div>
         </div>
 
         {/* Combined Sub-Header Info Ribbon */}
         <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-between gap-2 text-xs sm:text-sm">
-          {/* Game Slot Switcher - Glow on Text Only */}
-          <button
-            onClick={() => setCurrentView('CHANGE_GAME')}
-            className="px-3.5 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold/90 shadow-md flex items-center justify-center text-center shrink-0 uppercase tracking-wide hover:opacity-95 transition-all active:scale-95"
-          >
+          {/* Game Slot Display Badge - Non-clickable blinking indicator */}
+          <div className="px-3.5 py-1 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-lg border border-gold/90 shadow-md flex items-center justify-center text-center shrink-0 uppercase tracking-wide cursor-default select-none">
             <span className="animate-text-gold-glow inline-block">
               {activeGameSlot}
             </span>
-          </button>
-
-          {/* Min / Max Info Badge */}
-          <div className="text-gold font-extrabold text-[11px] sm:text-xs tracking-tight text-center">
-            Min ₹10 • Max ₹200
           </div>
         </div>
 
         {/* Responsive Grid Layout */}
         <div className="w-full px-3 sm:px-8 py-3 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-6 items-start">
           
-          {/* Left Column (5/12): Bet Entry Cards */}
-          <div className="lg:col-span-5 space-y-4">
-            
-            {/* How to play trigger button */}
-            <div className="flex items-center justify-start">
-              <button
-                type="button"
-                onClick={() => setShowHowToPlay(true)}
-                className="text-gold hover:text-white underline font-extrabold text-xs sm:text-sm flex items-center gap-1.5 transition-colors"
-              >
-                <div className="w-4 h-4 rounded-full bg-black p-0.5 flex items-center justify-center shrink-0 border border-gold">
-                  <img src="/assets/gold-question.png" alt="Help" className="w-full h-full object-contain filter drop-shadow" />
-                </div>
-                <span>How to play the game?</span>
-              </button>
-            </div>
+          {/* Left Column (5/12): Bet Entry Cards with Mode Tabs */}
+          <div className="lg:col-span-5 space-y-3 sm:space-y-4">
 
-            {/* 3 DIGIT GAME CARD */}
-            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)]">
-              {/* Header Title with Lines */}
-              <div className="flex items-center justify-center gap-3 mb-3.5 sm:mb-4">
-                <div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[#c49727] to-[#c49727]" />
-                <h2 className="text-[#e2b847] font-black text-sm sm:text-base tracking-widest uppercase whitespace-nowrap drop-shadow-sm">
-                  3 DIGIT GAME
-                </h2>
-                <div className="h-[1.5px] flex-1 bg-gradient-to-l from-transparent via-[#c49727] to-[#c49727]" />
-              </div>
+            {/* TABBED GAME ENTRY CARD (Original Dark Gold Design Aesthetic) */}
+            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)] space-y-3.5">
 
-              {/* Inputs Row */}
-              <div className="grid grid-cols-12 gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-                {/* Number Input (Col 8) */}
-                <div className="col-span-8">
+              {/* Mode Control Ribbon: Customer Name Box COMES FIRST */}
+              <div className="bg-neutral-950 p-2 sm:p-2.5 rounded-xl border border-neutral-800 flex flex-wrap items-center gap-2">
+                
+                {/* Customer Name Box (First!) */}
+                <div className="flex-1 min-w-[100px]">
                   <input
                     type="text"
-                    maxLength={3}
-                    placeholder="Number"
-                    value={threeDigitNum}
-                    onChange={(e) => setThreeDigitNum(e.target.value)}
-                    className="w-full px-3 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner transition-all"
+                    placeholder="Customer"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
-                {/* Count Input (Col 4) */}
-                <div className="col-span-4">
+
+                {/* Mode Selector Tabs (1, 2, 3) */}
+                <div className="flex items-center gap-1">
+                  {[1, 2, 3].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => {
+                        setActiveMode(m as 1 | 2 | 3);
+                        setInputNum('');
+                        setInputCount('');
+                        setBoxCount('');
+                      }}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
+                        activeMode === m
+                          ? 'bg-gold-metallic text-black border border-gold shadow-md font-black'
+                          : 'bg-black text-gold border border-gold/40 hover:border-gold font-bold'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Checkboxes: R & Set */}
+                <div className="flex items-center gap-2 pl-1">
+                  <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isReverse}
+                      onChange={(e) => setIsReverse(e.target.checked)}
+                      className="w-3.5 h-3.5 accent-amber-500 rounded"
+                    />
+                    <span>R</span>
+                  </label>
+
+                  {activeMode === 3 && (
+                    <label className="flex items-center gap-1 text-xs font-bold text-gold cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isSet}
+                        onChange={(e) => setIsSet(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-amber-500 rounded"
+                      />
+                      <span>Set</span>
+                    </label>
+                  )}
+                </div>
+              </div>
+
+              {/* Dynamic Inputs Row (Number, Count, Box Count) */}
+              <div className="grid grid-cols-12 gap-2 sm:gap-3">
+                <div className={activeMode === 3 ? 'col-span-4' : 'col-span-8'}>
+                  <input
+                    type="text"
+                    maxLength={activeMode}
+                    placeholder="Number"
+                    value={inputNum}
+                    onChange={(e) => setInputNum(e.target.value)}
+                    className="w-full px-3 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                  />
+                </div>
+
+                <div className={activeMode === 3 ? 'col-span-4' : 'col-span-4'}>
                   <input
                     type="number"
                     placeholder="Count"
-                    value={threeDigitCount}
-                    onChange={(e) => setThreeDigitCount(e.target.value)}
-                    className="w-full px-2 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner transition-all"
+                    value={inputCount}
+                    onChange={(e) => setInputCount(e.target.value)}
+                    className="w-full px-2 py-2 sm:py-2.5 bg-white text-black text-center text-sm sm:text-base font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
-              </div>
 
-              {/* Buttons Row */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
-                <button
-                  type="button"
-                  onClick={handleAddDirect}
-                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
-                >
-                  Direct
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddShuffle}
-                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
-                >
-                  Shuffle
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddBoth}
-                  className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40"
-                >
-                  Both
-                </button>
-              </div>
-            </div>
-
-            {/* 2 DIGIT GAME CARD */}
-            <div className="relative border-2 border-[#b88928] bg-black rounded-2xl p-3.5 sm:p-4 shadow-[0_0_15px_rgba(184,137,40,0.15)]">
-              {/* Header Title with Lines */}
-              <div className="flex items-center justify-center gap-3 mb-3.5 sm:mb-4">
-                <div className="h-[1.5px] flex-1 bg-gradient-to-r from-transparent via-[#c49727] to-[#c49727]" />
-                <h2 className="text-[#e2b847] font-black text-sm sm:text-base tracking-widest uppercase whitespace-nowrap drop-shadow-sm">
-                  2 DIGIT GAME
-                </h2>
-                <div className="h-[1.5px] flex-1 bg-gradient-to-l from-transparent via-[#c49727] to-[#c49727]" />
-              </div>
-
-              {/* 2x2 Grid of Pair Inputs - Always 2 Columns on Mobile & Desktop */}
-              <div className="grid grid-cols-2 gap-1.5 sm:gap-3.5 mb-4">
-                {/* Left Column Pair 1: AB */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
-                    AB
-                  </span>
-                  <div className="grid grid-cols-12 gap-1 flex-1">
-                    <input
-                      type="text"
-                      maxLength={2}
-                      placeholder="Number"
-                      value={pairAB}
-                      onChange={(e) => setPairAB(e.target.value)}
-                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
+                {activeMode === 3 && (
+                  <div className="col-span-4">
                     <input
                       type="number"
-                      placeholder="Count"
-                      value={pairABCount}
-                      onChange={(e) => setPairABCount(e.target.value)}
-                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
+                      placeholder="Box Count"
+                      value={boxCount}
+                      onChange={(e) => setBoxCount(e.target.value)}
+                      className="w-full px-2 py-2 sm:py-2.5 bg-white text-black text-center text-xs sm:text-sm font-bold placeholder-gray-400 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                     />
                   </div>
-                </div>
-
-                {/* Right Column Pair 1: BC */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
-                    BC
-                  </span>
-                  <div className="grid grid-cols-12 gap-1 flex-1">
-                    <input
-                      type="text"
-                      maxLength={2}
-                      placeholder="Number"
-                      value={pairBC}
-                      onChange={(e) => setPairBC(e.target.value)}
-                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Count"
-                      value={pairBCCount}
-                      onChange={(e) => setPairBCCount(e.target.value)}
-                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                {/* Left Column Pair 2: AC */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
-                    AC
-                  </span>
-                  <div className="grid grid-cols-12 gap-1 flex-1">
-                    <input
-                      type="text"
-                      maxLength={2}
-                      placeholder="Number"
-                      value={pairAC}
-                      onChange={(e) => setPairAC(e.target.value)}
-                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Count"
-                      value={pairACCount}
-                      onChange={(e) => setPairACCount(e.target.value)}
-                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                {/* Right Column Pair 2: CA */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <span className="text-white font-black text-sm sm:text-xl min-w-[20px] sm:min-w-[30px] text-center shrink-0">
-                    CA
-                  </span>
-                  <div className="grid grid-cols-12 gap-1 flex-1">
-                    <input
-                      type="text"
-                      maxLength={2}
-                      placeholder="Number"
-                      value={pairCA}
-                      onChange={(e) => setPairCA(e.target.value)}
-                      className="col-span-7 px-1 sm:px-2 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Count"
-                      value={pairCACount}
-                      onChange={(e) => setPairCACount(e.target.value)}
-                      className="col-span-5 px-0.5 sm:px-1 py-1 sm:py-2 bg-white text-black text-center text-[10px] sm:text-sm font-bold placeholder-gray-400 rounded-md sm:rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
 
-              {/* Centered Pair Button */}
-              <div className="flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleAddPair}
-                  className="w-36 sm:w-44 py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm md:text-base rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 text-center"
-                >
-                  Pair
-                </button>
+              {/* Mode-Specific Action Buttons (Original Gold Gradient Theme) */}
+              <div>
+                {/* MODE 1: A, B, C, ALL */}
+                {activeMode === 1 && (
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                    {(['A', 'B', 'C', 'ALL'] as const).map((btn) => (
+                      <button
+                        key={btn}
+                        type="button"
+                        onClick={() => handleMode1Add(btn)}
+                        className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                      >
+                        {btn}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* MODE 2: AB, AC, BC, ALL */}
+                {activeMode === 2 && (
+                  <div className="grid grid-cols-4 gap-2 sm:gap-3">
+                    {(['AB', 'AC', 'BC', 'ALL'] as const).map((btn) => (
+                      <button
+                        key={btn}
+                        type="button"
+                        onClick={() => handleMode2Add(btn)}
+                        className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                      >
+                        {btn}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* MODE 3: BOTH, BOX, SUPER */}
+                {activeMode === 3 && (
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleMode3Add('BOTH')}
+                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    >
+                      BOTH
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMode3Add('BOX')}
+                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    >
+                      BOX
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMode3Add('SUPER')}
+                      className="w-full py-2 sm:py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg sm:rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border border-[#f5e396]/40 cursor-pointer"
+                    >
+                      SUPER
+                    </button>
+                  </div>
+                )}
               </div>
+
+              {/* Subtotal Summary Footer matching original gold theme */}
+              <div className="bg-neutral-950 text-gold px-3.5 py-2 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm font-black tracking-wider uppercase shadow">
+                <span>COUNT: {totalCount}</span>
+                <span>TOT: ₹{totalAmount}</span>
+              </div>
+
             </div>
 
           </div>
@@ -405,9 +359,9 @@ export const GameDashboardView: React.FC = () => {
                 <span className="col-span-3">Amount</span>
               </div>
 
-              <div className="divide-y divide-gray-200 max-h-24 sm:max-h-48 overflow-y-auto text-xs sm:text-sm font-bold">
+              <div className="divide-y divide-gray-200 max-h-36 sm:max-h-64 overflow-y-auto text-xs sm:text-sm font-bold">
                 {betSlip.length === 0 ? (
-                  <div className="py-5 text-center text-neutral-400 italic font-normal text-xs sm:text-sm">
+                  <div className="py-6 text-center text-neutral-400 italic font-normal text-xs sm:text-sm">
                     No numbers added to slip yet
                   </div>
                 ) : (
@@ -428,7 +382,7 @@ export const GameDashboardView: React.FC = () => {
                         </span>
                         <button
                           onClick={() => removeFromBetSlip(item.id)}
-                          className="text-red-600 hover:text-red-800 p-0.5"
+                          className="text-red-600 hover:text-red-800 p-0.5 cursor-pointer"
                           title="Remove"
                         >
                           <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
@@ -450,15 +404,9 @@ export const GameDashboardView: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={saveTicket}
-                  className="px-4 py-2 bg-neutral-800 text-white hover:text-gold font-extrabold text-xs sm:text-sm tracking-wider rounded-lg border border-neutral-700 shadow uppercase hover:opacity-95 transition-transform active:scale-95"
+                  className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow-md uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer"
                 >
                   SAVE
-                </button>
-                <button
-                  onClick={payTicket}
-                  className="px-5 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm tracking-wider rounded-lg shadow-md uppercase hover:opacity-95 transition-transform active:scale-95"
-                >
-                  PAY
                 </button>
               </div>
             </div>
