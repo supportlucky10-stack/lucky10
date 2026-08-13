@@ -11,16 +11,28 @@ from app.schemas.user import UserAccountResponse, BankDetailsSchema
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
+def safe_format_dt(val, fmt="%Y-%m-%d") -> str:
+    if not val:
+        return ""
+    if isinstance(val, str):
+        return val[:10] if fmt == "%Y-%m-%d" else val
+    if hasattr(val, "strftime"):
+        try:
+            return val.strftime(fmt)
+        except Exception:
+            return str(val)
+    return str(val)
+
 def format_user_response(user: User) -> dict:
     bank = None
     if user.bank_details:
         bank = {
-            "accountHolderName": user.bank_details.account_holder_name,
-            "accountNo": user.bank_details.account_number,
-            "bankName": user.bank_details.bank_name,
-            "ifsc": user.bank_details.ifsc,
-            "branchName": user.bank_details.branch_name,
-            "updatedAt": user.bank_details.updated_at.strftime("%Y-%m-%d") if user.bank_details.updated_at else "",
+            "accountHolderName": user.bank_details.account_holder_name or "",
+            "accountNo": user.bank_details.account_number or "",
+            "bankName": user.bank_details.bank_name or "",
+            "ifsc": user.bank_details.ifsc or "",
+            "branchName": user.bank_details.branch_name or "",
+            "updatedAt": safe_format_dt(user.bank_details.updated_at, "%Y-%m-%d"),
         }
     return {
         "id": user.id,
@@ -28,9 +40,9 @@ def format_user_response(user: User) -> dict:
         "email": user.email,
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-        "balance": user.balance,
+        "balance": float(user.balance) if user.balance is not None else 0.0,
         "bankDetails": bank,
-        "createdAt": user.created_at.strftime("%Y-%m-%d") if user.created_at else "",
+        "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),
     }
 
 @router.post("/customer/register")
