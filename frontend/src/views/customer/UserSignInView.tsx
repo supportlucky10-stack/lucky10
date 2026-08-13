@@ -3,8 +3,8 @@ import { useApp } from '../../context/AppContext';
 
 export const UserSignInView: React.FC = () => {
   const { loginUser } = useApp();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('demo');
+  const [password, setPassword] = useState('demo123');
 
   // Lock iOS Safari rubber-band scrolling and set browser tab title
   useEffect(() => {
@@ -23,7 +23,7 @@ export const UserSignInView: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser(username, password);
+    loginUser(username || 'demo', password || 'demo123');
   };
 
   return (
@@ -51,7 +51,6 @@ export const UserSignInView: React.FC = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
-              required
             />
           </div>
 
@@ -62,11 +61,10 @@ export const UserSignInView: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
-              required
             />
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             <button
               type="submit"
               className="w-full py-3.5 sm:py-4 bg-[#0c3827] hover:bg-[#072418] active:scale-[0.98] text-white font-semibold text-sm sm:text-base rounded-full shadow-md transition-all cursor-pointer tracking-wider"
@@ -77,10 +75,15 @@ export const UserSignInView: React.FC = () => {
         </form>
 
         {/* Footer Text Row */}
-        <div className="pt-3 pb-1 text-xs sm:text-sm font-medium border-t border-neutral-300">
-          <span className="text-neutral-700">
-            Forgot password?
-          </span>
+        <div className="pt-3 pb-1 text-xs sm:text-sm font-medium border-t border-neutral-300 flex justify-between items-center text-neutral-700">
+          <span>Forgot password?</span>
+          <button 
+            type="button"
+            onClick={() => loginUser('demo', 'demo123')}
+            className="text-[#0c3827] font-bold hover:underline cursor-pointer"
+          >
+            Demo Sign In →
+          </button>
         </div>
 
       </div>
