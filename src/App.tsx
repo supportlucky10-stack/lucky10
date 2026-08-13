@@ -17,7 +17,6 @@ import { UpdateBankDetailsView } from './views/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/MyPlayReportView';
 
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
-import { BottomNavigation } from './components/BottomNavigation';
 
 const ViewRouter: React.FC = () => {
   const { currentView, toasts, removeToast } = useApp();
@@ -85,9 +84,6 @@ const ViewRouter: React.FC = () => {
       </div>
 
       {renderView()}
-
-      {/* Global Bottom Navigation Bar */}
-      <BottomNavigation />
     </MobileContainer>
   );
 };
