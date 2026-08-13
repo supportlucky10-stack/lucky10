@@ -11,6 +11,7 @@ if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
 from app.main import app
+from mangum import Mangum
 
-# Handler for Vercel serverless function execution
-handler = app
+# Wrap FastAPI app with Mangum adapter for Vercel Serverless execution
+handler = Mangum(app, lifespan="off")
