@@ -110,8 +110,8 @@ export const TodaysWinningNumbersView: React.FC = () => {
         {/* Date Selector for Previous History Tab */}
         {activeTab === 'PREVIOUS' && (
           <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-            <span className="flex items-center gap-2 font-black text-gold uppercase tracking-wider text-xs">
-              <Calendar className="w-4 h-4 text-gold shrink-0" /> Select Date:
+            <span className="font-black text-gold uppercase tracking-wider text-xs">
+              SELECT DATE
             </span>
             <div
               onClick={(e) => {
