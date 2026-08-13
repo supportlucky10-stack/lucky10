@@ -348,12 +348,12 @@ export const GameDashboardView: React.FC = () => {
             
             {/* Slip Table */}
             <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
-              <div className="grid grid-cols-12 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-3 text-center">
-                <span className="col-span-3 border-r border-gray-300">Type</span>
-                <span className="col-span-3 border-r border-gray-300">Number</span>
-                <span className="col-span-2 border-r border-gray-300">Count</span>
-                <span className="col-span-2 border-r border-gray-300">Amount</span>
-                <span className="col-span-2">Action</span>
+              <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center">
+                <span className="border-r border-gray-300">Type</span>
+                <span className="border-r border-gray-300">Number</span>
+                <span className="border-r border-gray-300">Count</span>
+                <span className="border-r border-gray-300">Amount</span>
+                <span>Action</span>
               </div>
 
               <div className="divide-y divide-gray-200 max-h-52 sm:max-h-72 overflow-y-auto text-xs sm:text-sm font-bold">
@@ -375,20 +375,20 @@ export const GameDashboardView: React.FC = () => {
                       : item.number;
 
                     return (
-                      <div key={item.id} className="grid grid-cols-12 py-2 px-3 items-center text-center">
-                        <span className="col-span-3 font-extrabold text-xs sm:text-sm text-purple-700 uppercase border-r border-gray-200 truncate px-1">
+                      <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center">
+                        <span className="font-extrabold text-xs sm:text-sm text-purple-700 uppercase border-r border-gray-200 truncate px-0.5">
                           {displayType}
                         </span>
-                        <span className="col-span-3 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
+                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
                           {displayNumber}
                         </span>
-                        <span className="col-span-2 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
+                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
                           {item.count}
                         </span>
-                        <span className="col-span-2 font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200">
+                        <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
                           ₹{item.totalAmount ?? (item.count * (item.unitPrice || 10))}
                         </span>
-                        <div className="col-span-2 flex items-center justify-center">
+                        <div className="flex items-center justify-center">
                           <button
                             onClick={() => removeFromBetSlip(item.id)}
                             className="text-neutral-700 hover:text-red-600 p-0.5 cursor-pointer transition-colors"
