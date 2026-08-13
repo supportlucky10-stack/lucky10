@@ -11,6 +11,7 @@ __pycache__/
 .Python
 *.egg-info/
 backend/dist/
+frontend/dist/
 
 # Logs
 logs
