@@ -347,8 +347,13 @@ export const GameDashboardView: React.FC = () => {
                     onClick={() => {
                       const newMode = m as 1 | 2 | 3;
                       setActiveMode(newMode);
-                      setIsReverse(false);
-                      setIsSet(false);
+                      if (newMode === 3) {
+                        setIsReverse(true);
+                        setIsSet(false);
+                      } else {
+                        setIsReverse(false);
+                        setIsSet(false);
+                      }
                       setInputNum('');
                       setStartRange('');
                       setEndRange('');
@@ -378,18 +383,18 @@ export const GameDashboardView: React.FC = () => {
                 />
               </div>
 
-              {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode) */}
+              {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode - Either R or Set is selected for 3 Digit) */}
               <div className="flex items-center gap-2 pl-1">
                 <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
                     checked={isReverse}
-                    onChange={(e) => {
-                      if (e.target.checked) {
+                    onChange={() => {
+                      if (activeMode === 3) {
                         setIsReverse(true);
                         setIsSet(false);
                       } else {
-                        setIsReverse(false);
+                        setIsReverse(!isReverse);
                       }
                     }}
                     className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
@@ -402,13 +407,9 @@ export const GameDashboardView: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={isSet}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setIsSet(true);
-                          setIsReverse(false);
-                        } else {
-                          setIsSet(false);
-                        }
+                      onChange={() => {
+                        setIsSet(true);
+                        setIsReverse(false);
                       }}
                       className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                     />
