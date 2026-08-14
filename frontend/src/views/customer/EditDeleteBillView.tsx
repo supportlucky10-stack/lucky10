@@ -95,8 +95,8 @@ export const EditDeleteBillView: React.FC = () => {
           className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-4 my-auto"
         >
           <div className="space-y-1.5">
-            <label className="text-xs font-black text-gold uppercase tracking-wider block">
-              ENTER BILL ID:
+            <label className="text-[10px] sm:text-xs font-black text-gold uppercase tracking-wider block">
+              ENTER BILL ID
             </label>
             <div className="relative">
               <input
@@ -161,8 +161,8 @@ export const EditDeleteBillView: React.FC = () => {
 
                 {/* Customer & Slot Info Bar */}
                 <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
-                  <span className="text-neutral-300">Slot: <strong className="text-gold font-bold">{searchedBill.gameSlot}</strong></span>
-                  <span className="text-neutral-300">Customer: <strong className="text-white font-bold">{(searchedBill as any).customerName || 'Customer'}</strong></span>
+                  <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{searchedBill.gameSlot}</strong></span>
+                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(searchedBill as any).customerName || 'Customer'}</strong></span>
                 </div>
 
                 {/* Table Column Headers Bar */}
@@ -197,7 +197,7 @@ export const EditDeleteBillView: React.FC = () => {
                 {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
                 <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT:</span>
+                    <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
                     <span className="text-gold font-black text-base">₹{searchedBill.totalAmount}</span>
                   </div>
 

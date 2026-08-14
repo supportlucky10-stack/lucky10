@@ -14,6 +14,7 @@ import { PreviousWinningNumbersView } from './views/customer/PreviousWinningNumb
 import { UpdateBankDetailsView } from './views/customer/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/customer/MyPlayReportView';
 import { EditDeleteBillView } from './views/customer/EditDeleteBillView';
+import { TotalCountView } from './views/customer/TotalCountView';
 
 // Admin View Imports
 import { AdminSignInView } from './views/admin/AdminSignInView';
@@ -49,6 +50,8 @@ const ViewRouter: React.FC = () => {
         return <ChangeGameView />;
       case 'TODAYS_WINNING_NUMBERS':
         return <TodaysWinningNumbersView />;
+      case 'TOTAL_COUNT_VIEW':
+        return <TotalCountView />;
       case 'TODAYS_RESULT':
         return <TodaysResultView />;
       case 'PREVIOUS_WINNING_NUMBERS':

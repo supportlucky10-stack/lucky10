@@ -10,10 +10,10 @@ import {
   Trash2,
 } from 'lucide-react';
 
-type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'DAILY';
+type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, setCurrentView, currentUser } = useApp();
+  const { userTickets, currentUser } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
@@ -55,6 +55,35 @@ export const MyPlayReportView: React.FC = () => {
   const [dailyToDate, setDailyToDate] = useState<string>(todayStr);
   const [dailySlotFilter, setDailySlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
 
+  // Dates & Form State for Over Count Report (matching original Count Report view)
+  const [countTab, setCountTab] = useState<'TODAY' | 'PREVIOUS'>('TODAY');
+  const [overCountDate, setOverCountDate] = useState<string>(todayStr);
+  const [overCountToDate, setOverCountToDate] = useState<string>(todayStr);
+  const [overCountSlot, setOverCountSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
+
+  const salesFromRef = React.useRef<HTMLInputElement>(null);
+  const salesToRef = React.useRef<HTMLInputElement>(null);
+  const winFromRef = React.useRef<HTMLInputElement>(null);
+  const winToRef = React.useRef<HTMLInputElement>(null);
+  const dailyFromRef = React.useRef<HTMLInputElement>(null);
+  const dailyToRef = React.useRef<HTMLInputElement>(null);
+  const countFromRef = React.useRef<HTMLInputElement>(null);
+  const countToRef = React.useRef<HTMLInputElement>(null);
+
+  const triggerDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
+    if (ref.current) {
+      if ('showPicker' in ref.current && typeof (ref.current as any).showPicker === 'function') {
+        try {
+          (ref.current as any).showPicker();
+        } catch (err) {
+          ref.current.click();
+        }
+      } else {
+        ref.current.click();
+      }
+    }
+  };
+
   const resetDatesToCurrent = () => {
     const currentToday = new Date().toISOString().split('T')[0];
     setFromDate(currentToday);
@@ -63,7 +92,88 @@ export const MyPlayReportView: React.FC = () => {
     setWinningToDate(currentToday);
     setDailyFromDate(currentToday);
     setDailyToDate(currentToday);
+    setOverCountDate(currentToday);
+    setOverCountToDate(currentToday);
+    setCountTab('TODAY');
   };
+
+  const { countReportRows, countReportTotalCount, countReportTotalCash } = React.useMemo(() => {
+    const targetFrom = countTab === 'TODAY' ? todayStr : overCountDate;
+    const targetTo = countTab === 'TODAY' ? todayStr : overCountToDate;
+
+    const filtered = userTickets.filter((tkt) => {
+      if (overCountSlot !== 'ALL') {
+        const slotPrefix = overCountSlot.split(' ')[0];
+        if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(overCountSlot)) {
+          return false;
+        }
+      }
+      const tktDate = tkt.placedAt?.split(' ')[0] || todayStr;
+      if (tktDate < targetFrom || tktDate > targetTo) {
+        return false;
+      }
+      return true;
+    });
+
+    let superCount = 0, superCash = 0;
+    let boxCount = 0, boxCash = 0;
+    let pairCount = 0, pairCash = 0;
+    let singleCount = 0, singleCash = 0;
+
+    filtered.forEach((tkt) => {
+      tkt.items.forEach((item: any) => {
+        const type = (item.type || '').toUpperCase();
+        const cnt = Number(item.count || 0);
+        const amt = Number(item.totalAmount || 0);
+
+        if (type === 'SUPER' || type === 'DIRECT') {
+          superCount += cnt;
+          superCash += amt;
+        } else if (type === 'BOX' || type === 'SHUFFLE') {
+          boxCount += cnt;
+          boxCash += amt;
+        } else if (['AB', 'BC', 'AC', 'PAIR'].includes(type)) {
+          pairCount += cnt;
+          pairCash += amt;
+        } else if (['A', 'B', 'C', 'POSITION'].includes(type)) {
+          singleCount += cnt;
+          singleCash += amt;
+        }
+      });
+    });
+
+    const rows = [
+      {
+        name: 'SUPER',
+        count: superCount,
+        rate: superCount > 0 ? (superCash / superCount).toFixed(1) : '-',
+        cash: superCash,
+      },
+      {
+        name: 'BOX',
+        count: boxCount,
+        rate: boxCount > 0 ? (boxCash / boxCount).toFixed(1) : '-',
+        cash: boxCash,
+      },
+      {
+        name: 'AB/BC/AC',
+        count: pairCount,
+        rate: pairCount > 0 ? (pairCash / pairCount).toFixed(1) : '-',
+        cash: pairCash,
+      },
+      {
+        name: 'A/B/C',
+        count: singleCount,
+        rate: singleCount > 0 ? (singleCash / singleCount).toFixed(1) : '-',
+        cash: singleCash,
+      },
+    ];
+
+    const totalCount = superCount + boxCount + pairCount + singleCount;
+    const totalCash = superCash + boxCash + pairCash + singleCash;
+
+    return { countReportRows: rows, countReportTotalCount: totalCount, countReportTotalCash: totalCash };
+  }, [userTickets, overCountDate, overCountToDate, overCountSlot, todayStr, countTab]);
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -545,11 +655,15 @@ export const MyPlayReportView: React.FC = () => {
       },
     },
     {
-      id: 'COUNT',
+      id: 'OVER_COUNT',
       title: 'COUNT REPORT',
       icon: BarChart3,
       description: 'View total count matrix for games (Super, Box, Pair)',
-      action: () => setCurrentView('TODAYS_WINNING_NUMBERS'),
+      action: () => {
+        resetDatesToCurrent();
+        setActiveSection('OVER_COUNT');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      },
     },
     {
       id: 'DAILY',
@@ -559,6 +673,7 @@ export const MyPlayReportView: React.FC = () => {
       action: () => {
         resetDatesToCurrent();
         setActiveSection('DAILY');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       },
     },
   ];
@@ -574,6 +689,8 @@ export const MyPlayReportView: React.FC = () => {
             ? 'SALES REPORT'
             : activeSection === 'WINNING'
             ? 'Winning Report'
+            : activeSection === 'OVER_COUNT'
+            ? 'COUNT REPORT'
             : 'DAILY REPORT'
         }
         showBack={true}
@@ -582,12 +699,13 @@ export const MyPlayReportView: React.FC = () => {
             ? () => {
                 resetDatesToCurrent();
                 setActiveSection('HUB');
+                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
               }
             : undefined
         }
       />
 
-      <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+      <div className="max-w-md mx-auto w-full px-6 sm:px-8 py-5 space-y-4.5">
         
         {/* ================= 1. MAIN REPORT HUB MENU ================= */}
         {activeSection === 'HUB' && (
@@ -630,7 +748,10 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(salesFromRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
                     </span>
@@ -638,6 +759,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(fromDate)}
                     </span>
                     <input
+                      ref={salesFromRef}
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
@@ -645,22 +767,23 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(salesFromRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(salesToRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
                     </span>
@@ -668,6 +791,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(toDate)}
                     </span>
                     <input
+                      ref={salesToRef}
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
@@ -675,15 +799,13 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(salesToRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
@@ -695,7 +817,7 @@ export const MyPlayReportView: React.FC = () => {
                 <button
                   onClick={() => setIsFullView(!isFullView)}
                   className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
-                    isFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
+                    isFullView ? 'bg-gold-metallic' : 'bg-slate-300'
                   }`}
                 >
                   <div
@@ -752,7 +874,7 @@ export const MyPlayReportView: React.FC = () => {
                   {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE:
+                      SELECT DIGIT TYPE
                     </span>
                     <div className="flex items-center justify-center gap-3">
                       {[
@@ -925,7 +1047,7 @@ export const MyPlayReportView: React.FC = () => {
                   {/* Row 3: Number Search Box (Crisp White Border) */}
                   <div className="space-y-1 pt-1">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      CHECK SPECIFIC NUMBER:
+                      SEARCH BY NUMBER
                     </span>
                     <div className="relative">
                       <input
@@ -974,7 +1096,10 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(winFromRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
                     </span>
@@ -982,6 +1107,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(winningFromDate)}
                     </span>
                     <input
+                      ref={winFromRef}
                       type="date"
                       value={winningFromDate}
                       onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
@@ -989,22 +1115,23 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={winningFromDate}
-                      onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(winFromRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(winToRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
                     </span>
@@ -1012,6 +1139,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(winningToDate)}
                     </span>
                     <input
+                      ref={winToRef}
                       type="date"
                       value={winningToDate}
                       onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
@@ -1019,15 +1147,13 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={winningToDate}
-                      onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(winToRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
@@ -1040,7 +1166,7 @@ export const MyPlayReportView: React.FC = () => {
                   type="button"
                   onClick={() => setIsWinningFullView(!isWinningFullView)}
                   className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
-                    isWinningFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
+                    isWinningFullView ? 'bg-gold-metallic' : 'bg-slate-300'
                   }`}
                 >
                   <div
@@ -1097,7 +1223,7 @@ export const MyPlayReportView: React.FC = () => {
                   {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE:
+                      SELECT DIGIT TYPE
                     </span>
                     <div className="flex items-center justify-center gap-3">
                       {[
@@ -1275,7 +1401,7 @@ export const MyPlayReportView: React.FC = () => {
                   {/* Row 3: Number Search Box (Crisp White Border) */}
                   <div className="space-y-1 pt-1">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      CHECK SPECIFIC NUMBER:
+                      SEARCH BY NUMBER
                     </span>
                     <div className="relative">
                       <input
@@ -1324,7 +1450,10 @@ export const MyPlayReportView: React.FC = () => {
                      {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(dailyFromRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       FROM DATE
                     </span>
@@ -1332,6 +1461,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(dailyFromDate)}
                     </span>
                     <input
+                      ref={dailyFromRef}
                       type="date"
                       value={dailyFromDate}
                       onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
@@ -1339,22 +1469,23 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={dailyFromDate}
-                      onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(dailyFromRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden">
+                  <div
+                    onClick={() => triggerDatePicker(dailyToRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       TO DATE
                     </span>
@@ -1362,6 +1493,7 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(dailyToDate)}
                     </span>
                     <input
+                      ref={dailyToRef}
                       type="date"
                       value={dailyToDate}
                       onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
@@ -1369,15 +1501,13 @@ export const MyPlayReportView: React.FC = () => {
                     />
                   </div>
 
-                  <div className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer">
-                    <span className="pointer-events-none">CHANGE</span>
-                    <input
-                      type="date"
-                      value={dailyToDate}
-                      onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
-                    />
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => triggerDatePicker(dailyToRef)}
+                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                  >
+                    <span>CHANGE</span>
+                  </button>
                 </div>
               </div>
 
@@ -1805,8 +1935,8 @@ export const MyPlayReportView: React.FC = () => {
 
               {/* Customer & Slot Info Bar */}
               <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
-                <span className="text-neutral-300">Slot: <strong className="text-gold font-bold">{selectedSingleTicket.gameSlot}</strong></span>
-                <span className="text-neutral-300">Customer: <strong className="text-white font-bold">{(selectedSingleTicket as any).customerName || 'Customer'}</strong></span>
+                <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{selectedSingleTicket.gameSlot}</strong></span>
+                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(selectedSingleTicket as any).customerName || 'Customer'}</strong></span>
               </div>
 
               {/* Table Column Headers Bar */}
@@ -1841,7 +1971,7 @@ export const MyPlayReportView: React.FC = () => {
               {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
               <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT:</span>
+                  <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
                   <span className="text-gold font-black text-base">₹{selectedSingleTicket.totalAmount}</span>
                 </div>
 
@@ -1943,7 +2073,7 @@ export const MyPlayReportView: React.FC = () => {
                 <span>DAILY REPORT &nbsp; ( {dailySlotFilter} )</span>
               </div>
               <div className="text-xs sm:text-sm font-bold text-neutral-300 flex items-center gap-3">
-                <span className="text-gold font-black">DATE :</span>
+                <span className="text-gold font-black">DATE</span>
                 <span className="font-mono tracking-wide text-white">
                   {formatDateDisplay(dailyFromDate)} &nbsp;&nbsp; to &nbsp;&nbsp; {formatDateDisplay(dailyToDate)}
                 </span>
@@ -2075,6 +2205,174 @@ export const MyPlayReportView: React.FC = () => {
           </div>
         </div>
       )}
+
+        {/* ================= 4. COUNT REPORT SUB-VIEW (Original View) ================= */}
+        {activeSection === 'OVER_COUNT' && (
+          <div className="space-y-4 pt-1 animate-drop-in">
+            
+            {/* Top Tab Bar: Today's Report vs Previous History */}
+            <div className="bg-neutral-950 border border-neutral-800 p-1.5 rounded-2xl flex items-center gap-1.5 font-sans shadow-xl">
+              <button
+                type="button"
+                onClick={() => setCountTab('TODAY')}
+                className={`flex-1 py-2.5 px-2 sm:px-3 rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  countTab === 'TODAY'
+                    ? 'bg-gold-metallic text-black shadow-md border border-gold-dark'
+                    : 'bg-black/40 text-neutral-300 border border-neutral-800/80 hover:text-white hover:border-neutral-700'
+                }`}
+              >
+                <ClipboardList className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Today's Report</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCountTab('PREVIOUS')}
+                className={`flex-1 py-2.5 px-2 sm:px-3 rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  countTab === 'PREVIOUS'
+                    ? 'bg-gold-metallic text-black shadow-md border border-gold-dark'
+                    : 'bg-black/40 text-neutral-300 border border-neutral-800/80 hover:text-white hover:border-neutral-700'
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Previous History</span>
+              </button>
+            </div>
+
+            {/* Input Form Box (Shown ONLY when Previous History tab is selected) */}
+            {countTab === 'PREVIOUS' && (
+              <div className="bg-[#0c0c0c] border border-neutral-800 p-3.5 sm:p-4 rounded-2xl shadow-xl space-y-3.5 font-sans animate-drop-in">
+                {/* FROM DATE Input Row */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      onClick={() => triggerDatePicker(countFromRef)}
+                      className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                    >
+                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
+                        FROM DATE
+                      </span>
+                      <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none">
+                        {formatDateDisplay(overCountDate)}
+                      </span>
+                      <input
+                        ref={countFromRef}
+                        type="date"
+                        value={overCountDate}
+                        onChange={(e) => e.target.value && setOverCountDate(e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => triggerDatePicker(countFromRef)}
+                      className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-3.5 py-3 rounded-xl text-[11px] sm:text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                    >
+                      <span>CHANGE</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* TO DATE Input Row */}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      onClick={() => triggerDatePicker(countToRef)}
+                      className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner"
+                    >
+                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
+                        TO DATE
+                      </span>
+                      <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none">
+                        {formatDateDisplay(overCountToDate)}
+                      </span>
+                      <input
+                        ref={countToRef}
+                        type="date"
+                        value={overCountToDate}
+                        onChange={(e) => e.target.value && setOverCountToDate(e.target.value)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                      />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => triggerDatePicker(countToRef)}
+                      className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-3.5 py-3 rounded-xl text-[11px] sm:text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
+                    >
+                      <span>CHANGE</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) */}
+            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full pt-0.5 px-0.5">
+              {(['ALL', '1 PM', '3 PM', '6 PM', '8 PM'] as const).map((opt) => {
+                const isSelected = overCountSlot === opt;
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => setOverCountSlot(opt)}
+                    className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-xl border transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-gold-metallic text-black border-gold-dark shadow-md scale-[1.02]'
+                        : 'bg-[#0c0c0c] text-white border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    {opt}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* SHOW REPORT Banner Button */}
+            <div className="w-full flex justify-center py-1.5">
+              <button
+                type="button"
+                onClick={() => {}}
+                className="px-9 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all border border-gold-dark"
+              >
+                SHOW REPORT
+              </button>
+            </div>
+
+            {/* Summary Table */}
+            <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
+              {/* Header Row */}
+              <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-neutral-800 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
+                <span className="text-left pl-2">GAME</span>
+                <span>COUNT</span>
+                <span>RATE</span>
+                <span>CASH</span>
+              </div>
+
+              {/* Data Rows */}
+              <div className="divide-y divide-neutral-850">
+                {countReportRows.map((row) => (
+                  <div key={row.name} className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
+                    <span className="text-left font-black text-gold pl-2 tracking-wide text-xs">{row.name}</span>
+                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? row.count : '-'}</span>
+                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? (typeof row.rate === 'number' ? `₹${row.rate}` : row.rate) : '-'}</span>
+                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.cash > 0 ? `₹${row.cash.toFixed(0)}` : '-'}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total Row */}
+              <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/50 bg-black font-black text-xs sm:text-sm">
+                <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
+                <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCount > 0 ? countReportTotalCount : '-'}</span>
+                <span className="font-mono text-neutral-500">-</span>
+                <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCash > 0 ? `₹${countReportTotalCash.toFixed(0)}` : '-'}</span>
+              </div>
+            </div>
+
+          </div>
+        )}
     </div>
   );
 };

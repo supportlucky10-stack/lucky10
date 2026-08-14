@@ -22,7 +22,7 @@ export const UserDrawerView: React.FC = () => {
     },
     {
       label: 'Total Count View',
-      action: () => setCurrentView('TODAYS_WINNING_NUMBERS'),
+      action: () => setCurrentView('TOTAL_COUNT_VIEW'),
     },
     {
       label: 'Edit, Delete Bill',

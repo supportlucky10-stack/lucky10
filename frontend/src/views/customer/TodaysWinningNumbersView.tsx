@@ -1,116 +1,94 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { History, FileText } from 'lucide-react';
+import { History, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 export const TodaysWinningNumbersView: React.FC = () => {
-  const { placedTickets } = useApp();
-  const [activeTab, setActiveTab] = useState<'TODAY' | 'PREVIOUS'>('TODAY');
+  const { goBack } = useApp();
+  const [activeTab, setActiveTab] = useState<'TODAYS_WINNERS' | 'PREVIOUS_HISTORY'>('TODAYS_WINNERS');
   const [selectedSlot, setSelectedSlot] = useState<string>('ALL');
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const [fromDate, setFromDate] = useState<string>(todayStr);
-  const [toDate, setToDate] = useState<string>(todayStr);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  );
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const slotOptions = ['ALL', ...games];
 
-  // Helper to format YYYY-MM-DD -> DD-MM-YYYY
-  const formatDateDisplay = (dateStr: string) => {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
-  };
-
-  // Filter tickets by slot and date range
-  const filteredTickets = placedTickets.filter((ticket) => {
-    if (selectedSlot !== 'ALL' && ticket.gameSlot !== selectedSlot) return false;
-    if (activeTab === 'PREVIOUS') {
-      const ticketDate = ticket.placedAt?.split(' ')[0] || '';
-      // Filter if date is between fromDate and toDate
-      if (fromDate && ticketDate < fromDate) return false;
-      if (toDate && ticketDate > toDate) return false;
-    }
-    return true;
-  });
-
-  // Aggregate items into game categories
-  let superCount = 0;
-  let superCash = 0;
-  let boxCount = 0;
-  let boxCash = 0;
-  let pair2Count = 0;
-  let pair2Cash = 0;
-  let pair1Count = 0;
-  let pair1Cash = 0;
-
-  filteredTickets.forEach((t) => {
-    t.items.forEach((item) => {
-      const type = item.type;
-      const num = item.number;
-
-      if (type === 'Direct') {
-        superCount += item.count;
-        superCash += item.totalAmount;
-      } else if (type === 'Shuffle') {
-        boxCount += item.count;
-        boxCash += item.totalAmount;
-      } else if (type === 'Pair') {
-        const cleanNum = num.includes(':') ? num.split(':')[1] : num;
-        if (cleanNum.length === 2) {
-          pair2Count += item.count;
-          pair2Cash += item.totalAmount;
-        } else {
-          pair1Count += item.count;
-          pair1Cash += item.totalAmount;
-        }
-      }
-    });
-  });
-
-  const superRate = superCount > 0 ? Math.round(superCash / superCount) : 10;
-  const boxRate = boxCount > 0 ? Math.round(boxCash / boxCount) : 10;
-  const pair2Rate = pair2Count > 0 ? Math.round(pair2Cash / pair2Count) : 10;
-  const pair1Rate = pair1Count > 0 ? Math.round(pair1Cash / pair1Count) : 10;
-
-  const totalCount = superCount + boxCount + pair2Count + pair1Count;
-  const totalCash = superCash + boxCash + pair2Cash + pair1Cash;
-
-  const reportRows = [
-    { name: 'SUPER', count: superCount, rate: superRate, cash: superCash },
-    { name: 'BOX', count: boxCount, rate: boxRate, cash: boxCash },
-    { name: 'AB/BC/AC', count: pair2Count, rate: pair2Rate, cash: pair2Cash },
-    { name: 'A/B/C', count: pair1Count, rate: pair1Rate, cash: pair1Cash },
+  // Today's published winners data
+  const todayWinners = [
+    { id: 'W-101', user: 'Rahul S.', slot: '1 PM Game' as GameSlot, prize: '1st Prize (Direct 742)', winAmount: '₹5,000', time: '1:05 PM' },
+    { id: 'W-102', user: 'Vikram M.', slot: '1 PM Game' as GameSlot, prize: '2nd Prize (Direct 819)', winAmount: '₹5,000', time: '1:05 PM' },
+    { id: 'W-103', user: 'Ankit P.', slot: '3 PM Game' as GameSlot, prize: 'Shuffle Winner (427)', winAmount: '₹3,000', time: '3:06 PM' },
+    { id: 'W-104', user: 'Priya K.', slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB:74)', winAmount: '₹500', time: '6:04 PM' },
+    { id: 'W-105', user: 'Suresh B.', slot: '8 PM Game' as GameSlot, prize: '1st Prize (Direct 819)', winAmount: '₹5,000', time: '8:05 PM' },
   ];
 
-  return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none">
-      {/* Header Banner */}
-      <HeaderBanner title="Total count view" />
+  const filteredTodayWinners = selectedSlot === 'ALL'
+    ? todayWinners
+    : todayWinners.filter((w) => w.slot === selectedSlot);
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4 font-sans">
+  // Dynamic previous winners calculation based on date and slot
+  const getPreviousWinners = (dateStr: string, slotFilter: string) => {
+    const mockAll = [
+      { id: 'PW-201', user: 'Adithyan P.', date: dateStr, slot: '1 PM Game' as GameSlot, prize: '1st Prize (Direct 742)', winAmount: '₹5,000', number: '742', time: '1:05 PM' },
+      { id: 'PW-202', user: 'Jerin V.', date: dateStr, slot: '1 PM Game' as GameSlot, prize: '2nd Prize (819)', winAmount: '₹5,000', number: '819', time: '1:06 PM' },
+      { id: 'PW-203', user: 'Rahul S.', date: dateStr, slot: '3 PM Game' as GameSlot, prize: '3rd Prize (350)', winAmount: '₹3,000', number: '350', time: '3:05 PM' },
+      { id: 'PW-204', user: 'Vikram M.', date: dateStr, slot: '3 PM Game' as GameSlot, prize: 'Shuffle Winner (053)', winAmount: '₹1,500', number: '053', time: '3:07 PM' },
+      { id: 'PW-205', user: 'Ankit P.', date: dateStr, slot: '6 PM Game' as GameSlot, prize: '4th Prize (194)', winAmount: '₹2,000', number: '194', time: '6:04 PM' },
+      { id: 'PW-206', user: 'Priya K.', date: dateStr, slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB:19)', winAmount: '₹500', number: '19', time: '6:06 PM' },
+      { id: 'PW-207', user: 'Suresh B.', date: dateStr, slot: '8 PM Game' as GameSlot, prize: '1st Prize (624)', winAmount: '₹5,000', number: '624', time: '8:05 PM' },
+      { id: 'PW-208', user: 'Deepak K.', date: dateStr, slot: '8 PM Game' as GameSlot, prize: 'Compliment Winner (625)', winAmount: '₹1,000', number: '625', time: '8:08 PM' },
+    ];
+
+    if (slotFilter === 'ALL') return mockAll;
+    return mockAll.filter((w) => w.slot === slotFilter);
+  };
+
+  const filteredPreviousWinners = getPreviousWinners(selectedDate, selectedSlot);
+
+  return (
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
+      {/* Header Banner */}
+      <HeaderBanner
+        title="Today's Winning Numbers"
+        showBack={true}
+        onBackClick={() => goBack()}
+      />
+
+      <div className="max-w-xl mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4">
         
-        {/* Navigation Tabs: Today's Report & Previous History */}
+        {/* Section Navigation Tabs: 2 Tabs */}
         <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold shadow">
           <button
-            onClick={() => setActiveTab('TODAY')}
+            onClick={() => {
+              setActiveTab('TODAYS_WINNERS');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer ${
-              activeTab === 'TODAY'
+              activeTab === 'TODAYS_WINNERS'
                 ? 'bg-gold-metallic text-black shadow'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            <FileText className="w-4 h-4 shrink-0" />
-            <span>Today's Report</span>
+            <svg
+              className={`w-4 h-4 shrink-0 transition-colors ${
+                activeTab === 'TODAYS_WINNERS' ? 'fill-black' : 'fill-neutral-400'
+              }`}
+              viewBox="0 0 24 24"
+            >
+              <path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V18H8v2h8v-2h-3v-2.1a5.01 5.01 0 0 0 3.61-3.04C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z" />
+            </svg>
+            <span>Today's Winners</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('PREVIOUS')}
+            onClick={() => {
+              setActiveTab('PREVIOUS_HISTORY');
+              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+            }}
             className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer ${
-              activeTab === 'PREVIOUS'
+              activeTab === 'PREVIOUS_HISTORY'
                 ? 'bg-gold-metallic text-black shadow'
                 : 'text-neutral-400 hover:text-white'
             }`}
@@ -120,74 +98,31 @@ export const TodaysWinningNumbersView: React.FC = () => {
           </button>
         </div>
 
-        {/* FROM DATE & TO DATE Selection for Previous History Tab (matching Image 2) */}
-        {activeTab === 'PREVIOUS' && (
-          <div className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl shadow-xl space-y-3.5 animate-drop-in">
-            
-            {/* From Date Input Row */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
-                  <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
-                    From date
-                  </span>
-                  <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
-                    {formatDateDisplay(fromDate)}
-                  </span>
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                  />
-                </label>
-
-                <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
-                  <span>CHANGE</span>
-                  <input
-                    type="date"
-                    value={fromDate}
-                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                  />
-                </label>
-              </div>
+        {/* Date Selector for Previous History Tab */}
+        {activeTab === 'PREVIOUS_HISTORY' && (
+          <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
+            <span className="flex items-center gap-2 font-black text-gold uppercase tracking-wider text-xs">
+              <Calendar className="w-4 h-4 text-gold shrink-0" /> Select Date:
+            </span>
+            <div
+              onClick={(e) => {
+                const input = e.currentTarget.querySelector('input');
+                input?.showPicker?.();
+              }}
+              className="flex items-center gap-2 bg-black border border-neutral-700 hover:border-gold/80 px-3 py-1.5 rounded-lg cursor-pointer transition-all shadow-inner group"
+            >
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
+              />
+              <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform cursor-pointer shrink-0" />
             </div>
-
-            {/* To Date Input Row */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
-                <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
-                  <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
-                    To date
-                  </span>
-                  <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
-                    {formatDateDisplay(toDate)}
-                  </span>
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => e.target.value && setToDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                  />
-                </label>
-
-                <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
-                  <span>CHANGE</span>
-                  <input
-                    type="date"
-                    value={toDate}
-                    onChange={(e) => e.target.value && setToDate(e.target.value)}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                  />
-                </label>
-              </div>
-            </div>
-
           </div>
         )}
 
-        {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) */}
+        {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) - Single View Grid */}
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5 w-full">
           {slotOptions.map((opt) => {
             const isSelected = selectedSlot === opt;
@@ -195,7 +130,10 @@ export const TodaysWinningNumbersView: React.FC = () => {
             return (
               <button
                 key={opt}
-                onClick={() => setSelectedSlot(opt)}
+                onClick={() => {
+                  setSelectedSlot(opt);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }}
                 className={`py-2 px-1 text-[10px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-gold-banner text-black border-gold shadow-md'
@@ -208,43 +146,81 @@ export const TodaysWinningNumbersView: React.FC = () => {
           })}
         </div>
 
-        {/* SHOW REPORT Banner Button */}
-        <div className="w-full flex justify-center pt-2">
-          <button className="px-8 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-md cursor-pointer hover:brightness-110 active:scale-95 transition-all">
-            SHOW REPORT
-          </button>
-        </div>
+        {/* Tab 1: Today's Winners Feed */}
+        {activeTab === 'TODAYS_WINNERS' && (
+          <div className="space-y-3">
+            <h3 className="text-gold font-black text-xs sm:text-sm uppercase tracking-wide border-b border-neutral-800 pb-1 flex items-center justify-between">
+              <span>Winners</span>
+            </h3>
 
-        {/* Total Count Report Table - Dark Metallic Gold Theme */}
-        <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-neutral-950 text-white text-xs sm:text-sm font-bold shadow-[0_0_20px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
-          {/* Header Row */}
-          <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-neutral-800 font-extrabold py-3 px-3 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-            <span>GAME</span>
-            <span>COUNT</span>
-            <span>RATE</span>
-            <span>CASH</span>
-          </div>
-
-          {/* Data Rows */}
-          <div className="divide-y divide-neutral-850">
-            {reportRows.map((row) => (
-              <div key={row.name} className="grid grid-cols-4 py-3 px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
-                <span className="text-left font-black text-gold pl-2 tracking-wide">{row.name}</span>
-                <span className="font-mono text-neutral-200">{row.count > 0 ? row.count : '-'}</span>
-                <span className="font-mono text-neutral-200">{row.count > 0 ? `₹${row.rate}` : '-'}</span>
-                <span className="font-mono text-neutral-200">{row.cash > 0 ? `₹${row.cash}` : '-'}</span>
+            {filteredTodayWinners.length === 0 ? (
+              <div className="bg-neutral-950 p-6 rounded-xl border border-neutral-800 text-center text-neutral-400 text-xs font-semibold">
+                No winners published yet for {selectedSlot} today.
               </div>
-            ))}
+            ) : (
+              <div className="space-y-2">
+                {filteredTodayWinners.map((winner) => (
+                  <div
+                    key={winner.id}
+                    className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex items-center justify-between shadow-sm hover:border-gold/30 transition-colors"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-extrabold text-sm">{winner.user}</span>
+                        <span className="text-[10px] bg-neutral-900 text-gold px-2 py-0.5 rounded font-mono font-bold border border-gold/30">
+                          {winner.slot}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-400 font-medium">{winner.prize}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-gold font-mono font-black text-base block">{winner.winAmount}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Total Row */}
-          <div className="grid grid-cols-4 py-3.5 px-3 items-center text-center border-t-2 border-gold/50 bg-black font-black text-xs sm:text-sm">
-            <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
-            <span className="font-mono text-gold text-sm sm:text-base">{totalCount > 0 ? totalCount : '-'}</span>
-            <span className="font-mono text-neutral-500">-</span>
-            <span className="font-mono text-gold text-sm sm:text-base">{totalCash > 0 ? `₹${totalCash}` : '-'}</span>
+        {/* Tab 2: Previous History Winners */}
+        {activeTab === 'PREVIOUS_HISTORY' && (
+          <div className="space-y-3">
+            <h3 className="text-gold font-black text-xs sm:text-sm uppercase tracking-wide border-b border-neutral-800 pb-1 flex items-center justify-between">
+              <span>Winners ({selectedDate})</span>
+            </h3>
+
+            {filteredPreviousWinners.length === 0 ? (
+              <div className="bg-neutral-950 p-6 rounded-xl border border-neutral-800 text-center text-neutral-400 text-xs font-semibold">
+                No winners recorded for {selectedSlot} on {selectedDate}.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredPreviousWinners.map((winner) => (
+                  <div
+                    key={winner.id}
+                    className="bg-neutral-950 p-3 rounded-xl border border-neutral-800 flex items-center justify-between shadow-sm hover:border-gold/30 transition-colors"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-extrabold text-sm">{winner.user}</span>
+                        <span className="text-[10px] bg-neutral-900 text-gold px-2 py-0.5 rounded font-mono font-bold border border-gold/30">
+                          {winner.slot}
+                        </span>
+                      </div>
+                      <p className="text-xs text-neutral-400 font-medium">
+                        {winner.prize} • Winning No: <strong className="text-gold font-mono">{winner.number}</strong>
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-gold font-mono font-black text-base block">{winner.winAmount}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
       </div>
     </div>
