@@ -650,8 +650,8 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(fromDateInputRef.current)}
+                  <label
+                    htmlFor="sales-from-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -661,29 +661,30 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(fromDate)}
                     </span>
                     <input
+                      id="sales-from-date"
                       ref={fromDateInputRef}
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="sales-from-date"
                     onClick={() => openDatePicker(fromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(toDateInputRef.current)}
+                  <label
+                    htmlFor="sales-to-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -693,21 +694,22 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(toDate)}
                     </span>
                     <input
+                      id="sales-to-date"
                       ref={toDateInputRef}
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="sales-to-date"
                     onClick={() => openDatePicker(toDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
@@ -998,8 +1000,8 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(winningFromDateInputRef.current)}
+                  <label
+                    htmlFor="winning-from-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -1009,29 +1011,30 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(winningFromDate)}
                     </span>
                     <input
+                      id="winning-from-date"
                       ref={winningFromDateInputRef}
                       type="date"
                       value={winningFromDate}
                       onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="winning-from-date"
                     onClick={() => openDatePicker(winningFromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(winningToDateInputRef.current)}
+                  <label
+                    htmlFor="winning-to-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -1041,21 +1044,22 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(winningToDate)}
                     </span>
                     <input
+                      id="winning-to-date"
                       ref={winningToDateInputRef}
                       type="date"
                       value={winningToDate}
                       onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="winning-to-date"
                     onClick={() => openDatePicker(winningToDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
@@ -1352,8 +1356,8 @@ export const MyPlayReportView: React.FC = () => {
                      {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(dailyFromDateInputRef.current)}
+                  <label
+                    htmlFor="daily-from-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -1363,29 +1367,30 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(dailyFromDate)}
                     </span>
                     <input
+                      id="daily-from-date"
                       ref={dailyFromDateInputRef}
                       type="date"
                       value={dailyFromDate}
                       onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="daily-from-date"
                     onClick={() => openDatePicker(dailyFromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => openDatePicker(dailyToDateInputRef.current)}
+                  <label
+                    htmlFor="daily-to-date"
                     className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
@@ -1395,21 +1400,22 @@ export const MyPlayReportView: React.FC = () => {
                       {formatDateDisplay(dailyToDate)}
                     </span>
                     <input
+                      id="daily-to-date"
                       ref={dailyToDateInputRef}
                       type="date"
                       value={dailyToDate}
                       onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
-                  </div>
+                  </label>
 
-                  <button
-                    type="button"
+                  <label
+                    htmlFor="daily-to-date"
                     onClick={() => openDatePicker(dailyToDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none"
                   >
                     CHANGE
-                  </button>
+                  </label>
                 </div>
               </div>
 
