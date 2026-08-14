@@ -10,6 +10,38 @@ import {
   Trash2,
 } from 'lucide-react';
 
+const formatPlacedAtDate = (str?: string): string => {
+  if (!str) return '';
+  const trimmed = str.trim();
+  
+  if (trimmed.includes('T')) {
+    const [datePart, timePart] = trimmed.split('T');
+    const [y, m, d] = datePart.split('-');
+    const cleanTime = timePart ? timePart.split('.')[0] : '';
+    const yy = y ? y.slice(-2) : '';
+    return `${d}/${m}/${yy} ${cleanTime}`.trim();
+  }
+
+  if (trimmed.includes('-')) {
+    const spaceParts = trimmed.split(' ');
+    const datePart = spaceParts[0];
+    const rest = spaceParts.slice(1).join(' ');
+    const parts = datePart.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        // YYYY-MM-DD -> DD/MM/YY
+        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)} ${rest}`.trim();
+      }
+      if (parts[2].length === 4) {
+        // DD-MM-YYYY -> DD/MM/YY
+        return `${parts[0]}/${parts[1]}/${parts[2].slice(-2)} ${rest}`.trim();
+      }
+    }
+  }
+
+  return trimmed.replace('T', ' ');
+};
+
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
@@ -1637,8 +1669,9 @@ export const MyPlayReportView: React.FC = () => {
                           <span className="text-gold text-sm font-black font-mono">TOTAL: <strong className="text-amber-400 font-mono text-base">{tkt.filteredTotalAmount}</strong></span>
                         </div>
 
-                        <div className="text-xs font-bold text-neutral-300">
+                        <div className="text-xs font-bold text-neutral-300 flex items-center justify-between">
                           <span>COUNT: <strong className="text-white font-mono text-sm">{tkt.filteredTotalCount}</strong></span>
+                          <span className="text-neutral-400 font-mono text-xs">{formatPlacedAtDate((tkt as any).placedAt || (tkt as any).createdAt || (tkt as any).timestamp || (tkt as any).date)}</span>
                         </div>
 
                         <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
@@ -1694,7 +1727,7 @@ export const MyPlayReportView: React.FC = () => {
                           </div>
                           <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
                             <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
-                            <span>{tkt.placedAt}</span>
+                            <span>{formatPlacedAtDate((tkt as any).placedAt || (tkt as any).createdAt || (tkt as any).timestamp || (tkt as any).date)}</span>
                           </div>
                           <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
                             <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
@@ -1923,41 +1956,6 @@ export const MyPlayReportView: React.FC = () => {
             </div>
 
           </div>
-
-          {/* DELETE PERMISSION CONFIRMATION DIALOG MODAL */}
-          {confirmDeleteId && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-neutral-950 border-2 border-rose-600 rounded-2xl max-w-xs w-full p-5 shadow-2xl space-y-4 text-center animate-drop-in">
-                <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-500 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
-                  <Trash2 className="w-6 h-6 stroke-[2.5]" />
-                </div>
-                <div>
-                  <h4 className="font-black text-white text-base uppercase">DELETE BILL PERMISSION</h4>
-                  <p className="text-xs text-neutral-400 mt-1 font-mono">
-                    Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong> completely?
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    onClick={() => setConfirmDeleteId(null)}
-                    className="flex-1 py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-700 hover:text-white cursor-pointer"
-                  >
-                    CANCEL
-                  </button>
-                  <button
-                    onClick={() => {
-                      setDeletedTicketIds((prev) => [...prev, confirmDeleteId]);
-                      setConfirmDeleteId(null);
-                      setSelectedSingleTicket(null);
-                    }}
-                    className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"
-                  >
-                    YES, DELETE
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
@@ -2286,6 +2284,43 @@ export const MyPlayReportView: React.FC = () => {
 
           </div>
         )}
+
+      {/* DELETE PERMISSION CONFIRMATION DIALOG MODAL (Top-level centered modal) */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in">
+          <div className="bg-neutral-950 border-2 border-rose-600 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(225,29,72,0.4)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-500 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <Trash2 className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <h4 className="font-black text-white text-base uppercase tracking-wide">DELETE BILL PERMISSION</h4>
+              <p className="text-xs text-neutral-400 mt-1 font-mono">
+                Are you sure you want to delete Bill ID <strong className="text-gold font-bold">#{confirmDeleteId}</strong> completely?
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2 font-mono">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 py-2.5 bg-neutral-900 text-neutral-300 font-black text-xs rounded-xl border border-neutral-700 hover:text-white cursor-pointer transition-colors"
+              >
+                CANCEL
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDeletedTicketIds((prev) => [...prev, confirmDeleteId]);
+                  setConfirmDeleteId(null);
+                  setSelectedSingleTicket(null);
+                }}
+                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"
+              >
+                YES, DELETE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
