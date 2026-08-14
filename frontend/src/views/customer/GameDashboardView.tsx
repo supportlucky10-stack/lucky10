@@ -321,9 +321,9 @@ export const GameDashboardView: React.FC = () => {
         </div>
 
         {/* Sub-Header Ribbon: Dynamic Slot Color Badge */}
-        <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm">
-          <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none transition-all`}>
-            <span className="inline-block">
+        <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none pointer-events-none">
+          <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none pointer-events-none caret-transparent transition-all`}>
+            <span className="inline-block select-none pointer-events-none caret-transparent">
               {activeGameSlot}
             </span>
           </div>
@@ -347,13 +347,8 @@ export const GameDashboardView: React.FC = () => {
                     onClick={() => {
                       const newMode = m as 1 | 2 | 3;
                       setActiveMode(newMode);
-                      if (newMode === 1 || newMode === 2) {
-                        setIsReverse(true);
-                        setIsSet(false);
-                      } else {
-                        setIsReverse(false);
-                        setIsSet(false);
-                      }
+                      setIsReverse(false);
+                      setIsSet(false);
                       setInputNum('');
                       setStartRange('');
                       setEndRange('');
@@ -383,26 +378,26 @@ export const GameDashboardView: React.FC = () => {
                 />
               </div>
 
-              {/* Checkboxes: R (Range Mode) & Set (Only for 3-Digit Mode; 1 & 2-Digit Games are Range Mode only) */}
-              {activeMode === 3 ? (
-                <div className="flex items-center gap-2 pl-1">
-                  <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
-                    <input
-                      type="checkbox"
-                      checked={isReverse}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setIsReverse(true);
-                          setIsSet(false);
-                        } else {
-                          setIsReverse(false);
-                        }
-                      }}
-                      className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                    />
-                    <span>R</span>
-                  </label>
+              {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode) */}
+              <div className="flex items-center gap-2 pl-1">
+                <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
+                  <input
+                    type="checkbox"
+                    checked={isReverse}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setIsReverse(true);
+                        setIsSet(false);
+                      } else {
+                        setIsReverse(false);
+                      }
+                    }}
+                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                  />
+                  <span>R</span>
+                </label>
 
+                {activeMode === 3 && (
                   <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                     <input
                       type="checkbox"
@@ -419,16 +414,12 @@ export const GameDashboardView: React.FC = () => {
                     />
                     <span>Set</span>
                   </label>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 rounded-lg">
-                  <span className="text-xs font-black text-amber-400 uppercase tracking-wide">R</span>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
-            {/* Dynamic Inputs Row (Range Mode for Mode 1 & 2; Normal vs Range/Set for Mode 3) */}
-            {(activeMode === 1 || activeMode === 2 || isReverse) ? (
+            {/* Dynamic Inputs Row (Normal vs Range Mode for 1, 2, 3 Digit) */}
+            {isReverse ? (
               /* Range Mode (4 inputs for Mode 1 & 2: Start, End, Step, Count; 5 inputs for Mode 3: + Box Count) */
               <div className={`grid ${activeMode === 3 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 sm:gap-2`}>
                 <div>

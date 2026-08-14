@@ -336,3 +336,13 @@ input, textarea, select, button, a {
   cursor: pointer;
 }
 
+/* Prevent Caret / Cursor blinking on static non-input text elements */
+*:not(input):not(textarea) {
+  caret-color: transparent !important;
+}
+
+.select-none, .pointer-events-none {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
