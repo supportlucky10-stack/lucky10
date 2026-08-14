@@ -33,15 +33,17 @@ export const MyPlayReportView: React.FC = () => {
   // Detailed Sales Report State
   const [showSalesDetails, setShowSalesDetails] = useState<boolean>(false);
   const [selectedSingleTicket, setSelectedSingleTicket] = useState<any | null>(null);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
   const longPressTimerRef = React.useRef<any>(null);
 
+  // Increased long press hold duration threshold to 750ms
   const startLongPress = (tkt: any) => {
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = setTimeout(() => {
       setSelectedSingleTicket(tkt);
-    }, 450);
+    }, 750);
   };
 
   const cancelLongPress = () => {
@@ -642,14 +644,6 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
             </div>
-
-            <button
-              onClick={() => setActiveSection('HUB')}
-              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Reports</span>
-            </button>
           </div>
         )}
 
@@ -755,12 +749,12 @@ export const MyPlayReportView: React.FC = () => {
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
             
-            {/* Gold Sub-header Metric Banner matching App Theme */}
-            <div className="bg-gold-metallic p-3.5 rounded-xl text-black shadow-lg border border-gold-dark space-y-1.5 font-mono">
-              <div className="flex items-center justify-between font-black text-base uppercase tracking-wider">
-                <span>SALES REPORT &nbsp;( {slotFilter === 'ALL' ? '3 PM' : slotFilter} )</span>
+            {/* Gold Sub-header Metric Banner matching App Theme with bold text, larger size, and no space before colon */}
+            <div className="bg-gold-metallic p-4 rounded-xl text-black shadow-lg border border-gold-dark space-y-2.5 font-mono">
+              <div className="flex items-center justify-between font-black text-lg sm:text-xl uppercase tracking-wider">
+                <span>SALES REPORT &nbsp;( {slotFilter === 'ALL' ? 'ALL' : slotFilter} )</span>
               </div>
-              <div className="flex items-center justify-between text-xs font-black pt-1.5 border-t border-black/20">
+              <div className="flex items-center justify-between text-base sm:text-lg font-black pt-2 border-t border-black/30">
                 <span>TotalCount: {totalDetailCount}</span>
                 <span>GrandTotal: {grandDetailTotal}</span>
               </div>
@@ -778,44 +772,51 @@ export const MyPlayReportView: React.FC = () => {
               </div>
             )}
 
-            {/* 1. WHEN FULL VIEW IS NOT ENABLED (Summary Cards View in Signature Dark Gold Theme matching Screenshot) */}
+            {/* 1. WHEN FULL VIEW IS NOT ENABLED (Default White Border, Gold Border when Clicked) */}
             {!isFullView && (
               <div className="space-y-3">
                 {displayTickets.length === 0 ? (
-                  <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                  <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
                     No bills found for the selected filter.
                   </div>
                 ) : (
-                  displayTickets.map((tkt) => (
-                    <div
-                      key={tkt.id}
-                      onMouseDown={() => startLongPress(tkt)}
-                      onMouseUp={cancelLongPress}
-                      onMouseLeave={cancelLongPress}
-                      onTouchStart={() => startLongPress(tkt)}
-                      onTouchEnd={cancelLongPress}
-                      className="bg-neutral-950 text-white rounded-2xl p-4 shadow-xl border border-gold/40 hover:border-gold transition-all cursor-pointer active:scale-[0.99] space-y-2 font-mono"
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-gold text-sm">BILL ID: <strong className="text-white font-mono">{tkt.id}</strong></span>
-                        <span className="text-gold text-sm font-black font-mono">TOTAL: <strong className="text-amber-400 font-mono text-base">{tkt.filteredTotalAmount}</strong></span>
-                      </div>
+                  displayTickets.map((tkt) => {
+                    const isSelected = selectedCardId === tkt.id;
+                    return (
+                      <div
+                        key={tkt.id}
+                        onClick={() => setSelectedCardId(isSelected ? null : tkt.id)}
+                        onMouseDown={() => startLongPress(tkt)}
+                        onMouseUp={cancelLongPress}
+                        onMouseLeave={cancelLongPress}
+                        onTouchStart={() => startLongPress(tkt)}
+                        onTouchEnd={cancelLongPress}
+                        className={`bg-neutral-950 text-white rounded-2xl p-4 shadow-xl border-2 transition-all cursor-pointer active:scale-[0.99] space-y-2 font-mono ${
+                          isSelected
+                            ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
+                            : 'border-white/90 hover:border-gold'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-black text-gold text-sm">BILL ID: <strong className="text-white font-mono">{tkt.id}</strong></span>
+                          <span className="text-gold text-sm font-black font-mono">TOTAL: <strong className="text-amber-400 font-mono text-base">{tkt.filteredTotalAmount}</strong></span>
+                        </div>
 
-                      <div className="text-xs font-bold text-neutral-300">
-                        <span>COUNT: <strong className="text-white font-mono text-sm">{tkt.filteredTotalCount}</strong></span>
-                      </div>
+                        <div className="text-xs font-bold text-neutral-300">
+                          <span>COUNT: <strong className="text-white font-mono text-sm">{tkt.filteredTotalCount}</strong></span>
+                        </div>
 
-                      <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
-                        <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{(tkt as any).customerName || 'Customer'}</strong></span>
-                        <span className="text-[10px] text-neutral-500 italic">(Hold to delete)</span>
+                        <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
+                          <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{(tkt as any).customerName || 'Customer'}</strong></span>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
 
-            {/* 2. WHEN FULL VIEW IS ENABLED (Detailed Card Boxes with Items Breakdown Table) */}
+            {/* 2. WHEN FULL VIEW IS ENABLED (Default White Border, Gold Border when Clicked) */}
             {isFullView && (
               <div className="space-y-3">
                 {/* Table Header Row */}
@@ -829,63 +830,70 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
 
                 {displayTickets.length === 0 ? (
-                  <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                  <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
                     No bills found matching selected digit/sub-option filter.
                   </div>
                 ) : (
-                  displayTickets.map((tkt) => (
-                    <div
-                      key={tkt.id}
-                      onMouseDown={() => startLongPress(tkt)}
-                      onMouseUp={cancelLongPress}
-                      onMouseLeave={cancelLongPress}
-                      onTouchStart={() => startLongPress(tkt)}
-                      onTouchEnd={cancelLongPress}
-                      className="bg-neutral-950 border border-neutral-800 hover:border-gold rounded-2xl overflow-hidden shadow-xl transition-all cursor-pointer group active:scale-[0.99]"
-                    >
-                      {/* Card Top Header */}
-                      <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
-                        <div className="flex items-center justify-between font-mono">
-                          <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
-                          <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.filteredTotalAmount}</strong></span>
+                  displayTickets.map((tkt) => {
+                    const isSelected = selectedCardId === tkt.id;
+                    return (
+                      <div
+                        key={tkt.id}
+                        onClick={() => setSelectedCardId(isSelected ? null : tkt.id)}
+                        onMouseDown={() => startLongPress(tkt)}
+                        onMouseUp={cancelLongPress}
+                        onMouseLeave={cancelLongPress}
+                        onTouchStart={() => startLongPress(tkt)}
+                        onTouchEnd={cancelLongPress}
+                        className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer group active:scale-[0.99] ${
+                          isSelected
+                            ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
+                            : 'border-white/90 hover:border-gold'
+                        }`}
+                      >
+                        {/* Card Top Header */}
+                        <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
+                          <div className="flex items-center justify-between font-mono">
+                            <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
+                            <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.filteredTotalAmount}</strong></span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                            <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
+                            <span>{tkt.placedAt}</span>
+                          </div>
+                          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
+                            <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
-                          <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
-                          <span>{tkt.placedAt}</span>
-                        </div>
-                        <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
-                          <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
-                          <span className="text-[10px] text-neutral-500 italic">(Hold to delete)</span>
-                        </div>
-                      </div>
 
-                      {/* Card Items Table */}
-                      <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
-                        {tkt.displayItems.map((item: any, idx: number) => {
-                          const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
-                          return (
-                            <div
-                              key={idx}
-                              className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
-                                isMatch
-                                  ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
-                                  : idx % 2 === 1
-                                  ? 'bg-fuchsia-50/80'
-                                  : 'bg-white'
-                              }`}
-                            >
-                              <div className="flex items-center gap-7 font-mono">
-                                <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
-                                <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
-                                <span className="font-black text-neutral-800">{item.count}</span>
+                        {/* Card Items Table */}
+                        <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
+                          {tkt.displayItems.map((item: any, idx: number) => {
+                            const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
+                            return (
+                              <div
+                                key={idx}
+                                className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
+                                  isMatch
+                                    ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
+                                    : idx % 2 === 1
+                                    ? 'bg-fuchsia-50/80'
+                                    : 'bg-white'
+                                }`}
+                              >
+                                <div className="flex items-center gap-7 font-mono">
+                                  <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
+                                  <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
+                                  <span className="font-black text-neutral-800">{item.count}</span>
+                                </div>
+                                <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
                               </div>
-                              <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}
