@@ -51,9 +51,19 @@ export const MyPlayReportView: React.FC = () => {
   const [selectedWinningCardId, setSelectedWinningCardId] = useState<string | null>(null);
 
   // Dates & Form State for Daily Report Form (matching Image 1)
-  const [dailyFromDate, setDailyFromDate] = useState<string>('2026-08-01');
+  const [dailyFromDate, setDailyFromDate] = useState<string>(todayStr);
   const [dailyToDate, setDailyToDate] = useState<string>(todayStr);
   const [dailySlotFilter, setDailySlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
+
+  const resetDatesToCurrent = () => {
+    const currentToday = new Date().toISOString().split('T')[0];
+    setFromDate(currentToday);
+    setToDate(currentToday);
+    setWinningFromDate(currentToday);
+    setWinningToDate(currentToday);
+    setDailyFromDate(currentToday);
+    setDailyToDate(currentToday);
+  };
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -539,14 +549,20 @@ export const MyPlayReportView: React.FC = () => {
       title: 'SALES REPORT',
       icon: ClipboardList,
       description: 'View sales breakdown by game slot and date range',
-      action: () => setActiveSection('SALES'),
+      action: () => {
+        resetDatesToCurrent();
+        setActiveSection('SALES');
+      },
     },
     {
       id: 'WINNING',
       title: 'WINNING REPORT',
       icon: Trophy,
       description: 'View winning tickets and total payout amounts',
-      action: () => setActiveSection('WINNING'),
+      action: () => {
+        resetDatesToCurrent();
+        setActiveSection('WINNING');
+      },
     },
     {
       id: 'COUNT',
@@ -560,7 +576,10 @@ export const MyPlayReportView: React.FC = () => {
       title: 'DAILY REPORT',
       icon: Calendar,
       description: 'View daily opening balance, total sales, and net summary',
-      action: () => setActiveSection('DAILY'),
+      action: () => {
+        resetDatesToCurrent();
+        setActiveSection('DAILY');
+      },
     },
   ];
 
@@ -580,7 +599,10 @@ export const MyPlayReportView: React.FC = () => {
         showBack={true}
         onBackClick={
           activeSection !== 'HUB'
-            ? () => setActiveSection('HUB')
+            ? () => {
+                resetDatesToCurrent();
+                setActiveSection('HUB');
+              }
             : undefined
         }
       />
@@ -1521,7 +1543,10 @@ export const MyPlayReportView: React.FC = () => {
           <HeaderBanner
             title="SALES REPORT"
             showBack={true}
-            onBackClick={() => setShowSalesDetails(false)}
+            onBackClick={() => {
+              resetDatesToCurrent();
+              setShowSalesDetails(false);
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1687,7 +1712,10 @@ export const MyPlayReportView: React.FC = () => {
           <HeaderBanner
             title="WINNING REPORT"
             showBack={true}
-            onBackClick={() => setShowWinningDetails(false)}
+            onBackClick={() => {
+              resetDatesToCurrent();
+              setShowWinningDetails(false);
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1907,7 +1935,10 @@ export const MyPlayReportView: React.FC = () => {
           <HeaderBanner
             title="DAILY REPORT"
             showBack={true}
-            onBackClick={() => setShowDailyReportOverlay(false)}
+            onBackClick={() => {
+              resetDatesToCurrent();
+              setShowDailyReportOverlay(false);
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-3 sm:px-4 py-4 space-y-4">
