@@ -7,7 +7,6 @@ import {
   BarChart3,
   Calendar,
   ChevronRight,
-  ArrowLeft,
   Trash2,
 } from 'lucide-react';
 
@@ -54,11 +53,7 @@ export const MyPlayReportView: React.FC = () => {
   // Dates & Form State for Daily Report Form (matching Image 1)
   const [dailyFromDate, setDailyFromDate] = useState<string>('2026-08-01');
   const [dailyToDate, setDailyToDate] = useState<string>(todayStr);
-  const [isDailyFullView, setIsDailyFullView] = useState<boolean>(false);
   const [dailySlotFilter, setDailySlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
-  const [dailyDigitFilter, setDailyDigitFilter] = useState<'ALL' | 'NONE' | '1' | '2' | '3'>('NONE');
-  const [dailySubOptionFilter, setDailySubOptionFilter] = useState<string>('NONE');
-  const [dailySearchNumber, setDailySearchNumber] = useState<string>('');
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -443,6 +438,22 @@ export const MyPlayReportView: React.FC = () => {
       ],
     },
   ];
+
+  const getPrizeBadgeClass = (prize: string) => {
+    if (prize.includes('1ST')) {
+      return 'bg-amber-500/20 border border-amber-500/50 text-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]';
+    }
+    if (prize.includes('2ND')) {
+      return 'bg-purple-500/20 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]';
+    }
+    if (prize.includes('3RD')) {
+      return 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]';
+    }
+    if (prize.includes('4TH') || prize.includes('5TH')) {
+      return 'bg-blue-500/20 border border-blue-500/50 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]';
+    }
+    return 'bg-rose-500/20 border border-rose-500/50 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.2)]';
+  };
 
   // Filter winning categories based on winningSlotFilter, winningDigitFilter, winningSubOptionFilter & winningSearchNumber
   const displayWinningCategories = sampleWinningCategories
@@ -986,6 +997,7 @@ export const MyPlayReportView: React.FC = () => {
                   Full View
                 </span>
                 <button
+                  type="button"
                   onClick={() => setIsWinningFullView(!isWinningFullView)}
                   className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
                     isWinningFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
@@ -1060,6 +1072,7 @@ export const MyPlayReportView: React.FC = () => {
                             : winningDigitFilter !== 'NONE' && winningDigitFilter === item.id;
                         return (
                           <button
+                            type="button"
                             key={item.id}
                             onClick={() => {
                               if (item.id === 'ALL') {
@@ -1108,6 +1121,7 @@ export const MyPlayReportView: React.FC = () => {
                             : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
                         return (
                           <button
+                            type="button"
                             key={opt.id}
                             onClick={() => {
                               if (opt.id === 'ALL') {
@@ -1141,6 +1155,7 @@ export const MyPlayReportView: React.FC = () => {
                             : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
                         return (
                           <button
+                            type="button"
                             key={opt.id}
                             onClick={() => {
                               if (opt.id === 'ALL') {
@@ -1173,6 +1188,7 @@ export const MyPlayReportView: React.FC = () => {
                             : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
                         return (
                           <button
+                            type="button"
                             key={opt.id}
                             onClick={() => {
                               if (opt.id === 'ALL') {
@@ -1200,6 +1216,7 @@ export const MyPlayReportView: React.FC = () => {
                         const isSelected = winningSubOptionFilter === 'ALL';
                         return (
                           <button
+                            type="button"
                             key={opt.id}
                             onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
                             className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
@@ -1231,6 +1248,7 @@ export const MyPlayReportView: React.FC = () => {
                       />
                       {winningSearchNumber && (
                         <button
+                          type="button"
                           onClick={() => setWinningSearchNumber('')}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold"
                         >
@@ -1327,26 +1345,6 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Full View Toggle Switch */}
-              <div className="flex items-center justify-between pt-1 pb-1">
-                <span className="text-xs sm:text-sm font-black text-neutral-300 tracking-wide">
-                  Full View
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsDailyFullView(!isDailyFullView)}
-                  className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
-                    isDailyFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-black shadow-md transition-transform ${
-                      isDailyFullView ? 'translate-x-6' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
               {/* Day Detail & Game Detail Checkbox Options */}
               <div className="pt-2 border-t border-neutral-900 flex items-center justify-start gap-8">
                 {/* Day Detail Checkbox */}
@@ -1440,198 +1438,6 @@ export const MyPlayReportView: React.FC = () => {
                   })}
                 </div>
               </div>
-
-              {/* FULL VIEW EXTRA OPTIONS (Digit selector, Sub-options, and Number Check Box) */}
-              {isDailyFullView && (
-                <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
-                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE:
-                    </span>
-                    <div className="flex items-center justify-center gap-3">
-                      {[
-                        { id: 'ALL', label: '★' },
-                        { id: '1', label: '1' },
-                        { id: '2', label: '2' },
-                        { id: '3', label: '3' },
-                      ].map((item) => {
-                        const isSelected =
-                          dailyDigitFilter === 'ALL'
-                            ? true
-                            : dailyDigitFilter !== 'NONE' && dailyDigitFilter === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() => {
-                              if (item.id === 'ALL') {
-                                if (dailyDigitFilter === 'ALL') {
-                                  setDailyDigitFilter('NONE');
-                                  setDailySubOptionFilter('NONE');
-                                } else {
-                                  setDailyDigitFilter('ALL');
-                                  setDailySubOptionFilter('NONE');
-                                }
-                              } else {
-                                if (dailyDigitFilter === item.id) {
-                                  setDailyDigitFilter('NONE');
-                                  setDailySubOptionFilter('NONE');
-                                } else {
-                                  setDailyDigitFilter(item.id as any);
-                                  setDailySubOptionFilter('NONE');
-                                }
-                              }
-                            }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shadow border ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Row 2: Sub-options */}
-                  <div className="flex items-center justify-center gap-2 pt-1">
-                    {dailyDigitFilter === '1' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'A', label: 'A' },
-                        { id: 'B', label: 'B' },
-                        { id: 'C', label: 'C' },
-                      ].map((item) => {
-                        const isSelected = dailySubOptionFilter === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() =>
-                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
-                            }
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {dailyDigitFilter === '2' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'AB', label: 'AB' },
-                        { id: 'BC', label: 'BC' },
-                        { id: 'AC', label: 'AC' },
-                      ].map((item) => {
-                        const isSelected = dailySubOptionFilter === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() =>
-                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
-                            }
-                            className={`h-9 px-3 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {dailyDigitFilter === '3' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'SUPER', label: 'SUPER' },
-                        { id: 'BOX', label: 'BOX' },
-                      ].map((item) => {
-                        const isSelected = dailySubOptionFilter === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() =>
-                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
-                            }
-                            className={`h-9 px-3 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {(dailyDigitFilter === 'ALL' || dailyDigitFilter === 'NONE') && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'A', label: 'A' },
-                        { id: 'B', label: 'B' },
-                        { id: 'C', label: 'C' },
-                      ].map((item) => {
-                        const isSelected = dailySubOptionFilter === item.id;
-                        return (
-                          <button
-                            type="button"
-                            key={item.id}
-                            onClick={() =>
-                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
-                            }
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {item.label}
-                          </button>
-                        );
-                      })
-                    )}
-                  </div>
-
-                  {/* Row 3: Check Specific Number Input */}
-                  <div className="space-y-1 pt-1">
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      CHECK SPECIFIC NUMBER:
-                    </span>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        placeholder="Number"
-                        value={dailySearchNumber}
-                        onChange={(e) => setDailySearchNumber(e.target.value)}
-                        className="w-full bg-black border border-neutral-700 focus:border-gold text-white font-mono text-xs px-4 py-2.5 rounded-xl outline-none placeholder:text-neutral-500"
-                      />
-                      {dailySearchNumber && (
-                        <button
-                          type="button"
-                          onClick={() => setDailySearchNumber('')}
-                          className="absolute right-3 text-neutral-400 hover:text-white text-xs font-bold"
-                        >
-                          Clear
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* SHOW REPORT Action Button */}
               <div className="pt-2">
@@ -1861,6 +1667,7 @@ export const MyPlayReportView: React.FC = () => {
               </div>
             )}
 
+
             {/* Grouped Category Winning Breakdown (matching Image 2) */}
             {displayWinningCategories.length === 0 ? (
               <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
@@ -1870,12 +1677,12 @@ export const MyPlayReportView: React.FC = () => {
               displayWinningCategories.map((group) => (
                 <div key={group.category} className="space-y-3">
                   
-                  {/* Category Dark Section Header Bar (e.g. BOX, SUPER) */}
-                  <div className="bg-[#3b3b3b] text-white font-black text-sm tracking-widest uppercase py-2 px-4 rounded-xl text-center shadow-md font-mono border border-neutral-700">
+                  {/* Category Dark Section Header Bar (In Signature Dark Gold Theme) */}
+                  <div className="bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border border-gold/40 text-gold font-black text-sm tracking-widest uppercase py-2.5 px-4 rounded-xl text-center shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono">
                     {group.category}
                   </div>
 
-                  {/* Category Cards List */}
+                  {/* Category Cards List (In Signature Dark Gold Theme) */}
                   <div className="space-y-3">
                     {group.cards.map((card: any) => {
                       const isSelected = selectedWinningCardId === card.id;
@@ -1885,20 +1692,29 @@ export const MyPlayReportView: React.FC = () => {
                           onClick={() => setSelectedWinningCardId(isSelected ? null : card.id)}
                           className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${
                             isSelected
-                              ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
-                              : 'border-white/90 hover:border-gold'
+                              ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.5)] scale-[1.01]'
+                              : 'border-gold/40 hover:border-gold hover:shadow-[0_0_15px_rgba(212,175,55,0.2)]'
                           }`}
                         >
-                          {/* Card Prize Header Bar (Light themed pastel bar matching Image 2) */}
-                          <div className={`${card.theme} px-4 py-2.5 font-black text-xs flex items-center justify-between uppercase tracking-wider`}>
-                            <span className="text-sm font-extrabold">{card.prize}</span>
-                            <span className="text-xs">NUMBER: <strong className="text-sm ml-1">{card.number}</strong></span>
+                          {/* Card Prize Header Bar */}
+                          <div className="bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-b border-neutral-800 px-4 py-3 font-mono flex items-center justify-between">
+                            <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${getPrizeBadgeClass(card.prize)}`}>
+                              {card.prize}
+                            </span>
+                            <div className="text-right">
+                              <span className="text-neutral-400 text-xs font-bold uppercase">NUMBER:</span>
+                              <span className="text-white font-black text-base font-mono tracking-wider ml-1.5">{card.number}</span>
+                            </div>
                           </div>
 
-                          {/* Card Bottom Row (Crisp white background showing COUNT and TOTAL) */}
-                          <div className="bg-white text-black font-black text-xs px-4 py-3 flex items-center justify-between">
-                            <span className="tracking-wide">COUNT: <strong className="text-sm ml-1">{card.count}</strong></span>
-                            <span className="tracking-wide">TOTAL: <strong className="text-sm ml-1">{card.total}</strong></span>
+                          {/* Card Bottom Row */}
+                          <div className="bg-black px-4 py-3 flex items-center justify-between font-mono text-xs">
+                            <span className="text-neutral-300">
+                              COUNT: <strong className="text-white font-black text-sm ml-1 font-mono">{card.count}</strong>
+                            </span>
+                            <span className="text-gold font-bold">
+                              TOTAL: <strong className="text-amber-400 font-black text-base ml-1 font-mono">₹{card.total}</strong>
+                            </span>
                           </div>
                         </div>
                       );
@@ -2207,18 +2023,6 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
             )}
-
-            {/* Back Button */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowDailyReportOverlay(false)}
-                className="w-full py-3 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2 cursor-pointer shadow active:scale-95 transition-all"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Reports</span>
-              </button>
-            </div>
 
           </div>
         </div>
