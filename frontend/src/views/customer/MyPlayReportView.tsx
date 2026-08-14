@@ -2208,7 +2208,7 @@ export const MyPlayReportView: React.FC = () => {
 
         {/* ================= 4. COUNT REPORT SUB-VIEW (Original View) ================= */}
         {activeSection === 'OVER_COUNT' && (
-          <div className="space-y-4 pt-1 animate-drop-in">
+          <div className="space-y-4 pt-1 px-3 sm:px-5 animate-drop-in">
             
             {/* Top Tab Bar: Today's Report vs Previous History */}
             <div className="bg-neutral-950 border border-neutral-800 p-1.5 rounded-2xl flex items-center gap-1.5 font-sans shadow-xl">
