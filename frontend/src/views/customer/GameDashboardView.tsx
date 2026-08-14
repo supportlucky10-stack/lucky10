@@ -421,13 +421,13 @@ export const GameDashboardView: React.FC = () => {
                 </div>
               </div>
             ) : (
-              /* Normal Mode (3 inputs: NO., Count, Box Count) matching Photo 1 */
+              /* Normal Mode (3 inputs: Number, Count, Box Count) matching Photo 1 */
               <div className="grid grid-cols-12 gap-2 sm:gap-3">
                 <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                   <input
                     type="text"
                     maxLength={activeMode}
-                    placeholder="NO."
+                    placeholder="Number"
                     value={inputNum}
                     onChange={(e) => setInputNum(e.target.value)}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"

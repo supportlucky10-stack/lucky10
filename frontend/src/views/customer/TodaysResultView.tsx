@@ -83,30 +83,43 @@ export const TodaysResultView: React.FC = () => {
   const currentTheme = slotThemeStyles[activeGameSlot];
 
   const handleShareToWhatsApp = () => {
-    const formattedDate = activeTab === 'TODAY'
-      ? new Date().toLocaleDateString('en-GB')
-      : activeDate.split('-').reverse().join('/');
+    // Format Date: DD-MM-YYYY (e.g. 13-08-2026)
+    const dateParts = activeDate.split('-');
+    const formattedDate = dateParts.length === 3
+      ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+      : new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
 
+    // Format Time: 01:00 PM, 03:00 PM, 06:00 PM, 08:00 PM
+    const slotTimeMap: Record<string, string> = {
+      '1 PM Game': '01:00 PM',
+      '3 PM Game': '03:00 PM',
+      '6 PM Game': '06:00 PM',
+      '8 PM Game': '08:00 PM',
+    };
+    const formattedTime = slotTimeMap[activeGameSlot] || activeGameSlot.replace(' Game', '');
+
+    // Format Compliments in 6 numbers per line separated by " | " with trailing " |"
     const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
     const fallbackList = [
-      '743', '741', '744', '740', '820',
-      '818', '821', '817', '351', '349',
-      '352', '348', '195', '193', '196',
-      '192', '529', '631', '412', '908',
-      '111', '222', '333', '444', '555',
-      '666', '777', '888', '999', '100'
+      '007', '026', '050', '122', '155', '187',
+      '192', '217', '237', '285', '339', '349',
+      '360', '390', '488', '525', '534', '543',
+      '597', '608', '621', '624', '682', '723',
+      '803', '839', '862', '886', '915', '941'
     ];
     const compliments30 = Array.from({ length: 30 }, (_, index) => {
-      return rawList[index] || fallbackList[index];
+      const val = rawList[index] || fallbackList[index];
+      return String(val).padStart(3, '0');
     });
 
     const complimentRows: string[] = [];
-    for (let i = 0; i < 30; i += 5) {
-      complimentRows.push(compliments30.slice(i, i + 5).join('  '));
+    for (let i = 0; i < 30; i += 6) {
+      const row = compliments30.slice(i, i + 6).join(' | ') + ' |';
+      complimentRows.push(row);
     }
     const formattedCompliments = complimentRows.join('\n');
 
-    const text = `🏆 *LUCKY 10 - RESULT REPORT* 🏆\n📅 *Date:* ${formattedDate}\n⏰ *Game Slot:* ${activeGameSlot}\n\n1: ${currentResult.prize1 || '---'}\n2: ${currentResult.prize2 || '---'}\n3: ${currentResult.prize3 || '---'}\n4: ${currentResult.prize4 || '---'}\n5: ${currentResult.prize5 || '408'}\n\n🎁 *COMPLIMENTS (30 NUMBERS):*\n${formattedCompliments}\n\n✨ Check live results on Lucky 10 App!`;
+    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '---'}\n2 - ${currentResult.prize2 || '---'}\n3 - ${currentResult.prize3 || '---'}\n4 - ${currentResult.prize4 || '---'}\n5 - ${currentResult.prize5 || '408'}\n\nOthers:-\n${formattedCompliments}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
@@ -202,8 +215,8 @@ export const TodaysResultView: React.FC = () => {
           })}
         </div>
 
-        {/* 5 Winning Number Cards (Text labels "1st Prize", "2nd Prize" etc. removed) */}
-        <div className="space-y-2 sm:space-y-2.5">
+        {/* 5 Winning Number Cards (1st Prize featured slightly larger, 2nd-5th compact) */}
+        <div className="space-y-1.5">
           {[
             { id: 1, val: currentResult.prize1, delay: '0ms', isFirst: true },
             { id: 2, val: currentResult.prize2, delay: '120ms', isFirst: false },
@@ -214,28 +227,28 @@ export const TodaysResultView: React.FC = () => {
             <div
               key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
               style={{ animationDelay: item.delay }}
-              className={`flex items-center justify-start rounded-2xl animate-drop-in transition-all ${
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} animate-drop-in transition-all ${
                 item.isFirst
-                  ? `p-3.5 sm:p-4 bg-neutral-950 ${currentTheme.cardBorder}`
-                  : 'p-3 sm:p-3.5 bg-neutral-950 border border-neutral-800 shadow'
+                  ? 'py-2.5 px-3.5 sm:py-3 sm:px-4 shadow-md border-2'
+                  : 'py-1.5 px-3 sm:py-2 sm:px-3.5 shadow-sm border'
               }`}
             >
-              <div className="flex items-center gap-4 w-full">
+              <div className="flex items-center gap-3 w-full">
                 <div
-                  className={`flex items-center justify-center rounded-xl border shrink-0 font-black aspect-square ${
+                  className={`flex items-center justify-center rounded-lg border shrink-0 font-black aspect-square ${currentTheme.badgeActive} ${
                     item.isFirst
-                      ? `w-10 h-10 sm:w-11 sm:h-11 min-w-[40px] min-h-[40px] ${currentTheme.badgeActive}`
-                      : 'w-8 h-8 sm:w-9 sm:h-9 min-w-[32px] min-h-[32px] bg-white text-black text-xs sm:text-sm border-black'
+                      ? 'w-8.5 h-8.5 sm:w-9.5 sm:h-9.5 min-w-[34px] min-h-[34px] max-w-[34px] max-h-[34px] sm:min-w-[38px] sm:min-h-[38px] text-sm sm:text-base'
+                      : 'w-6.5 h-6.5 sm:w-7 sm:h-7 min-w-[26px] min-h-[26px] max-w-[26px] max-h-[26px] sm:min-w-[28px] sm:min-h-[28px] text-xs sm:text-xs'
                   }`}
                 >
                   {item.id}
                 </div>
                 <div className="flex items-center flex-1">
                   <span
-                    className={`font-black font-mono tracking-widest block ${
+                    className={`font-black font-sans tracking-widest block ${currentTheme.textActive} ${
                       item.isFirst
-                        ? `${currentTheme.textActive} text-xl sm:text-2xl font-extrabold`
-                        : 'text-neutral-100 text-base sm:text-lg font-bold'
+                        ? 'text-lg sm:text-xl font-black'
+                        : 'text-sm sm:text-base font-bold'
                     }`}
                   >
                     {item.val || '---'}
@@ -275,7 +288,7 @@ export const TodaysResultView: React.FC = () => {
                 {compliments30.map((val, idx) => (
                   <div
                     key={idx}
-                    className="bg-black py-2 sm:py-2.5 text-center text-sm sm:text-base font-mono font-extrabold text-neutral-100 tracking-wide"
+                    className="bg-black py-2 sm:py-2.5 text-center text-sm sm:text-base font-sans font-black text-neutral-100 tracking-wider"
                   >
                     {val}
                   </div>
