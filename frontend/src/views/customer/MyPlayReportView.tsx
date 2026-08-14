@@ -597,10 +597,10 @@ export const MyPlayReportView: React.FC = () => {
                   key={item.id}
                   type="button"
                   onClick={item.action}
-                  className="w-full bg-neutral-950 p-4 sm:p-4.5 rounded-2xl border border-neutral-800 flex items-center justify-between shadow-md hover:border-gold/60 hover:bg-neutral-900/80 active:scale-[0.98] transition-all cursor-pointer group focus:outline-none focus:ring-0 select-none outline-none"
+                  className="w-full bg-neutral-950 p-4 sm:p-4.5 rounded-2xl border border-neutral-800 flex items-center justify-between shadow-md [@media(hover:hover)]:hover:border-gold/60 [@media(hover:hover)]:hover:bg-neutral-900/80 active:scale-[0.98] active:border-gold/60 transition-all cursor-pointer group focus:outline-none select-none outline-none [-webkit-tap-highlight-color:transparent]"
                 >
                   <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gold-metallic text-black rounded-xl border border-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
+                    <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gold-metallic text-black rounded-xl border border-black flex items-center justify-center shrink-0 shadow-md [@media(hover:hover)]:group-hover:scale-105 transition-transform">
                       <IconComp className="w-5 h-5 stroke-[2.5]" />
                     </div>
 
@@ -611,7 +611,7 @@ export const MyPlayReportView: React.FC = () => {
                     </div>
                   </div>
 
-                  <ChevronRight className="w-5 h-5 text-neutral-500 group-hover:text-gold group-hover:translate-x-1 transition-all shrink-0" />
+                  <ChevronRight className="w-5 h-5 text-neutral-500 [@media(hover:hover)]:group-hover:text-gold [@media(hover:hover)]:group-hover:translate-x-1 transition-all shrink-0" />
                 </button>
               );
             })}
@@ -630,7 +630,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(fromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
@@ -643,14 +643,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(fromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
@@ -662,7 +662,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(toDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
@@ -675,14 +675,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(toDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
@@ -978,7 +978,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(winningFromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
@@ -991,14 +991,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={winningFromDate}
                       onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(winningFromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
@@ -1010,7 +1010,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(winningToDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
@@ -1023,14 +1023,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={winningToDate}
                       onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(winningToDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
@@ -1332,7 +1332,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(dailyFromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       FROM DATE
@@ -1345,14 +1345,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={dailyFromDate}
                       onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(dailyFromDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
@@ -1364,7 +1364,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(dailyToDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       TO DATE
@@ -1377,14 +1377,14 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={dailyToDate}
                       onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                     />
                   </div>
 
                   <button
                     type="button"
                     onClick={() => openDatePicker(dailyToDateInputRef.current)}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                    className="bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center z-20"
                   >
                     CHANGE
                   </button>
