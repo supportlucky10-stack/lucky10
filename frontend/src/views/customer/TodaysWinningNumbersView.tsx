@@ -1,25 +1,38 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { History, Calendar, FileText } from 'lucide-react';
+import { History, FileText } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 export const TodaysWinningNumbersView: React.FC = () => {
   const { placedTickets } = useApp();
   const [activeTab, setActiveTab] = useState<'TODAY' | 'PREVIOUS'>('TODAY');
   const [selectedSlot, setSelectedSlot] = useState<string>('ALL');
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date(Date.now() - 86400000).toISOString().split('T')[0]
-  );
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const [fromDate, setFromDate] = useState<string>(todayStr);
+  const [toDate, setToDate] = useState<string>(todayStr);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const slotOptions = ['ALL', ...games];
 
-  // Filter tickets by slot and date
+  // Helper to format YYYY-MM-DD -> DD-MM-YYYY
+  const formatDateDisplay = (dateStr: string) => {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Filter tickets by slot and date range
   const filteredTickets = placedTickets.filter((ticket) => {
     if (selectedSlot !== 'ALL' && ticket.gameSlot !== selectedSlot) return false;
     if (activeTab === 'PREVIOUS') {
-      return ticket.placedAt?.startsWith(selectedDate);
+      const ticketDate = ticket.placedAt?.split(' ')[0] || '';
+      // Filter if date is between fromDate and toDate
+      if (fromDate && ticketDate < fromDate) return false;
+      if (toDate && ticketDate > toDate) return false;
     }
     return true;
   });
@@ -78,13 +91,13 @@ export const TodaysWinningNumbersView: React.FC = () => {
       {/* Header Banner */}
       <HeaderBanner title="Total count view" />
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4">
+      <div className="max-w-md mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4 font-sans">
         
         {/* Navigation Tabs: Today's Report & Previous History */}
         <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold shadow">
           <button
             onClick={() => setActiveTab('TODAY')}
-            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
+            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer ${
               activeTab === 'TODAY'
                 ? 'bg-gold-metallic text-black shadow'
                 : 'text-neutral-400 hover:text-white'
@@ -96,7 +109,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('PREVIOUS')}
-            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
+            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer ${
               activeTab === 'PREVIOUS'
                 ? 'bg-gold-metallic text-black shadow'
                 : 'text-neutral-400 hover:text-white'
@@ -107,27 +120,70 @@ export const TodaysWinningNumbersView: React.FC = () => {
           </button>
         </div>
 
-        {/* Date Selector for Previous History Tab */}
+        {/* FROM DATE & TO DATE Selection for Previous History Tab (matching Image 2) */}
         {activeTab === 'PREVIOUS' && (
-          <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-            <span className="font-black text-gold uppercase tracking-wider text-xs">
-              SELECT DATE
-            </span>
-            <div
-              onClick={(e) => {
-                const input = e.currentTarget.querySelector('input');
-                input?.showPicker?.();
-              }}
-              className="flex items-center gap-2 bg-black border border-neutral-700 hover:border-gold/80 px-3 py-1.5 rounded-lg cursor-pointer transition-all shadow-inner group"
-            >
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
-              />
-              <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform cursor-pointer shrink-0" />
+          <div className="bg-neutral-950 border border-neutral-800 p-4 rounded-2xl shadow-xl space-y-3.5 animate-drop-in">
+            
+            {/* From Date Input Row */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
+                  <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    {formatDateDisplay(fromDate)}
+                  </span>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                  />
+                </label>
+
+                <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
+                  <span>CHANGE</span>
+                  <input
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                  />
+                </label>
+              </div>
             </div>
+
+            {/* To Date Input Row */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
+                  <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                  />
+                </label>
+
+                <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
+                  <span>CHANGE</span>
+                  <input
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                  />
+                </label>
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -140,7 +196,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
               <button
                 key={opt}
                 onClick={() => setSelectedSlot(opt)}
-                className={`py-2 px-1 text-[10px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all ${
+                className={`py-2 px-1 text-[10px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all cursor-pointer ${
                   isSelected
                     ? 'bg-gold-banner text-black border-gold shadow-md'
                     : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-gold/40'
@@ -160,7 +216,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
         </div>
 
         {/* Total Count Report Table - Dark Metallic Gold Theme */}
-        <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-neutral-950 text-white text-xs sm:text-sm font-bold shadow-[0_0_20px_rgba(184,137,40,0.15)] animate-drop-in">
+        <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-neutral-950 text-white text-xs sm:text-sm font-bold shadow-[0_0_20px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
           {/* Header Row */}
           <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-neutral-800 font-extrabold py-3 px-3 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
             <span>GAME</span>

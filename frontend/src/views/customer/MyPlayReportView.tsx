@@ -14,10 +14,10 @@ import {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, setCurrentView } = useApp();
+  const { userTickets, setCurrentView, currentUser } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
-  // Dates for Sales Report Form
+  // Dates & Form State for Sales Report Form
   const todayStr = new Date().toISOString().split('T')[0];
 
   const [fromDate, setFromDate] = useState<string>(todayStr);
@@ -25,18 +25,194 @@ export const MyPlayReportView: React.FC = () => {
   const [isFullView, setIsFullView] = useState<boolean>(false);
   const [slotFilter, setSlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
   
-  // By default, no digit type or sub-option is selected/starred
+  // Sales Report Filters
   const [digitFilter, setDigitFilter] = useState<'ALL' | 'NONE' | '1' | '2' | '3'>('NONE');
   const [subOptionFilter, setSubOptionFilter] = useState<string>('NONE');
   const [searchNumber, setSearchNumber] = useState<string>('');
 
-  // Detailed Sales Report State
+  // Detailed Sales Report Overlay State
   const [showSalesDetails, setShowSalesDetails] = useState<boolean>(false);
   const [selectedSingleTicket, setSelectedSingleTicket] = useState<any | null>(null);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
   const longPressTimerRef = React.useRef<any>(null);
+
+  // Dates & Form State for Winning Report Form (matching Image 1)
+  const [winningFromDate, setWinningFromDate] = useState<string>(todayStr);
+  const [winningToDate, setWinningToDate] = useState<string>(todayStr);
+  const [isWinningFullView, setIsWinningFullView] = useState<boolean>(false);
+  const [winningSlotFilter, setWinningSlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
+  const [winningDigitFilter, setWinningDigitFilter] = useState<'ALL' | 'NONE' | '1' | '2' | '3'>('NONE');
+  const [winningSubOptionFilter, setWinningSubOptionFilter] = useState<string>('NONE');
+  const [winningSearchNumber, setWinningSearchNumber] = useState<string>('');
+  
+  // Detailed Winning Report Overlay State (matching Image 2)
+  const [showWinningDetails, setShowWinningDetails] = useState<boolean>(false);
+  const [selectedWinningCardId, setSelectedWinningCardId] = useState<string | null>(null);
+
+  // Dates & Form State for Daily Report Form (matching Image 1)
+  const [dailyFromDate, setDailyFromDate] = useState<string>('2026-08-01');
+  const [dailyToDate, setDailyToDate] = useState<string>(todayStr);
+  const [isDailyFullView, setIsDailyFullView] = useState<boolean>(false);
+  const [dailySlotFilter, setDailySlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
+  const [dailyDigitFilter, setDailyDigitFilter] = useState<'ALL' | 'NONE' | '1' | '2' | '3'>('NONE');
+  const [dailySubOptionFilter, setDailySubOptionFilter] = useState<string>('NONE');
+  const [dailySearchNumber, setDailySearchNumber] = useState<string>('');
+
+  const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
+  const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
+  const [showDailyReportOverlay, setShowDailyReportOverlay] = useState<boolean>(false);
+  const [activeDailyOverlayTab, setActiveDailyOverlayTab] = useState<'DAY' | 'GAME'>('DAY');
+
+  // Input refs for Date Picker popup trigger
+  const fromDateInputRef = React.useRef<HTMLInputElement>(null);
+  const toDateInputRef = React.useRef<HTMLInputElement>(null);
+  const winningFromDateInputRef = React.useRef<HTMLInputElement>(null);
+  const winningToDateInputRef = React.useRef<HTMLInputElement>(null);
+  const dailyFromDateInputRef = React.useRef<HTMLInputElement>(null);
+  const dailyToDateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const openDatePicker = (inputEl: HTMLInputElement | null) => {
+    if (!inputEl) return;
+    if (typeof inputEl.showPicker === 'function') {
+      try {
+        inputEl.showPicker();
+        return;
+      } catch (err) {}
+    }
+    inputEl.focus();
+    inputEl.click();
+  };
+
+  // Sample Realistic Day-wise dataset matching Image 2
+  const sampleDailyRows = [
+    { date: '01-08-2026', sale: 2840, prize: 0 },
+    { date: '02-08-2026', sale: 2620, prize: 1100 },
+    { date: '03-08-2026', sale: 3220, prize: 540 },
+    { date: '04-08-2026', sale: 5150, prize: 1280 },
+    { date: '05-08-2026', sale: 4120, prize: 190 },
+    { date: '06-08-2026', sale: 3400, prize: 130 },
+    { date: '07-08-2026', sale: 3880, prize: 700 },
+    { date: '08-08-2026', sale: 5290, prize: 120 },
+    { date: '09-08-2026', sale: 4300, prize: 180 },
+    { date: '10-08-2026', sale: 4230, prize: 1560 },
+    { date: '11-08-2026', sale: 12990, prize: 5060 },
+    { date: '12-08-2026', sale: 7260, prize: 5040 },
+    { date: '13-08-2026', sale: 12600, prize: 22500 },
+    { date: '14-08-2026', sale: 440, prize: 0 },
+  ];
+
+  // Helper to format YYYY-MM-DD -> DD-MM-YYYY
+  const formatDateDisplay = (dateStr: string) => {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dateStr;
+  };
+
+  // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
+  const parseDDMMYYYYtoYYYYMMDD = (dStr: string) => {
+    const parts = dStr.split('-');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return dStr;
+  };
+
+  // Dynamically filter daily rows between dailyFromDate and dailyToDate (inclusive)
+  const filteredDailyRows = React.useMemo(() => {
+    const dateMap = new Map<string, { date: string; sale: number; prize: number }>();
+    
+    // 1. Process sample baseline data within selected range
+    sampleDailyRows.forEach((r) => {
+      const isoDate = parseDDMMYYYYtoYYYYMMDD(r.date);
+      if (isoDate >= dailyFromDate && isoDate <= dailyToDate) {
+        const slotScale = dailySlotFilter === 'ALL' ? 1 : 0.25;
+        dateMap.set(isoDate, {
+          date: r.date,
+          sale: Math.round(r.sale * slotScale),
+          prize: Math.round(r.prize * slotScale),
+        });
+      }
+    });
+
+    // 2. Incorporate actual tickets placed by the user
+    userTickets.forEach((t) => {
+      const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+      if (tDate >= dailyFromDate && tDate <= dailyToDate) {
+        if (dailySlotFilter === 'ALL' || t.gameSlot.toUpperCase().startsWith(dailySlotFilter.toUpperCase())) {
+          const displayD = formatDateDisplay(tDate);
+          const existing = dateMap.get(tDate) || { date: displayD, sale: 0, prize: 0 };
+          existing.sale += t.totalAmount;
+          if (t.status === 'WON') {
+            existing.prize += t.winAmount || 0;
+          }
+          dateMap.set(tDate, existing);
+        }
+      }
+    });
+
+    // If no records in range, create at least selected fromDate entry
+    if (dateMap.size === 0 && dailyFromDate && dailyToDate) {
+      dateMap.set(dailyFromDate, {
+        date: formatDateDisplay(dailyFromDate),
+        sale: 0,
+        prize: 0,
+      });
+    }
+
+    return Array.from(dateMap.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([_, val]) => val);
+  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets]);
+
+  // Aggregate dynamically calculated daily totals based on selected dates and filter
+  const currentDailyTotalSale = filteredDailyRows.reduce((acc, r) => acc + r.sale, 0);
+  const currentDailyTotalPrize = filteredDailyRows.reduce((acc, r) => acc + r.prize, 0);
+  const currentDailyNetTotal = currentDailyTotalSale - currentDailyTotalPrize;
+
+  // Game slot rows dynamically reflecting the selected date range & user tickets
+  const dynamicGameRows = React.useMemo(() => {
+    const daysCount = Math.max(1, filteredDailyRows.length);
+    const dayRatio = daysCount / 14;
+
+    const baseSlots = [
+      { slotName: '1 PM', baseSale: 16840, basePrize: 21800, slotKey: '1 PM Game' },
+      { slotName: '3 PM', baseSale: 15360, basePrize: 3100, slotKey: '3 PM Game' },
+      { slotName: '6 PM', baseSale: 15980, basePrize: 7740, slotKey: '6 PM Game' },
+      { slotName: '8 PM', baseSale: 24160, basePrize: 5760, slotKey: '8 PM Game' },
+    ];
+
+    return baseSlots.map((slot) => {
+      const slotTickets = userTickets.filter((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+        return (
+          tDate >= dailyFromDate &&
+          tDate <= dailyToDate &&
+          t.gameSlot === slot.slotKey
+        );
+      });
+      const userSale = slotTickets.reduce((acc, t) => acc + t.totalAmount, 0);
+      const userPrize = slotTickets
+        .filter((t) => t.status === 'WON')
+        .reduce((acc, t) => acc + (t.winAmount || 0), 0);
+
+      const computedSale = Math.round(slot.baseSale * dayRatio) + userSale;
+      const computedPrize = Math.round(slot.basePrize * dayRatio) + userPrize;
+
+      return {
+        slotName: slot.slotName,
+        sale: computedSale,
+        prize: computedPrize,
+      };
+    });
+  }, [filteredDailyRows, dailyFromDate, dailyToDate, userTickets]);
+
+  const filteredGameRows = dailySlotFilter === 'ALL'
+    ? dynamicGameRows
+    : dynamicGameRows.filter((r) => r.slotName === dailySlotFilter);
 
   // Increased long press hold duration threshold to 750ms
   const startLongPress = (tkt: any) => {
@@ -52,21 +228,6 @@ export const MyPlayReportView: React.FC = () => {
       longPressTimerRef.current = null;
     }
   };
-
-  // Helper to format YYYY-MM-DD -> DD-MM-YYYY
-  const formatDateDisplay = (dateStr: string) => {
-    const parts = dateStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dateStr;
-  };
-
-  // Aggregate user sales & winning data
-  const totalSales = userTickets.reduce((acc, t) => acc + t.totalAmount, 0);
-  const totalWinning = userTickets
-    .filter((t) => t.status === 'WON')
-    .reduce((acc, t) => acc + (t.winAmount || 0), 0);
 
   // Mock Realistic Ticket Data matching user's reference screenshots
   const sampleTickets = [
@@ -154,26 +315,26 @@ export const MyPlayReportView: React.FC = () => {
   const allTickets = userTickets.length > 0 ? userTickets : sampleTickets;
 
   // Filter items matching digitFilter & subOptionFilter
-  const isItemMatch = (item: any) => {
+  const isItemMatch = (item: any, digitF: string, subF: string) => {
     const itemType = (item.type || '').toUpperCase();
     const numStr = (item.number || '').toString().trim();
     const numLength = numStr.replace(/\D/g, '').length;
 
     // 1. Digit Filter
-    if (digitFilter === '1') {
+    if (digitF === '1') {
       const isOneDigit = numLength === 1 || ['A', 'B', 'C'].includes(itemType);
       if (!isOneDigit) return false;
-    } else if (digitFilter === '2') {
+    } else if (digitF === '2') {
       const isTwoDigit = numLength === 2 || ['AB', 'BC', 'AC'].includes(itemType);
       if (!isTwoDigit) return false;
-    } else if (digitFilter === '3') {
+    } else if (digitF === '3') {
       const isThreeDigit = numLength === 3 || ['SUPER', 'BOX', 'DIRECT', 'SHUFFLE'].includes(itemType);
       if (!isThreeDigit) return false;
     }
 
     // 2. Sub Option Filter
-    if (subOptionFilter !== 'ALL' && subOptionFilter !== 'NONE') {
-      const sub = subOptionFilter.toUpperCase();
+    if (subF !== 'ALL' && subF !== 'NONE') {
+      const sub = subF.toUpperCase();
       if (sub === 'SUPER' || sub === 'DIRECT') {
         if (itemType !== 'SUPER' && itemType !== 'DIRECT') return false;
       } else if (sub === 'BOX' || sub === 'SHUFFLE') {
@@ -186,7 +347,7 @@ export const MyPlayReportView: React.FC = () => {
     return true;
   };
 
-  // Filter tickets based on search number, slot filter, deletion, and digit/suboption filters
+  // Filter tickets for Sales Report
   const displayTickets = allTickets
     .map((tkt) => {
       if (deletedTicketIds.includes(tkt.id)) return null;
@@ -197,7 +358,7 @@ export const MyPlayReportView: React.FC = () => {
           return false;
         }
         if (isFullView) {
-          return isItemMatch(item);
+          return isItemMatch(item, digitFilter, subOptionFilter);
         }
         return true;
       });
@@ -218,6 +379,103 @@ export const MyPlayReportView: React.FC = () => {
     0
   );
   const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.filteredTotalAmount, 0);
+
+  // Realistic Winning Report Data matching Image 2
+  const sampleWinningCategories = [
+    {
+      category: 'BOX',
+      cards: [
+        {
+          id: 'w1',
+          prize: '1ST PRIZE',
+          number: '386',
+          count: 1,
+          total: 3000,
+          theme: 'bg-[#cbe6d4] text-[#134927]', // Light green header
+          slot: '3 PM Game',
+          type: 'BOX',
+        },
+        {
+          id: 'w2',
+          prize: '2ND PRIZE',
+          number: '638',
+          count: 1,
+          total: 800,
+          theme: 'bg-[#dcd0f0] text-[#3c1e6e]', // Light purple header
+          slot: '3 PM Game',
+          type: 'BOX',
+        },
+      ],
+    },
+    {
+      category: 'SUPER',
+      cards: [
+        {
+          id: 'w3',
+          prize: '1ST PRIZE',
+          number: '386',
+          count: 2,
+          total: 10000,
+          theme: 'bg-[#cbe6d4] text-[#134927]', // Light green header
+          slot: '3 PM Game',
+          type: 'SUPER',
+        },
+        {
+          id: 'w4',
+          prize: '5TH PRIZE',
+          number: '805',
+          count: 2,
+          total: 100,
+          theme: 'bg-[#e5d9cc] text-[#4a341e]', // Light warm taupe header
+          slot: '1 PM Game',
+          type: 'SUPER',
+        },
+        {
+          id: 'w5',
+          prize: '6TH PRIZE',
+          number: '184',
+          count: 5,
+          total: 250,
+          theme: 'bg-[#cfdff6] text-[#17335c]', // Light blue header
+          slot: '1 PM Game',
+          type: 'SUPER',
+        },
+      ],
+    },
+  ];
+
+  // Filter winning categories based on winningSlotFilter, winningDigitFilter, winningSubOptionFilter & winningSearchNumber
+  const displayWinningCategories = sampleWinningCategories
+    .map((cat) => {
+      const matchingCards = cat.cards.filter((card) => {
+        if (winningSlotFilter !== 'ALL' && !card.slot.startsWith(winningSlotFilter)) {
+          return false;
+        }
+        if (winningSearchNumber.trim() && !card.number.includes(winningSearchNumber.trim())) {
+          return false;
+        }
+        if (isWinningFullView) {
+          return isItemMatch(card, winningDigitFilter, winningSubOptionFilter);
+        }
+        return true;
+      });
+
+      if (matchingCards.length === 0) return null;
+      return {
+        ...cat,
+        cards: matchingCards,
+      };
+    })
+    .filter(Boolean) as any[];
+
+  const winningTotalCount = displayWinningCategories.reduce(
+    (acc, cat) => acc + cat.cards.reduce((cAcc: number, c: any) => cAcc + c.count, 0),
+    0
+  );
+  const winningGrandTotal = displayWinningCategories.reduce(
+    (acc, cat) => acc + cat.cards.reduce((cAcc: number, c: any) => cAcc + c.total, 0),
+    0
+  );
 
   const reportItems = [
     {
@@ -261,7 +519,7 @@ export const MyPlayReportView: React.FC = () => {
             ? 'SALES REPORT'
             : activeSection === 'WINNING'
             ? 'Winning Report'
-            : 'Daily Report'
+            : 'DAILY REPORT'
         }
         showBack={true}
         onBackClick={
@@ -313,60 +571,64 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
+                  <div
+                    onClick={() => openDatePicker(fromDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
                       From date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
                       {formatDateDisplay(fromDate)}
                     </span>
                     <input
+                      ref={fromDateInputRef}
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                      className="sr-only pointer-events-none"
                     />
-                  </label>
+                  </div>
 
-                  <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
-                    <span>CHANGE</span>
-                    <input
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                    />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(fromDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
+                  <div
+                    onClick={() => openDatePicker(toDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
                       To date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
                       {formatDateDisplay(toDate)}
                     </span>
                     <input
+                      ref={toDateInputRef}
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                      className="sr-only pointer-events-none"
                     />
-                  </label>
+                  </div>
 
-                  <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
-                    <span>CHANGE</span>
-                    <input
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
-                    />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(toDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
                 </div>
               </div>
 
@@ -647,90 +909,751 @@ export const MyPlayReportView: React.FC = () => {
           </div>
         )}
 
-        {/* ================= 3. WINNING REPORT SUB-VIEW ================= */}
+        {/* ================= 3. WINNING REPORT SUB-VIEW (matching Image 1) ================= */}
         {activeSection === 'WINNING' && (
-          <div className="space-y-4 animate-drop-in">
-            <div className="bg-neutral-950 p-4 rounded-2xl border border-gold/60 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                <span className="text-xs font-black text-neutral-400 uppercase">TOTAL WINNING PAYOUT</span>
-                <span className="text-xl font-black text-gold font-mono">₹{totalWinning}</span>
+          <div className="space-y-5 animate-drop-in">
+            
+            {/* Winning Report Input Form Box */}
+            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5">
+              
+              {/* From Date Input Row */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => openDatePicker(winningFromDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                      From date
+                    </span>
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                      {formatDateDisplay(winningFromDate)}
+                    </span>
+                    <input
+                      ref={winningFromDateInputRef}
+                      type="date"
+                      value={winningFromDate}
+                      onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
+                      className="sr-only pointer-events-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(winningFromDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
+                </div>
               </div>
 
-              <p className="text-xs text-neutral-400">
-                Winning tickets are credited automatically to your account balance upon draw publication.
-              </p>
-            </div>
+              {/* To Date Input Row */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => openDatePicker(winningToDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                      To date
+                    </span>
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                      {formatDateDisplay(winningToDate)}
+                    </span>
+                    <input
+                      ref={winningToDateInputRef}
+                      type="date"
+                      value={winningToDate}
+                      onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
+                      className="sr-only pointer-events-none"
+                    />
+                  </div>
 
-            {/* List of Winning Tickets */}
-            <div className="space-y-2">
-              {userTickets.filter((t) => t.status === 'WON').length === 0 ? (
-                <div className="bg-neutral-950 p-6 rounded-xl border border-neutral-800 text-center text-neutral-400 text-xs font-semibold">
-                  No winning tickets found yet.
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(winningToDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
                 </div>
-              ) : (
-                userTickets
-                  .filter((t) => t.status === 'WON')
-                  .map((tkt) => (
-                    <div
-                      key={tkt.id}
-                      className="bg-neutral-950 p-3.5 rounded-xl border border-emerald-800/60 flex items-center justify-between shadow"
-                    >
-                      <div>
-                        <span className="text-xs font-black text-white uppercase block">{tkt.gameSlot}</span>
-                        <span className="text-[10px] text-neutral-400 font-mono">ID: {tkt.id}</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-emerald-400 font-black text-sm block font-mono">
-                          +₹{tkt.winAmount || 0}
+              </div>
+
+              {/* Full View Toggle Switch */}
+              <div className="flex items-center justify-between pt-1 pb-1">
+                <span className="text-xs sm:text-sm font-black text-neutral-300 tracking-wide">
+                  Full View
+                </span>
+                <button
+                  onClick={() => setIsWinningFullView(!isWinningFullView)}
+                  className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
+                    isWinningFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-black shadow-md transition-transform ${
+                      isWinningFullView ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Slot Filter Radio Options (All, 1pm, 3pm, 6pm, 8pm) */}
+              <div className="pt-2 border-t border-neutral-900 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {[
+                    { id: 'ALL', label: 'All' },
+                    { id: '1 PM', label: '1 PM' },
+                    { id: '3 PM', label: '3 PM' },
+                    { id: '6 PM', label: '6 PM' },
+                    { id: '8 PM', label: '8 PM' },
+                  ].map((opt) => {
+                    const isChecked = winningSlotFilter === opt.id;
+                    return (
+                      <label
+                        key={opt.id}
+                        onClick={() => setWinningSlotFilter(opt.id as any)}
+                        className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all"
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                            isChecked
+                              ? 'border-gold bg-black'
+                              : 'border-neutral-600 bg-black group-hover:border-neutral-400'
+                          }`}
+                        >
+                          {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
+                        </div>
+                        <span
+                          className={`text-xs font-black tracking-wide ${
+                            isChecked ? 'text-gold' : 'text-neutral-300'
+                          }`}
+                        >
+                          {opt.label}
                         </span>
-                        <span className="text-[10px] text-emerald-500 font-extrabold uppercase">WON</span>
-                      </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* FULL VIEW EXTRA OPTIONS FOR WINNING REPORT */}
+              {isWinningFullView && (
+                <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
+                  
+                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
+                      SELECT DIGIT TYPE:
+                    </span>
+                    <div className="flex items-center justify-center gap-3">
+                      {[
+                        { id: 'ALL', label: '★' },
+                        { id: '1', label: '1' },
+                        { id: '2', label: '2' },
+                        { id: '3', label: '3' },
+                      ].map((item) => {
+                        const isSelected =
+                          winningDigitFilter === 'ALL'
+                            ? true
+                            : winningDigitFilter !== 'NONE' && winningDigitFilter === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              if (item.id === 'ALL') {
+                                if (winningDigitFilter === 'ALL') {
+                                  setWinningDigitFilter('NONE');
+                                  setWinningSubOptionFilter('NONE');
+                                } else {
+                                  setWinningDigitFilter('ALL');
+                                  setWinningSubOptionFilter('NONE');
+                                }
+                              } else {
+                                if (winningDigitFilter === item.id) {
+                                  setWinningDigitFilter('NONE');
+                                  setWinningSubOptionFilter('NONE');
+                                } else {
+                                  setWinningDigitFilter(item.id as any);
+                                  setWinningSubOptionFilter('NONE');
+                                }
+                              }
+                            }}
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))
+                  </div>
+
+                  {/* Row 2: Sub-options (Uniform white border styling) */}
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    {winningDigitFilter === '1' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'A', label: 'A' },
+                        { id: 'B', label: 'B' },
+                        { id: 'C', label: 'C' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {winningDigitFilter === '2' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'AB', label: 'AB' },
+                        { id: 'BC', label: 'BC' },
+                        { id: 'AC', label: 'AC' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`px-3.5 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {winningDigitFilter === '3' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'SUPER', label: 'SUPER' },
+                        { id: 'BOX', label: 'BOX' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`px-3.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {(winningDigitFilter === 'ALL' || winningDigitFilter === 'NONE') && (
+                      [
+                        { id: 'ALL', label: '★' },
+                      ].map((opt) => {
+                        const isSelected = winningSubOptionFilter === 'ALL';
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Row 3: Number Search Box (Crisp White Border) */}
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
+                      CHECK SPECIFIC NUMBER:
+                    </span>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        maxLength={3}
+                        value={winningSearchNumber}
+                        onChange={(e) => setWinningSearchNumber(e.target.value.replace(/\D/g, ''))}
+                        placeholder="Number"
+                        className="w-full bg-black border-2 border-white/90 focus:border-gold text-white font-mono font-black text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner"
+                      />
+                      {winningSearchNumber && (
+                        <button
+                          onClick={() => setWinningSearchNumber('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
               )}
+
+              {/* SHOW REPORT Action Button */}
+              <div className="pt-2">
+                <button
+                  onClick={() => setShowWinningDetails(true)}
+                  className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <span>SHOW REPORT</span>
+                </button>
+              </div>
+
             </div>
 
-            <button
-              onClick={() => setActiveSection('HUB')}
-              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Reports</span>
-            </button>
           </div>
         )}
 
-        {/* ================= 4. DAILY REPORT SUB-VIEW ================= */}
+        {/* ================= 4. DAILY REPORT SUB-VIEW (matching Image 1) ================= */}
         {activeSection === 'DAILY' && (
-          <div className="space-y-4 animate-drop-in">
-            <div className="bg-neutral-950 p-4 rounded-2xl border border-gold/60 space-y-3 shadow-lg">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
-                <span className="text-xs font-black text-gold uppercase">DAILY SUMMARY ({todayStr})</span>
+          <div className="space-y-5 animate-drop-in">
+            {/* Daily Report Input Form Box */}
+            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 font-sans">
+              {/* FROM DATE Input Row */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => openDatePicker(dailyFromDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                      FROM DATE
+                    </span>
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                      {formatDateDisplay(dailyFromDate)}
+                    </span>
+                    <input
+                      ref={dailyFromDateInputRef}
+                      type="date"
+                      value={dailyFromDate}
+                      onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
+                      className="sr-only pointer-events-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(dailyFromDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2 text-xs font-bold">
-                <div className="flex justify-between py-1 border-b border-neutral-850">
-                  <span className="text-neutral-400">Total Sales</span>
-                  <span className="text-white font-mono">₹{totalSales}</span>
+              {/* TO DATE Input Row */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                  <div
+                    onClick={() => openDatePicker(dailyToDateInputRef.current)}
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                  >
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                      TO DATE
+                    </span>
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                      {formatDateDisplay(dailyToDate)}
+                    </span>
+                    <input
+                      ref={dailyToDateInputRef}
+                      type="date"
+                      value={dailyToDate}
+                      onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
+                      className="sr-only pointer-events-none"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openDatePicker(dailyToDateInputRef.current)}
+                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center"
+                  >
+                    CHANGE
+                  </button>
                 </div>
-                <div className="flex justify-between py-1 border-b border-neutral-850">
-                  <span className="text-neutral-400">Total Payouts</span>
-                  <span className="text-rose-400 font-mono">₹{totalWinning}</span>
+              </div>
+
+              {/* Full View Toggle Switch */}
+              <div className="flex items-center justify-between pt-1 pb-1">
+                <span className="text-xs sm:text-sm font-black text-neutral-300 tracking-wide">
+                  Full View
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsDailyFullView(!isDailyFullView)}
+                  className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${
+                    isDailyFullView ? 'bg-gold-metallic' : 'bg-neutral-800'
+                  }`}
+                >
+                  <div
+                    className={`w-5 h-5 rounded-full bg-black shadow-md transition-transform ${
+                      isDailyFullView ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Day Detail & Game Detail Checkbox Options */}
+              <div className="pt-2 border-t border-neutral-900 flex items-center justify-start gap-8">
+                {/* Day Detail Checkbox */}
+                <label
+                  onClick={() => {
+                    setIsDayDetail(!isDayDetail);
+                    if (!isDayDetail) setActiveDailyOverlayTab('DAY');
+                  }}
+                  className="flex items-center gap-2.5 cursor-pointer group select-none"
+                >
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isDayDetail
+                        ? 'border-gold bg-gold text-black'
+                        : 'border-neutral-600 bg-black group-hover:border-neutral-400'
+                    }`}
+                  >
+                    {isDayDetail && (
+                      <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
+                        <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-xs sm:text-sm font-black tracking-wide ${isDayDetail ? 'text-gold' : 'text-neutral-300'}`}>
+                    Day Detail
+                  </span>
+                </label>
+
+                {/* Game Detail Checkbox */}
+                <label
+                  onClick={() => {
+                    setIsGameDetail(!isGameDetail);
+                    if (!isGameDetail) setActiveDailyOverlayTab('GAME');
+                  }}
+                  className="flex items-center gap-2.5 cursor-pointer group select-none"
+                >
+                  <div
+                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
+                      isGameDetail
+                        ? 'border-gold bg-gold text-black'
+                        : 'border-neutral-600 bg-black group-hover:border-neutral-400'
+                    }`}
+                  >
+                    {isGameDetail && (
+                      <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
+                        <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-xs sm:text-sm font-black tracking-wide ${isGameDetail ? 'text-gold' : 'text-neutral-300'}`}>
+                    Game Detail
+                  </span>
+                </label>
+              </div>
+
+              {/* Slot Filter Radio Options (All, 1 PM, 3 PM, 6 PM, 8 PM) */}
+              <div className="pt-2 border-t border-neutral-900 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  {[
+                    { id: 'ALL', label: 'All' },
+                    { id: '1 PM', label: '1 PM' },
+                    { id: '3 PM', label: '3 PM' },
+                    { id: '6 PM', label: '6 PM' },
+                    { id: '8 PM', label: '8 PM' },
+                  ].map((opt) => {
+                    const isChecked = dailySlotFilter === opt.id;
+                    return (
+                      <label
+                        key={opt.id}
+                        onClick={() => setDailySlotFilter(opt.id as any)}
+                        className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all"
+                      >
+                        <div
+                          className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${
+                            isChecked
+                              ? 'border-gold bg-black'
+                              : 'border-neutral-600 bg-black group-hover:border-neutral-400'
+                          }`}
+                        >
+                          {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
+                        </div>
+                        <span
+                          className={`text-xs font-black tracking-wide ${
+                            isChecked ? 'text-gold' : 'text-neutral-300'
+                          }`}
+                        >
+                          {opt.label}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
-                <div className="flex justify-between py-1 pt-2 font-black text-sm">
-                  <span className="text-gold">NET REVENUE</span>
-                  <span className="text-gold font-mono">₹{totalSales - totalWinning}</span>
+              </div>
+
+              {/* FULL VIEW EXTRA OPTIONS (Digit selector, Sub-options, and Number Check Box) */}
+              {isDailyFullView && (
+                <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
+                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
+                      SELECT DIGIT TYPE:
+                    </span>
+                    <div className="flex items-center justify-center gap-3">
+                      {[
+                        { id: 'ALL', label: '★' },
+                        { id: '1', label: '1' },
+                        { id: '2', label: '2' },
+                        { id: '3', label: '3' },
+                      ].map((item) => {
+                        const isSelected =
+                          dailyDigitFilter === 'ALL'
+                            ? true
+                            : dailyDigitFilter !== 'NONE' && dailyDigitFilter === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() => {
+                              if (item.id === 'ALL') {
+                                if (dailyDigitFilter === 'ALL') {
+                                  setDailyDigitFilter('NONE');
+                                  setDailySubOptionFilter('NONE');
+                                } else {
+                                  setDailyDigitFilter('ALL');
+                                  setDailySubOptionFilter('NONE');
+                                }
+                              } else {
+                                if (dailyDigitFilter === item.id) {
+                                  setDailyDigitFilter('NONE');
+                                  setDailySubOptionFilter('NONE');
+                                } else {
+                                  setDailyDigitFilter(item.id as any);
+                                  setDailySubOptionFilter('NONE');
+                                }
+                              }
+                            }}
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Sub-options */}
+                  <div className="flex items-center justify-center gap-2 pt-1">
+                    {dailyDigitFilter === '1' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'A', label: 'A' },
+                        { id: 'B', label: 'B' },
+                        { id: 'C', label: 'C' },
+                      ].map((item) => {
+                        const isSelected = dailySubOptionFilter === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() =>
+                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
+                            }
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {dailyDigitFilter === '2' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'AB', label: 'AB' },
+                        { id: 'BC', label: 'BC' },
+                        { id: 'AC', label: 'AC' },
+                      ].map((item) => {
+                        const isSelected = dailySubOptionFilter === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() =>
+                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
+                            }
+                            className={`h-9 px-3 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {dailyDigitFilter === '3' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'SUPER', label: 'SUPER' },
+                        { id: 'BOX', label: 'BOX' },
+                      ].map((item) => {
+                        const isSelected = dailySubOptionFilter === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() =>
+                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
+                            }
+                            className={`h-9 px-3 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {(dailyDigitFilter === 'ALL' || dailyDigitFilter === 'NONE') && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'A', label: 'A' },
+                        { id: 'B', label: 'B' },
+                        { id: 'C', label: 'C' },
+                      ].map((item) => {
+                        const isSelected = dailySubOptionFilter === item.id;
+                        return (
+                          <button
+                            type="button"
+                            key={item.id}
+                            onClick={() =>
+                              setDailySubOptionFilter(dailySubOptionFilter === item.id ? 'NONE' : item.id)
+                            }
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Row 3: Check Specific Number Input */}
+                  <div className="space-y-1 pt-1">
+                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
+                      CHECK SPECIFIC NUMBER:
+                    </span>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        placeholder="Number"
+                        value={dailySearchNumber}
+                        onChange={(e) => setDailySearchNumber(e.target.value)}
+                        className="w-full bg-black border border-neutral-700 focus:border-gold text-white font-mono text-xs px-4 py-2.5 rounded-xl outline-none placeholder:text-neutral-500"
+                      />
+                      {dailySearchNumber && (
+                        <button
+                          type="button"
+                          onClick={() => setDailySearchNumber('')}
+                          className="absolute right-3 text-neutral-400 hover:text-white text-xs font-bold"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* SHOW REPORT Action Button */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!isDayDetail && !isGameDetail) {
+                      setIsDayDetail(true);
+                      setActiveDailyOverlayTab('DAY');
+                    } else if (isGameDetail && !isDayDetail) {
+                      setActiveDailyOverlayTab('GAME');
+                    } else {
+                      setActiveDailyOverlayTab('DAY');
+                    }
+                    setShowDailyReportOverlay(true);
+                  }}
+                  className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <span>SHOW REPORT</span>
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={() => setActiveSection('HUB')}
-              className="w-full py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Reports</span>
-            </button>
           </div>
         )}
 
@@ -755,8 +1678,8 @@ export const MyPlayReportView: React.FC = () => {
                 <span>SALES REPORT &nbsp;( {slotFilter === 'ALL' ? 'ALL' : slotFilter} )</span>
               </div>
               <div className="flex items-center justify-between text-base sm:text-lg font-black pt-2 border-t border-black/30">
-                <span>TotalCount: {totalDetailCount}</span>
-                <span>GrandTotal: {grandDetailTotal}</span>
+                <span>Total Count: {totalDetailCount}</span>
+                <span>Grand Total: {grandDetailTotal}</span>
               </div>
             </div>
 
@@ -902,6 +1825,94 @@ export const MyPlayReportView: React.FC = () => {
         </div>
       )}
 
+      {/* ================= DEDICATED FULL-SCREEN OVERLAY PAGE FOR WINNING REPORT OUTPUT (matching Image 2) ================= */}
+      {showWinningDetails && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          
+          {/* Header Banner matching App Theme */}
+          <HeaderBanner
+            title="WINNING REPORT"
+            showBack={true}
+            onBackClick={() => setShowWinningDetails(false)}
+          />
+
+          <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+            
+            {/* Gold Sub-header Metric Banner matching Image 2 */}
+            <div className="bg-gold-metallic p-4 rounded-xl text-black shadow-lg border border-gold-dark space-y-2.5 font-mono">
+              <div className="flex items-center justify-between font-black text-lg sm:text-xl uppercase tracking-wider">
+                <span>WINNING REPORT &nbsp;( {winningSlotFilter === 'ALL' ? 'ALL' : winningSlotFilter} )</span>
+              </div>
+              <div className="flex items-center justify-between text-base sm:text-lg font-black pt-2 border-t border-black/30">
+                <span>Total Count: {winningTotalCount}</span>
+                <span>Grand Total: {winningGrandTotal}</span>
+              </div>
+            </div>
+
+            {/* Number Search Indicator */}
+            {winningSearchNumber.trim() && (
+              <div className="bg-neutral-900 border border-gold/60 p-3 rounded-xl flex items-center justify-between text-xs font-mono shadow-md">
+                <span className="text-neutral-300">
+                  SEARCHING NUMBER: <strong className="text-gold font-bold text-sm">"{winningSearchNumber}"</strong>
+                </span>
+                <span className="text-emerald-400 font-extrabold">
+                  {displayWinningCategories.length} Category(s) Matched
+                </span>
+              </div>
+            )}
+
+            {/* Grouped Category Winning Breakdown (matching Image 2) */}
+            {displayWinningCategories.length === 0 ? (
+              <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
+                No winning tickets found for the selected filter.
+              </div>
+            ) : (
+              displayWinningCategories.map((group) => (
+                <div key={group.category} className="space-y-3">
+                  
+                  {/* Category Dark Section Header Bar (e.g. BOX, SUPER) */}
+                  <div className="bg-[#3b3b3b] text-white font-black text-sm tracking-widest uppercase py-2 px-4 rounded-xl text-center shadow-md font-mono border border-neutral-700">
+                    {group.category}
+                  </div>
+
+                  {/* Category Cards List */}
+                  <div className="space-y-3">
+                    {group.cards.map((card: any) => {
+                      const isSelected = selectedWinningCardId === card.id;
+                      return (
+                        <div
+                          key={card.id}
+                          onClick={() => setSelectedWinningCardId(isSelected ? null : card.id)}
+                          className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${
+                            isSelected
+                              ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
+                              : 'border-white/90 hover:border-gold'
+                          }`}
+                        >
+                          {/* Card Prize Header Bar (Light themed pastel bar matching Image 2) */}
+                          <div className={`${card.theme} px-4 py-2.5 font-black text-xs flex items-center justify-between uppercase tracking-wider`}>
+                            <span className="text-sm font-extrabold">{card.prize}</span>
+                            <span className="text-xs">NUMBER: <strong className="text-sm ml-1">{card.number}</strong></span>
+                          </div>
+
+                          {/* Card Bottom Row (Crisp white background showing COUNT and TOTAL) */}
+                          <div className="bg-white text-black font-black text-xs px-4 py-3 flex items-center justify-between">
+                            <span className="tracking-wide">COUNT: <strong className="text-sm ml-1">{card.count}</strong></span>
+                            <span className="tracking-wide">TOTAL: <strong className="text-sm ml-1">{card.total}</strong></span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              ))
+            )}
+
+          </div>
+        </div>
+      )}
+
       {/* ================= EDIT, DELETE BILL SINGLE VIEW (In Signature Dark Gold Web Theme) ================= */}
       {selectedSingleTicket && (
         <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
@@ -1021,6 +2032,195 @@ export const MyPlayReportView: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= DEDICATED FULL-SCREEN OVERLAY PAGE FOR DAILY REPORT (matching Image 3 & Image 4) ================= */}
+      {showDailyReportOverlay && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          {/* Header Banner matching App Theme */}
+          <HeaderBanner
+            title="DAILY REPORT"
+            showBack={true}
+            onBackClick={() => setShowDailyReportOverlay(false)}
+          />
+
+          <div className="max-w-md mx-auto w-full px-3 sm:px-4 py-4 space-y-4">
+            
+            {/* If both Day Detail & Game Detail are selected, show a tab switcher */}
+            {isDayDetail && isGameDetail && (
+              <div className="flex bg-neutral-900 p-1 rounded-xl border border-neutral-800 text-xs font-black">
+                <button
+                  onClick={() => setActiveDailyOverlayTab('DAY')}
+                  className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+                    activeDailyOverlayTab === 'DAY'
+                      ? 'bg-gold-metallic text-black shadow font-black'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Day Detail
+                </button>
+                <button
+                  onClick={() => setActiveDailyOverlayTab('GAME')}
+                  className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+                    activeDailyOverlayTab === 'GAME'
+                      ? 'bg-gold-metallic text-black shadow font-black'
+                      : 'text-neutral-400 hover:text-white'
+                  }`}
+                >
+                  Game Detail
+                </button>
+              </div>
+            )}
+
+            {/* Dark Gold Header Metric Card matching App Design */}
+            <div className="bg-gradient-to-b from-neutral-900 via-neutral-950 to-black border-2 border-gold/60 rounded-2xl p-4 text-white shadow-[0_0_20px_rgba(212,175,55,0.15)] space-y-2.5 font-mono">
+              <div className="font-black text-base sm:text-lg uppercase tracking-wider text-gold flex items-center justify-between">
+                <span>DAILY REPORT &nbsp; ( {dailySlotFilter} )</span>
+              </div>
+              <div className="text-xs sm:text-sm font-bold text-neutral-300 flex items-center gap-3">
+                <span className="text-gold font-black">DATE :</span>
+                <span className="font-mono tracking-wide text-white">
+                  {formatDateDisplay(dailyFromDate)} &nbsp;&nbsp; to &nbsp;&nbsp; {formatDateDisplay(dailyToDate)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800">
+                <div className="flex items-center gap-6">
+                  <span>
+                    Total:{' '}
+                    <strong className="font-mono text-gold text-sm sm:text-base">
+                      {currentDailyNetTotal}
+                    </strong>
+                  </span>
+                  <span>
+                    Sale:{' '}
+                    <strong className="font-mono text-white text-sm sm:text-base">
+                      {currentDailyTotalSale}
+                    </strong>
+                  </span>
+                </div>
+                <div>
+                  <span>
+                    Prize:{' '}
+                    <strong className="font-mono text-rose-400 text-sm sm:text-base">
+                      {currentDailyTotalPrize}
+                    </strong>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 1. DAY DETAIL TABLE (Our Signature Dark Gold Theme) */}
+            {activeDailyOverlayTab === 'DAY' && (
+              <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
+                {/* Table Header Bar */}
+                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                  <span className="text-center">NAME</span>
+                  <span className="text-center">SALE</span>
+                  <span className="text-center">PRIZE</span>
+                  <span className="text-center">TOTAL</span>
+                </div>
+
+                {/* Table Rows dynamically filtered by Date */}
+                <div className="divide-y divide-neutral-850 font-mono">
+                  {filteredDailyRows.map((row, idx) => {
+                    const rowTotal = row.sale - row.prize;
+                    const customerDisplayName = currentUser?.name || currentUser?.username || 'DEMO PLAYER';
+                    const isNegative = rowTotal < 0;
+                    return (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-4 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
+                      >
+                        {/* NAME Column: Date on top, Customer name below */}
+                        <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
+                          <span className="text-white font-bold">{row.date}</span>
+                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5">
+                            {customerDisplayName}
+                          </span>
+                        </div>
+
+                        {/* SALE Column (Bold white font) */}
+                        <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">
+                          {row.sale}
+                        </div>
+
+                        {/* PRIZE Column (Rose / Coral font) */}
+                        <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">
+                          {row.prize}
+                        </div>
+
+                        {/* TOTAL Column (Sky Blue or Rose if negative) */}
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>
+                          {rowTotal}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 2. GAME DETAIL TABLE (Our Signature Dark Gold Theme) */}
+            {activeDailyOverlayTab === 'GAME' && (
+              <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
+                {/* Table Header Bar */}
+                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                  <span className="text-center">NAME</span>
+                  <span className="text-center">SALE</span>
+                  <span className="text-center">PRIZE</span>
+                  <span className="text-center">TOTAL</span>
+                </div>
+
+                {/* Table Rows for 1 PM, 3 PM, 6 PM, 8 PM (Filtered by selected slot) */}
+                <div className="divide-y divide-neutral-850 font-mono">
+                  {filteredGameRows.map((row, idx) => {
+                    const rowTotal = row.sale - row.prize;
+                    const isNegative = rowTotal < 0;
+                    return (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-4 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
+                      >
+                        {/* NAME Column: Clean gold slot text */}
+                        <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">
+                          {row.slotName}
+                        </div>
+
+                        {/* SALE Column (Bold white font) */}
+                        <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">
+                          {row.sale}
+                        </div>
+
+                        {/* PRIZE Column (Rose / Coral font) */}
+                        <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">
+                          {row.prize}
+                        </div>
+
+                        {/* TOTAL Column (Sky Blue or Rose if negative) */}
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>
+                          {rowTotal}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Back Button */}
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDailyReportOverlay(false)}
+                className="w-full py-3 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-800 hover:text-white flex items-center justify-center gap-2 cursor-pointer shadow active:scale-95 transition-all"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Reports</span>
+              </button>
+            </div>
+
+          </div>
         </div>
       )}
     </div>
