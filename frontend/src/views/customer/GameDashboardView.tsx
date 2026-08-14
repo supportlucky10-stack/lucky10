@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare } from 'lucide-react';
 
@@ -107,6 +107,7 @@ export const GameDashboardView: React.FC = () => {
     betSlip,
     addToBetSlip,
     removeFromBetSlip,
+    clearBetSlip,
     saveTicket,
     setCurrentView,
     addToast,
@@ -132,6 +133,13 @@ export const GameDashboardView: React.FC = () => {
 
   const unitPrice = 10; // ₹10 per count
 
+  // Clear unsaved generated draft numbers if user navigates to another page/section without saving
+  useEffect(() => {
+    return () => {
+      clearBetSlip();
+    };
+  }, []);
+
   // Helper to generate range numbers
   const getRangeNumbers = (padLength: number): string[] => {
     const s = parseInt(startRange);
@@ -145,11 +153,25 @@ export const GameDashboardView: React.FC = () => {
     return list;
   };
 
-  // Mode 1 Handlers (A, B, C, ALL)
+  // Rotational Permutation Generator for Set Mode (e.g. 314 -> 314, 341, 134, 143, 431, 413)
+  const getPermutations = (str: string): string[] => {
+    if (str.length <= 1) return [str];
+    const results = new Set<string>();
+    for (let i = 0; i < str.length; i++) {
+      const char = str[i];
+      const remaining = str.slice(0, i) + str.slice(i + 1);
+      for (const subPerm of getPermutations(remaining)) {
+        results.add(char + subPerm);
+      }
+    }
+    return Array.from(results);
+  };
+
+  // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1 || cnt > 50) {
-      addToast('Please enter valid count (1-50)', 'error');
+    if (!cnt || cnt < 5 || cnt > 50) {
+      addToast('Minimum 5 count is required for 1-digit game', 'error');
       return;
     }
 
@@ -215,7 +237,7 @@ export const GameDashboardView: React.FC = () => {
     setInputCount('');
   };
 
-  // Mode 3 Handlers (BOTH, BOX, SUPER)
+  // Mode 3 Handlers (BOTH, BOX, SUPER) with Set Rotational Permutations
   const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 1 || cnt > 50) {
@@ -223,10 +245,19 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const targetNums = isReverse ? getRangeNumbers(3) : [inputNum];
+    let targetNums = isReverse ? getRangeNumbers(3) : [inputNum];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 3 || isNaN(Number(n)))) {
       addToast('Please enter a valid 3-digit number or range (000-999)', 'error');
       return;
+    }
+
+    // Expand into rotational permutations if Set is checked
+    if (isSet) {
+      const setPerms = new Set<string>();
+      targetNums.forEach((n) => {
+        getPermutations(n).forEach((p) => setPerms.add(p));
+      });
+      targetNums = Array.from(setPerms);
     }
 
     targetNums.forEach((n) => {
@@ -252,7 +283,7 @@ export const GameDashboardView: React.FC = () => {
       }
     });
 
-    addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
+    addToast(`Added Mode 3 (${modeType}${isSet ? ' SET' : ''}) bets for ${targetNums.length} number(s)`, 'success');
     setInputNum('');
     setStartRange('');
     setEndRange('');
@@ -312,10 +343,19 @@ export const GameDashboardView: React.FC = () => {
                     key={m}
                     type="button"
                     onClick={() => {
-                      setActiveMode(m as 1 | 2 | 3);
+                      const newMode = m as 1 | 2 | 3;
+                      setActiveMode(newMode);
+                      if (newMode === 1 || newMode === 2) {
+                        setIsReverse(true);
+                        setIsSet(false);
+                      } else {
+                        setIsReverse(false);
+                        setIsSet(false);
+                      }
                       setInputNum('');
                       setStartRange('');
                       setEndRange('');
+                      setStepVal('');
                       setInputCount('');
                       setBoxCount('');
                     }}
@@ -341,26 +381,26 @@ export const GameDashboardView: React.FC = () => {
                 />
               </div>
 
-              {/* Checkboxes: R (Range Mode) & Set (Mutually Exclusive) */}
-              <div className="flex items-center gap-2 pl-1">
-                <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
-                  <input
-                    type="checkbox"
-                    checked={isReverse}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setIsReverse(true);
-                        setIsSet(false);
-                      } else {
-                        setIsReverse(false);
-                      }
-                    }}
-                    className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                  />
-                  <span>R</span>
-                </label>
+              {/* Checkboxes: R (Range Mode) & Set (Only for 3-Digit Mode; 1 & 2-Digit Games are Range Mode only) */}
+              {activeMode === 3 ? (
+                <div className="flex items-center gap-2 pl-1">
+                  <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
+                    <input
+                      type="checkbox"
+                      checked={isReverse}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setIsReverse(true);
+                          setIsSet(false);
+                        } else {
+                          setIsReverse(false);
+                        }
+                      }}
+                      className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                    />
+                    <span>R</span>
+                  </label>
 
-                {activeMode === 3 && (
                   <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                     <input
                       type="checkbox"
@@ -377,12 +417,16 @@ export const GameDashboardView: React.FC = () => {
                     />
                     <span>Set</span>
                   </label>
-                )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-500/20 border border-amber-500/40 rounded-lg">
+                  <span className="text-xs font-black text-amber-400 uppercase tracking-wide">R</span>
+                </div>
+              )}
             </div>
 
-            {/* Dynamic Inputs Row (Normal vs Range Mode [R]) */}
-            {isReverse ? (
+            {/* Dynamic Inputs Row (Range Mode for Mode 1 & 2; Normal vs Range/Set for Mode 3) */}
+            {(activeMode === 1 || activeMode === 2 || isReverse) ? (
               /* Range Mode (4 inputs for Mode 1 & 2: Start, End, Step, Count; 5 inputs for Mode 3: + Box Count) */
               <div className={`grid ${activeMode === 3 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 sm:gap-2`}>
                 <div>
@@ -539,9 +583,9 @@ export const GameDashboardView: React.FC = () => {
           </div>
 
           {/* Subtotal Summary Bar (COUNT & TOTAL) Placed Down Below Entry Card */}
-          <div className="bg-neutral-950 text-white px-3.5 py-2.5 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm font-black tracking-wider uppercase shadow">
+          <div className="bg-neutral-950 text-white px-4 py-3 rounded-xl border border-neutral-800 flex items-center justify-between text-sm sm:text-base md:text-lg font-black tracking-wider uppercase shadow-md">
             <span>COUNT: {totalCount}</span>
-            <span>TOTAL: ₹{totalAmount}</span>
+            <span>TOTAL: {totalAmount}</span>
           </div>
 
           {/* Slip Table Placed Down Below Subtotal Bar */}
@@ -554,7 +598,7 @@ export const GameDashboardView: React.FC = () => {
               <span>Action</span>
             </div>
 
-            <div className="divide-y divide-gray-200 min-h-[300px] sm:min-h-[400px] max-h-[500px] sm:max-h-[650px] overflow-y-auto text-xs sm:text-sm font-bold">
+            <div className="divide-y divide-gray-200 min-h-[450px] sm:min-h-[600px] max-h-[650px] sm:max-h-[850px] overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = item.number.includes(':')
@@ -580,7 +624,7 @@ export const GameDashboardView: React.FC = () => {
                         {item.count}
                       </span>
                       <span className="font-mono font-bold text-xs sm:text-sm text-black border-r border-gray-200 truncate px-0.5">
-                        ₹{item.totalAmount ?? (item.count * (item.unitPrice || 10))}
+                        {item.totalAmount ?? (item.count * (item.unitPrice || 10))}
                       </span>
                       <div className="flex items-center justify-center">
                         <button
