@@ -2,18 +2,28 @@ import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Search, Trash2 } from 'lucide-react';
-import type { PlacedTicket } from '../../types';
 
 export const EditDeleteBillView: React.FC = () => {
   const { userTickets } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
-  const [searchedBill, setSearchedBill] = useState<PlacedTicket | any | null>(null);
+  const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [deletedBillIds, setDeletedBillIds] = useState<string[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
 
-  // Realistic sample tickets for demonstration if userTickets is empty
-  const sampleTickets = [
+  // Mock bills array to fallback if user has no placed tickets yet
+  const mockBills = [
+    {
+      id: '8127716',
+      gameSlot: '3 PM Game',
+      customerName: 'Demo Customer',
+      placedAt: '14-08-2026 02:41:04 PM',
+      totalAmount: 110,
+      items: [
+        { type: 'SUPER', number: '053', count: 5, totalAmount: 50 },
+        { type: 'BOX', number: '748', count: 6, totalAmount: 60 },
+      ],
+    },
     {
       id: '8124807',
       gameSlot: '1 PM Game',
@@ -49,94 +59,70 @@ export const EditDeleteBillView: React.FC = () => {
         { type: 'BOX', number: '590', count: 1, totalAmount: 10 },
       ],
     },
-    {
-      id: '8124215',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 10:29:32 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'SUPER', number: '568', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '567', count: 1, totalAmount: 10 },
-      ],
-    },
-    {
-      id: '8113930',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '13-08-2026 12:57:46 PM',
-      totalAmount: 60,
-      items: [
-        { type: 'SUPER', number: '786', count: 2, totalAmount: 20 },
-        { type: 'SUPER', number: '286', count: 2, totalAmount: 20 },
-        { type: 'SUPER', number: '886', count: 2, totalAmount: 20 },
-      ],
-    },
   ];
-
-  const allTickets = (userTickets && userTickets.length > 0 ? userTickets : sampleTickets).filter(
-    (t) => !deletedTicketIds.includes(t.id)
-  );
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    const query = billIdInput.trim().toLowerCase();
-    setHasSearched(true);
+    if (!billIdInput.trim()) return;
 
-    if (!query) {
+    setHasSearched(true);
+    const query = billIdInput.trim().replace('#', '');
+
+    // Skip if already deleted
+    if (deletedBillIds.includes(query)) {
       setSearchedBill(null);
       return;
     }
 
-    // Find ticket by exact or partial ID match
-    const found = allTickets.find(
-      (t) => t.id.toLowerCase() === query || t.id.toLowerCase().includes(query)
+    const allBillsPool = userTickets.length > 0 ? userTickets : mockBills;
+    const found = allBillsPool.find(
+      (b: any) => b.id.toLowerCase() === query.toLowerCase()
     );
 
-    if (found) {
-      setSearchedBill(found);
-    } else {
-      setSearchedBill(null);
-    }
+    setSearchedBill(found || null);
   };
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start pb-28 sm:pb-36 antialiased select-none font-sans">
-      {/* Gold Header Banner */}
-      <HeaderBanner title="DELETE BILL" />
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
+      {/* Header Banner matching theme */}
+      <HeaderBanner title="EDIT / DELETE BILL" showBack={true} />
 
-      {/* Main Search & Manage Container */}
-      <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-6">
+      <div className={`max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 flex flex-col justify-center`}>
         
-        {/* Search Input Box */}
-        <form onSubmit={handleSearch} className="w-full space-y-3">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Type Bill Id here.."
-              value={billIdInput}
-              onChange={(e) => {
-                setBillIdInput(e.target.value);
-                if (!e.target.value.trim()) {
+        {/* Search Input Box Card (Centered on Page) */}
+        <form
+          onSubmit={handleSearch}
+          className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-4 my-auto"
+        >
+          <div className="space-y-1.5">
+            <label className="text-xs font-black text-gold uppercase tracking-wider block">
+              ENTER BILL ID:
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={billIdInput}
+                onChange={(e) => {
+                  setBillIdInput(e.target.value);
                   setHasSearched(false);
-                  setSearchedBill(null);
-                }
-              }}
-              className="w-full px-4 py-3 bg-white text-black font-extrabold text-sm sm:text-base rounded-xl border border-neutral-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-md font-mono"
-            />
-            {billIdInput && (
-              <button
-                type="button"
-                onClick={() => {
-                  setBillIdInput('');
-                  setHasSearched(false);
-                  setSearchedBill(null);
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-black font-bold text-xs"
-              >
-                Clear
-              </button>
-            )}
+                placeholder="e.g. 8127716"
+                className="w-full bg-black border border-neutral-700 focus:border-gold text-white font-mono font-black text-sm px-4 py-3 rounded-xl placeholder:text-neutral-600 outline-none transition-all shadow-inner"
+              />
+              {billIdInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBillIdInput('');
+                    setSearchedBill(null);
+                    setHasSearched(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
 
           <button
@@ -148,9 +134,9 @@ export const EditDeleteBillView: React.FC = () => {
           </button>
         </form>
 
-        {/* Bill Search Results Container (Matching Web App Dark Gold Theme) */}
+        {/* Bill Search Results Container */}
         {hasSearched && (
-          <div className="w-full animate-drop-in">
+          <div className="w-full animate-drop-in pt-2">
             {!searchedBill ? (
               <div className="p-6 bg-neutral-950 rounded-2xl border border-neutral-800 text-center space-y-2">
                 <p className="text-sm font-bold text-neutral-400 italic font-mono">
@@ -160,12 +146,13 @@ export const EditDeleteBillView: React.FC = () => {
             ) : (
               <div className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
                 
-                {/* Bill ID Header Bar */}
-                <div className="bg-neutral-900 border-b border-neutral-800 p-4 flex items-center justify-between font-mono">
+                {/* Bill ID Header Bar (Clean layout without top delete button) */}
+                <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                   <div>
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                     <span className="text-gold font-black text-base">#{searchedBill.id}</span>
                   </div>
+
                   <div className="text-right">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
                     <span className="text-white font-extrabold text-xs">{searchedBill.placedAt}</span>
@@ -178,14 +165,14 @@ export const EditDeleteBillView: React.FC = () => {
                   <span className="text-neutral-300">Customer: <strong className="text-white font-bold">{(searchedBill as any).customerName || 'Customer'}</strong></span>
                 </div>
 
-                {/* Table Column Headers Bar (GAME, NUM, COUNT, ACTION) */}
+                {/* Table Column Headers Bar */}
                 <div className="bg-neutral-900/90 text-gold font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-800 uppercase">
                   <div className="flex items-center gap-10">
                     <span className="w-16">GAME</span>
                     <span className="w-16">NUM</span>
                     <span>COUNT</span>
                   </div>
-                  <span>ACTION</span>
+                  <span>AMOUNT</span>
                 </div>
 
                 {/* Table Rows in Dark Theme */}
@@ -202,22 +189,26 @@ export const EditDeleteBillView: React.FC = () => {
                         <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
                         <span className="text-rose-400 font-black text-sm">{item.count}</span>
                       </div>
-
-                      <button
-                        onClick={() => setConfirmDeleteId(searchedBill.id)}
-                        className="w-8 h-8 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-400 border border-rose-800/80 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                        title="Delete Bill"
-                      >
-                        <Trash2 className="w-4 h-4 stroke-[2.5]" />
-                      </button>
+                      <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
                     </div>
                   ))}
                 </div>
 
-                {/* Bill Total Footer Bar */}
-                <div className="bg-neutral-900 border-t border-neutral-800 p-4 flex items-center justify-between font-mono">
-                  <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
-                  <span className="text-gold font-black text-base">₹{searchedBill.totalAmount}</span>
+                {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
+                <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT:</span>
+                    <span className="text-gold font-black text-base">₹{searchedBill.totalAmount}</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDeleteId(searchedBill.id)}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer shadow border border-rose-500"
+                  >
+                    <Trash2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>DELETE</span>
+                  </button>
                 </div>
 
               </div>
@@ -237,7 +228,7 @@ export const EditDeleteBillView: React.FC = () => {
             <div>
               <h4 className="font-black text-white text-base uppercase">DELETE BILL PERMISSION</h4>
               <p className="text-xs text-neutral-400 mt-1 font-mono">
-                Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong>?
+                Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong> completely?
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2">
@@ -249,11 +240,9 @@ export const EditDeleteBillView: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  setDeletedTicketIds((prev) => [...prev, confirmDeleteId]);
-                  setConfirmDeleteId(null);
+                  setDeletedBillIds((prev) => [...prev, confirmDeleteId]);
                   setSearchedBill(null);
-                  setHasSearched(false);
-                  setBillIdInput('');
+                  setConfirmDeleteId(null);
                 }}
                 className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"
               >

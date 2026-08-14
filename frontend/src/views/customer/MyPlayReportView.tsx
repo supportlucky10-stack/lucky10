@@ -70,6 +70,27 @@ export const MyPlayReportView: React.FC = () => {
   // Mock Realistic Ticket Data matching user's reference screenshots
   const sampleTickets = [
     {
+      id: '8127716',
+      gameSlot: '3 PM Game',
+      customerName: 'Demo Customer',
+      placedAt: '14-08-2026 02:41:04 PM',
+      totalAmount: 110,
+      items: [
+        { type: 'SUPER', number: '053', count: 5, totalAmount: 50 },
+        { type: 'BOX', number: '748', count: 6, totalAmount: 60 },
+      ],
+    },
+    {
+      id: '8127579',
+      gameSlot: '3 PM Game',
+      customerName: 'Demo Customer',
+      placedAt: '14-08-2026 02:22:15 PM',
+      totalAmount: 70,
+      items: [
+        { type: 'A', number: '8', count: 7, totalAmount: 70 },
+      ],
+    },
+    {
       id: '8124807',
       gameSlot: '1 PM Game',
       customerName: 'Demo Customer',
@@ -131,25 +152,71 @@ export const MyPlayReportView: React.FC = () => {
 
   const allTickets = userTickets.length > 0 ? userTickets : sampleTickets;
 
-  // Filter tickets based on search number, slot filter, and deletion
-  const displayTickets = allTickets.filter((tkt) => {
-    if (deletedTicketIds.includes(tkt.id)) {
-      return false;
+  // Filter items matching digitFilter & subOptionFilter
+  const isItemMatch = (item: any) => {
+    const itemType = (item.type || '').toUpperCase();
+    const numStr = (item.number || '').toString().trim();
+    const numLength = numStr.replace(/\D/g, '').length;
+
+    // 1. Digit Filter
+    if (digitFilter === '1') {
+      const isOneDigit = numLength === 1 || ['A', 'B', 'C'].includes(itemType);
+      if (!isOneDigit) return false;
+    } else if (digitFilter === '2') {
+      const isTwoDigit = numLength === 2 || ['AB', 'BC', 'AC'].includes(itemType);
+      if (!isTwoDigit) return false;
+    } else if (digitFilter === '3') {
+      const isThreeDigit = numLength === 3 || ['SUPER', 'BOX', 'DIRECT', 'SHUFFLE'].includes(itemType);
+      if (!isThreeDigit) return false;
     }
-    if (slotFilter !== 'ALL' && !tkt.gameSlot.startsWith(slotFilter)) {
-      return false;
+
+    // 2. Sub Option Filter
+    if (subOptionFilter !== 'ALL' && subOptionFilter !== 'NONE') {
+      const sub = subOptionFilter.toUpperCase();
+      if (sub === 'SUPER' || sub === 'DIRECT') {
+        if (itemType !== 'SUPER' && itemType !== 'DIRECT') return false;
+      } else if (sub === 'BOX' || sub === 'SHUFFLE') {
+        if (itemType !== 'BOX' && itemType !== 'SHUFFLE') return false;
+      } else {
+        if (itemType !== sub) return false;
+      }
     }
-    if (searchNumber) {
-      return tkt.items.some((item: any) => item.number.includes(searchNumber));
-    }
+
     return true;
-  });
+  };
+
+  // Filter tickets based on search number, slot filter, deletion, and digit/suboption filters
+  const displayTickets = allTickets
+    .map((tkt) => {
+      if (deletedTicketIds.includes(tkt.id)) return null;
+      if (slotFilter !== 'ALL' && !tkt.gameSlot.startsWith(slotFilter)) return null;
+
+      const matchingItems = tkt.items.filter((item: any) => {
+        if (searchNumber.trim() && !item.number.includes(searchNumber.trim())) {
+          return false;
+        }
+        if (isFullView) {
+          return isItemMatch(item);
+        }
+        return true;
+      });
+
+      if (matchingItems.length === 0) return null;
+
+      return {
+        ...tkt,
+        displayItems: matchingItems,
+        filteredTotalCount: matchingItems.reduce((acc, i) => acc + i.count, 0),
+        filteredTotalAmount: matchingItems.reduce((acc, i) => acc + i.totalAmount, 0),
+      };
+    })
+    .filter(Boolean) as any[];
 
   const totalDetailCount = displayTickets.reduce(
-    (acc, tkt) => acc + tkt.items.reduce((sum: number, item: any) => sum + item.count, 0),
+    (acc, tkt) => acc + tkt.filteredTotalCount,
     0
   );
-  const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.totalAmount, 0);
+  const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.filteredTotalAmount, 0);
 
   const reportItems = [
     {
@@ -537,7 +604,7 @@ export const MyPlayReportView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Row 3: Number Search Box */}
+                  {/* Row 3: Number Search Box (Crisp White Border) */}
                   <div className="space-y-1 pt-1">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
                       CHECK SPECIFIC NUMBER:
@@ -549,7 +616,7 @@ export const MyPlayReportView: React.FC = () => {
                         value={searchNumber}
                         onChange={(e) => setSearchNumber(e.target.value.replace(/\D/g, ''))}
                         placeholder="Number"
-                        className="w-full bg-black border border-neutral-700 focus:border-gold text-white font-mono font-black text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-500 outline-none transition-all shadow-inner"
+                        className="w-full bg-black border-2 border-white/90 focus:border-gold text-white font-mono font-black text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner"
                       />
                       {searchNumber && (
                         <button
@@ -576,113 +643,6 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
             </div>
-
-            {/* ================= SALES DETAIL OUTPUT VIEW (Matching User's Reference Screenshots) ================= */}
-            {showSalesDetails && (
-              <div className="space-y-4 animate-drop-in pt-2">
-                
-                {/* Gold Sub-header Banner matching Screenshot */}
-                <div className="bg-gold-metallic p-3.5 rounded-xl text-black shadow-lg border border-gold-dark space-y-1.5">
-                  <div className="flex items-center justify-between font-black text-sm sm:text-base uppercase tracking-wider">
-                    <span>SALES DETAIL &nbsp;( {slotFilter === 'ALL' ? '1 PM' : slotFilter} )</span>
-                    <button
-                      onClick={() => setShowSalesDetails(false)}
-                      className="text-xs font-extrabold bg-black text-white px-3 py-1 rounded-lg hover:bg-neutral-800 cursor-pointer shadow"
-                    >
-                      Hide Detail
-                    </button>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-black pt-1.5 border-t border-black/20 font-mono">
-                    <span>TotalCount: {totalDetailCount}</span>
-                    <span>GrandTotal: {grandDetailTotal}</span>
-                  </div>
-                </div>
-
-                {/* Number Search Results Indicator */}
-                {searchNumber.trim() && (
-                  <div className="bg-neutral-900 border border-gold/60 p-3.5 rounded-xl flex items-center justify-between text-xs font-mono shadow-md">
-                    <span className="text-neutral-300">
-                      SEARCHING NUMBER: <strong className="text-gold font-bold text-sm">"{searchNumber}"</strong>
-                    </span>
-                    <span className="text-emerald-400 font-extrabold">
-                      {displayTickets.length} Bill(s) Matched
-                    </span>
-                  </div>
-                )}
-
-                {/* Table Header Row */}
-                <div className="bg-white text-black font-black text-xs px-4 py-2 rounded-xl flex items-center justify-between shadow-md">
-                  <div className="flex items-center gap-7 font-mono">
-                    <span>GAME</span>
-                    <span>NUM</span>
-                    <span>CNT</span>
-                  </div>
-                  <span className="font-mono">T.AMT</span>
-                </div>
-
-                {/* Individual Ticket Card Boxes */}
-                {displayTickets.length === 0 ? (
-                  <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
-                    No bills found matching number <span className="text-gold">"{searchNumber}"</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {displayTickets.map((tkt) => (
-                      <div
-                        key={tkt.id}
-                        onMouseDown={() => startLongPress(tkt)}
-                        onMouseUp={cancelLongPress}
-                        onMouseLeave={cancelLongPress}
-                        onTouchStart={() => startLongPress(tkt)}
-                        onTouchEnd={cancelLongPress}
-                        className="bg-neutral-950 border border-neutral-800 hover:border-gold rounded-2xl overflow-hidden shadow-xl transition-all cursor-pointer group active:scale-[0.99]"
-                      >
-                        {/* Card Top Header */}
-                        <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
-                          <div className="flex items-center justify-between font-mono">
-                            <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
-                            <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.totalAmount}</strong></span>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
-                            <span>COUNT: <strong className="text-white font-bold">{tkt.items.reduce((sum: number, i: any) => sum + i.count, 0)}</strong></span>
-                            <span>{tkt.placedAt}</span>
-                          </div>
-                          <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
-                            <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
-                          </div>
-                        </div>
-
-                        {/* Card Items Table (Light rows with crisp dark text matching screenshot) */}
-                        <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
-                          {tkt.items.map((item: any, idx: number) => {
-                            const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
-                            return (
-                              <div
-                                key={idx}
-                                className={`flex items-center justify-between px-4 py-2 transition-colors ${
-                                  isMatch
-                                    ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
-                                    : idx % 2 === 1
-                                    ? 'bg-fuchsia-50/80'
-                                    : 'bg-white'
-                                }`}
-                              >
-                                <div className="flex items-center gap-7 font-mono">
-                                  <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
-                                  <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
-                                  <span className="font-black text-neutral-800">{item.count}</span>
-                                </div>
-                                <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             <button
               onClick={() => setActiveSection('HUB')}
@@ -783,6 +743,109 @@ export const MyPlayReportView: React.FC = () => {
 
       </div>
 
+      {/* ================= DEDICATED FULL-SCREEN OVERLAY PAGE FOR SALES REPORT OUTPUT ================= */}
+      {showSalesDetails && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          
+          {/* Header Banner matching App Theme */}
+          <HeaderBanner
+            title="SALES REPORT"
+            showBack={true}
+            onBackClick={() => setShowSalesDetails(false)}
+          />
+
+          <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+            
+            {/* Gold Sub-header Metric Banner matching App Theme */}
+            <div className="bg-gold-metallic p-3.5 rounded-xl text-black shadow-lg border border-gold-dark space-y-1.5 font-mono">
+              <div className="flex items-center justify-between font-black text-base uppercase tracking-wider">
+                <span>SALES REPORT &nbsp;( {slotFilter === 'ALL' ? '3 PM' : slotFilter} )</span>
+              </div>
+              <div className="flex items-center justify-between text-xs font-black pt-1.5 border-t border-black/20">
+                <span>TotalCount: {totalDetailCount}</span>
+                <span>GrandTotal: {grandDetailTotal}</span>
+              </div>
+            </div>
+
+            {/* Number Search Indicator */}
+            {searchNumber.trim() && (
+              <div className="bg-neutral-900 border border-gold/60 p-3 rounded-xl flex items-center justify-between text-xs font-mono shadow-md">
+                <span className="text-neutral-300">
+                  SEARCHING NUMBER: <strong className="text-gold font-bold text-sm">"{searchNumber}"</strong>
+                </span>
+                <span className="text-emerald-400 font-extrabold">
+                  {displayTickets.length} Bill(s) Matched
+                </span>
+              </div>
+            )}
+
+            {/* UNIFORM CARD BOXES VIEW (Both Full View OFF and Full View ON render exact same card box structure) */}
+            <div className="space-y-3">
+              {displayTickets.length === 0 ? (
+                <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                  No bills found for the selected filter.
+                </div>
+              ) : (
+                displayTickets.map((tkt) => (
+                  <div
+                    key={tkt.id}
+                    onMouseDown={() => startLongPress(tkt)}
+                    onMouseUp={cancelLongPress}
+                    onMouseLeave={cancelLongPress}
+                    onTouchStart={() => startLongPress(tkt)}
+                    onTouchEnd={cancelLongPress}
+                    className="bg-neutral-950 border border-neutral-800 hover:border-gold rounded-2xl overflow-hidden shadow-xl transition-all cursor-pointer group active:scale-[0.99]"
+                  >
+                    {/* Card Top Header (Dark bar with BILL ID, TOTAL, COUNT, TIMESTAMP, CUSTOMER) */}
+                    <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
+                      <div className="flex items-center justify-between font-mono">
+                        <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
+                        <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.filteredTotalAmount}</strong></span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                        <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
+                        <span>{tkt.placedAt}</span>
+                      </div>
+                      <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
+                        <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
+                        <span className="text-[10px] text-neutral-500 italic">(Hold to delete)</span>
+                      </div>
+                    </div>
+
+                    {/* Card Items Table (Light rows displaying items matching screenshot 1) */}
+                    <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
+                      {tkt.displayItems.map((item: any, idx: number) => {
+                        const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
+                              isMatch
+                                ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
+                                : idx % 2 === 1
+                                ? 'bg-fuchsia-50/80'
+                                : 'bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-7 font-mono">
+                              <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
+                              <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
+                              <span className="font-black text-neutral-800">{item.count}</span>
+                            </div>
+                            <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* ================= EDIT, DELETE BILL SINGLE VIEW (In Signature Dark Gold Web Theme) ================= */}
       {selectedSingleTicket && (
         <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
@@ -799,12 +862,13 @@ export const MyPlayReportView: React.FC = () => {
             {/* Bill Card Container in Dark Luxury Gold Theme */}
             <div className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
               
-              {/* Bill ID Header Bar */}
-              <div className="bg-neutral-900 border-b border-neutral-800 p-4 flex items-center justify-between font-mono">
+              {/* Bill ID Header Bar (Clean layout without top delete button) */}
+              <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <span className="text-gold font-black text-base">#{selectedSingleTicket.id}</span>
                 </div>
+
                 <div className="text-right">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
                   <span className="text-white font-extrabold text-xs">{selectedSingleTicket.placedAt}</span>
@@ -824,7 +888,7 @@ export const MyPlayReportView: React.FC = () => {
                   <span className="w-16">NUM</span>
                   <span>COUNT</span>
                 </div>
-                <span>ACTION</span>
+                <span>AMOUNT</span>
               </div>
 
               {/* Table Rows in Dark Theme */}
@@ -841,22 +905,26 @@ export const MyPlayReportView: React.FC = () => {
                       <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
                       <span className="text-rose-400 font-black text-sm">{item.count}</span>
                     </div>
-
-                    <button
-                      onClick={() => setConfirmDeleteId(selectedSingleTicket.id)}
-                      className="w-8 h-8 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-400 border border-rose-800/80 flex items-center justify-center transition-all cursor-pointer active:scale-95"
-                      title="Delete Bill"
-                    >
-                      <Trash2 className="w-4 h-4 stroke-[2.5]" />
-                    </button>
+                    <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
                   </div>
                 ))}
               </div>
 
-              {/* Bill Total Footer Bar */}
-              <div className="bg-neutral-900 border-t border-neutral-800 p-4 flex items-center justify-between font-mono">
-                <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
-                <span className="text-gold font-black text-base">₹{selectedSingleTicket.totalAmount}</span>
+              {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
+              <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT:</span>
+                  <span className="text-gold font-black text-base">₹{selectedSingleTicket.totalAmount}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(selectedSingleTicket.id)}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer shadow border border-rose-500"
+                >
+                  <Trash2 className="w-4 h-4 stroke-[2.5]" />
+                  <span>DELETE</span>
+                </button>
               </div>
 
             </div>
@@ -873,7 +941,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div>
                   <h4 className="font-black text-white text-base uppercase">DELETE BILL PERMISSION</h4>
                   <p className="text-xs text-neutral-400 mt-1 font-mono">
-                    Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong>?
+                    Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong> completely?
                   </p>
                 </div>
                 <div className="flex items-center gap-3 pt-2">
