@@ -115,10 +115,10 @@ export const GameDashboardView: React.FC = () => {
 
   const theme = slotThemes[activeGameSlot] || slotThemes['3 PM Game'];
 
-  // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 3
-  const [activeMode, setActiveMode] = useState<1 | 2 | 3>(3);
+  // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 1
+  const [activeMode, setActiveMode] = useState<1 | 2 | 3>(1);
   const [customerName, setCustomerName] = useState('');
-  const [isReverse, setIsReverse] = useState(false); // Checkbox 'R' (Range Mode)
+  const [isReverse, setIsReverse] = useState(true); // Checkbox 'R' (Range Mode default for 1 & 2 digit)
   const [isSet, setIsSet] = useState(false);
 
   // Common Input State
@@ -177,7 +177,7 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const targetNums = isReverse ? getRangeNumbers(1) : [inputNum];
+    const targetNums = getRangeNumbers(1);
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 1 || isNaN(Number(n)))) {
       addToast('Please enter a valid 1-digit number or range', 'error');
       return;
@@ -212,7 +212,7 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const targetNums = isReverse ? getRangeNumbers(2) : [inputNum];
+    const targetNums = getRangeNumbers(2);
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 2 || isNaN(Number(n)))) {
       addToast('Please enter a valid 2-digit number or range', 'error');
       return;
