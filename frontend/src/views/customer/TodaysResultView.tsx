@@ -5,7 +5,8 @@ import { Calendar, CheckCircle2, ChevronDown } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 export const TodaysResultView: React.FC = () => {
-  const { activeGameSlot, gameResults, setActiveGameSlot } = useApp();
+  const { gameResults } = useApp();
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
