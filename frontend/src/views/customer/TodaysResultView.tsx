@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Calendar, CheckCircle2, History } from 'lucide-react';
+import { Calendar, CheckCircle2, ChevronDown } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 export const TodaysResultView: React.FC = () => {
   const { activeGameSlot, gameResults, setActiveGameSlot } = useApp();
-  const [activeTab, setActiveTab] = useState<'TODAY' | 'PREVIOUS'>('TODAY');
-  const [selectedDate, setSelectedDate] = useState(
-    new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split('T')[0]
   );
+  const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
@@ -75,21 +75,22 @@ export const TodaysResultView: React.FC = () => {
     };
   };
 
-  const activeDate = activeTab === 'TODAY'
-    ? new Date().toISOString().split('T')[0]
-    : selectedDate;
-
+  const activeDate = selectedDate;
   const currentResult = getResultForSlotAndDate(activeGameSlot, activeDate);
   const currentTheme = slotThemeStyles[activeGameSlot];
 
-  const handleShareToWhatsApp = () => {
-    // Format Date: DD-MM-YYYY (e.g. 13-08-2026)
-    const dateParts = activeDate.split('-');
-    const formattedDate = dateParts.length === 3
-      ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
-      : new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+  // Format active date as DD-MM-YYYY for clear display
+  const dateParts = activeDate.split('-');
+  const displayDateFormatted = dateParts.length === 3
+    ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
+    : activeDate;
 
-    // Format Time: 01:00 PM, 03:00 PM, 06:00 PM, 08:00 PM
+  // Header Title shows both exact Date and Game Slot Time so screenshots (SS) leave zero confusion!
+  const slotTitle = `${displayDateFormatted}  |  ${activeGameSlot.replace(' Game', '')} RESULT`;
+
+  const handleShareToWhatsApp = () => {
+    const formattedDate = displayDateFormatted;
+
     const slotTimeMap: Record<string, string> = {
       '1 PM Game': '01:00 PM',
       '3 PM Game': '03:00 PM',
@@ -98,7 +99,6 @@ export const TodaysResultView: React.FC = () => {
     };
     const formattedTime = slotTimeMap[activeGameSlot] || activeGameSlot.replace(' Game', '');
 
-    // Format Compliments in 6 numbers per line separated by " | " with trailing " |"
     const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
     const fallbackList = [
       '007', '026', '050', '122', '155', '187',
@@ -125,94 +125,91 @@ export const TodaysResultView: React.FC = () => {
     window.open(whatsappUrl, '_blank');
   };
 
-  const slotTitle = activeGameSlot.replace(' Game', '') + ' Result';
-
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none">
-      {/* Gold Header Banner */}
+      {/* Gold Header Banner with exact Date + Slot Time for Crystal-Clear Screenshots */}
       <HeaderBanner title={slotTitle} />
 
       <div className="max-w-xl mx-auto w-full px-3.5 sm:px-6 py-4 space-y-4">
         
-        {/* Results Section Tabs: Today & Previous */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold">
+        {/* Integrated Single-View Date Control (Active Date Pill + Integrated Calendar Selector) */}
+        <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-950 rounded-xl border border-neutral-800 text-xs sm:text-sm font-extrabold shadow">
+          {/* Active Selected Date Display Pill */}
           <button
             onClick={() => {
-              setActiveTab('TODAY');
+              setSelectedDate(new Date().toISOString().split('T')[0]);
               window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             }}
-            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
-              activeTab === 'TODAY'
-                ? 'bg-gold-metallic text-black shadow'
-                : 'text-neutral-400 hover:text-white'
-            }`}
+            className="py-2.5 px-3 bg-gold-metallic text-black rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer shadow hover:brightness-110 active:scale-98"
+            title="Click to reset to Today"
           >
             <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span>Today's Result</span>
+            <span className="font-black">{displayDateFormatted}</span>
           </button>
 
-          <button
-            onClick={() => {
-              setActiveTab('PREVIOUS');
-              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          {/* Direct Calendar Date Picker (Opens Calendar directly) */}
+          <div
+            onClick={(e) => {
+              const input = e.currentTarget.querySelector('input');
+              input?.showPicker?.();
             }}
-            className={`py-2.5 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-center ${
-              activeTab === 'PREVIOUS'
-                ? 'bg-gold-metallic text-black shadow'
-                : 'text-neutral-400 hover:text-white'
-            }`}
+            className="py-2.5 px-3 bg-neutral-900 text-neutral-300 hover:text-white rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer relative group border border-neutral-800 hover:border-gold/50"
           >
-            <History className="w-4 h-4 shrink-0" />
-            <span>Previous Results</span>
-          </button>
+            <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform shrink-0" />
+            <span className="truncate font-black">Select Date</span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setSelectedDate(e.target.value);
+                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                }
+              }}
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+            />
+          </div>
         </div>
 
-        {/* Date Selector for Previous Tab */}
-        {activeTab === 'PREVIOUS' && (
-          <div className="bg-neutral-950 border border-gold/40 p-3 rounded-xl flex items-center justify-between text-xs text-neutral-300 shadow">
-            <span className="font-black text-gold uppercase tracking-wider text-xs">
-              SELECT DATE
-            </span>
-            <div
-              onClick={(e) => {
-                const input = e.currentTarget.querySelector('input');
-                input?.showPicker?.();
-              }}
-              className="flex items-center gap-2 bg-black border border-neutral-700 hover:border-gold/80 px-3 py-1.5 rounded-lg cursor-pointer transition-all shadow-inner group"
-            >
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="bg-transparent text-white font-mono text-xs focus:outline-none cursor-pointer"
-              />
-              <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform cursor-pointer shrink-0" />
+        {/* Game Slot Selector Dropdown Option (Click to expand game options) */}
+        <div className="w-full relative">
+          <button
+            onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
+            className={`w-full py-2.5 sm:py-3 px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="opacity-80 text-[10px] sm:text-xs tracking-wider uppercase">GAME SLOT:</span>
+              <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot}</span>
             </div>
-          </div>
-        )}
+            <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-        {/* Slot Switcher Pills with Dynamic Game Colors (1 PM, 3 PM, 6 PM, 8 PM) */}
-        <div className="grid grid-cols-4 gap-1.5 w-full">
-          {games.map((slot) => {
-            const isSelected = slot === activeGameSlot;
-            const theme = slotThemeStyles[slot];
-            return (
-              <button
-                key={slot}
-                onClick={() => {
-                  setActiveGameSlot(slot);
-                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                }}
-                className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-lg border transition-all cursor-pointer ${
-                  isSelected
-                    ? theme.pillActive
-                    : 'bg-neutral-900 text-neutral-300 border-neutral-800 hover:border-neutral-700'
-                }`}
-              >
-                <span className="truncate block">{slot}</span>
-              </button>
-            );
-          })}
+          {isGameDropdownOpen && (
+            <div className="mt-2 p-2 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1.5 shadow-2xl animate-drop-in z-20 relative">
+              {games.map((slot) => {
+                const theme = slotThemeStyles[slot];
+                const isSelected = slot === activeGameSlot;
+                return (
+                  <button
+                    key={slot}
+                    onClick={() => {
+                      setActiveGameSlot(slot);
+                      setIsGameDropdownOpen(false);
+                      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                    }}
+                    className={`w-full py-2.5 px-4 rounded-lg font-black text-xs sm:text-sm uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
+                      isSelected
+                        ? theme.pillActive
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <span>{slot}</span>
+                    {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* 5 Winning Number Cards (1st Prize featured slightly larger, 2nd-5th compact) */}
@@ -225,7 +222,7 @@ export const TodaysResultView: React.FC = () => {
             { id: 5, val: currentResult.prize5 || '408', delay: '480ms', isFirst: false },
           ].map((item) => (
             <div
-              key={`prize-${item.id}-${activeTab}-${activeDate}-${activeGameSlot}`}
+              key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
               style={{ animationDelay: item.delay }}
               className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} animate-drop-in transition-all ${
                 item.isFirst
@@ -245,7 +242,7 @@ export const TodaysResultView: React.FC = () => {
                 </div>
                 <div className="flex items-center flex-1">
                   <span
-                    className={`font-black font-sans tracking-widest block ${currentTheme.textActive} ${
+                    className={`font-black font-sans tracking-widest block text-white ${
                       item.isFirst
                         ? 'text-lg sm:text-xl font-black'
                         : 'text-sm sm:text-base font-bold'
@@ -263,12 +260,11 @@ export const TodaysResultView: React.FC = () => {
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const fallbackList = [
-            '743', '741', '744', '740', '820',
-            '818', '821', '817', '351', '349',
-            '352', '348', '195', '193', '196',
-            '192', '529', '631', '412', '908',
-            '111', '222', '333', '444', '555',
-            '666', '777', '888', '999', '100'
+            '007', '026', '050', '122', '155', '187',
+            '192', '217', '237', '285', '339', '349',
+            '360', '390', '488', '525', '534', '543',
+            '597', '608', '621', '624', '682', '723',
+            '803', '839', '862', '886', '915', '941'
           ];
           const compliments30 = Array.from({ length: 30 }, (_, index) => {
             return rawList[index] || fallbackList[index];
@@ -276,7 +272,7 @@ export const TodaysResultView: React.FC = () => {
 
           return (
             <div
-              key={`compliments-${activeTab}-${activeDate}-${activeGameSlot}`}
+              key={`compliments-${activeDate}-${activeGameSlot}`}
               style={{ animationDelay: '600ms' }}
               className="bg-neutral-950 text-white rounded-xl p-3 sm:p-4 shadow-lg border border-neutral-800 space-y-2 animate-drop-in hover:border-gold/40 transition-all"
             >

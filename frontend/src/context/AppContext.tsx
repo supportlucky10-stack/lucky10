@@ -198,12 +198,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const addToast = (text: string, type: 'success' | 'error' | 'info' = 'info') => {
-    const id = Math.random().toString(36).substr(2, 9);
-    setToasts((prev) => [...prev, { id, text, type }]);
-    setTimeout(() => {
-      removeToast(id);
-    }, 4000);
+  const addToast = (_text: string, _type: 'success' | 'error' | 'info' = 'info') => {
+    // Toast notification popups disabled per user request
+    return;
   };
 
   const removeToast = (id: string) => {
