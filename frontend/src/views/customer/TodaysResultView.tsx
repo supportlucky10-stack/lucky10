@@ -85,8 +85,8 @@ export const TodaysResultView: React.FC = () => {
     ? `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`
     : activeDate;
 
-  // Header Title shows both exact Date and Game Slot Time so screenshots (SS) leave zero confusion!
-  const slotTitle = `${displayDateFormatted}  |  ${activeGameSlot.replace(' Game', '')} RESULT`;
+  // Header Title shows Result only per user request
+  const slotTitle = 'Result';
 
   const handleShareToWhatsApp = () => {
     const formattedDate = displayDateFormatted;
@@ -140,11 +140,10 @@ export const TodaysResultView: React.FC = () => {
               setSelectedDate(new Date().toISOString().split('T')[0]);
               window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
             }}
-            className="py-2.5 px-3 bg-gold-metallic text-black rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer shadow hover:brightness-110 active:scale-98"
+            className="py-2.5 px-3 bg-gold-metallic text-black rounded-lg transition-all flex items-center justify-center text-center cursor-pointer shadow hover:brightness-110 active:scale-98"
             title="Click to reset to Today"
           >
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            <span className="font-black">{displayDateFormatted}</span>
+            <span className="font-black text-sm sm:text-base tracking-wide">{displayDateFormatted}</span>
           </button>
 
           {/* Direct Calendar Date Picker (Opens Calendar directly) */}
@@ -156,7 +155,7 @@ export const TodaysResultView: React.FC = () => {
             className="py-2.5 px-3 bg-neutral-900 text-neutral-300 hover:text-white rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer relative group border border-neutral-800 hover:border-gold/50"
           >
             <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform shrink-0" />
-            <span className="truncate font-black">Select Date</span>
+            <span className="truncate font-black">Change date</span>
             <input
               type="date"
               value={selectedDate}
@@ -178,8 +177,8 @@ export const TodaysResultView: React.FC = () => {
             className={`w-full py-2.5 sm:py-3 px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
           >
             <div className="flex items-center gap-2">
-              <span className="opacity-80 text-[10px] sm:text-xs tracking-wider uppercase">GAME SLOT:</span>
-              <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot}</span>
+              <span className="opacity-80 text-[10px] sm:text-xs tracking-wider uppercase">TIME:</span>
+              <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot.replace(' Game', '')}</span>
             </div>
             <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
@@ -203,7 +202,7 @@ export const TodaysResultView: React.FC = () => {
                         : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                     }`}
                   >
-                    <span>{slot}</span>
+                    <span>{slot.replace(' Game', '')}</span>
                     {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                   </button>
                 );
