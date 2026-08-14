@@ -140,10 +140,12 @@ export const GameDashboardView: React.FC = () => {
     };
   }, []);
 
-  // Helper to generate range numbers
+  // Helper to generate range numbers (supports single number when End is empty)
   const getRangeNumbers = (padLength: number): string[] => {
-    const s = parseInt(startRange);
-    const e = parseInt(endRange);
+    const sStr = startRange.trim() !== '' ? startRange : inputNum;
+    const eStr = endRange.trim() !== '' ? endRange : sStr;
+    const s = parseInt(sStr);
+    const e = parseInt(eStr);
     const step = parseInt(stepVal) || 1;
     if (isNaN(s) || isNaN(e) || s > e || step <= 0) return [];
     const list: string[] = [];
