@@ -434,6 +434,12 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     maxLength={activeMode}
                     placeholder="Start"
                     value={startRange}
@@ -445,6 +451,12 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     maxLength={activeMode}
                     placeholder="End"
                     value={endRange}
@@ -456,6 +468,12 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Step"
                     value={stepVal}
                     onChange={(e) => setStepVal(e.target.value)}
@@ -466,6 +484,12 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
@@ -477,6 +501,12 @@ export const GameDashboardView: React.FC = () => {
                   <div>
                     <input
                       type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       placeholder="Box Count"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
@@ -491,6 +521,12 @@ export const GameDashboardView: React.FC = () => {
                 <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     maxLength={activeMode}
                     placeholder="Number"
                     value={inputNum}
@@ -502,6 +538,12 @@ export const GameDashboardView: React.FC = () => {
                 <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                   <input
                     type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
@@ -513,6 +555,12 @@ export const GameDashboardView: React.FC = () => {
                   <div className="col-span-4">
                     <input
                       type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
                       placeholder="Box Count"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
@@ -532,7 +580,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
+                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]`}
                     >
                       {pos}
                     </button>
@@ -547,7 +595,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center`}
+                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]`}
                     >
                       {pair}
                     </button>
@@ -560,21 +608,21 @@ export const GameDashboardView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOTH')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     BOTH
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOX')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     BOX
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('SUPER')}
-                    className="w-full h-10 sm:h-11 bg-black text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-white/90 cursor-pointer flex items-center justify-center"
+                    className="w-full h-10 sm:h-11 bg-black text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-white/90 cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     SUPER
                   </button>
