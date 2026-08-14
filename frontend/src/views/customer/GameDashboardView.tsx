@@ -115,10 +115,10 @@ export const GameDashboardView: React.FC = () => {
 
   const theme = slotThemes[activeGameSlot] || slotThemes['3 PM Game'];
 
-  // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 1
-  const [activeMode, setActiveMode] = useState<1 | 2 | 3>(1);
+  // Mode Selection State: 1 (1 Digit), 2 (2 Digit), 3 (3 Digit) - Default to 3
+  const [activeMode, setActiveMode] = useState<1 | 2 | 3>(3);
   const [customerName, setCustomerName] = useState('');
-  const [isReverse, setIsReverse] = useState(true); // Checkbox 'R' (Range Mode default for 1 & 2 digit)
+  const [isReverse, setIsReverse] = useState(false); // Checkbox 'R' (Range Mode)
   const [isSet, setIsSet] = useState(false);
 
   // Common Input State
@@ -648,7 +648,7 @@ export const GameDashboardView: React.FC = () => {
               <span>Action</span>
             </div>
 
-            <div className="divide-y divide-gray-200 min-h-[450px] sm:min-h-[600px] max-h-[650px] sm:max-h-[850px] overflow-y-auto text-xs sm:text-sm font-bold">
+            <div className="divide-y divide-gray-200 min-h-[220px] sm:min-h-[320px] max-h-[400px] sm:max-h-[550px] overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = item.number.includes(':')
