@@ -85,7 +85,7 @@ export const EditDeleteBillView: React.FC = () => {
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
       {/* Header Banner matching theme */}
-      <HeaderBanner title="EDIT / DELETE BILL" showBack={true} />
+      <HeaderBanner title="DELETE BILL" showBack={true} />
 
       <div className={`max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 flex flex-col justify-center`}>
         

@@ -25,7 +25,7 @@ export const UserDrawerView: React.FC = () => {
       action: () => setCurrentView('TOTAL_COUNT_VIEW'),
     },
     {
-      label: 'Edit, Delete Bill',
+      label: 'Delete Bill',
       action: () => setCurrentView('EDIT_DELETE_BILL'),
     },
     {

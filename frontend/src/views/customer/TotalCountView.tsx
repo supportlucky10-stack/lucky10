@@ -21,12 +21,15 @@ export const TotalCountView: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
   
   // Single DIGIT selection: 'ALL' | '1' | '2' | '3'
-  const [digitFilter, setDigitFilter] = useState<'ALL' | '1' | '2' | '3'>('2');
+  const [digitFilter, setDigitFilter] = useState<'ALL' | '1' | '2' | '3'>('3');
   
-  // Multi-select SUB options for the active digit ('ALL' or array like ['AB', 'BC', 'AC'])
-  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>(['ALL']);
+  // Multi-select SUB options for the active digit (e.g. ['SUPER', 'BOX'] or ['A', 'B', 'C'])
+  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>(['SUPER', 'BOX']);
   
   const [searchNumber, setSearchNumber] = useState<string>('');
+  
+  // Has the user clicked the CALCULATE button?
+  const [hasCalculated, setHasCalculated] = useState<boolean>(false);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +59,6 @@ export const TotalCountView: React.FC = () => {
   const subOptions = useMemo(() => {
     if (digitFilter === '1') {
       return [
-        { id: 'ALL', label: '★' },
         { id: 'A', label: 'A' },
         { id: 'B', label: 'B' },
         { id: 'C', label: 'C' },
@@ -64,7 +66,6 @@ export const TotalCountView: React.FC = () => {
     }
     if (digitFilter === '2') {
       return [
-        { id: 'ALL', label: '★' },
         { id: 'AB', label: 'AB' },
         { id: 'BC', label: 'BC' },
         { id: 'AC', label: 'AC' },
@@ -72,39 +73,46 @@ export const TotalCountView: React.FC = () => {
     }
     if (digitFilter === '3') {
       return [
-        { id: 'ALL', label: '★' },
         { id: 'SUPER', label: 'SUPER' },
         { id: 'BOX', label: 'BOX' },
       ];
     }
-    return [{ id: 'ALL', label: '★' }];
+    return [];
   }, [digitFilter]);
 
   // Handle single Digit selection change
   const handleDigitSelect = (digitId: 'ALL' | '1' | '2' | '3') => {
     setDigitFilter(digitId);
-    setSelectedSubOptions(['ALL']);
+    if (digitId === '1') {
+      setSelectedSubOptions(['A', 'B', 'C']);
+    } else if (digitId === '2') {
+      setSelectedSubOptions(['AB', 'BC', 'AC']);
+    } else if (digitId === '3') {
+      setSelectedSubOptions(['SUPER', 'BOX']);
+    } else {
+      setSelectedSubOptions([]);
+    }
   };
 
   // Toggle Sub Option Multi-select within the active digit category
   const toggleSubOption = (optId: string) => {
-    if (optId === 'ALL') {
-      setSelectedSubOptions(['ALL']);
-      return;
-    }
-
-    let next = selectedSubOptions.filter((s) => s !== 'ALL');
+    let next = [...selectedSubOptions];
     if (next.includes(optId)) {
       next = next.filter((s) => s !== optId);
     } else {
       next.push(optId);
     }
 
+    const availableIds = subOptions.map((o) => o.id);
     if (next.length === 0) {
-      setSelectedSubOptions(['ALL']);
+      setSelectedSubOptions(availableIds);
     } else {
       setSelectedSubOptions(next);
     }
+  };
+
+  const handleCalculate = () => {
+    setHasCalculated(true);
   };
 
   // Dataset generator: combines real placed tickets with realistic sample count entries
@@ -223,7 +231,7 @@ export const TotalCountView: React.FC = () => {
       }
 
       // Multi-Select Sub Option Filter within active Digit
-      if (!selectedSubOptions.includes('ALL')) {
+      if (digitFilter !== 'ALL' && selectedSubOptions.length > 0) {
         if (!selectedSubOptions.includes(item.game)) {
           return false;
         }
@@ -253,10 +261,10 @@ export const TotalCountView: React.FC = () => {
       {/* Header Banner */}
       <HeaderBanner title="TOTAL COUNT VIEW" showBack={true} />
 
-      <div className="max-w-md mx-auto w-full px-6 sm:px-8 py-5 space-y-4">
+      <div className="max-w-md mx-auto w-full px-5 sm:px-6 py-5 space-y-4">
         
         {/* Form Controls Box */}
-        <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-4 font-sans">
+        <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-3.5 font-sans">
           
           {/* Row 1: DIGIT Selector (Single Select: ★, 1, 2, 3) */}
           <div className="flex items-center gap-3">
@@ -289,31 +297,33 @@ export const TotalCountView: React.FC = () => {
             </div>
           </div>
 
-          {/* Row 2: SUB Selector (Multi-Select Enabled) */}
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] sm:text-xs font-black text-neutral-300 uppercase tracking-wider w-12 shrink-0">
-              SUB:
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {subOptions.map((opt) => {
-                const isSelected = selectedSubOptions.includes(opt.id);
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => toggleSubOption(opt.id)}
-                    className={`px-3 h-8 rounded-full min-w-[32px] font-black text-xs transition-all cursor-pointer border flex items-center justify-center ${
-                      isSelected
-                        ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                        : 'bg-black text-neutral-400 border-neutral-700 hover:border-neutral-500'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                );
-              })}
+          {/* Row 2: SUB Selector (Multi-Select Enabled when digit selected) */}
+          {subOptions.length > 0 && (
+            <div className="flex items-center gap-3 animate-fade-in">
+              <span className="text-[10px] sm:text-xs font-black text-neutral-300 uppercase tracking-wider w-12 shrink-0">
+                SUB:
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {subOptions.map((opt) => {
+                  const isSelected = selectedSubOptions.includes(opt.id);
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => toggleSubOption(opt.id)}
+                      className={`px-3 h-8 rounded-full min-w-[32px] font-black text-xs transition-all cursor-pointer border flex items-center justify-center ${
+                        isSelected
+                          ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                          : 'bg-black text-neutral-400 border-neutral-700 hover:border-neutral-500'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Row 3: SEARCH BY NUMBER */}
           <div className="space-y-1">
@@ -327,7 +337,7 @@ export const TotalCountView: React.FC = () => {
                 onChange={(e) => setSearchNumber(e.target.value.replace(/\D/g, ''))}
                 placeholder="Number"
                 maxLength={3}
-                className="w-full bg-black border-2 border-white focus:border-gold text-white font-mono font-black text-xs sm:text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner"
+                className="w-full bg-black border-2 border-white focus:border-gold text-white font-mono font-black text-xs sm:text-sm px-4 py-2 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner"
               />
               {searchNumber && (
                 <button
@@ -341,51 +351,40 @@ export const TotalCountView: React.FC = () => {
             </div>
           </div>
 
-          {/* Row 4: DATE Selection with CHANGE Button */}
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <div
-                onClick={() => triggerDatePicker(dateInputRef)}
-                className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-              >
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                  DATE
-                </span>
-                <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none">
-                  {formatDateDisplay(selectedDate)}
-                </span>
-                <input
-                  ref={dateInputRef}
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={() => triggerDatePicker(dateInputRef)}
-                className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-              >
-                <span>CHANGE</span>
-              </button>
+          {/* Row 4: DATE Box and CALCULATE Button (Equal 50/50 Size) */}
+          <div className="flex items-center gap-3 pt-0.5">
+            {/* DATE Box - 50% width */}
+            <div
+              onClick={() => triggerDatePicker(dateInputRef)}
+              className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 py-1.5 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+            >
+              <span className="text-[9px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                DATE
+              </span>
+              <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                {formatDateDisplay(selectedDate)}
+              </span>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={selectedDate}
+                onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+              />
             </div>
-          </div>
 
-          {/* Row 5: CALCULATE Action Button */}
-          <div className="pt-1">
+            {/* CALCULATE Button - 50% width */}
             <button
               type="button"
-              onClick={() => {}}
-              className="w-full py-3 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer"
+              onClick={handleCalculate}
+              className="flex-1 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer h-[44px]"
             >
               <RefreshCw className="w-4 h-4 stroke-[2.5]" />
               <span>CALCULATE</span>
             </button>
           </div>
 
-          {/* Row 6: Game Slot Filter Radio Options */}
+          {/* Row 5: Game Slot Filter Radio Options */}
           <div className="pt-2 border-t border-neutral-900">
             <div className="flex flex-wrap items-center justify-between gap-1">
               {[
@@ -429,8 +428,8 @@ export const TotalCountView: React.FC = () => {
         {/* Summary Banner Card */}
         <div className="border-2 border-gold/70 rounded-xl bg-black px-4 py-3 flex items-center justify-between shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono font-black text-xs sm:text-sm">
           <div className="flex items-center gap-6">
-            <span className="text-gold">COUNT: <span className="text-white">{totalCount}</span></span>
-            <span className="text-gold">TOT: <span className="text-white">₹{totalAmount.toFixed(1)}</span></span>
+            <span className="text-gold">COUNT: <span className="text-white">{hasCalculated ? totalCount : 0}</span></span>
+            <span className="text-gold">TOT: <span className="text-white">₹{hasCalculated ? totalAmount.toFixed(1) : '0.0'}</span></span>
           </div>
           <button
             type="button"
@@ -455,20 +454,24 @@ export const TotalCountView: React.FC = () => {
 
           {/* Data Rows */}
           <div className="divide-y divide-neutral-850 max-h-72 overflow-y-auto">
-            {filteredCountDataset.length > 0 ? (
-              filteredCountDataset.map((row, idx) => (
-                <div key={row.id} className="grid grid-cols-5 py-2.5 px-2 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
-                  <span className="text-neutral-500 text-[11px]">{idx + 1}</span>
-                  <span className="text-left font-black text-gold text-xs">{row.game}</span>
-                  <span className="font-mono text-white text-xs font-black">{row.number}</span>
-                  <span className="font-mono text-neutral-200 text-xs">{row.count}</span>
-                  <span className="font-mono text-neutral-200 text-xs">₹{row.amount}</span>
+            {hasCalculated ? (
+              filteredCountDataset.length > 0 ? (
+                filteredCountDataset.map((row, idx) => (
+                  <div key={row.id} className="grid grid-cols-5 py-2.5 px-2 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
+                    <span className="text-neutral-500 text-[11px]">{idx + 1}</span>
+                    <span className="text-left font-black text-gold text-xs">{row.game}</span>
+                    <span className="font-mono text-white text-xs font-black">{row.number}</span>
+                    <span className="font-mono text-neutral-200 text-xs">{row.count}</span>
+                    <span className="font-mono text-neutral-200 text-xs">₹{row.amount}</span>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-neutral-400 font-sans text-xs">
+                  No count records match the selected filters.
                 </div>
-              ))
+              )
             ) : (
-              <div className="py-8 text-center text-neutral-400 font-sans text-xs">
-                No count records match the selected filters.
-              </div>
+              <div className="py-10" />
             )}
           </div>
         </div>
