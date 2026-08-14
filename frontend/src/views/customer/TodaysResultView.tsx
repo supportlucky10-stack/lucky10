@@ -147,14 +147,8 @@ export const TodaysResultView: React.FC = () => {
             <span className="font-black text-sm sm:text-base tracking-wide">{displayDateFormatted}</span>
           </button>
 
-          {/* Direct Calendar Date Picker (Opens Calendar directly) */}
-          <div
-            onClick={(e) => {
-              const input = e.currentTarget.querySelector('input');
-              input?.showPicker?.();
-            }}
-            className="py-2.5 px-3 bg-neutral-900 text-neutral-300 hover:text-white rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer relative group border border-neutral-800 hover:border-gold/50"
-          >
+          {/* Direct Calendar Date Picker (Opens Calendar directly on touch/click) */}
+          <label className="py-2.5 px-3 bg-neutral-900 text-neutral-300 hover:text-white rounded-lg transition-all flex items-center justify-center gap-2 text-center cursor-pointer relative group border border-neutral-800 hover:border-gold/50 overflow-hidden">
             <Calendar className="w-4 h-4 text-gold group-hover:scale-110 transition-transform shrink-0" />
             <span className="truncate font-black">Change date</span>
             <input
@@ -166,9 +160,9 @@ export const TodaysResultView: React.FC = () => {
                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                 }
               }}
-              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
             />
-          </div>
+          </label>
         </div>
 
         {/* Game Slot Selector Dropdown Option (Click to expand game options) */}

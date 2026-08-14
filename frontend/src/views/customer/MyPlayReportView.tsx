@@ -19,9 +19,8 @@ export const MyPlayReportView: React.FC = () => {
 
   // Dates for Sales Report Form
   const todayStr = new Date().toISOString().split('T')[0];
-  const firstOfMonthStr = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
 
-  const [fromDate, setFromDate] = useState<string>(firstOfMonthStr);
+  const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
   const [isFullView, setIsFullView] = useState<boolean>(false);
   const [slotFilter, setSlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
@@ -312,7 +311,7 @@ export const MyPlayReportView: React.FC = () => {
               {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all">
+                  <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
                       From date
                     </span>
@@ -323,26 +322,26 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
                     />
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={(e) => {
-                      const input = e.currentTarget.parentElement?.querySelector('input');
-                      input?.showPicker?.();
-                    }}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow"
-                  >
-                    CHANGE
-                  </div>
+                  <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
+                    <span>CHANGE</span>
+                    <input
+                      type="date"
+                      value={fromDate}
+                      onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                    />
+                  </label>
                 </div>
               </div>
 
               {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
-                  <div className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all">
+                  <label className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block">
                     <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
                       To date
                     </span>
@@ -353,19 +352,19 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
                     />
-                  </div>
+                  </label>
 
-                  <div
-                    onClick={(e) => {
-                      const input = e.currentTarget.parentElement?.querySelector('input');
-                      input?.showPicker?.();
-                    }}
-                    className="bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow"
-                  >
-                    CHANGE
-                  </div>
+                  <label className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/80 px-4 py-3.5 rounded-xl cursor-pointer text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow overflow-hidden flex items-center justify-center">
+                    <span>CHANGE</span>
+                    <input
+                      type="date"
+                      value={toDate}
+                      onChange={(e) => e.target.value && setToDate(e.target.value)}
+                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-20 block"
+                    />
+                  </label>
                 </div>
               </div>
 
@@ -779,68 +778,117 @@ export const MyPlayReportView: React.FC = () => {
               </div>
             )}
 
-            {/* UNIFORM CARD BOXES VIEW (Both Full View OFF and Full View ON render exact same card box structure) */}
-            <div className="space-y-3">
-              {displayTickets.length === 0 ? (
-                <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
-                  No bills found for the selected filter.
-                </div>
-              ) : (
-                displayTickets.map((tkt) => (
-                  <div
-                    key={tkt.id}
-                    onMouseDown={() => startLongPress(tkt)}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                    onTouchStart={() => startLongPress(tkt)}
-                    onTouchEnd={cancelLongPress}
-                    className="bg-neutral-950 border border-neutral-800 hover:border-gold rounded-2xl overflow-hidden shadow-xl transition-all cursor-pointer group active:scale-[0.99]"
-                  >
-                    {/* Card Top Header (Dark bar with BILL ID, TOTAL, COUNT, TIMESTAMP, CUSTOMER) */}
-                    <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
-                      <div className="flex items-center justify-between font-mono">
-                        <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
-                        <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.filteredTotalAmount}</strong></span>
+            {/* 1. WHEN FULL VIEW IS NOT ENABLED (Summary Cards View in Signature Dark Gold Theme matching Screenshot) */}
+            {!isFullView && (
+              <div className="space-y-3">
+                {displayTickets.length === 0 ? (
+                  <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                    No bills found for the selected filter.
+                  </div>
+                ) : (
+                  displayTickets.map((tkt) => (
+                    <div
+                      key={tkt.id}
+                      onMouseDown={() => startLongPress(tkt)}
+                      onMouseUp={cancelLongPress}
+                      onMouseLeave={cancelLongPress}
+                      onTouchStart={() => startLongPress(tkt)}
+                      onTouchEnd={cancelLongPress}
+                      className="bg-neutral-950 text-white rounded-2xl p-4 shadow-xl border border-gold/40 hover:border-gold transition-all cursor-pointer active:scale-[0.99] space-y-2 font-mono"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-gold text-sm">BILL ID: <strong className="text-white font-mono">{tkt.id}</strong></span>
+                        <span className="text-gold text-sm font-black font-mono">TOTAL: <strong className="text-amber-400 font-mono text-base">{tkt.filteredTotalAmount}</strong></span>
                       </div>
-                      <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
-                        <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
-                        <span>{tkt.placedAt}</span>
+
+                      <div className="text-xs font-bold text-neutral-300">
+                        <span>COUNT: <strong className="text-white font-mono text-sm">{tkt.filteredTotalCount}</strong></span>
                       </div>
-                      <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
-                        <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
+
+                      <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
+                        <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{(tkt as any).customerName || 'Customer'}</strong></span>
                         <span className="text-[10px] text-neutral-500 italic">(Hold to delete)</span>
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+            )}
 
-                    {/* Card Items Table (Light rows displaying items matching screenshot 1) */}
-                    <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
-                      {tkt.displayItems.map((item: any, idx: number) => {
-                        const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
-                        return (
-                          <div
-                            key={idx}
-                            className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
-                              isMatch
-                                ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
-                                : idx % 2 === 1
-                                ? 'bg-fuchsia-50/80'
-                                : 'bg-white'
-                            }`}
-                          >
-                            <div className="flex items-center gap-7 font-mono">
-                              <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
-                              <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
-                              <span className="font-black text-neutral-800">{item.count}</span>
-                            </div>
-                            <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+            {/* 2. WHEN FULL VIEW IS ENABLED (Detailed Card Boxes with Items Breakdown Table) */}
+            {isFullView && (
+              <div className="space-y-3">
+                {/* Table Header Row */}
+                <div className="bg-neutral-900 text-gold font-black text-xs px-4 py-2.5 rounded-xl flex items-center justify-between shadow-md border border-neutral-800">
+                  <div className="flex items-center gap-7 font-mono">
+                    <span>GAME</span>
+                    <span>NUM</span>
+                    <span>CNT</span>
                   </div>
-                ))
-              )}
-            </div>
+                  <span className="font-mono">T.AMT</span>
+                </div>
+
+                {displayTickets.length === 0 ? (
+                  <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                    No bills found matching selected digit/sub-option filter.
+                  </div>
+                ) : (
+                  displayTickets.map((tkt) => (
+                    <div
+                      key={tkt.id}
+                      onMouseDown={() => startLongPress(tkt)}
+                      onMouseUp={cancelLongPress}
+                      onMouseLeave={cancelLongPress}
+                      onTouchStart={() => startLongPress(tkt)}
+                      onTouchEnd={cancelLongPress}
+                      className="bg-neutral-950 border border-neutral-800 hover:border-gold rounded-2xl overflow-hidden shadow-xl transition-all cursor-pointer group active:scale-[0.99]"
+                    >
+                      {/* Card Top Header */}
+                      <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
+                        <div className="flex items-center justify-between font-mono">
+                          <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.id}</strong></span>
+                          <span className="font-black text-white">TOTAL: <strong className="text-gold text-sm font-mono">{tkt.filteredTotalAmount}</strong></span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                          <span>COUNT: <strong className="text-white font-bold">{tkt.filteredTotalCount}</strong></span>
+                          <span>{tkt.placedAt}</span>
+                        </div>
+                        <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
+                          <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
+                          <span className="text-[10px] text-neutral-500 italic">(Hold to delete)</span>
+                        </div>
+                      </div>
+
+                      {/* Card Items Table */}
+                      <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
+                        {tkt.displayItems.map((item: any, idx: number) => {
+                          const isMatch = searchNumber.trim() && item.number.includes(searchNumber.trim());
+                          return (
+                            <div
+                              key={idx}
+                              className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
+                                isMatch
+                                  ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
+                                  : idx % 2 === 1
+                                  ? 'bg-fuchsia-50/80'
+                                  : 'bg-white'
+                              }`}
+                            >
+                              <div className="flex items-center gap-7 font-mono">
+                                <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
+                                <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
+                                <span className="font-black text-neutral-800">{item.count}</span>
+                              </div>
+                              <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
 
           </div>
         </div>
