@@ -439,20 +439,65 @@ export const MyPlayReportView: React.FC = () => {
     },
   ];
 
-  const getPrizeBadgeClass = (prize: string) => {
+  const getWinnerCardTheme = (prize: string) => {
     if (prize.includes('1ST')) {
-      return 'bg-amber-500/20 border border-amber-500/50 text-gold shadow-[0_0_10px_rgba(245,158,11,0.2)]';
+      return {
+        cardBorder: 'border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
+        cardBg: 'bg-gradient-to-br from-[#0c2e1b] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-neutral-950 border-b border-emerald-500/40',
+        badge: 'bg-emerald-500/30 border border-emerald-400 text-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.4)]',
+        totalText: 'text-emerald-400',
+        numberText: 'text-emerald-300',
+      };
     }
     if (prize.includes('2ND')) {
-      return 'bg-purple-500/20 border border-purple-500/50 text-purple-300 shadow-[0_0_10px_rgba(168,85,247,0.2)]';
+      return {
+        cardBorder: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.25)]',
+        cardBg: 'bg-gradient-to-br from-[#2a1347] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-purple-950 via-purple-900/60 to-neutral-950 border-b border-purple-500/40',
+        badge: 'bg-purple-500/30 border border-purple-400 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.4)]',
+        totalText: 'text-purple-400',
+        numberText: 'text-purple-300',
+      };
     }
     if (prize.includes('3RD')) {
-      return 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.2)]';
+      return {
+        cardBorder: 'border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
+        cardBg: 'bg-gradient-to-br from-[#3b2a07] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-amber-950 via-amber-900/60 to-neutral-950 border-b border-amber-500/40',
+        badge: 'bg-amber-500/30 border border-amber-400 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]',
+        totalText: 'text-amber-400',
+        numberText: 'text-amber-300',
+      };
     }
     if (prize.includes('4TH') || prize.includes('5TH')) {
-      return 'bg-blue-500/20 border border-blue-500/50 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]';
+      return {
+        cardBorder: 'border-orange-500/70 shadow-[0_0_20px_rgba(249,115,22,0.25)]',
+        cardBg: 'bg-gradient-to-br from-[#331c10] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-orange-950 via-orange-900/60 to-neutral-950 border-b border-orange-500/40',
+        badge: 'bg-orange-500/30 border border-orange-400 text-orange-200 shadow-[0_0_10px_rgba(249,115,22,0.4)]',
+        totalText: 'text-orange-400',
+        numberText: 'text-orange-300',
+      };
     }
-    return 'bg-rose-500/20 border border-rose-500/50 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.2)]';
+    if (prize.includes('6TH')) {
+      return {
+        cardBorder: 'border-sky-500/70 shadow-[0_0_20px_rgba(14,165,233,0.25)]',
+        cardBg: 'bg-gradient-to-br from-[#0c2547] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-sky-950 via-sky-900/60 to-neutral-950 border-b border-sky-500/40',
+        badge: 'bg-sky-500/30 border border-sky-400 text-sky-200 shadow-[0_0_10px_rgba(14,165,233,0.4)]',
+        totalText: 'text-sky-400',
+        numberText: 'text-sky-300',
+      };
+    }
+    return {
+      cardBorder: 'border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.25)]',
+      cardBg: 'bg-gradient-to-br from-[#2e1320] via-neutral-950 to-black',
+      headerBg: 'bg-gradient-to-r from-rose-950 via-rose-900/60 to-neutral-950 border-b border-rose-500/40',
+      badge: 'bg-rose-500/30 border border-rose-400 text-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
+      totalText: 'text-rose-400',
+      numberText: 'text-rose-300',
+    };
   };
 
   // Filter winning categories based on winningSlotFilter, winningDigitFilter, winningSubOptionFilter & winningSearchNumber
@@ -550,8 +595,9 @@ export const MyPlayReportView: React.FC = () => {
               return (
                 <button
                   key={item.id}
+                  type="button"
                   onClick={item.action}
-                  className="w-full bg-neutral-950 p-4 sm:p-4.5 rounded-2xl border border-neutral-800 flex items-center justify-between shadow-md hover:border-gold/60 hover:bg-neutral-900/80 active:scale-[0.98] transition-all cursor-pointer group"
+                  className="w-full bg-neutral-950 p-4 sm:p-4.5 rounded-2xl border border-neutral-800 flex items-center justify-between shadow-md hover:border-gold/60 hover:bg-neutral-900/80 active:scale-[0.98] transition-all cursor-pointer group focus:outline-none focus:ring-0 select-none outline-none"
                 >
                   <div className="flex items-center gap-3.5">
                     <div className="w-10 h-10 sm:w-11 sm:h-11 bg-gold-metallic text-black rounded-xl border border-black flex items-center justify-center shrink-0 shadow-md group-hover:scale-105 transition-transform">
@@ -584,12 +630,12 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(fromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(fromDate)}
                     </span>
                     <input
@@ -597,7 +643,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={fromDate}
                       onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -616,12 +662,12 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(toDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(toDate)}
                     </span>
                     <input
@@ -629,7 +675,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={toDate}
                       onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -932,12 +978,12 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(winningFromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       From date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(winningFromDate)}
                     </span>
                     <input
@@ -945,7 +991,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={winningFromDate}
                       onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -964,12 +1010,12 @@ export const MyPlayReportView: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(winningToDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       To date
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(winningToDate)}
                     </span>
                     <input
@@ -977,7 +1023,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={winningToDate}
                       onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -1281,17 +1327,17 @@ export const MyPlayReportView: React.FC = () => {
           <div className="space-y-5 animate-drop-in">
             {/* Daily Report Input Form Box */}
             <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 font-sans">
-              {/* FROM DATE Input Row */}
+                     {/* From Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(dailyFromDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       FROM DATE
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(dailyFromDate)}
                     </span>
                     <input
@@ -1299,7 +1345,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={dailyFromDate}
                       onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -1313,17 +1359,17 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
 
-              {/* TO DATE Input Row */}
+              {/* To Date Input Row */}
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   <div
                     onClick={() => openDatePicker(dailyToDateInputRef.current)}
-                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block"
+                    className="relative flex-1 bg-black border border-neutral-700 hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden"
                   >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block">
+                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
                       TO DATE
                     </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono">
+                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
                       {formatDateDisplay(dailyToDate)}
                     </span>
                     <input
@@ -1331,7 +1377,7 @@ export const MyPlayReportView: React.FC = () => {
                       type="date"
                       value={dailyToDate}
                       onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
-                      className="sr-only pointer-events-none"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                     />
                   </div>
 
@@ -1345,20 +1391,21 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Day Detail & Game Detail Checkbox Options */}
+              {/* Day Detail & Game Detail Checkbox Options (Mutually Exclusive) */}
               <div className="pt-2 border-t border-neutral-900 flex items-center justify-start gap-8">
                 {/* Day Detail Checkbox */}
                 <label
                   onClick={() => {
-                    setIsDayDetail(!isDayDetail);
-                    if (!isDayDetail) setActiveDailyOverlayTab('DAY');
+                    setIsDayDetail(true);
+                    setIsGameDetail(false);
+                    setActiveDailyOverlayTab('DAY');
                   }}
                   className="flex items-center gap-2.5 cursor-pointer group select-none"
                 >
                   <div
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                       isDayDetail
-                        ? 'border-gold bg-gold text-black'
+                        ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]'
                         : 'border-neutral-600 bg-black group-hover:border-neutral-400'
                     }`}
                   >
@@ -1376,15 +1423,16 @@ export const MyPlayReportView: React.FC = () => {
                 {/* Game Detail Checkbox */}
                 <label
                   onClick={() => {
-                    setIsGameDetail(!isGameDetail);
-                    if (!isGameDetail) setActiveDailyOverlayTab('GAME');
+                    setIsGameDetail(true);
+                    setIsDayDetail(false);
+                    setActiveDailyOverlayTab('GAME');
                   }}
                   className="flex items-center gap-2.5 cursor-pointer group select-none"
                 >
                   <div
                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                       isGameDetail
-                        ? 'border-gold bg-gold text-black'
+                        ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]'
                         : 'border-neutral-600 bg-black group-hover:border-neutral-400'
                     }`}
                   >
@@ -1651,7 +1699,7 @@ export const MyPlayReportView: React.FC = () => {
               </div>
               <div className="flex items-center justify-between text-base sm:text-lg font-black pt-2 border-t border-black/30">
                 <span>Total Count: {winningTotalCount}</span>
-                <span>Grand Total: {winningGrandTotal}</span>
+                <span>Total: {winningGrandTotal}</span>
               </div>
             </div>
 
@@ -1668,7 +1716,7 @@ export const MyPlayReportView: React.FC = () => {
             )}
 
 
-            {/* Grouped Category Winning Breakdown (matching Image 2) */}
+            {/* Grouped Category Winning Breakdown (matching Image 2 with Color Boxes) */}
             {displayWinningCategories.length === 0 ? (
               <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
                 No winning tickets found for the selected filter.
@@ -1677,43 +1725,44 @@ export const MyPlayReportView: React.FC = () => {
               displayWinningCategories.map((group) => (
                 <div key={group.category} className="space-y-3">
                   
-                  {/* Category Dark Section Header Bar (In Signature Dark Gold Theme) */}
+                  {/* Category Dark Section Header Bar */}
                   <div className="bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border border-gold/40 text-gold font-black text-sm tracking-widest uppercase py-2.5 px-4 rounded-xl text-center shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono">
                     {group.category}
                   </div>
 
-                  {/* Category Cards List (In Signature Dark Gold Theme) */}
+                  {/* Category Cards List (Color-styled boxes for each winner tier) */}
                   <div className="space-y-3">
                     {group.cards.map((card: any) => {
                       const isSelected = selectedWinningCardId === card.id;
+                      const theme = getWinnerCardTheme(card.prize);
                       return (
                         <div
                           key={card.id}
                           onClick={() => setSelectedWinningCardId(isSelected ? null : card.id)}
-                          className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${
+                          className={`${theme.cardBg} rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${
                             isSelected
-                              ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.5)] scale-[1.01]'
-                              : 'border-gold/40 hover:border-gold hover:shadow-[0_0_15px_rgba(212,175,55,0.2)]'
+                              ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.6)] scale-[1.01]'
+                              : `${theme.cardBorder} hover:scale-[1.005]`
                           }`}
                         >
-                          {/* Card Prize Header Bar */}
-                          <div className="bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 border-b border-neutral-800 px-4 py-3 font-mono flex items-center justify-between">
-                            <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${getPrizeBadgeClass(card.prize)}`}>
+                          {/* Card Prize Header Bar with distinct color header */}
+                          <div className={`${theme.headerBg} px-4 py-3 font-mono flex items-center justify-between`}>
+                            <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${theme.badge}`}>
                               {card.prize}
                             </span>
                             <div className="text-right">
-                              <span className="text-neutral-400 text-xs font-bold uppercase">NUMBER:</span>
-                              <span className="text-white font-black text-base font-mono tracking-wider ml-1.5">{card.number}</span>
+                              <span className="text-neutral-300 text-xs font-bold uppercase">NUMBER:</span>
+                              <span className={`font-black text-base font-mono tracking-wider ml-1.5 ${theme.numberText}`}>{card.number}</span>
                             </div>
                           </div>
 
-                          {/* Card Bottom Row */}
-                          <div className="bg-black px-4 py-3 flex items-center justify-between font-mono text-xs">
+                          {/* Card Bottom Row with distinct text colors */}
+                          <div className="bg-black/90 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
                             <span className="text-neutral-300">
                               COUNT: <strong className="text-white font-black text-sm ml-1 font-mono">{card.count}</strong>
                             </span>
                             <span className="text-gold font-bold">
-                              TOTAL: <strong className="text-amber-400 font-black text-base ml-1 font-mono">₹{card.total}</strong>
+                              TOTAL: <strong className={`font-black text-base ml-1 font-mono ${theme.totalText}`}>₹{card.total}</strong>
                             </span>
                           </div>
                         </div>
