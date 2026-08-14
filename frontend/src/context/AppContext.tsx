@@ -356,6 +356,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast('Your bet slip is empty!', 'error');
       return false;
     }
+
+    const mode1Items = betSlip.filter((item) => {
+      if (item.number.includes(':')) {
+        const parts = item.number.split(':');
+        return parts.length === 2 && parts[1].length === 1;
+      }
+      return false;
+    });
+    const mode1TotalCount = mode1Items.reduce((sum, item) => sum + item.count, 0);
+
+    if (mode1TotalCount > 0 && mode1TotalCount < 5) {
+      addToast('Please play at least 5 count for 1-digit game', 'error');
+      return false;
+    }
+
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
     try {
       const newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE');

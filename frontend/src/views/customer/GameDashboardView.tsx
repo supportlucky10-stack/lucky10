@@ -125,10 +125,10 @@ export const GameDashboardView: React.FC = () => {
   const [inputCount, setInputCount] = useState('');
   const [boxCount, setBoxCount] = useState('');
 
-  // Range Mode Inputs (Start, End, 1 / Step)
+  // Range Mode Inputs (Start, End, Step)
   const [startRange, setStartRange] = useState('');
   const [endRange, setEndRange] = useState('');
-  const [stepVal, setStepVal] = useState('1');
+  const [stepVal, setStepVal] = useState('');
 
   const unitPrice = 10; // ₹10 per count
 
@@ -137,7 +137,7 @@ export const GameDashboardView: React.FC = () => {
     const s = parseInt(startRange);
     const e = parseInt(endRange);
     const step = parseInt(stepVal) || 1;
-    if (isNaN(s) || isNaN(e) || s > e) return [];
+    if (isNaN(s) || isNaN(e) || s > e || step <= 0) return [];
     const list: string[] = [];
     for (let i = s; i <= e; i += step) {
       list.push(String(i).padStart(padLength, '0'));
@@ -176,6 +176,7 @@ export const GameDashboardView: React.FC = () => {
     setInputNum('');
     setStartRange('');
     setEndRange('');
+    setStepVal('');
     setInputCount('');
   };
 
@@ -210,6 +211,7 @@ export const GameDashboardView: React.FC = () => {
     setInputNum('');
     setStartRange('');
     setEndRange('');
+    setStepVal('');
     setInputCount('');
   };
 
@@ -254,6 +256,7 @@ export const GameDashboardView: React.FC = () => {
     setInputNum('');
     setStartRange('');
     setEndRange('');
+    setStepVal('');
     setInputCount('');
     setBoxCount('');
   };
@@ -338,13 +341,20 @@ export const GameDashboardView: React.FC = () => {
                 />
               </div>
 
-              {/* Checkboxes: R (Range Mode) & Set */}
+              {/* Checkboxes: R (Range Mode) & Set (Mutually Exclusive) */}
               <div className="flex items-center gap-2 pl-1">
                 <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
                     checked={isReverse}
-                    onChange={(e) => setIsReverse(e.target.checked)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setIsReverse(true);
+                        setIsSet(false);
+                      } else {
+                        setIsReverse(false);
+                      }
+                    }}
                     className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                   />
                   <span>R</span>
@@ -355,7 +365,14 @@ export const GameDashboardView: React.FC = () => {
                     <input
                       type="checkbox"
                       checked={isSet}
-                      onChange={(e) => setIsSet(e.target.checked)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setIsSet(true);
+                          setIsReverse(false);
+                        } else {
+                          setIsSet(false);
+                        }
+                      }}
                       className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                     />
                     <span>Set</span>
@@ -366,8 +383,8 @@ export const GameDashboardView: React.FC = () => {
 
             {/* Dynamic Inputs Row (Normal vs Range Mode [R]) */}
             {isReverse ? (
-              /* Range Mode (5 inputs: Start, End, 1, Count, Box Count) matching Photo 2 */
-              <div className="grid grid-cols-5 gap-1 sm:gap-2">
+              /* Range Mode (4 inputs for Mode 1 & 2: Start, End, Step, Count; 5 inputs for Mode 3: + Box Count) */
+              <div className={`grid ${activeMode === 3 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 sm:gap-2`}>
                 <div>
                   <input
                     type="text"
@@ -393,7 +410,7 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     type="number"
-                    placeholder="1"
+                    placeholder="Step"
                     value={stepVal}
                     onChange={(e) => setStepVal(e.target.value)}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
@@ -410,15 +427,17 @@ export const GameDashboardView: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <input
-                    type="number"
-                    placeholder="Box Count"
-                    value={boxCount}
-                    onChange={(e) => setBoxCount(e.target.value)}
-                    className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
-                  />
-                </div>
+                {activeMode === 3 && (
+                  <div>
+                    <input
+                      type="number"
+                      placeholder="Box Count"
+                      value={boxCount}
+                      onChange={(e) => setBoxCount(e.target.value)}
+                      className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               /* Normal Mode (3 inputs: Number, Count, Box Count) matching Photo 1 */
@@ -535,7 +554,7 @@ export const GameDashboardView: React.FC = () => {
               <span>Action</span>
             </div>
 
-            <div className="divide-y divide-gray-200 min-h-[220px] sm:min-h-[320px] max-h-[450px] sm:max-h-[600px] overflow-y-auto text-xs sm:text-sm font-bold">
+            <div className="divide-y divide-gray-200 min-h-[300px] sm:min-h-[400px] max-h-[500px] sm:max-h-[650px] overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = item.number.includes(':')

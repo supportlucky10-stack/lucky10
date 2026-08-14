@@ -21,10 +21,10 @@ export const TotalCountView: React.FC = () => {
   const [selectedSlot, setSelectedSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
   
   // Single DIGIT selection: 'ALL' | '1' | '2' | '3'
-  const [digitFilter, setDigitFilter] = useState<'ALL' | '1' | '2' | '3'>('3');
+  const [digitFilter, setDigitFilter] = useState<'ALL' | '1' | '2' | '3'>('ALL');
   
-  // Multi-select SUB options for the active digit (e.g. ['SUPER', 'BOX'] or ['A', 'B', 'C'])
-  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>(['SUPER', 'BOX']);
+  // Multi-select SUB options for the active digit
+  const [selectedSubOptions, setSelectedSubOptions] = useState<string[]>([]);
   
   const [searchNumber, setSearchNumber] = useState<string>('');
   
@@ -83,15 +83,7 @@ export const TotalCountView: React.FC = () => {
   // Handle single Digit selection change
   const handleDigitSelect = (digitId: 'ALL' | '1' | '2' | '3') => {
     setDigitFilter(digitId);
-    if (digitId === '1') {
-      setSelectedSubOptions(['A', 'B', 'C']);
-    } else if (digitId === '2') {
-      setSelectedSubOptions(['AB', 'BC', 'AC']);
-    } else if (digitId === '3') {
-      setSelectedSubOptions(['SUPER', 'BOX']);
-    } else {
-      setSelectedSubOptions([]);
-    }
+    setSelectedSubOptions([]);
   };
 
   // Toggle Sub Option Multi-select within the active digit category
@@ -102,13 +94,7 @@ export const TotalCountView: React.FC = () => {
     } else {
       next.push(optId);
     }
-
-    const availableIds = subOptions.map((o) => o.id);
-    if (next.length === 0) {
-      setSelectedSubOptions(availableIds);
-    } else {
-      setSelectedSubOptions(next);
-    }
+    setSelectedSubOptions(next);
   };
 
   const handleCalculate = () => {
@@ -453,7 +439,7 @@ export const TotalCountView: React.FC = () => {
           </div>
 
           {/* Data Rows */}
-          <div className="divide-y divide-neutral-850 max-h-72 overflow-y-auto">
+          <div className="divide-y divide-neutral-850 min-h-[220px] sm:min-h-[300px] max-h-[420px] sm:max-h-[500px] overflow-y-auto font-mono">
             {hasCalculated ? (
               filteredCountDataset.length > 0 ? (
                 filteredCountDataset.map((row, idx) => (
@@ -471,7 +457,7 @@ export const TotalCountView: React.FC = () => {
                 </div>
               )
             ) : (
-              <div className="py-10" />
+              <div className="min-h-[220px] sm:min-h-[300px]" />
             )}
           </div>
         </div>

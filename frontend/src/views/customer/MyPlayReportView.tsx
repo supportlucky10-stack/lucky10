@@ -745,67 +745,46 @@ export const MyPlayReportView: React.FC = () => {
             {/* Sales Report Input Form Box */}
             <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5">
               
-              {/* From Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(salesFromRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      From date
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(fromDate)}
-                    </span>
-                    <input
-                      ref={salesFromRef}
-                      type="date"
-                      value={fromDate}
-                      onChange={(e) => e.target.value && setFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(salesFromRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+              {/* Single-Line FROM DATE & TO DATE Row */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => triggerDatePicker(salesFromRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(fromDate)}
+                  </span>
+                  <input
+                    ref={salesFromRef}
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
-              </div>
 
-              {/* To Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(salesToRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      To date
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(toDate)}
-                    </span>
-                    <input
-                      ref={salesToRef}
-                      type="date"
-                      value={toDate}
-                      onChange={(e) => e.target.value && setToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(salesToRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+                {/* TO DATE */}
+                <div
+                  onClick={() => triggerDatePicker(salesToRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    ref={salesToRef}
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
               </div>
 
@@ -1093,67 +1072,46 @@ export const MyPlayReportView: React.FC = () => {
             {/* Winning Report Input Form Box */}
             <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5">
               
-              {/* From Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(winFromRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      From date
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(winningFromDate)}
-                    </span>
-                    <input
-                      ref={winFromRef}
-                      type="date"
-                      value={winningFromDate}
-                      onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(winFromRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+              {/* Single-Line FROM DATE & TO DATE Row */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => triggerDatePicker(winFromRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(winningFromDate)}
+                  </span>
+                  <input
+                    ref={winFromRef}
+                    type="date"
+                    value={winningFromDate}
+                    onChange={(e) => e.target.value && setWinningFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
-              </div>
 
-              {/* To Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(winToRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      To date
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(winningToDate)}
-                    </span>
-                    <input
-                      ref={winToRef}
-                      type="date"
-                      value={winningToDate}
-                      onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(winToRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+                {/* TO DATE */}
+                <div
+                  onClick={() => triggerDatePicker(winToRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(winningToDate)}
+                  </span>
+                  <input
+                    ref={winToRef}
+                    type="date"
+                    value={winningToDate}
+                    onChange={(e) => e.target.value && setWinningToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
               </div>
 
@@ -1445,69 +1403,47 @@ export const MyPlayReportView: React.FC = () => {
         {/* ================= 4. DAILY REPORT SUB-VIEW (matching Image 1) ================= */}
         {activeSection === 'DAILY' && (
           <div className="space-y-5 animate-drop-in">
-            {/* Daily Report Input Form Box */}
             <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 font-sans">
-                     {/* From Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(dailyFromRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      FROM DATE
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(dailyFromDate)}
-                    </span>
-                    <input
-                      ref={dailyFromRef}
-                      type="date"
-                      value={dailyFromDate}
-                      onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(dailyFromRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+              {/* Single-Line FROM DATE & TO DATE Row */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => triggerDatePicker(dailyFromRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    FROM DATE
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(dailyFromDate)}
+                  </span>
+                  <input
+                    ref={dailyFromRef}
+                    type="date"
+                    value={dailyFromDate}
+                    onChange={(e) => e.target.value && setDailyFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
-              </div>
 
-              {/* To Date Input Row */}
-              <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                  <div
-                    onClick={() => triggerDatePicker(dailyToRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-4 py-2.5 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                  >
-                    <span className="text-[10px] sm:text-xs font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                      TO DATE
-                    </span>
-                    <span className="text-white font-black text-sm sm:text-base tracking-wide block mt-0.5 font-mono pointer-events-none">
-                      {formatDateDisplay(dailyToDate)}
-                    </span>
-                    <input
-                      ref={dailyToRef}
-                      type="date"
-                      value={dailyToDate}
-                      onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => triggerDatePicker(dailyToRef)}
-                    className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-4 py-3.5 rounded-xl text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                  >
-                    <span>CHANGE</span>
-                  </button>
+                {/* TO DATE */}
+                <div
+                  onClick={() => triggerDatePicker(dailyToRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    TO DATE
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(dailyToDate)}
+                  </span>
+                  <input
+                    ref={dailyToRef}
+                    type="date"
+                    value={dailyToDate}
+                    onChange={(e) => e.target.value && setDailyToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
                 </div>
               </div>
 
@@ -1630,7 +1566,6 @@ export const MyPlayReportView: React.FC = () => {
             </div>
           </div>
         )}
-
       </div>
 
       {/* ================= DEDICATED FULL-SCREEN OVERLAY PAGE FOR SALES REPORT OUTPUT ================= */}
@@ -2201,7 +2136,6 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
             )}
-
           </div>
         </div>
       )}
@@ -2242,67 +2176,46 @@ export const MyPlayReportView: React.FC = () => {
             {/* Input Form Box (Shown ONLY when Previous History tab is selected) */}
             {countTab === 'PREVIOUS' && (
               <div className="bg-[#0c0c0c] border border-neutral-800 p-3.5 sm:p-4 rounded-2xl shadow-xl space-y-3.5 font-sans animate-drop-in">
-                {/* FROM DATE Input Row */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      onClick={() => triggerDatePicker(countFromRef)}
-                      className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                    >
-                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                        FROM DATE
-                      </span>
-                      <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none">
-                        {formatDateDisplay(overCountDate)}
-                      </span>
-                      <input
-                        ref={countFromRef}
-                        type="date"
-                        value={overCountDate}
-                        onChange={(e) => e.target.value && setOverCountDate(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => triggerDatePicker(countFromRef)}
-                      className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-3.5 py-3 rounded-xl text-[11px] sm:text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                    >
-                      <span>CHANGE</span>
-                    </button>
+                {/* Single-Line FROM DATE & TO DATE Row */}
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  {/* FROM DATE */}
+                  <div
+                    onClick={() => triggerDatePicker(countFromRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                  >
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                      FROM DATE
+                    </span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                      {formatDateDisplay(overCountDate)}
+                    </span>
+                    <input
+                      ref={countFromRef}
+                      type="date"
+                      value={overCountDate}
+                      onChange={(e) => e.target.value && setOverCountDate(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                    />
                   </div>
-                </div>
 
-                {/* TO DATE Input Row */}
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      onClick={() => triggerDatePicker(countToRef)}
-                      className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner"
-                    >
-                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none">
-                        TO DATE
-                      </span>
-                      <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none">
-                        {formatDateDisplay(overCountToDate)}
-                      </span>
-                      <input
-                        ref={countToRef}
-                        type="date"
-                        value={overCountToDate}
-                        onChange={(e) => e.target.value && setOverCountToDate(e.target.value)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => triggerDatePicker(countToRef)}
-                      className="relative bg-neutral-900 border border-neutral-700 [@media(hover:hover)]:hover:border-gold/80 px-3.5 py-3 rounded-xl text-[11px] sm:text-xs font-black uppercase text-white tracking-wider hover:bg-neutral-800 transition-all shrink-0 active:scale-95 shadow flex items-center justify-center select-none overflow-hidden cursor-pointer"
-                    >
-                      <span>CHANGE</span>
-                    </button>
+                  {/* TO DATE */}
+                  <div
+                    onClick={() => triggerDatePicker(countToRef)}
+                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                  >
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                      TO DATE
+                    </span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                      {formatDateDisplay(overCountToDate)}
+                    </span>
+                    <input
+                      ref={countToRef}
+                      type="date"
+                      value={overCountToDate}
+                      onChange={(e) => e.target.value && setOverCountToDate(e.target.value)}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                    />
                   </div>
                 </div>
               </div>
