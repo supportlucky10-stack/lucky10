@@ -287,9 +287,15 @@ export const AdminResultManagementView: React.FC = () => {
                 <div><span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize4} onChange={(e) => setPrize4(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
                 <div><span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize5} onChange={(e) => setPrize5(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
               </div>
-              <button type="button" onClick={handlePublishPrizes} className="w-full py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-[0.99] tracking-wider">
-                PUBLISH ({shortSlot})
-              </button>
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={handlePublishPrizes}
+                  className="px-6 py-1.5 bg-gold-metallic text-black font-black text-xs rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
+                >
+                  PUBLISH ({shortSlot})
+                </button>
+              </div>
             </div>
 
             <div className="space-y-3 pt-2 border-t border-neutral-800">
@@ -301,9 +307,15 @@ export const AdminResultManagementView: React.FC = () => {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={handlePublishCompliments} className="w-full py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-[0.99] tracking-wider">
-                PUBLISH ({shortSlot})
-              </button>
+              <div className="flex justify-center pt-1">
+                <button
+                  type="button"
+                  onClick={handlePublishCompliments}
+                  className="px-6 py-1.5 bg-gold-metallic text-black font-black text-xs rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
+                >
+                  PUBLISH ({shortSlot})
+                </button>
+              </div>
             </div>
           </div>
         )}

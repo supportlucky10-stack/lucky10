@@ -192,7 +192,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                         </span>
                       </div>
                       <span className="text-neutral-400 text-xs font-mono flex items-center gap-1 mt-1">
-                        <Calendar className="w-3.5 h-3.5 text-gold shrink-0" /> Reg. Date: {formatDateDDMMYY(u.createdAt)}
+                        <Calendar className="w-3.5 h-3.5 text-gold shrink-0" /> Create Date: {formatDateDDMMYY(u.createdAt)}
                       </span>
                     </div>
 
@@ -201,13 +201,13 @@ export const AdminUsersAndResultsView: React.FC = () => {
                         onClick={() => toggleUserStatus(u.id)}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm border ${
                           isUserActive
-                            ? 'bg-amber-950/50 hover:bg-amber-900/80 border-amber-500/60 text-amber-300'
-                            : 'bg-emerald-950/60 hover:bg-emerald-900/80 border-emerald-500/60 text-emerald-300'
+                            ? 'bg-emerald-950/60 hover:bg-emerald-900/80 border-emerald-500/60 text-emerald-300'
+                            : 'bg-rose-950/50 hover:bg-rose-900/80 border-rose-500/60 text-rose-300'
                         }`}
-                        title={isUserActive ? `Deactivate user ${u.name}` : `Activate user ${u.name}`}
+                        title={isUserActive ? `Click to deactivate ${u.name}` : `Click to activate ${u.name}`}
                       >
-                        <Power className={`w-3.5 h-3.5 shrink-0 ${isUserActive ? 'text-amber-400' : 'text-emerald-400'}`} />
-                        <span>{isUserActive ? 'Deactivate' : 'Activate'}</span>
+                        <Power className={`w-3.5 h-3.5 shrink-0 ${isUserActive ? 'text-emerald-400' : 'text-rose-400'}`} />
+                        <span>{isUserActive ? 'Active' : 'Deactivate'}</span>
                       </button>
 
                       <button

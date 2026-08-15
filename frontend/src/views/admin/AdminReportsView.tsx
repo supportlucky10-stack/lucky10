@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket } from '../../types';
@@ -11,7 +11,6 @@ import {
   Copy,
   Trophy,
   ClipboardList,
-  ArrowRight,
 } from 'lucide-react';
 import goldTrophy from '../../assets/gold-trophy.png';
 
@@ -61,12 +60,22 @@ const formatCustomerName = (name?: string): string => {
   return name.trim();
 };
 
+const formatDateDisplay = (dateStr: string) => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  return dateStr;
+};
+
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
   const { registeredUsers, placedTickets, getResultForSlotAndDate, payoutLogs } = useApp();
 
   const todayStr = new Date().toISOString().split('T')[0];
+
+  const userFromRef = useRef<HTMLInputElement>(null);
+  const userToRef = useRef<HTMLInputElement>(null);
 
   // Active Tab
   const [activeTab, setActiveTab] = useState<ReportTab>('USERS');
@@ -79,6 +88,7 @@ export const AdminReportsView: React.FC = () => {
   const [toDate, setToDate] = useState<string>(todayStr);
   const [slotFilter, setSlotFilter] = useState<'ALL' | GameSlot>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
 
   const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
@@ -117,23 +127,45 @@ export const AdminReportsView: React.FC = () => {
     });
   }, [placedTickets, selectedUserId, selectedUser]);
 
-  // Compute User Performance List
+  // Compute User Performance List filtered by fromDate, toDate, and userSearchQuery
   const userPerformanceList = useMemo(() => {
-    return registeredUsers.map((user) => {
+    let users = registeredUsers;
+    if (userSearchQuery.trim()) {
+      const q = userSearchQuery.trim().toLowerCase();
+      users = registeredUsers.filter(
+        (u) =>
+          u.name.toLowerCase().includes(q) ||
+          u.username.toLowerCase().includes(q)
+      );
+    }
+
+    return users.map((user) => {
       const userTkts = placedTickets.filter((t) => {
-        return (
+        const matchesUser =
           t.userId === user.id ||
           (t as any).agencyName === user.username ||
-          (t as any).userName === user.name
-        );
+          (t as any).userName === user.name;
+        if (!matchesUser) return false;
+
+        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        if (fromDate && tDate < fromDate) return false;
+        if (toDate && tDate > toDate) return false;
+        return true;
       });
 
       const totalBills = userTkts.length;
       const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
 
-      // Payouts for this user
+      // Payouts for this user filtered by date range
       const userPayouts = payoutLogs
-        .filter((p) => p.userId === user.id || p.userName === user.name)
+        .filter((p) => {
+          const matchesUser = p.userId === user.id || p.userName === user.name;
+          if (!matchesUser) return false;
+          const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
+          if (fromDate && pDate < fromDate) return false;
+          if (toDate && pDate > toDate) return false;
+          return true;
+        })
         .reduce((sum, p) => sum + (p.amount || 0), 0);
 
       const net = totalGross - userPayouts;
@@ -146,23 +178,7 @@ export const AdminReportsView: React.FC = () => {
         net,
       };
     });
-  }, [registeredUsers, placedTickets, payoutLogs]);
-
-  // Overall Global System Metrics
-  const globalTotalGross = useMemo(() => {
-    return userFilteredTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-  }, [userFilteredTickets]);
-
-  const globalTotalPayouts = useMemo(() => {
-    if (selectedUser) {
-      return payoutLogs
-        .filter((p) => p.userId === selectedUser.id || p.userName === selectedUser.name)
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
-    }
-    return payoutLogs.reduce((sum, p) => sum + (p.amount || 0), 0);
-  }, [payoutLogs, selectedUser]);
-
-  const globalNet = globalTotalGross - globalTotalPayouts;
+  }, [registeredUsers, userSearchQuery, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
 
   // Filtered Tickets for Sales Tab
   const salesFilteredTickets = useMemo(() => {
@@ -293,37 +309,6 @@ export const AdminReportsView: React.FC = () => {
       <HeaderBanner title="Reports" />
 
       <div className="px-4 sm:px-6 py-4 space-y-4 max-w-5xl mx-auto w-full">
-        
-        {/* Metric Cards in a SINGLE ROW */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="bg-neutral-950 border border-neutral-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-neutral-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
-              Gross Sales
-            </span>
-            <span className="text-white font-black text-sm sm:text-xl font-mono block">
-              ₹ {globalTotalGross.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="bg-neutral-950 border border-rose-500/40 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-rose-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
-              Payouts
-            </span>
-            <span className="text-rose-300 font-black text-sm sm:text-xl font-mono block">
-              ₹ {globalTotalPayouts.toLocaleString()}
-            </span>
-          </div>
-
-          <div className="bg-neutral-950 border border-gold/60 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-gold text-[10px] sm:text-xs font-black uppercase tracking-wider block truncate">
-              Net Revenue
-            </span>
-            <span className="text-gold font-black text-sm sm:text-xl font-mono block">
-              ₹ {globalNet.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
         {/* Top 4 Section Navigation Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-neutral-950 rounded-xl sm:rounded-2xl border border-gold/40 shadow-sm">
           <button
@@ -382,13 +367,69 @@ export const AdminReportsView: React.FC = () => {
         {/* TAB 1: USERS LIST & REPORT PERFORMANCE TABLE */}
         {activeTab === 'USERS' && (
           <div className="space-y-3 animate-drop-in">
+            {/* Single-Line FROM DATE & TO DATE Row + User Search */}
+            <div className="bg-neutral-950 border border-neutral-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => userFromRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(fromDate)}
+                  </span>
+                  <input
+                    ref={userFromRef}
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+
+                {/* TO DATE */}
+                <div
+                  onClick={() => userToRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    ref={userToRef}
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+              </div>
+
+              {/* User Search Bar */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search user by name or username..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full bg-black border border-neutral-700 text-white text-xs pl-8 pr-3 py-2 rounded-xl focus:border-gold outline-none placeholder-neutral-500 font-sans"
+                />
+              </div>
+            </div>
+
             <div className="bg-neutral-950 border border-gold/40 rounded-xl overflow-hidden shadow-md">
               <div className="p-3 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-black text-xs sm:text-sm text-white uppercase tracking-wider flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-gold" />
-                  <span>All Users List &amp; Performance ({registeredUsers.length})</span>
+                  <span>User Wise Performance ({userPerformanceList.length})</span>
                 </h3>
-                <span className="text-[11px] text-neutral-400">Click any user to view report</span>
               </div>
 
               {registeredUsers.length === 0 ? (
@@ -401,12 +442,10 @@ export const AdminReportsView: React.FC = () => {
                     <thead>
                       <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
                         <th className="py-2.5 px-3">User / Agency</th>
-                        <th className="py-2.5 px-2 text-right">Balance</th>
                         <th className="py-2.5 px-2 text-center">Bills</th>
                         <th className="py-2.5 px-2 text-right">Sales</th>
-                        <th className="py-2.5 px-2 text-right">Payouts</th>
+                        <th className="py-2.5 px-2 text-right">Price</th>
                         <th className="py-2.5 px-2 text-right">Net</th>
-                        <th className="py-2.5 px-3 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-900">
@@ -427,9 +466,6 @@ export const AdminReportsView: React.FC = () => {
                               <div className="font-black text-white text-xs">{user.name}</div>
                               <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
                             </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-bold text-white">
-                              ₹ {user.balance.toLocaleString()}
-                            </td>
                             <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
                               {totalBills}
                             </td>
@@ -441,19 +477,6 @@ export const AdminReportsView: React.FC = () => {
                             </td>
                             <td className="py-2.5 px-2 text-right font-mono font-black text-gold">
                               ₹ {net.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedUserId(user.id);
-                                  setActiveTab('SALES');
-                                }}
-                                className="px-2.5 py-1 bg-neutral-900 hover:bg-gold-metallic hover:text-black text-gold text-[10px] font-black rounded-md border border-gold/40 transition-all flex items-center gap-1 mx-auto cursor-pointer"
-                              >
-                                <span>Report</span>
-                                <ArrowRight className="w-3 h-3" />
-                              </button>
                             </td>
                           </tr>
                         );
