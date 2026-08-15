@@ -144,36 +144,47 @@ export const TodaysResultView: React.FC = () => {
       {/* Header Banner */}
       <HeaderBanner title="RESULT" />
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-2 flex-1 flex flex-col justify-between space-y-2">
+      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-2.5 flex-1 flex flex-col justify-start space-y-2.5">
         
-        {/* Top Controls: Single-Line DATE Box (Clickable to change date) & TIME Dropdown */}
-        <div className="grid grid-cols-2 gap-2 shrink-0">
-          {/* DATE Box - clicking opens date picker directly */}
-          <div
-            onClick={triggerDatePicker}
-            className="relative bg-gold-metallic text-black rounded-xl px-3 py-1.5 cursor-pointer group transition-all block overflow-hidden shadow-md h-[38px] sm:h-[40px] flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2 pointer-events-none">
-              <Calendar className="w-4 h-4 text-black shrink-0" />
+        {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
+        <div className="space-y-2 shrink-0">
+          {/* Row 1: Date Pill & Change Date Button */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {/* Left: Date Display Pill */}
+            <div
+              onClick={triggerDatePicker}
+              className="bg-gold-metallic text-black rounded-xl px-3.5 py-2 cursor-pointer transition-all flex items-center justify-center shadow-md h-[40px]"
+            >
               <span className="text-black font-black text-xs sm:text-sm tracking-wide font-mono">
                 {displayDateFormatted}
               </span>
             </div>
-            <input
-              ref={dateInputRef}
-              type="date"
-              value={selectedDate}
-              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-            />
+
+            {/* Right: Change Date Button */}
+            <div
+              onClick={triggerDatePicker}
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 rounded-xl px-3.5 py-2 cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md h-[40px]"
+            >
+              <Calendar className="w-4 h-4 text-gold shrink-0" />
+              <span className="font-bold text-xs sm:text-sm tracking-wide">
+                Change date
+              </span>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={selectedDate}
+                onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+              />
+            </div>
           </div>
 
-          {/* TIME Dropdown Selector */}
+          {/* Row 2: TIME Dropdown Selector */}
           <div className="relative">
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[38px] sm:h-[40px] px-3 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[40px] px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="opacity-80 text-[10px] tracking-wider uppercase">TIME:</span>
@@ -212,7 +223,7 @@ export const TodaysResultView: React.FC = () => {
         </div>
 
         {/* 5 Winning Number Cards (All 5 Prizes Uniform Same Size) */}
-        <div className="space-y-1.5 sm:space-y-2 shrink-0">
+        <div className="space-y-1.5 shrink-0">
           {[
             { id: 1, val: currentResult.prize1 || '389' },
             { id: 2, val: currentResult.prize2 || '145' },
@@ -222,7 +233,7 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-2 sm:py-2.5 px-3.5 shadow-sm`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1.5 sm:py-2 px-3.5 shadow-sm`}
             >
               <div className="flex items-center gap-3.5 w-full">
                 <div
@@ -231,7 +242,7 @@ export const TodaysResultView: React.FC = () => {
                   {item.id}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span className="font-black font-mono tracking-widest block text-white text-xl sm:text-2xl">
+                  <span className="font-black font-mono tracking-widest block text-white text-lg sm:text-xl">
                     {item.val}
                   </span>
                 </div>
@@ -240,7 +251,7 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table (Proportionally Fills Remaining Middle Space) */}
+        {/* COMPLIMENTS Matrix Table (Uniform Compact Sizing & Gold Title) */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const fallbackList = [
@@ -258,17 +269,17 @@ export const TodaysResultView: React.FC = () => {
           return (
             <div
               key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-xl p-2 sm:p-2.5 shadow-xl border border-neutral-800 flex-1 flex flex-col justify-between space-y-1 my-0.5"
+              className="bg-neutral-950 text-white rounded-xl p-2 sm:p-2.5 shadow-xl border border-neutral-800 space-y-1 shrink-0 my-0.5"
             >
               <h3 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-wider shrink-0">
                 COMPLIMENTS
               </h3>
 
-              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono flex-1">
+              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono">
                 {compliments30.map((val, idx) => (
                   <div
                     key={idx}
-                    className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 sm:py-1.5"
+                    className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 sm:py-1.5"
                   >
                     {val}
                   </div>
