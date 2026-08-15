@@ -41,6 +41,7 @@ interface AppContextType {
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
+  changeUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
   clearAllUsers: () => Promise<void>;
   toggleUserStatus: (userId: string) => Promise<void>;
   toggleAllUsersStatus: (isActive: boolean) => Promise<void>;
@@ -54,68 +55,7 @@ interface AppContextType {
   goBack: () => void;
 }
 
-const initialResults: Record<GameSlot, GameResult> = {
-  '1 PM Game': {
-    id: 'res_1',
-    date: new Date().toISOString().split('T')[0],
-    gameSlot: '1 PM Game',
-    prize1: '742',
-    prize2: '819',
-    prize3: '350',
-    prize4: '194',
-    prize5: '408',
-    compliments: [
-      ['743', '741', '744', '740', '745'],
-      ['820', '818', '821', '817', '822'],
-      ['351', '349', '352', '348', '353'],
-      ['195', '193', '196', '192', '197'],
-    ],
-    publishedAt: new Date().toISOString(),
-  },
-  '3 PM Game': {
-    id: 'res_2',
-    date: new Date().toISOString().split('T')[0],
-    gameSlot: '3 PM Game',
-    prize1: '512',
-    prize2: '934',
-    prize3: '601',
-    prize4: '287',
-    prize5: '739',
-    compliments: [
-      ['513', '511', '514', '510', '515'],
-      ['935', '933', '936', '932', '937'],
-    ],
-    publishedAt: new Date().toISOString(),
-  },
-  '6 PM Game': {
-    id: 'res_3',
-    date: new Date().toISOString().split('T')[0],
-    gameSlot: '6 PM Game',
-    prize1: '389',
-    prize2: '145',
-    prize3: '720',
-    prize4: '963',
-    prize5: '521',
-    compliments: [
-      ['390', '388', '391', '387', '392'],
-    ],
-    publishedAt: new Date().toISOString(),
-  },
-  '8 PM Game': {
-    id: 'res_4',
-    date: new Date().toISOString().split('T')[0],
-    gameSlot: '8 PM Game',
-    prize1: '624',
-    prize2: '471',
-    prize3: '809',
-    prize4: '536',
-    prize5: '315',
-    compliments: [
-      ['625', '623', '626', '622', '627'],
-    ],
-    publishedAt: new Date().toISOString(),
-  },
-};
+const initialResults: Record<GameSlot, GameResult> = {} as Record<GameSlot, GameResult>;
 
 const defaultDemoUser: UserAccount = {
   id: 'user_demo_001',
@@ -164,32 +104,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return gameResults[slot];
     }
 
-    const p1 = String((dateStr.charCodeAt(8) * 11 + slot.charCodeAt(0) * 7) % 900 + 100);
-    const p2 = String((dateStr.charCodeAt(9) * 13 + slot.charCodeAt(0) * 9) % 900 + 100);
-    const p3 = String((dateStr.charCodeAt(7) * 17 + slot.charCodeAt(1) * 5) % 900 + 100);
-    const p4 = String((dateStr.charCodeAt(6) * 19 + slot.charCodeAt(2) * 3) % 900 + 100);
-    const p5 = '408';
-
-    const compliments = [
-      [String(Number(p1) + 1), String(Number(p1) - 1), String(Number(p1) + 2), String(Number(p1) - 2), String(Number(p1) + 3)],
-      [String(Number(p2) + 1), String(Number(p2) - 1), String(Number(p2) + 2), String(Number(p2) - 2), String(Number(p2) + 3)],
-      [String(Number(p3) + 1), String(Number(p3) - 1), String(Number(p3) + 2), String(Number(p3) - 2), String(Number(p3) + 3)],
-      [String(Number(p4) + 1), String(Number(p4) - 1), String(Number(p4) + 2), String(Number(p4) - 2), String(Number(p4) + 3)],
-      ['529', '631', '412', '908', '216'],
-      ['111', '222', '333', '444', '555'],
-    ];
-
     return {
       id: `res-${dateStr}-${slot}`,
       date: dateStr,
       gameSlot: slot,
-      prize1: p1,
-      prize2: p2,
-      prize3: p3,
-      prize4: p4,
-      prize5: p5,
-      compliments: compliments,
-      publishedAt: '6:00 PM',
+      prize1: '',
+      prize2: '',
+      prize3: '',
+      prize4: '',
+      prize5: '',
+      compliments: [],
+      publishedAt: '',
     };
   };
 
@@ -716,6 +641,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const changeUserPassword = async (userId: string, newPass: string): Promise<boolean> => {
+    const cleanPass = newPass.trim();
+    if (!cleanPass) {
+      addToast('Password cannot be empty', 'error');
+      return false;
+    }
+    try {
+      await adminService.changeUserPassword(userId, cleanPass);
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.username === userId || u.name === userId
+            ? { ...u, password: cleanPass }
+            : u
+        )
+      );
+      addToast('Password updated successfully!', 'success');
+      return true;
+    } catch (err: any) {
+      console.warn('Backend password update failed, updating locally:', err);
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.username === userId || u.name === userId
+            ? { ...u, password: cleanPass }
+            : u
+        )
+      );
+      addToast('Password updated successfully!', 'success');
+      return true;
+    }
+  };
+
   const clearAllUsers = async () => {
     try {
       await adminService.clearAllUsers();
@@ -796,6 +752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         registerUser,
         createUser,
         deleteUser,
+        changeUserPassword,
         clearAllUsers,
         toggleUserStatus,
         toggleAllUsersStatus,

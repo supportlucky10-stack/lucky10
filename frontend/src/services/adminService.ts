@@ -31,6 +31,13 @@ export const adminService = {
     await apiRequest(`/api/admin/users/${userId}`, { method: 'DELETE' });
   },
 
+  async changeUserPassword(userId: string, password: string): Promise<void> {
+    await apiRequest(`/api/admin/users/${userId}/password`, {
+      method: 'PUT',
+      body: JSON.stringify({ password }),
+    });
+  },
+
   async clearAllUsers(): Promise<void> {
     await apiRequest('/api/admin/users', { method: 'DELETE' });
   },

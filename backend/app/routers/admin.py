@@ -119,6 +119,23 @@ def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admi
     db.refresh(user)
     return {"id": user.id, "isActive": user.is_active, "message": "User status updated successfully"}
 
+@router.put("/users/{user_id}/password")
+@router.patch("/users/{user_id}/password")
+def change_user_password(user_id: str, payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    new_password = payload.get("password")
+    if not new_password or len(str(new_password).strip()) < 1:
+        raise HTTPException(status_code=400, detail="Password cannot be empty")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password_hash = get_password_hash(str(new_password).strip())
+    db.commit()
+    return {"message": "Password updated successfully", "id": user.id}
+
 @router.delete("/users/{user_id}")
 def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Building2, Calendar, Users, ChevronDown, ChevronUp, UserPlus, X, Check, Eye, EyeOff, AlertTriangle, Power, Trash2 } from 'lucide-react';
+import { Calendar, Users, UserPlus, X, Check, Eye, EyeOff, AlertTriangle, Power, Trash2, KeyRound } from 'lucide-react';
 
 const formatDateDDMMYY = (dateStr?: string): string => {
   if (!dateStr) return '';
@@ -16,10 +16,18 @@ const formatDateDDMMYY = (dateStr?: string): string => {
 };
 
 export const AdminUsersAndResultsView: React.FC = () => {
-  const { registeredUsers, createUser, deleteUser, toggleUserStatus, toggleAllUsersStatus } = useApp();
-  const [expandedUserBank, setExpandedUserBank] = useState<string | null>(null);
+  const { registeredUsers, createUser, deleteUser, changeUserPassword, toggleUserStatus, toggleAllUsersStatus } = useApp();
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Change Password State
+  const [userToChangePassword, setUserToChangePassword] = useState<{ id: string; name: string; username?: string } | null>(null);
+  const [newUserPassword, setNewUserPassword] = useState<string>('');
+  const [confirmNewUserPassword, setConfirmNewUserPassword] = useState<string>('');
+  const [showNewUserPassword, setShowNewUserPassword] = useState<boolean>(false);
+  const [showConfirmNewUserPassword, setShowConfirmNewUserPassword] = useState<boolean>(false);
+  const [passwordChangeError, setPasswordChangeError] = useState<string>('');
+  const [isChangingPassword, setIsChangingPassword] = useState<boolean>(false);
 
   // Create User Form State
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
@@ -58,163 +66,257 @@ export const AdminUsersAndResultsView: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    const success = await createUser(agencyName.trim(), password.trim(), finalMode);
-    setIsSubmitting(false);
-
-    if (success) {
-      setAgencyName('');
-      setPassword('');
-      setConfirmPassword('');
-      setShowPassword(false);
-      setShowConfirmPassword(false);
-      setFormError('');
-      setMode('With Commission');
-      setCommissionRate('20%');
-      setShowCreateForm(false);
+    try {
+      const ok = await createUser(agencyName.trim(), password.trim(), finalMode);
+      if (ok) {
+        setAgencyName('');
+        setPassword('');
+        setConfirmPassword('');
+        setMode('With Commission');
+        setShowCreateForm(false);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const allActive = registeredUsers.length > 0 && registeredUsers.every((u) => u.isActive !== false);
+  const handleSaveNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordChangeError('');
+
+    if (!newUserPassword.trim()) {
+      setPasswordChangeError('Please enter a new password');
+      return;
+    }
+    if (newUserPassword !== confirmNewUserPassword) {
+      setPasswordChangeError('Passwords do not match. Please retype password correctly.');
+      return;
+    }
+    if (!userToChangePassword) return;
+
+    setIsChangingPassword(true);
+    try {
+      const ok = await changeUserPassword(userToChangePassword.id, newUserPassword.trim());
+      if (ok) {
+        setUserToChangePassword(null);
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none">
-      {/* Gold Header */}
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none font-sans relative">
       <HeaderBanner title="Users List" />
 
-      <div className="px-4 sm:px-6 py-6 space-y-6 max-w-5xl mx-auto w-full">
-        {/* Header Action Row */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-            <Users className="w-4 h-4 text-gold" />
-            <span>Users List ({registeredUsers.length})</span>
-          </h2>
+      <div className="px-4 sm:px-6 py-5 space-y-4 max-w-4xl mx-auto w-full">
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-neutral-950 p-3.5 rounded-2xl border border-neutral-800 shadow-md">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-gold" />
+            <h2 className="text-base font-extrabold text-white">
+              Users List ({registeredUsers.length})
+            </h2>
+          </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             {registeredUsers.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
-                  const targetState = !allActive;
-                  if (
-                    window.confirm(
-                      targetState
-                        ? 'Are you sure you want to activate all users?'
-                        : 'Are you sure you want to deactivate all users? Users will be unable to log in.'
-                    )
-                  ) {
-                    toggleAllUsersStatus(targetState);
-                  }
+                  const anyActive = registeredUsers.some((u) => u.isActive !== false);
+                  toggleAllUsersStatus(!anyActive);
                 }}
-                className={`px-3 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-all ${
-                  allActive
-                    ? 'bg-rose-950/90 hover:bg-rose-900 border border-rose-600/70 text-rose-200'
-                    : 'bg-emerald-950/90 hover:bg-emerald-900 border border-emerald-600/70 text-emerald-200'
+                className={`px-3 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all inline-flex items-center gap-1.5 cursor-pointer shadow-sm border ${
+                  registeredUsers.some((u) => u.isActive !== false)
+                    ? 'bg-rose-950/70 hover:bg-rose-900 border-rose-600/80 text-rose-300'
+                    : 'bg-emerald-950/70 hover:bg-emerald-900 border-emerald-600/80 text-emerald-300'
                 }`}
-                title={allActive ? 'Deactivate all user accounts' : 'Activate all user accounts'}
               >
-                <Power className="w-3.5 h-3.5 shrink-0" />
-                <span>{allActive ? 'Deactivate All Users' : 'Activate All Users'}</span>
+                <Power className="w-3.5 h-3.5" />
+                <span>
+                  {registeredUsers.some((u) => u.isActive !== false)
+                    ? 'Deactivate All Users'
+                    : 'Activate All Users'}
+                </span>
               </button>
             )}
 
             <button
-              onClick={() => setShowCreateForm(!showCreateForm)}
-              className="px-3.5 py-2 bg-gold-metallic hover:bg-gold text-black rounded-xl font-extrabold text-xs flex items-center gap-1.5 shadow-md cursor-pointer transition-transform active:scale-95"
+              onClick={() => {
+                setShowCreateForm(!showCreateForm);
+                setFormError('');
+              }}
+              className="px-3 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all hover:opacity-95 active:scale-95"
             >
               {showCreateForm ? <X className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-              <span>{showCreateForm ? 'Close Form' : '+ Create User'}</span>
+              <span>{showCreateForm ? 'Cancel' : '+ Create User'}</span>
             </button>
           </div>
         </div>
 
-        {/* Create User Card Form */}
         {showCreateForm && (
           <form
             onSubmit={handleCreateUser}
-            className="p-5 bg-neutral-950 border border-gold/50 rounded-2xl space-y-4 shadow-xl animate-drop-in"
+            className="p-5 bg-neutral-950 border border-gold/40 rounded-2xl space-y-4 animate-drop-in shadow-xl"
           >
-            <div className="flex items-center justify-between border-b border-neutral-900 pb-3">
-              <span className="font-extrabold text-gold text-sm uppercase tracking-wide flex items-center gap-2">
-                <UserPlus className="w-4 h-4" /> Create New User / Agency
-              </span>
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <h3 className="font-extrabold text-sm text-gold uppercase tracking-wider flex items-center gap-2">
+                <UserPlus className="w-4 h-4 text-gold" />
+                Create New Agency / User
+              </h3>
               <button
                 type="button"
                 onClick={() => setShowCreateForm(false)}
-                className="text-neutral-500 hover:text-white"
+                className="text-neutral-400 hover:text-white p-1"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="space-y-3.5 text-xs font-mono">
-              {/* Agency Name Field */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-neutral-400 font-sans font-bold uppercase text-[10px] mb-1">
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
                   Agency Name :
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Enter Agency Name"
+                  placeholder="e.g. WinnerAgency"
                   value={agencyName}
                   onChange={(e) => {
                     setAgencyName(e.target.value);
                     if (formError) setFormError('');
                   }}
-                  className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2.5 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                  className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
                 />
               </div>
 
-              {/* Create Password Field */}
               <div>
-                <label className="block text-neutral-400 font-sans font-bold uppercase text-[10px] mb-1">
-                  Create Password :
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Commission Mode :
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode('With Commission')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      mode === 'With Commission'
+                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    With Commission
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('Without Commission')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      mode === 'Without Commission'
+                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    Without Commission
+                  </button>
+                </div>
+              </div>
+
+              {mode === 'With Commission' && (
+                <div className="sm:col-span-2">
+                  <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                    Commission Rate :
+                  </label>
+                  <div className="grid grid-cols-2 gap-3 max-w-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCommissionRate('20%')}
+                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                        commissionRate === '20%'
+                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
+                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                      }`}
+                    >
+                      20% Commission
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommissionRate('30%')}
+                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                        commissionRate === '30%'
+                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
+                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                      }`}
+                    >
+                      30% Commission
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Password :
                 </label>
                 <div className="relative w-full">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
-                    placeholder="Enter Password"
+                    placeholder="Enter password"
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (formError) setFormError('');
                     }}
-                    className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2.5 pr-10 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
+                      passwordsMismatch
+                        ? 'border-rose-500 focus:border-rose-500'
+                        : 'border-neutral-700 focus:border-gold'
+                    }`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
-                    title={showPassword ? 'Hide password' : 'Show password'}
                   >
-                    {showPassword ? (
-                      <EyeOff className="w-4 h-4 text-neutral-400" />
-                    ) : (
-                      <Eye className="w-4 h-4 text-neutral-400" />
-                    )}
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                   </button>
                 </div>
               </div>
 
-              {/* Retype Password Field */}
               <div>
-                <label className="block text-neutral-400 font-sans font-bold uppercase text-[10px] mb-1">
-                  Retype Password :
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1 flex items-center justify-between">
+                  <span>Confirm Password :</span>
+                  {password && confirmPassword && (
+                    <span
+                      className={`text-[10px] font-bold flex items-center gap-1 ${
+                        password === confirmPassword ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {password === confirmPassword ? (
+                        <>
+                          <Check className="w-3 h-3" /> Passwords match
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-3 h-3" /> Do not match
+                        </>
+                      )}
+                    </span>
+                  )}
                 </label>
                 <div className="relative w-full">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     required
-                    placeholder="Retype Password"
+                    placeholder="Retype password"
                     value={confirmPassword}
                     onChange={(e) => {
                       setConfirmPassword(e.target.value);
                       if (formError) setFormError('');
                     }}
-                    className={`w-full bg-black border text-white px-3.5 py-2.5 pr-10 rounded-xl focus:outline-none font-sans text-xs ${
+                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
                       passwordsMismatch
-                        ? 'border-rose-500/80 focus:border-rose-500'
+                        ? 'border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30'
                         : 'border-neutral-700 focus:border-gold'
                     }`}
                   />
@@ -222,108 +324,36 @@ export const AdminUsersAndResultsView: React.FC = () => {
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
-                    title={showConfirmPassword ? 'Hide password' : 'Show password'}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="w-4 h-4 text-neutral-400" />
+                      <EyeOff className="w-3.5 h-3.5" />
                     ) : (
-                      <Eye className="w-4 h-4 text-neutral-400" />
+                      <Eye className="w-3.5 h-3.5" />
                     )}
                   </button>
                 </div>
-                {passwordsMismatch && (
-                  <p className="text-rose-400 text-[11px] font-sans mt-1.5 flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                    Passwords do not match
-                  </p>
-                )}
-              </div>
-
-              {/* Form Level Error Message */}
-              {formError && !passwordsMismatch && (
-                <div className="p-2.5 bg-rose-950/70 border border-rose-500/50 text-rose-200 rounded-xl text-xs font-sans flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
-                  <span>{formError}</span>
-                </div>
-              )}
-
-              {/* Mode Field (With Commission / Without Commission) */}
-              <div>
-                <label className="block text-neutral-400 font-sans font-bold uppercase text-[10px] mb-1.5">
-                  Mode :
-                </label>
-                <div className="grid grid-cols-2 gap-2 font-sans mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setMode('With Commission')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                      mode === 'With Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md'
-                        : 'bg-black text-neutral-400 border-neutral-800 hover:border-neutral-700'
-                    }`}
-                  >
-                    {mode === 'With Commission' && <Check className="w-3.5 h-3.5" />}
-                    <span>With Commission</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode('Without Commission')}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-                      mode === 'Without Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md'
-                        : 'bg-black text-neutral-400 border-neutral-800 hover:border-neutral-700'
-                    }`}
-                  >
-                    {mode === 'Without Commission' && <Check className="w-3.5 h-3.5" />}
-                    <span>Without Commission</span>
-                  </button>
-                </div>
-
-                {/* Commission Rate Options (Visible when With Commission is selected) */}
-                {mode === 'With Commission' && (
-                  <div className="p-3 bg-neutral-900/90 border border-gold/40 rounded-xl space-y-2 shadow-inner animate-fadeIn">
-                    <label className="block text-gold font-sans font-bold uppercase text-[10px] tracking-wider">
-                      Commission Rate :
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 font-sans">
-                      {(['20%', '30%'] as const).map((rate) => (
-                        <button
-                          key={rate}
-                          type="button"
-                          onClick={() => setCommissionRate(rate)}
-                          className={`py-2 px-3 rounded-lg border text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                            commissionRate === rate
-                              ? 'bg-gold text-black border-gold font-black shadow-sm'
-                              : 'bg-black text-neutral-300 border-neutral-800 hover:border-gold/50'
-                          }`}
-                        >
-                          {commissionRate === rate && <Check className="w-3.5 h-3.5" />}
-                          <span>{rate}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-900">
+            {formError && (
+              <p className="text-rose-400 text-xs font-sans flex items-center gap-1 pt-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                {formError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
               <button
                 type="button"
-                onClick={() => {
-                  setShowCreateForm(false);
-                  setFormError('');
-                }}
-                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl border border-neutral-800 cursor-pointer"
+                onClick={() => setShowCreateForm(false)}
+                className="px-4 py-2 bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || passwordsMismatch || !agencyName.trim() || !password.trim() || !confirmPassword.trim()}
-                className="px-5 py-2 bg-gold-metallic hover:bg-gold text-black text-xs font-extrabold rounded-xl shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:opacity-90"
               >
                 {isSubmitting ? 'Creating...' : 'Submit & Create'}
               </button>
@@ -331,7 +361,6 @@ export const AdminUsersAndResultsView: React.FC = () => {
           </form>
         )}
 
-        {/* Registered Users List */}
         <div className="space-y-3">
           {registeredUsers.length === 0 ? (
             <div className="bg-neutral-950 border border-neutral-800 rounded-xl p-8 text-center text-neutral-500 italic text-xs">
@@ -347,8 +376,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                     isUserActive ? 'border-neutral-800 hover:border-gold/30' : 'border-rose-950/80 bg-neutral-950/90'
                   }`}
                 >
-                  {/* Header Row: User Name, Registration Date & Action Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-900 pb-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-extrabold text-white text-base block">{u.name}</span>
@@ -375,8 +403,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {/* Activate / Deactivate Single User Toggle Button */}
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button
                         onClick={() => toggleUserStatus(u.id)}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm border ${
@@ -390,7 +417,22 @@ export const AdminUsersAndResultsView: React.FC = () => {
                         <span>{isUserActive ? 'Deactivate' : 'Activate'}</span>
                       </button>
 
-                      {/* Delete User Button */}
+                      <button
+                        onClick={() => {
+                          setUserToChangePassword(u);
+                          setNewUserPassword('');
+                          setConfirmNewUserPassword('');
+                          setShowNewUserPassword(false);
+                          setShowConfirmNewUserPassword(false);
+                          setPasswordChangeError('');
+                        }}
+                        className="px-2.5 py-1.5 bg-blue-950/50 hover:bg-blue-900/80 border border-blue-500/60 text-blue-300 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
+                        title={`Change password for ${u.name}`}
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>Change Password</span>
+                      </button>
+
                       <button
                         onClick={() => setUserToDelete(u)}
                         className="px-2.5 py-1.5 bg-rose-950/50 hover:bg-rose-900/80 border border-rose-500/60 text-rose-300 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
@@ -401,77 +443,116 @@ export const AdminUsersAndResultsView: React.FC = () => {
                       </button>
                     </div>
                   </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
 
-                  {/* Info Row: Bank Details Toggle Button */}
-                  <div className="flex flex-wrap items-center justify-end gap-3 text-xs">
-                    <button
-                      onClick={() => setExpandedUserBank(expandedUserBank === u.id ? null : u.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-colors cursor-pointer shrink-0 ${
-                        u.bankDetails
-                          ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-300 hover:bg-emerald-900'
-                          : 'bg-neutral-900 border-neutral-800 text-neutral-500 hover:text-neutral-300'
-                      }`}
-                    >
-                      <Building2 className="w-3.5 h-3.5" />
-                      <span>{u.bankDetails ? 'Bank Details' : 'No Bank Details'}</span>
-                      {expandedUserBank === u.id ? (
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                  </div>
-
-                {/* Expandable Bank Account Details Drawer */}
-                {expandedUserBank === u.id && (
-                  <div className="mt-3 p-4 bg-neutral-900 rounded-xl border border-gold/40 text-xs space-y-2 font-mono shadow-inner">
-                    <div className="text-gold font-extrabold flex items-center gap-1.5 text-xs border-b border-neutral-800 pb-2">
-                      <Building2 className="w-4 h-4 text-gold" /> Bank Account Details ({u.name})
-                    </div>
-                    {u.bankDetails ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-neutral-300 pt-1">
-                        <div className="bg-black p-2.5 rounded-lg border border-neutral-800">
-                          <span className="text-neutral-500 block text-[10px] uppercase font-sans font-bold">
-                            Account Holder:
-                          </span>
-                          <span className="font-bold text-white text-xs">{u.bankDetails.accountHolderName}</span>
-                        </div>
-                        <div className="bg-black p-2.5 rounded-lg border border-neutral-800">
-                          <span className="text-neutral-500 block text-[10px] uppercase font-sans font-bold">
-                            Bank Name:
-                          </span>
-                          <span className="font-bold text-white text-xs">{u.bankDetails.bankName}</span>
-                        </div>
-                        <div className="bg-black p-2.5 rounded-lg border border-neutral-800">
-                          <span className="text-neutral-500 block text-[10px] uppercase font-sans font-bold">
-                            Account Number:
-                          </span>
-                          <span className="font-bold text-gold text-xs">{u.bankDetails.accountNo}</span>
-                        </div>
-                        <div className="bg-black p-2.5 rounded-lg border border-neutral-800">
-                          <span className="text-neutral-500 block text-[10px] uppercase font-sans font-bold">
-                            IFSC / Branch:
-                          </span>
-                          <span className="font-bold text-white text-xs">
-                            {u.bankDetails.ifsc} ({u.bankDetails.branchName})
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="text-neutral-500 italic block text-xs">
-                        User has not updated bank account details yet.
-                      </span>
-                    )}
-                  </div>
-                )}
+      {userToChangePassword && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border-2 border-gold rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-drop-in text-white font-sans">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold flex items-center justify-center text-gold">
+                  <KeyRound className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">Change Password</h3>
+                  <p className="text-[10px] text-neutral-400 font-mono">{userToChangePassword.name}</p>
+                </div>
               </div>
-            );
-          })
-        )}
-      </div>
-      </div>
+              <button
+                type="button"
+                onClick={() => setUserToChangePassword(null)}
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-      {/* DELETE USER PERMISSION CONFIRMATION DIALOG MODAL */}
+            <form onSubmit={handleSaveNewPassword} className="space-y-3.5">
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  New Password :
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showNewUserPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Enter new password"
+                    value={newUserPassword}
+                    onChange={(e) => {
+                      setNewUserPassword(e.target.value);
+                      if (passwordChangeError) setPasswordChangeError('');
+                    }}
+                    className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewUserPassword(!showNewUserPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
+                  >
+                    {showNewUserPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Confirm New Password :
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showConfirmNewUserPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Retype new password"
+                    value={confirmNewUserPassword}
+                    onChange={(e) => {
+                      setConfirmNewUserPassword(e.target.value);
+                      if (passwordChangeError) setPasswordChangeError('');
+                    }}
+                    className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmNewUserPassword(!showConfirmNewUserPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
+                  >
+                    {showConfirmNewUserPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {passwordChangeError && (
+                <p className="text-rose-400 text-xs font-sans flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  {passwordChangeError}
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setUserToChangePassword(null)}
+                  className="w-1/2 py-2 bg-neutral-900 border border-neutral-700 text-neutral-300 rounded-xl text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="w-1/2 py-2 bg-gold-metallic text-black font-black text-xs rounded-xl shadow hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isChangingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {userToDelete && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-950 border-2 border-rose-600 rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 text-center animate-drop-in">
