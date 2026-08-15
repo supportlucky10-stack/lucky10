@@ -28,7 +28,7 @@ interface AppContextType {
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
   userTickets: PlacedTicket[];
-  saveTicket: () => Promise<boolean>;
+  saveTicket: () => Promise<string | null>;
   payTicket: () => Promise<boolean>;
   bankDetails: BankDetails | null;
   updateBankDetails: (details: Omit<BankDetails, 'updatedAt'>) => Promise<void>;
@@ -351,10 +351,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBetSlip([]);
   };
 
-  const saveTicket = async (): Promise<boolean> => {
+  const saveTicket = async (): Promise<string | null> => {
     if (betSlip.length === 0) {
       addToast('Your bet slip is empty!', 'error');
-      return false;
+      return null;
     }
 
     const mode1Items = betSlip.filter((item) => {
@@ -368,18 +368,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (mode1TotalCount > 0 && mode1TotalCount < 5) {
       addToast('Please play at least 5 count for 1-digit game', 'error');
-      return false;
+      return null;
     }
 
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
     try {
       const newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE');
       setPlacedTickets((prev) => [newTicket, ...prev]);
-      addToast('Saved successfully!', 'success');
-      return true;
+      return newTicket.id;
     } catch (err: any) {
       addToast(err.message || 'Failed to save ticket', 'error');
-      return false;
+      return null;
     }
   };
 

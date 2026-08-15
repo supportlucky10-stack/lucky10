@@ -10,6 +10,21 @@ import {
   Trash2,
 } from 'lucide-react';
 
+
+
+const format24HourTime = (timeStr?: string): string => {
+  if (!timeStr) return '';
+  const cleanTime = timeStr.trim().split('.')[0]; // remove milliseconds
+  const parts = cleanTime.split(':');
+  if (parts.length >= 2) {
+    const h = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
+    const m = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
+    const s = parts[2] ? String(parseInt(parts[2], 10) || 0).padStart(2, '0') : '';
+    return s ? `${h}:${m}:${s}` : `${h}:${m}`;
+  }
+  return cleanTime;
+};
+
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
   const trimmed = str.trim();
@@ -19,24 +34,34 @@ const formatPlacedAtDate = (str?: string): string => {
     const [y, m, d] = datePart.split('-');
     const cleanTime = timePart ? timePart.split('.')[0] : '';
     const yy = y ? y.slice(-2) : '';
-    return `${d}/${m}/${yy} ${cleanTime}`.trim();
+    const formattedTime = format24HourTime(cleanTime);
+    return `${d}/${m}/${yy} ${formattedTime}`.trim();
   }
 
   if (trimmed.includes('-')) {
     const spaceParts = trimmed.split(' ');
     const datePart = spaceParts[0];
-    const rest = spaceParts.slice(1).join(' ');
+    const timePart = spaceParts.slice(1).join(' ');
     const parts = datePart.split('-');
     if (parts.length === 3) {
+      const formattedTime = format24HourTime(timePart);
       if (parts[0].length === 4) {
         // YYYY-MM-DD -> DD/MM/YY
-        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)} ${rest}`.trim();
+        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)} ${formattedTime}`.trim();
       }
       if (parts[2].length === 4) {
         // DD-MM-YYYY -> DD/MM/YY
-        return `${parts[0]}/${parts[1]}/${parts[2].slice(-2)} ${rest}`.trim();
+        return `${parts[0]}/${parts[1]}/${parts[2].slice(-2)} ${formattedTime}`.trim();
       }
     }
+  }
+
+  if (trimmed.includes('/')) {
+    const spaceParts = trimmed.split(' ');
+    const datePart = spaceParts[0];
+    const timePart = spaceParts.slice(1).join(' ');
+    const formattedTime = format24HourTime(timePart);
+    return `${datePart} ${formattedTime}`.trim();
   }
 
   return trimmed.replace('T', ' ');
@@ -64,10 +89,37 @@ export const MyPlayReportView: React.FC = () => {
   // Detailed Sales Report Overlay State
   const [showSalesDetails, setShowSalesDetails] = useState<boolean>(false);
   const [selectedSingleTicket, setSelectedSingleTicket] = useState<any | null>(null);
-  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [deleteSingleTicketTarget, setDeleteSingleTicketTarget] = useState<any | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
-  const longPressTimerRef = React.useRef<any>(null);
+  const listLongPressTimerRef = React.useRef<any>(null);
+  const detailLongPressTimerRef = React.useRef<any>(null);
+
+  const startListLongPress = (tkt: any) => {
+    listLongPressTimerRef.current = setTimeout(() => {
+      setSelectedSingleTicket(tkt);
+    }, 450);
+  };
+
+  const cancelListLongPress = () => {
+    if (listLongPressTimerRef.current) {
+      clearTimeout(listLongPressTimerRef.current);
+      listLongPressTimerRef.current = null;
+    }
+  };
+
+  const startDetailLongPress = (tkt: any) => {
+    detailLongPressTimerRef.current = setTimeout(() => {
+      setDeleteSingleTicketTarget(tkt);
+    }, 450);
+  };
+
+  const cancelDetailLongPress = () => {
+    if (detailLongPressTimerRef.current) {
+      clearTimeout(detailLongPressTimerRef.current);
+      detailLongPressTimerRef.current = null;
+    }
+  };
 
   // Dates & Form State for Winning Report Form (matching Image 1)
   const [winningFromDate, setWinningFromDate] = useState<string>(todayStr);
@@ -341,20 +393,7 @@ export const MyPlayReportView: React.FC = () => {
     ? dynamicGameRows
     : dynamicGameRows.filter((r) => r.slotName === dailySlotFilter);
 
-  // Increased long press hold duration threshold to 750ms
-  const startLongPress = (tkt: any) => {
-    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = setTimeout(() => {
-      setSelectedSingleTicket(tkt);
-    }, 750);
-  };
 
-  const cancelLongPress = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
 
   // Mock Realistic Ticket Data matching user's reference screenshots
   const sampleTickets = [
@@ -882,12 +921,13 @@ export const MyPlayReportView: React.FC = () => {
               {isFullView && (
                 <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
                   
-                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
+                  {/* Single Combined Line for SELECT DIGIT TYPE & Sub-Options */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE
+                      SELECT DIGIT TYPE &amp; OPTIONS
                     </span>
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-2 flex-nowrap overflow-x-auto py-1">
+                      {/* Digit Type Buttons (*, 1, 2, 3) */}
                       {[
                         { id: 'ALL', label: '★' },
                         { id: '1', label: '1' },
@@ -896,10 +936,11 @@ export const MyPlayReportView: React.FC = () => {
                       ].map((item) => {
                         const isSelected =
                           digitFilter === 'ALL'
-                            ? true
+                            ? item.id === 'ALL'
                             : digitFilter !== 'NONE' && digitFilter === item.id;
                         return (
                           <button
+                            type="button"
                             key={item.id}
                             onClick={() => {
                               if (item.id === 'ALL') {
@@ -920,7 +961,7 @@ export const MyPlayReportView: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shadow border ${
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
                               isSelected
                                 ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
                                 : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
@@ -930,129 +971,135 @@ export const MyPlayReportView: React.FC = () => {
                           </button>
                         );
                       })}
+
+                      {/* Divider */}
+                      <div className="w-px h-6 bg-neutral-700 shrink-0 mx-1" />
+
+                      {/* Active Sub-Options inline right next to digit buttons */}
+                      {digitFilter === '1' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'A', label: 'A' },
+                          { id: 'B', label: 'B' },
+                          { id: 'C', label: 'C' },
+                        ].map((opt) => {
+                          const isSelected =
+                            subOptionFilter === 'ALL'
+                              ? true
+                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {digitFilter === '2' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'AB', label: 'AB' },
+                          { id: 'AC', label: 'AC' },
+                          { id: 'BC', label: 'BC' },
+                        ].map((opt) => {
+                          const isSelected =
+                            subOptionFilter === 'ALL'
+                              ? true
+                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {digitFilter === '3' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'SUPER', label: 'SUPER' },
+                          { id: 'BOX', label: 'BOX' },
+                          { id: 'BOTH', label: 'BOTH' },
+                        ].map((opt) => {
+                          const isSelected =
+                            subOptionFilter === 'ALL'
+                              ? true
+                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`px-2.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {(digitFilter === 'ALL' || digitFilter === 'NONE') && (
+                        [
+                          { id: 'ALL', label: '★' },
+                        ].map((opt) => {
+                          const isSelected = subOptionFilter === 'ALL';
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
-                  </div>
-
-                  {/* Row 2: Sub-options (Uniform white border styling) */}
-                  <div className="flex items-center justify-center gap-2 pt-1">
-                    {digitFilter === '1' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'A', label: 'A' },
-                        { id: 'B', label: 'B' },
-                        { id: 'C', label: 'C' },
-                      ].map((opt) => {
-                        const isSelected =
-                          subOptionFilter === 'ALL'
-                            ? true
-                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {digitFilter === '2' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'AB', label: 'AB' },
-                        { id: 'BC', label: 'BC' },
-                        { id: 'AC', label: 'AC' },
-                      ].map((opt) => {
-                        const isSelected =
-                          subOptionFilter === 'ALL'
-                            ? true
-                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`px-3.5 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {digitFilter === '3' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'SUPER', label: 'SUPER' },
-                        { id: 'BOX', label: 'BOX' },
-                      ].map((opt) => {
-                        const isSelected =
-                          subOptionFilter === 'ALL'
-                            ? true
-                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`px-3.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {(digitFilter === 'ALL' || digitFilter === 'NONE') && (
-                      [
-                        { id: 'ALL', label: '★' },
-                      ].map((opt) => {
-                        const isSelected = subOptionFilter === 'ALL';
-                        return (
-                          <button
-                            key={opt.id}
-                            onClick={() => setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
                   </div>
 
                   {/* Row 3: Number Search Box (Crisp White Border) */}
@@ -1210,12 +1257,13 @@ export const MyPlayReportView: React.FC = () => {
               {isWinningFullView && (
                 <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
                   
-                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) */}
+                  {/* Single Combined Line for SELECT DIGIT TYPE & Sub-Options */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE
+                      SELECT DIGIT TYPE &amp; OPTIONS
                     </span>
-                    <div className="flex items-center justify-center gap-3">
+                    <div className="flex items-center justify-center gap-2 flex-nowrap overflow-x-auto py-1">
+                      {/* Digit Type Buttons (*, 1, 2, 3) */}
                       {[
                         { id: 'ALL', label: '★' },
                         { id: '1', label: '1' },
@@ -1224,7 +1272,7 @@ export const MyPlayReportView: React.FC = () => {
                       ].map((item) => {
                         const isSelected =
                           winningDigitFilter === 'ALL'
-                            ? true
+                            ? item.id === 'ALL'
                             : winningDigitFilter !== 'NONE' && winningDigitFilter === item.id;
                         return (
                           <button
@@ -1249,7 +1297,7 @@ export const MyPlayReportView: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shadow border ${
+                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
                               isSelected
                                 ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
                                 : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
@@ -1259,133 +1307,135 @@ export const MyPlayReportView: React.FC = () => {
                           </button>
                         );
                       })}
+
+                      {/* Divider */}
+                      <div className="w-px h-6 bg-neutral-700 shrink-0 mx-1" />
+
+                      {/* Active Sub-Options inline right next to digit buttons */}
+                      {winningDigitFilter === '1' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'A', label: 'A' },
+                          { id: 'B', label: 'B' },
+                          { id: 'C', label: 'C' },
+                        ].map((opt) => {
+                          const isSelected =
+                            winningSubOptionFilter === 'ALL'
+                              ? true
+                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {winningDigitFilter === '2' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'AB', label: 'AB' },
+                          { id: 'AC', label: 'AC' },
+                          { id: 'BC', label: 'BC' },
+                        ].map((opt) => {
+                          const isSelected =
+                            winningSubOptionFilter === 'ALL'
+                              ? true
+                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {winningDigitFilter === '3' && (
+                        [
+                          { id: 'ALL', label: '★' },
+                          { id: 'SUPER', label: 'SUPER' },
+                          { id: 'BOX', label: 'BOX' },
+                          { id: 'BOTH', label: 'BOTH' },
+                        ].map((opt) => {
+                          const isSelected =
+                            winningSubOptionFilter === 'ALL'
+                              ? true
+                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => {
+                                if (opt.id === 'ALL') {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                                } else {
+                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                                }
+                              }}
+                              className={`px-2.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
+
+                      {(winningDigitFilter === 'ALL' || winningDigitFilter === 'NONE') && (
+                        [
+                          { id: 'ALL', label: '★' },
+                        ].map((opt) => {
+                          const isSelected = winningSubOptionFilter === 'ALL';
+                          return (
+                            <button
+                              type="button"
+                              key={opt.id}
+                              onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
+                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                                isSelected
+                                  ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
+                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                              }`}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
-                  </div>
-
-                  {/* Row 2: Sub-options (Uniform white border styling) */}
-                  <div className="flex items-center justify-center gap-2 pt-1">
-                    {winningDigitFilter === '1' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'A', label: 'A' },
-                        { id: 'B', label: 'B' },
-                        { id: 'C', label: 'C' },
-                      ].map((opt) => {
-                        const isSelected =
-                          winningSubOptionFilter === 'ALL'
-                            ? true
-                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                        return (
-                          <button
-                            type="button"
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {winningDigitFilter === '2' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'AB', label: 'AB' },
-                        { id: 'BC', label: 'BC' },
-                        { id: 'AC', label: 'AC' },
-                      ].map((opt) => {
-                        const isSelected =
-                          winningSubOptionFilter === 'ALL'
-                            ? true
-                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                        return (
-                          <button
-                            type="button"
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`px-3.5 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {winningDigitFilter === '3' && (
-                      [
-                        { id: 'ALL', label: '★' },
-                        { id: 'SUPER', label: 'SUPER' },
-                        { id: 'BOX', label: 'BOX' },
-                      ].map((opt) => {
-                        const isSelected =
-                          winningSubOptionFilter === 'ALL'
-                            ? true
-                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                        return (
-                          <button
-                            type="button"
-                            key={opt.id}
-                            onClick={() => {
-                              if (opt.id === 'ALL') {
-                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                              } else {
-                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                              }
-                            }}
-                            className={`px-3.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
-
-                    {(winningDigitFilter === 'ALL' || winningDigitFilter === 'NONE') && (
-                      [
-                        { id: 'ALL', label: '★' },
-                      ].map((opt) => {
-                        const isSelected = winningSubOptionFilter === 'ALL';
-                        return (
-                          <button
-                            type="button"
-                            key={opt.id}
-                            onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
-                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                            }`}
-                          >
-                            {opt.label}
-                          </button>
-                        );
-                      })
-                    )}
                   </div>
 
                   {/* Row 3: Number Search Box (Crisp White Border) */}
@@ -1616,12 +1666,12 @@ export const MyPlayReportView: React.FC = () => {
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
             
-            {/* Gold Sub-header Metric Banner matching App Theme with bold text, larger size, and no space before colon */}
-            <div className="bg-gold-metallic p-4 rounded-xl text-black shadow-lg border border-gold-dark space-y-2.5 font-mono">
-              <div className="flex items-center justify-between font-black text-lg sm:text-xl uppercase tracking-wider">
+            {/* Gold Sub-header Metric Banner matching App Theme with bold text, larger size, and rounded-2xl border */}
+            <div className="bg-gold-metallic p-4 rounded-2xl text-black shadow-xl border-2 border-gold-dark space-y-2.5 font-mono">
+              <div className="flex items-center justify-between font-black text-base sm:text-lg uppercase tracking-wider">
                 <span>SALES REPORT &nbsp;( {slotFilter === 'ALL' ? 'ALL' : slotFilter} )</span>
               </div>
-              <div className="flex items-center justify-between text-base sm:text-lg font-black pt-2 border-t border-black/30">
+              <div className="flex items-center justify-between text-sm sm:text-base font-black pt-2 border-t border-black/30">
                 <span>Total Count: {totalDetailCount}</span>
                 <span>Grand Total: {grandDetailTotal}</span>
               </div>
@@ -1648,16 +1698,15 @@ export const MyPlayReportView: React.FC = () => {
                   </div>
                 ) : (
                   displayTickets.map((tkt) => {
-                    const isSelected = selectedCardId === tkt.id;
+                    const isSelected = selectedSingleTicket?.id === tkt.id;
                     return (
                       <div
                         key={tkt.id}
-                        onClick={() => setSelectedCardId(isSelected ? null : tkt.id)}
-                        onMouseDown={() => startLongPress(tkt)}
-                        onMouseUp={cancelLongPress}
-                        onMouseLeave={cancelLongPress}
-                        onTouchStart={() => startLongPress(tkt)}
-                        onTouchEnd={cancelLongPress}
+                        onMouseDown={() => startListLongPress(tkt)}
+                        onMouseUp={cancelListLongPress}
+                        onMouseLeave={cancelListLongPress}
+                        onTouchStart={() => startListLongPress(tkt)}
+                        onTouchEnd={cancelListLongPress}
                         className={`bg-neutral-950 text-white rounded-2xl p-4 shadow-xl border-2 transition-all cursor-pointer active:scale-[0.99] space-y-2 font-mono ${
                           isSelected
                             ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
@@ -1703,16 +1752,15 @@ export const MyPlayReportView: React.FC = () => {
                   </div>
                 ) : (
                   displayTickets.map((tkt) => {
-                    const isSelected = selectedCardId === tkt.id;
+                    const isSelected = selectedSingleTicket?.id === tkt.id;
                     return (
                       <div
                         key={tkt.id}
-                        onClick={() => setSelectedCardId(isSelected ? null : tkt.id)}
-                        onMouseDown={() => startLongPress(tkt)}
-                        onMouseUp={cancelLongPress}
-                        onMouseLeave={cancelLongPress}
-                        onTouchStart={() => startLongPress(tkt)}
-                        onTouchEnd={cancelLongPress}
+                        onMouseDown={() => startListLongPress(tkt)}
+                        onMouseUp={cancelListLongPress}
+                        onMouseLeave={cancelListLongPress}
+                        onTouchStart={() => startListLongPress(tkt)}
+                        onTouchEnd={cancelListLongPress}
                         className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer group active:scale-[0.99] ${
                           isSelected
                             ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
@@ -1872,23 +1920,30 @@ export const MyPlayReportView: React.FC = () => {
         </div>
       )}
 
-      {/* ================= EDIT, DELETE BILL SINGLE VIEW (In Signature Dark Gold Web Theme) ================= */}
-      {selectedSingleTicket && (
+      {/* ================= BILL DETAILS SINGLE VIEW (Clean view without delete button) ================= */}
+      {selectedSingleTicket && !deleteSingleTicketTarget && (
         <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
           
           {/* Header Banner matching App Theme */}
           <HeaderBanner
-            title="DELETE BILL"
+            title="BILL DETAILS"
             showBack={true}
             onBackClick={() => setSelectedSingleTicket(null)}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
             
-            {/* Bill Card Container in Dark Luxury Gold Theme */}
-            <div className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
+            {/* Bill Card Container (Long-press to go to Delete Bill page) */}
+            <div
+              onMouseDown={() => startDetailLongPress(selectedSingleTicket)}
+              onMouseUp={cancelDetailLongPress}
+              onMouseLeave={cancelDetailLongPress}
+              onTouchStart={() => startDetailLongPress(selectedSingleTicket)}
+              onTouchEnd={cancelDetailLongPress}
+              className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 cursor-pointer"
+            >
               
-              {/* Bill ID Header Bar (Clean layout without top delete button) */}
+              {/* Bill ID Header Bar */}
               <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
@@ -1897,7 +1952,7 @@ export const MyPlayReportView: React.FC = () => {
 
                 <div className="text-right">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
-                  <span className="text-white font-extrabold text-xs">{selectedSingleTicket.placedAt}</span>
+                  <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(selectedSingleTicket.placedAt)}</span>
                 </div>
               </div>
 
@@ -1936,16 +1991,92 @@ export const MyPlayReportView: React.FC = () => {
                 ))}
               </div>
 
-              {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
+              {/* Bill Total Footer Bar (Clean Layout without DELETE button) */}
+              <div className="bg-neutral-900 border-t border-neutral-800 p-4 flex items-center justify-between font-mono">
+                <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
+                <span className="text-gold font-black text-lg">₹{selectedSingleTicket.totalAmount}</span>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ================= DELETE BILL PAGE (Navigated to when long-pressed from Bill Details) ================= */}
+      {deleteSingleTicketTarget && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          
+          {/* Header Banner matching App Theme */}
+          <HeaderBanner
+            title="DELETE BILL"
+            showBack={true}
+            onBackClick={() => setDeleteSingleTicketTarget(null)}
+          />
+
+          <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+            
+            {/* Bill Card Container with DELETE option */}
+            <div className="bg-neutral-950 border-2 border-rose-600/60 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(225,29,72,0.2)] space-y-0">
+              
+              {/* Bill ID Header Bar */}
+              <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
+                <div>
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
+                  <span className="text-gold font-black text-base">#{deleteSingleTicketTarget.id}</span>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
+                  <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(deleteSingleTicketTarget.placedAt)}</span>
+                </div>
+              </div>
+
+              {/* Customer & Slot Info Bar */}
+              <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
+                <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{deleteSingleTicketTarget.gameSlot}</strong></span>
+                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(deleteSingleTicketTarget as any).customerName || 'Customer'}</strong></span>
+              </div>
+
+              {/* Table Column Headers Bar */}
+              <div className="bg-neutral-900/90 text-gold font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-800 uppercase">
+                <div className="flex items-center gap-10">
+                  <span className="w-16">GAME</span>
+                  <span className="w-16">NUM</span>
+                  <span>COUNT</span>
+                </div>
+                <span>AMOUNT</span>
+              </div>
+
+              {/* Table Rows in Dark Theme */}
+              <div className="divide-y divide-neutral-850 font-mono text-xs font-bold">
+                {deleteSingleTicketTarget.items.map((item: any, idx: number) => (
+                  <div
+                    key={idx}
+                    className={`flex items-center justify-between px-4 py-3.5 ${
+                      idx % 2 === 1 ? 'bg-neutral-900/40' : 'bg-black'
+                    }`}
+                  >
+                    <div className="flex items-center gap-10">
+                      <span className="w-16 uppercase text-gold font-black">{item.type}</span>
+                      <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
+                      <span className="text-rose-400 font-black text-sm">{item.count}</span>
+                    </div>
+                    <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bill Total Footer Bar with DELETE Button */}
               <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
-                  <span className="text-gold font-black text-base">₹{selectedSingleTicket.totalAmount}</span>
+                  <span className="text-gold font-black text-base">₹{deleteSingleTicketTarget.totalAmount}</span>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setConfirmDeleteId(selectedSingleTicket.id)}
+                  onClick={() => setConfirmDeleteId(deleteSingleTicketTarget.id)}
                   className="px-4 py-2 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all cursor-pointer shadow border border-rose-500"
                 >
                   <Trash2 className="w-4 h-4 stroke-[2.5]" />
@@ -2311,6 +2442,7 @@ export const MyPlayReportView: React.FC = () => {
                 onClick={() => {
                   setDeletedTicketIds((prev) => [...prev, confirmDeleteId]);
                   setConfirmDeleteId(null);
+                  setDeleteSingleTicketTarget(null);
                   setSelectedSingleTicket(null);
                 }}
                 className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"

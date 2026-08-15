@@ -140,21 +140,21 @@ export const TodaysResultView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
+    <div className="w-full h-screen min-h-screen bg-black text-white flex flex-col justify-between overflow-hidden antialiased select-none font-sans">
       {/* Header Banner */}
       <HeaderBanner title="RESULT" />
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-3.5 sm:py-4 flex-1 flex flex-col justify-start space-y-3.5 sm:space-y-4">
+      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-2 flex-1 flex flex-col justify-between space-y-2">
         
         {/* Top Controls: Single-Line DATE Box (Clickable to change date) & TIME Dropdown */}
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2 shrink-0">
           {/* DATE Box - clicking opens date picker directly */}
           <div
             onClick={triggerDatePicker}
-            className="relative bg-gold-metallic text-black rounded-xl px-3.5 py-2 cursor-pointer group transition-all block overflow-hidden shadow-md h-[44px] flex items-center justify-between"
+            className="relative bg-gold-metallic text-black rounded-xl px-3 py-1.5 cursor-pointer group transition-all block overflow-hidden shadow-md h-[38px] sm:h-[40px] flex items-center justify-between"
           >
             <div className="flex items-center gap-2 pointer-events-none">
-              <Calendar className="w-4.5 h-4.5 text-black shrink-0" />
+              <Calendar className="w-4 h-4 text-black shrink-0" />
               <span className="text-black font-black text-xs sm:text-sm tracking-wide font-mono">
                 {displayDateFormatted}
               </span>
@@ -173,7 +173,7 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[44px] px-3.5 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[38px] sm:h-[40px] px-3 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="opacity-80 text-[10px] tracking-wider uppercase">TIME:</span>
@@ -183,7 +183,7 @@ export const TodaysResultView: React.FC = () => {
             </button>
 
             {isGameDropdownOpen && (
-              <div className="absolute left-0 right-0 top-12 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
+              <div className="absolute left-0 right-0 top-11 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
                 {games.map((slot) => {
                   const theme = slotThemeStyles[slot];
                   const isSelected = slot === activeGameSlot;
@@ -195,7 +195,7 @@ export const TodaysResultView: React.FC = () => {
                         setActiveGameSlot(slot);
                         setIsGameDropdownOpen(false);
                       }}
-                      className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
+                      className={`w-full py-1.5 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
                         isSelected
                           ? theme.pillActive
                           : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
@@ -211,8 +211,8 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Winning Number Cards (Extra Large, prominent prize cards) */}
-        <div className="space-y-2.5 sm:space-y-3">
+        {/* 5 Winning Number Cards (All 5 Prizes Uniform Same Size) */}
+        <div className="space-y-1.5 sm:space-y-2 shrink-0">
           {[
             { id: 1, val: currentResult.prize1 || '389' },
             { id: 2, val: currentResult.prize2 || '145' },
@@ -222,16 +222,16 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-2xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-3.5 sm:py-4.5 px-4 sm:px-5 shadow-lg`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-2 sm:py-2.5 px-3.5 shadow-sm`}
             >
-              <div className="flex items-center gap-4 w-full">
+              <div className="flex items-center gap-3.5 w-full">
                 <div
-                  className={`w-10 h-10 sm:w-11 sm:h-11 rounded-xl border shrink-0 font-black text-base sm:text-lg flex items-center justify-center ${currentTheme.badgeActive}`}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
                 >
                   {item.id}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span className="font-black font-mono tracking-widest block text-white text-2xl sm:text-3xl md:text-4xl">
+                  <span className="font-black font-mono tracking-widest block text-white text-xl sm:text-2xl">
                     {item.val}
                   </span>
                 </div>
@@ -240,7 +240,7 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table (30 total entries: 5 columns x 6 rows) */}
+        {/* COMPLIMENTS Matrix Table (Proportionally Fills Remaining Middle Space) */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const fallbackList = [
@@ -258,17 +258,17 @@ export const TodaysResultView: React.FC = () => {
           return (
             <div
               key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 shadow-xl border border-neutral-800 space-y-2"
+              className="bg-neutral-950 text-white rounded-xl p-2 sm:p-2.5 shadow-xl border border-neutral-800 flex-1 flex flex-col justify-between space-y-1 my-0.5"
             >
-              <h3 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1.5 uppercase tracking-wider">
+              <h3 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-wider shrink-0">
                 COMPLIMENTS
               </h3>
 
-              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-xl overflow-hidden font-mono">
+              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono flex-1">
                 {compliments30.map((val, idx) => (
                   <div
                     key={idx}
-                    className="bg-black py-1.5 sm:py-2 text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider"
+                    className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 sm:py-1.5"
                   >
                     {val}
                   </div>
@@ -279,11 +279,11 @@ export const TodaysResultView: React.FC = () => {
         })()}
 
         {/* SHARE RESULT TO WHATSAPP Action Button */}
-        <div className="pt-1 pb-4 w-full flex justify-center">
+        <div className="pt-0.5 pb-1 w-full flex justify-center shrink-0">
           <button
             type="button"
             onClick={handleShareToWhatsApp}
-            className="w-full py-3.5 sm:py-4 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-2xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2 transition-all cursor-pointer group"
+            className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2 transition-all cursor-pointer group"
           >
             <svg
               className="w-4 h-4 fill-white shrink-0 group-hover:rotate-6 transition-transform"

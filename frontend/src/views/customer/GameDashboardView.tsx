@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2 } from 'lucide-react';
 
 interface SlotTheme {
   name: string;
@@ -27,77 +27,77 @@ const slotThemes: Record<string, SlotTheme> = {
     name: '1 PM Game',
     badgeBg: 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500',
     badgeText: 'text-white',
-    badgeBorder: 'border-blue-400',
-    cardBorder: 'border-blue-500',
-    cardShadow: 'shadow-[0_0_15px_rgba(59,130,246,0.3)]',
-    buttonGradient: 'bg-gradient-to-b from-sky-400 via-blue-600 to-indigo-800',
+    badgeBorder: 'border-sky-300',
+    cardBorder: 'border-sky-500/80',
+    cardShadow: 'shadow-[0_0_20px_rgba(59,130,246,0.35)]',
+    buttonGradient: 'bg-gradient-to-b from-blue-500 via-blue-600 to-indigo-700 hover:from-blue-400 hover:to-indigo-600',
     buttonText: 'text-white',
-    buttonBorder: 'border-sky-300/40',
-    activeTabBg: 'bg-gradient-to-r from-blue-500 to-sky-500',
+    buttonBorder: 'border-sky-300',
+    activeTabBg: 'bg-gradient-to-r from-blue-600 to-indigo-600',
     activeTabText: 'text-white',
     activeTabBorder: 'border-sky-400',
-    inactiveTabText: 'text-sky-400',
-    inactiveTabBorder: 'border-blue-500/40 hover:border-sky-400',
-    menuIconText: 'text-sky-400',
-    saveBtnBg: 'bg-gradient-to-r from-blue-500 via-indigo-600 to-sky-500',
-    saveBtnText: 'text-white',
+    inactiveTabText: 'text-sky-300',
+    inactiveTabBorder: 'border-sky-500/50',
+    menuIconText: 'text-sky-300',
+    saveBtnBg: 'bg-gradient-to-r from-blue-500 to-indigo-600',
+    saveBtnText: 'text-white border border-sky-300',
   },
   '3 PM Game': {
     name: '3 PM Game',
     badgeBg: 'bg-gold-metallic',
     badgeText: 'text-black',
-    badgeBorder: 'border-gold/90',
-    cardBorder: 'border-[#b88928]',
-    cardShadow: 'shadow-[0_0_15px_rgba(184,137,40,0.2)]',
-    buttonGradient: 'bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19]',
+    badgeBorder: 'border-gold-dark',
+    cardBorder: 'border-gold-dark',
+    cardShadow: 'shadow-[0_0_20px_rgba(184,137,40,0.35)]',
+    buttonGradient: 'bg-gradient-to-b from-[#e3bf45] via-[#b88928] to-[#805b11] hover:from-[#f0cf5d] hover:to-[#996e19]',
     buttonText: 'text-black',
-    buttonBorder: 'border-[#f5e396]/40',
+    buttonBorder: 'border-amber-200',
     activeTabBg: 'bg-gold-metallic',
     activeTabText: 'text-black',
-    activeTabBorder: 'border-gold',
+    activeTabBorder: 'border-gold-dark',
     inactiveTabText: 'text-gold',
-    inactiveTabBorder: 'border-gold/40 hover:border-gold',
+    inactiveTabBorder: 'border-gold-dark',
     menuIconText: 'text-gold',
     saveBtnBg: 'bg-gold-metallic',
-    saveBtnText: 'text-black',
+    saveBtnText: 'text-black border border-gold-dark',
   },
   '6 PM Game': {
     name: '6 PM Game',
     badgeBg: 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600',
     badgeText: 'text-white',
-    badgeBorder: 'border-fuchsia-400',
-    cardBorder: 'border-fuchsia-500',
-    cardShadow: 'shadow-[0_0_15px_rgba(217,70,239,0.3)]',
-    buttonGradient: 'bg-gradient-to-b from-fuchsia-400 via-pink-600 to-rose-700',
+    badgeBorder: 'border-fuchsia-300',
+    cardBorder: 'border-fuchsia-500/80',
+    cardShadow: 'shadow-[0_0_20px_rgba(217,70,239,0.35)]',
+    buttonGradient: 'bg-gradient-to-b from-fuchsia-500 via-pink-600 to-rose-700 hover:from-fuchsia-400 hover:to-rose-600',
     buttonText: 'text-white',
-    buttonBorder: 'border-fuchsia-300/40',
-    activeTabBg: 'bg-gradient-to-r from-fuchsia-500 to-pink-600',
+    buttonBorder: 'border-fuchsia-300',
+    activeTabBg: 'bg-gradient-to-r from-fuchsia-600 to-rose-600',
     activeTabText: 'text-white',
     activeTabBorder: 'border-fuchsia-400',
-    inactiveTabText: 'text-fuchsia-400',
-    inactiveTabBorder: 'border-fuchsia-500/40 hover:border-fuchsia-400',
-    menuIconText: 'text-fuchsia-400',
-    saveBtnBg: 'bg-gradient-to-r from-fuchsia-500 via-pink-600 to-rose-600',
-    saveBtnText: 'text-white',
+    inactiveTabText: 'text-fuchsia-300',
+    inactiveTabBorder: 'border-fuchsia-500/50',
+    menuIconText: 'text-fuchsia-300',
+    saveBtnBg: 'bg-gradient-to-r from-fuchsia-500 to-rose-600',
+    saveBtnText: 'text-white border border-fuchsia-300',
   },
   '8 PM Game': {
     name: '8 PM Game',
-    badgeBg: 'bg-gradient-to-r from-emerald-500 via-teal-600 to-cyan-600',
+    badgeBg: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600',
     badgeText: 'text-black',
-    badgeBorder: 'border-teal-400',
-    cardBorder: 'border-teal-500',
-    cardShadow: 'shadow-[0_0_15px_rgba(20,184,166,0.3)]',
-    buttonGradient: 'bg-gradient-to-b from-emerald-300 via-teal-500 to-cyan-700',
+    badgeBorder: 'border-teal-300',
+    cardBorder: 'border-teal-400/80',
+    cardShadow: 'shadow-[0_0_20px_rgba(20,184,166,0.35)]',
+    buttonGradient: 'bg-gradient-to-b from-emerald-400 via-teal-500 to-cyan-700 hover:from-emerald-300 hover:to-cyan-600',
     buttonText: 'text-black',
-    buttonBorder: 'border-teal-300/40',
-    activeTabBg: 'bg-gradient-to-r from-emerald-400 to-teal-500',
+    buttonBorder: 'border-teal-200',
+    activeTabBg: 'bg-gradient-to-r from-emerald-400 to-cyan-600',
     activeTabText: 'text-black',
-    activeTabBorder: 'border-teal-400',
-    inactiveTabText: 'text-teal-400',
-    inactiveTabBorder: 'border-teal-500/40 hover:border-teal-400',
-    menuIconText: 'text-teal-400',
-    saveBtnBg: 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600',
-    saveBtnText: 'text-black',
+    activeTabBorder: 'border-teal-300',
+    inactiveTabText: 'text-teal-300',
+    inactiveTabBorder: 'border-teal-500/50',
+    menuIconText: 'text-teal-300',
+    saveBtnBg: 'bg-gradient-to-r from-emerald-400 to-cyan-600',
+    saveBtnText: 'text-black border border-teal-200',
   },
 };
 
@@ -120,6 +120,7 @@ export const GameDashboardView: React.FC = () => {
   const [customerName, setCustomerName] = useState('');
   const [isReverse, setIsReverse] = useState(false); // Checkbox 'R' (Range Mode)
   const [isSet, setIsSet] = useState(false);
+  const [savedBillId, setSavedBillId] = useState<string | null>(null);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -172,12 +173,12 @@ export const GameDashboardView: React.FC = () => {
   // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 5 || cnt > 50) {
+    if (!cnt || cnt < 5) {
       addToast('Minimum 5 count is required for 1-digit game', 'error');
       return;
     }
 
-    const targetNums = getRangeNumbers(1);
+    const targetNums = isReverse ? getRangeNumbers(1) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 1 || isNaN(Number(n)))) {
       addToast('Please enter a valid 1-digit number or range', 'error');
       return;
@@ -207,12 +208,12 @@ export const GameDashboardView: React.FC = () => {
   // Mode 2 Handlers (AB, AC, BC, ALL)
   const handleMode2Add = (pair: 'AB' | 'AC' | 'BC' | 'ALL') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1 || cnt > 50) {
-      addToast('Please enter valid count (1-50)', 'error');
+    if (!cnt || cnt < 1) {
+      addToast('Please enter a valid count', 'error');
       return;
     }
 
-    const targetNums = getRangeNumbers(2);
+    const targetNums = isReverse ? getRangeNumbers(2) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 2 || isNaN(Number(n)))) {
       addToast('Please enter a valid 2-digit number or range', 'error');
       return;
@@ -242,12 +243,12 @@ export const GameDashboardView: React.FC = () => {
   // Mode 3 Handlers (BOTH, BOX, SUPER) with Set Rotational Permutations
   const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1 || cnt > 50) {
-      addToast('Please enter valid count (1-50)', 'error');
+    if (!cnt || cnt < 1) {
+      addToast('Please enter a valid count', 'error');
       return;
     }
 
-    let targetNums = isReverse ? getRangeNumbers(3) : [inputNum];
+    let targetNums = isReverse ? getRangeNumbers(3) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 3 || isNaN(Number(n)))) {
       addToast('Please enter a valid 3-digit number or range (000-999)', 'error');
       return;
@@ -262,30 +263,48 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    targetNums.forEach((n) => {
-      if (modeType === 'SUPER' || modeType === 'BOTH') {
+    const bCnt = parseInt(boxCount) || 0;
+
+    targetNums.forEach((numStr) => {
+      if (modeType === 'BOTH') {
+        const directCnt = cnt;
+        const boxAmt = bCnt > 0 ? bCnt : cnt;
+        // 1. Add SUPER (Direct) bet
         addToBetSlip({
-          number: n,
+          number: numStr,
+          count: directCnt,
+          type: 'Direct',
+          unitPrice,
+          totalAmount: directCnt * unitPrice,
+        });
+        // 2. Add BOX (Shuffle) bet
+        addToBetSlip({
+          number: numStr,
+          count: boxAmt,
+          type: 'Shuffle',
+          unitPrice,
+          totalAmount: boxAmt * unitPrice,
+        });
+      } else if (modeType === 'BOX') {
+        addToBetSlip({
+          number: numStr,
+          count: cnt,
+          type: 'Shuffle',
+          unitPrice,
+          totalAmount: cnt * unitPrice,
+        });
+      } else if (modeType === 'SUPER') {
+        addToBetSlip({
+          number: numStr,
           count: cnt,
           type: 'Direct',
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
       }
-
-      if (modeType === 'BOX' || modeType === 'BOTH') {
-        const bCnt = parseInt(boxCount) || cnt;
-        addToBetSlip({
-          number: n,
-          count: bCnt,
-          type: 'Shuffle',
-          unitPrice,
-          totalAmount: bCnt * unitPrice,
-        });
-      }
     });
 
-    addToast(`Added Mode 3 (${modeType}${isSet ? ' SET' : ''}) bets for ${targetNums.length} number(s)`, 'success');
+    addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
     setInputNum('');
     setStartRange('');
     setEndRange('');
@@ -298,128 +317,130 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start relative pb-6 sm:pb-8 antialiased select-none">
-      <div>
-        {/* Top Header Bar */}
-        <div className="w-full px-3 sm:px-8 py-2.5 bg-black/90 flex items-center justify-between border-b border-neutral-900">
-          {/* Left: Drawer Menu Button */}
-          <button
-            onClick={() => setCurrentView('USER_DRAWER')}
-            className={`p-1.5 ${theme.menuIconText} hover:opacity-80 transition-opacity bg-neutral-950 rounded-lg border border-neutral-800 shadow cursor-pointer`}
-            title="Open Menu"
-          >
-            <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-          </button>
+    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans pb-4">
+      {/* Top Header Bar */}
+      <div className="w-full bg-neutral-950 px-3 sm:px-8 py-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md">
+        {/* Left: Drawer Menu Toggle Icon Button */}
+        <button
+          onClick={() => setCurrentView('USER_DRAWER')}
+          className={`p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border border-neutral-800 ${theme.menuIconText} cursor-pointer`}
+          title="Open Menu"
+        >
+          <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+        </button>
 
-          {/* Right: SAVE Button */}
-          <button
-            onClick={saveTicket}
-            className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer`}
-          >
-            SAVE
-          </button>
+        {/* Right: SAVE Button */}
+        <button
+          onClick={async () => {
+            const billId = await saveTicket();
+            if (billId) {
+              setSavedBillId(billId);
+            }
+          }}
+          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer`}
+        >
+          SAVE
+        </button>
+      </div>
+
+      {/* Sub-Header Ribbon: Dynamic Slot Color Badge */}
+      <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none pointer-events-none">
+        <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none pointer-events-none caret-transparent transition-all`}>
+          <span className="inline-block select-none pointer-events-none caret-transparent">
+            {activeGameSlot}
+          </span>
         </div>
+      </div>
 
-        {/* Sub-Header Ribbon: Dynamic Slot Color Badge */}
-        <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none pointer-events-none">
-          <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none pointer-events-none caret-transparent transition-all`}>
-            <span className="inline-block select-none pointer-events-none caret-transparent">
-              {activeGameSlot}
-            </span>
-          </div>
-        </div>
-
-        {/* Main Layout Flow */}
-        <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto space-y-3 sm:space-y-4">
+      {/* Main Layout Flow */}
+      <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto space-y-3 sm:space-y-4">
+        
+        {/* TABBED GAME ENTRY CARD */}
+        <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all`}>
           
-          {/* TABBED GAME ENTRY CARD (Upper Controls Box with Dynamic Slot Border & Glow) */}
-          <div className={`relative border-2 ${theme.cardBorder} bg-black rounded-2xl p-3.5 sm:p-4 ${theme.cardShadow} space-y-3.5 transition-all`}>
+          {/* Header Row inside Entry Card: Mode Tabs, Customer Box, R & Set Checkboxes */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-900 pb-2.5">
             
-            {/* Mode Control Ribbon: Tabs (1,2,3) + Customer Name Box + Checkboxes */}
-            <div className="bg-neutral-950 p-2 sm:p-2.5 rounded-xl border border-neutral-800 flex flex-wrap items-center gap-2">
-              
-              {/* Mode Selector Tabs (1, 2, 3) */}
-              <div className="flex items-center gap-1">
-                {[1, 2, 3].map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => {
-                      const newMode = m as 1 | 2 | 3;
-                      setActiveMode(newMode);
-                      if (newMode === 3) {
-                        setIsReverse(true);
-                        setIsSet(false);
-                      } else {
-                        setIsReverse(false);
-                        setIsSet(false);
-                      }
-                      setInputNum('');
-                      setStartRange('');
-                      setEndRange('');
-                      setStepVal('');
-                      setInputCount('');
-                      setBoxCount('');
-                    }}
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
-                      activeMode === m
-                        ? `${theme.activeTabBg} ${theme.activeTabText} border ${theme.activeTabBorder} shadow-md font-black`
-                        : `bg-black ${theme.inactiveTabText} border ${theme.inactiveTabBorder} font-bold`
-                    }`}
-                  >
-                    {m}
-                  </button>
-                ))}
-              </div>
+            {/* Mode Selector Tabs (1, 2, 3) */}
+            <div className="flex items-center gap-1">
+              {[1, 2, 3].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    const newMode = m as 1 | 2 | 3;
+                    setActiveMode(newMode);
+                    setIsReverse(false);
+                    setIsSet(false);
+                    setInputNum('');
+                    setStartRange('');
+                    setEndRange('');
+                    setStepVal('');
+                    setInputCount('');
+                    setBoxCount('');
+                  }}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
+                    activeMode === m
+                      ? `${theme.activeTabBg} ${theme.activeTabText} border ${theme.activeTabBorder} shadow-md font-black`
+                      : `bg-black ${theme.inactiveTabText} border ${theme.inactiveTabBorder} font-bold`
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
 
-              {/* Customer Name Box */}
-              <div className="flex-1 min-w-[90px]">
+            {/* Customer Name Box */}
+            <div className="flex-1 min-w-[90px]">
+              <input
+                type="text"
+                placeholder="Customer"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
+              />
+            </div>
+
+            {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode) */}
+            <div className="flex items-center gap-2 pl-1">
+              <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                 <input
-                  type="text"
-                  placeholder="Customer"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
+                  type="checkbox"
+                  checked={isReverse}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setIsReverse(true);
+                      setIsSet(false);
+                    } else {
+                      setIsReverse(false);
+                    }
+                  }}
+                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                 />
-              </div>
+                <span>R</span>
+              </label>
 
-              {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode - Either R or Set is selected for 3 Digit) */}
-              <div className="flex items-center gap-2 pl-1">
-                <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
+              {activeMode === 3 && (
+                <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
-                    checked={isReverse}
-                    onChange={() => {
-                      if (activeMode === 3) {
-                        setIsReverse(true);
-                        setIsSet(false);
+                    checked={isSet}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setIsSet(true);
+                        setIsReverse(false);
                       } else {
-                        setIsReverse(!isReverse);
+                        setIsSet(false);
                       }
                     }}
                     className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
                   />
-                  <span>R</span>
+                  <span>Set</span>
                 </label>
-
-                {activeMode === 3 && (
-                  <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
-                    <input
-                      type="checkbox"
-                      checked={isSet}
-                      onChange={() => {
-                        setIsSet(true);
-                        setIsReverse(false);
-                      }}
-                      className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
-                    />
-                    <span>Set</span>
-                  </label>
-                )}
-              </div>
+              )}
             </div>
+          </div>
 
-            {/* Dynamic Inputs Row (Normal vs Range Mode for 1, 2, 3 Digit) */}
             {isReverse ? (
               /* Range Mode (4 inputs for Mode 1 & 2: Start, End, Step, Count; 5 inputs for Mode 3: + Box Count) */
               <div className={`grid ${activeMode === 3 ? 'grid-cols-5' : 'grid-cols-4'} gap-1 sm:gap-2`}>
@@ -683,9 +704,34 @@ export const GameDashboardView: React.FC = () => {
               )}
             </div>
           </div>
-
         </div>
-      </div>
+
+      {/* SAVED SUCCESS CONFIRMATION POP-UP MODAL */}
+      {savedBillId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-emerald-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(16,185,129,0.4)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">Successfully Saved</h4>
+              <p className="text-sm text-gold font-bold">
+                BILL ID: <span className="text-white font-black">{savedBillId}</span>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSavedBillId(null);
+                clearBetSlip();
+              }}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
