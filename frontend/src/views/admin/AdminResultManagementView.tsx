@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, Sparkles, ChevronDown, RotateCcw, Calendar } from 'lucide-react';
-import goldTrophy from '../../assets/gold-trophy.png';
+import { CheckCircle2, ChevronDown, RotateCcw, Calendar } from 'lucide-react';
 
 const slotThemes: Record<string, {
   name: string;
@@ -202,7 +201,7 @@ export const AdminResultManagementView: React.FC = () => {
                 : 'bg-transparent text-neutral-400 hover:text-white'
             }`}
           >
-            1. POSITIONS &amp; COMPLIMENTS
+            1. PUBLISH RESULT
           </button>
           <button
             type="button"
@@ -217,32 +216,23 @@ export const AdminResultManagementView: React.FC = () => {
                 : 'bg-transparent text-neutral-400 hover:text-white'
             }`}
           >
-            2. CUSTOMER RESULT PREVIEW
+            2. RESULT PREVIEW
           </button>
         </div>
 
-        {/* ── TAB 1: POSITIONS & COMPLIMENTS ── */}
+        {/* ── TAB 1: POSITIONS & COMPLIMENTS (PUBLISH RESULT) ── */}
         {activeTab === 'publish' && (
           <div className="bg-neutral-950 border border-gold/40 p-5 rounded-2xl space-y-5 shadow-md overflow-visible relative">
             
-            {/* Section Header */}
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full border border-gold/80 bg-black flex items-center justify-center text-gold shrink-0">
-                  <Calendar className="w-4 h-4" />
-                </div>
-                <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
-                  Positions &amp; Compliments
-                </h2>
-              </div>
-              <span className="text-xs text-gold font-mono font-bold">5 Prizes + 30 Compliments</span>
+            {/* Section Header: Single Line Text Only */}
+            <div className="border-b border-neutral-800 pb-3">
+              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
+                Positions &amp; Compliments
+              </h2>
             </div>
 
             {/* Slot Selector */}
             <div className="relative z-30">
-              <label className="text-xs text-neutral-400 font-bold block mb-1.5">
-                Select Game Slot:
-              </label>
               <div className="relative">
                 <button
                   type="button"
@@ -282,12 +272,8 @@ export const AdminResultManagementView: React.FC = () => {
               </div>
             </div>
 
-            {/* Section 1: 5 Winning Prize Numbers */}
+            {/* 5 Winning Prize Numbers */}
             <div className="space-y-3">
-              <label className="text-xs text-gold font-black uppercase tracking-wider block">
-                1. 5 Winning Prize Numbers:
-              </label>
-
               {/* 1st Prize: full width on top */}
               <div className="text-xs">
                 <span className="text-neutral-400 font-bold block mb-1">1st Prize Number</span>
@@ -363,35 +349,29 @@ export const AdminResultManagementView: React.FC = () => {
               </button>
             </div>
 
-            {/* Section 2: Compliment Winning Number (30 Boxes) */}
+            {/* Compliment Numbers Section */}
             <div className="space-y-3 pt-2 border-t border-neutral-800">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <label className="text-xs text-gold font-black uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>2. Compliment Winning Number:</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={resetComplimentsToDefaults}
-                    className="p-1 px-2.5 text-[11px] bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-gold rounded-lg border border-neutral-700 flex items-center gap-1 cursor-pointer"
-                    title="Auto generate default 30 compliments"
-                  >
-                    <RotateCcw className="w-3 h-3" /> Auto-Fill
-                  </button>
-                  <button
-                    type="button"
-                    onClick={clearAllComplimentBoxes}
-                    className="p-1 px-2.5 text-[11px] bg-neutral-900 hover:bg-rose-950 text-neutral-400 hover:text-rose-300 rounded-lg border border-neutral-700 cursor-pointer"
-                    title="Clear all boxes"
-                  >
-                    Clear All
-                  </button>
-                </div>
+              <div className="flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={resetComplimentsToDefaults}
+                  className="p-1 px-2.5 text-[11px] bg-neutral-900 hover:bg-neutral-800 text-neutral-300 hover:text-gold rounded-lg border border-neutral-700 flex items-center gap-1 cursor-pointer"
+                  title="Auto generate default 30 compliments"
+                >
+                  <RotateCcw className="w-3 h-3" /> Auto-Fill
+                </button>
+                <button
+                  type="button"
+                  onClick={clearAllComplimentBoxes}
+                  className="p-1 px-2.5 text-[11px] bg-neutral-900 hover:bg-rose-950 text-neutral-400 hover:text-rose-300 rounded-lg border border-neutral-700 cursor-pointer"
+                  title="Clear all boxes"
+                >
+                  Clear All
+                </button>
               </div>
 
-              {/* 30 Compliment Boxes in 2-col / 5-col grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 sm:gap-3">
+              {/* 30 Compliment Boxes in 3-column grid (3 in a row) */}
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 {complimentBoxes.map((num, idx) => (
                   <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
                     <div className="flex justify-between items-center mb-1">
@@ -442,45 +422,33 @@ export const AdminResultManagementView: React.FC = () => {
           </div>
         )}
 
-        {/* ── TAB 2: CUSTOMER RESULT PREVIEW ── */}
+        {/* ── TAB 2: RESULT PREVIEW ── */}
         {activeTab === 'preview' && (
           <div className="bg-neutral-950 border border-gold/40 p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-md">
-            {/* Header */}
-            <div className="flex items-center gap-2.5 border-b border-neutral-800 pb-3">
-              <div className="w-7 h-7 rounded-full bg-black p-1 flex items-center justify-center shrink-0 border border-gold/80">
-                <img src={goldTrophy} alt="Preview" className="w-full h-full object-contain" />
-              </div>
-              <div>
-                <h3 className="font-black text-sm text-white">Published Result Preview</h3>
-                <p className="text-[10px] text-neutral-400">Live Customer View Layout</p>
-              </div>
-            </div>
 
             {/* Date & Change Date Row */}
             <div className="grid grid-cols-2 gap-2">
               <div
-                onClick={() => previewDateRef.current?.showPicker?.()}
-                className="bg-gold-metallic text-black rounded-xl px-3 py-2 cursor-pointer flex items-center justify-center h-10"
+                className="bg-gold-metallic text-black rounded-xl px-3 py-2 flex items-center justify-center h-10 select-none shadow-sm"
               >
                 <span className="font-black text-xs font-mono tracking-wide">
                   {previewDate.split('-').reverse().join('-')}
                 </span>
+              </div>
+              <div
+                onClick={() => previewDateRef.current?.showPicker?.()}
+                className="relative bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 rounded-xl px-3 py-2 h-10 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm"
+              >
+                <Calendar className="w-4 h-4 text-gold shrink-0 pointer-events-none" />
+                <span className="font-bold text-xs pointer-events-none">Change date</span>
                 <input
                   ref={previewDateRef}
                   type="date"
                   value={previewDate}
                   onChange={(e) => e.target.value && setPreviewDate(e.target.value)}
-                  className="absolute opacity-0 w-0 h-0"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => previewDateRef.current?.showPicker?.()}
-                className="bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 rounded-xl px-3 py-2 h-10 flex items-center justify-center gap-2 cursor-pointer transition-all"
-              >
-                <Calendar className="w-4 h-4 text-gold shrink-0" />
-                <span className="font-bold text-xs">Change date</span>
-              </button>
             </div>
 
             {/* Slot Selector */}
