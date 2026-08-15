@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import type { GameSlot, PlacedTicket } from '../../types';
+import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
 import {
   TrendingUp,
   Users,
@@ -13,6 +13,20 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import goldTrophy from '../../assets/gold-trophy.png';
+
+const getDisplayGame = (item: { number?: string; type?: string }): string => {
+  const num = item.number || '';
+  if (num.includes(':')) {
+    return num.split(':')[0].toUpperCase();
+  }
+  const typeStr = (item.type || '').toUpperCase();
+  if (typeStr === 'DIRECT' || typeStr === 'SUPER') return 'SUPER';
+  if (typeStr === 'SHUFFLE' || typeStr === 'BOX') return 'BOX';
+  if (['AB', 'BC', 'AC', 'A', 'B', 'C'].includes(typeStr)) return typeStr;
+  if (num.length === 1) return 'A';
+  if (num.length === 2) return 'AB';
+  return item.type || 'SUPER';
+};
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -33,18 +47,9 @@ const formatPlacedAtDate = (str?: string): string => {
   return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
 };
 
-const getDisplayGame = (item: { number?: string; type?: string }): string => {
-  const num = item.number || '';
-  if (num.includes(':')) {
-    return num.split(':')[0].toUpperCase();
-  }
-  const typeStr = (item.type || '').toUpperCase();
-  if (typeStr === 'DIRECT' || typeStr === 'SUPER') return 'SUPER';
-  if (typeStr === 'SHUFFLE' || typeStr === 'BOX') return 'BOX';
-  if (['AB', 'BC', 'AC', 'A', 'B', 'C'].includes(typeStr)) return typeStr;
-  if (num.length === 1) return 'A';
-  if (num.length === 2) return 'AB';
-  return item.type || 'SUPER';
+const formatCustomerName = (name?: string): string => {
+  if (!name || name.trim().toLowerCase() === 'customer') return '';
+  return name.trim();
 };
 
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
@@ -55,16 +60,22 @@ const getDisplayNumber = (item: { number?: string; type?: string }): string => {
   return num;
 };
 
-const formatCustomerName = (name?: string): string => {
-  if (!name || name.trim().toLowerCase() === 'customer') return '';
-  return name.trim();
-};
-
 const formatDateDisplay = (dateStr: string) => {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
   if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
   return dateStr;
+};
+
+const formatRupees = (amount: number): string => {
+  const isNegative = amount < 0;
+  const abs = Math.abs(amount);
+  if (abs >= 100000) {
+    const inLakhs = abs / 100000;
+    const formatted = parseFloat(inLakhs.toFixed(2));
+    return `${isNegative ? '-' : ''}₹ ${formatted}Lk`;
+  }
+  return `${isNegative ? '-' : ''}₹ ${abs.toLocaleString()}`;
 };
 
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
@@ -81,15 +92,17 @@ export const AdminReportsView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ReportTab>('USERS');
 
   // Selected User / Agency ('ALL' = Whole System Report, or specific userId / username)
-  const [selectedUserId, setSelectedUserId] = useState<string>('ALL');
+  const [selectedUserId] = useState<string>('ALL');
 
-  // Filter States for Sales & Winning
+  // Filter States
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
-  const [slotFilter, setSlotFilter] = useState<'ALL' | GameSlot>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
   const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
+
+  // Selected User for Detailed Sales Report Sub-view
+  const [selectedReportUser, setSelectedReportUser] = useState<UserAccount | null>(null);
+  const [reportFilterSearch, setReportFilterSearch] = useState<string>('');
 
   const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -168,53 +181,98 @@ export const AdminReportsView: React.FC = () => {
         })
         .reduce((sum, p) => sum + (p.amount || 0), 0);
 
-      const net = totalGross - userPayouts;
+      // Commission calculation based on user's mode/rate
+      let commissionPercent = 0;
+      const userMode = user.mode || '';
+      if (userMode.includes('30%')) {
+        commissionPercent = 0.30;
+      } else if (userMode.includes('With Commission') || userMode.includes('20%')) {
+        commissionPercent = 0.20;
+      } else if (userMode === 'Without Commission') {
+        commissionPercent = 0;
+      } else if (userMode) {
+        commissionPercent = 0.20;
+      }
+
+      const totalCommission = Math.round(totalGross * commissionPercent);
+      const net = totalGross - userPayouts - totalCommission;
 
       return {
         user,
         totalBills,
         totalGross,
         totalPayouts: userPayouts,
+        totalCommission,
         net,
       };
     });
   }, [registeredUsers, userSearchQuery, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
 
-  // Filtered Tickets for Sales Tab
-  const salesFilteredTickets = useMemo(() => {
-    return userFilteredTickets.filter((t) => {
-      // Date filter
+  // Detailed tickets for selectedReportUser filtered by date range
+  const selectedUserTickets = useMemo(() => {
+    if (!selectedReportUser) return [];
+    return placedTickets.filter((t) => {
+      const matchesUser =
+        t.userId === selectedReportUser.id ||
+        (t as any).agencyName === selectedReportUser.username ||
+        (t as any).userName === selectedReportUser.name;
+      if (!matchesUser) return false;
+
       const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
       if (fromDate && tDate < fromDate) return false;
       if (toDate && tDate > toDate) return false;
-
-      // Slot filter
-      if (slotFilter !== 'ALL' && t.gameSlot !== slotFilter) return false;
-
-      // Search Query
-      if (searchQuery.trim()) {
-        const q = searchQuery.trim().toLowerCase();
-        const idMatch = t.id.toLowerCase().includes(q) || (t.ticketId && t.ticketId.toLowerCase().includes(q));
-        const cMatch = t.customerName && t.customerName.toLowerCase().includes(q);
-        const userMatch = (t as any).userName && (t as any).userName.toLowerCase().includes(q);
-        const numMatch = t.items.some((it) => it.number && it.number.toLowerCase().includes(q));
-        if (!idMatch && !cMatch && !userMatch && !numMatch) return false;
-      }
-
       return true;
     });
-  }, [userFilteredTickets, fromDate, toDate, slotFilter, searchQuery, todayStr]);
+  }, [selectedReportUser, placedTickets, fromDate, toDate, todayStr]);
 
-  const totalFilteredSalesAmount = useMemo(() => {
-    return salesFilteredTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-  }, [salesFilteredTickets]);
+  const selectedUserTotalGross = useMemo(() => {
+    return selectedUserTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+  }, [selectedUserTickets]);
 
-  const totalFilteredItemsCount = useMemo(() => {
-    return salesFilteredTickets.reduce(
-      (sum, t) => sum + t.items.reduce((s, it) => s + (it.count || 1), 0),
-      0
-    );
-  }, [salesFilteredTickets]);
+  const selectedUserTotalPayouts = useMemo(() => {
+    if (!selectedReportUser) return 0;
+    return payoutLogs
+      .filter((p) => {
+        const matchesUser = p.userId === selectedReportUser.id || p.userName === selectedReportUser.name;
+        if (!matchesUser) return false;
+        const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
+        if (fromDate && pDate < fromDate) return false;
+        if (toDate && pDate > toDate) return false;
+        return true;
+      })
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
+  }, [selectedReportUser, payoutLogs, fromDate, toDate, todayStr]);
+
+  const selectedUserCommission = useMemo(() => {
+    if (!selectedReportUser) return 0;
+    let commissionPercent = 0;
+    const userMode = selectedReportUser.mode || '';
+    if (userMode.includes('30%')) {
+      commissionPercent = 0.30;
+    } else if (userMode.includes('With Commission') || userMode.includes('20%')) {
+      commissionPercent = 0.20;
+    } else if (userMode === 'Without Commission') {
+      commissionPercent = 0;
+    } else if (userMode) {
+      commissionPercent = 0.20;
+    }
+    return Math.round(selectedUserTotalGross * commissionPercent);
+  }, [selectedReportUser, selectedUserTotalGross]);
+
+  const selectedUserNet = selectedUserTotalGross - selectedUserTotalPayouts - selectedUserCommission;
+
+  // Filtered by internal search within user's report
+  const filteredUserTickets = useMemo(() => {
+    if (!reportFilterSearch.trim()) return selectedUserTickets;
+    const q = reportFilterSearch.trim().toLowerCase();
+    return selectedUserTickets.filter((t) => {
+      const idMatch = t.id.toLowerCase().includes(q) || (t.ticketId && t.ticketId.toLowerCase().includes(q));
+      const cMatch = t.customerName && t.customerName.toLowerCase().includes(q);
+      const numMatch = t.items.some((it) => it.number && it.number.toLowerCase().includes(q));
+      const slotMatch = t.gameSlot.toLowerCase().includes(q);
+      return idMatch || cMatch || numMatch || slotMatch;
+    });
+  }, [selectedUserTickets, reportFilterSearch]);
 
   // Winning Tickets Computation
   const winningTicketsList = useMemo(() => {
@@ -301,6 +359,19 @@ export const AdminReportsView: React.FC = () => {
     return winningTicketsList.reduce((sum, w) => sum + w.wonAmount, 0);
   }, [winningTicketsList]);
 
+  // Overall Global System Metrics for all users in the selected date range
+  const globalTotalGross = useMemo(() => {
+    return userPerformanceList.reduce((sum, item) => sum + item.totalGross, 0);
+  }, [userPerformanceList]);
+
+  const globalTotalPayouts = useMemo(() => {
+    return userPerformanceList.reduce((sum, item) => sum + item.totalPayouts, 0);
+  }, [userPerformanceList]);
+
+  const globalNet = useMemo(() => {
+    return userPerformanceList.reduce((sum, item) => sum + item.net, 0);
+  }, [userPerformanceList]);
+
   const gameSlotsList: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
   return (
@@ -309,6 +380,35 @@ export const AdminReportsView: React.FC = () => {
       <HeaderBanner title="Reports" />
 
       <div className="px-4 sm:px-6 py-4 space-y-4 max-w-5xl mx-auto w-full">
+        {/* Metric Cards in a SINGLE ROW */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="bg-neutral-950 border border-neutral-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+            <span className="text-neutral-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
+              Gross Sales
+            </span>
+            <span className="text-white font-black text-sm sm:text-xl font-mono block">
+              {formatRupees(globalTotalGross)}
+            </span>
+          </div>
+
+          <div className="bg-neutral-950 border border-rose-500/40 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+            <span className="text-rose-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
+              Payouts
+            </span>
+            <span className="text-rose-300 font-black text-sm sm:text-xl font-mono block">
+              {formatRupees(globalTotalPayouts)}
+            </span>
+          </div>
+
+          <div className="bg-neutral-950 border border-gold/60 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+            <span className="text-gold text-[10px] sm:text-xs font-black uppercase tracking-wider block truncate">
+              Net Revenue
+            </span>
+            <span className="text-gold font-black text-sm sm:text-xl font-mono block">
+              {formatRupees(globalNet)}
+            </span>
+          </div>
+        </div>
         {/* Top 4 Section Navigation Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-neutral-950 rounded-xl sm:rounded-2xl border border-gold/40 shadow-sm">
           <button
@@ -445,42 +545,37 @@ export const AdminReportsView: React.FC = () => {
                         <th className="py-2.5 px-2 text-center">Bills</th>
                         <th className="py-2.5 px-2 text-right">Sales</th>
                         <th className="py-2.5 px-2 text-right">Price</th>
+                        <th className="py-2.5 px-2 text-right">COMM</th>
                         <th className="py-2.5 px-2 text-right">Net</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-900">
-                      {userPerformanceList.map(({ user, totalBills, totalGross, totalPayouts, net }) => {
-                        const isCurrent = selectedUserId === user.id || selectedUserId === user.username;
-                        return (
-                          <tr
-                            key={user.id}
-                            onClick={() => {
-                              setSelectedUserId(user.id);
-                              setActiveTab('SALES');
-                            }}
-                            className={`transition-colors cursor-pointer hover:bg-neutral-900/70 ${
-                              isCurrent ? 'bg-amber-950/30 border-l-4 border-gold' : ''
-                            }`}
-                          >
-                            <td className="py-2.5 px-3">
-                              <div className="font-black text-white text-xs">{user.name}</div>
-                              <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
-                            </td>
-                            <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
-                              {totalBills}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-black text-white">
-                              ₹ {totalGross.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400">
-                              ₹ {totalPayouts.toLocaleString()}
-                            </td>
-                            <td className="py-2.5 px-2 text-right font-mono font-black text-gold">
-                              ₹ {net.toLocaleString()}
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {userPerformanceList.map(({ user, totalBills, totalGross, totalPayouts, totalCommission, net }) => (
+                        <tr
+                          key={user.id}
+                          className="transition-colors hover:bg-neutral-900/50"
+                        >
+                          <td className="py-2.5 px-3">
+                            <div className="font-black text-white text-xs">{user.name}</div>
+                            <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
+                            {totalBills}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">
+                            {formatRupees(totalGross)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                            {formatRupees(totalPayouts)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                            {formatRupees(totalCommission)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">
+                            {formatRupees(net)}
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
@@ -489,187 +584,122 @@ export const AdminReportsView: React.FC = () => {
           </div>
         )}
 
-        {/* TAB 2: SIMPLIFIED SALES REPORT */}
+        {/* TAB 2: SALES REPORT (Matching Image 2) */}
         {activeTab === 'SALES' && (
           <div className="space-y-3 animate-drop-in">
-            {/* Simple Clean Filter Bar */}
-            <div className="bg-neutral-950 border border-neutral-800 p-3 rounded-xl space-y-2.5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {/* User Dropdown Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 font-bold">User:</span>
-                  <select
-                    value={selectedUserId}
-                    onChange={(e) => setSelectedUserId(e.target.value)}
-                    className="bg-black border border-neutral-700 text-gold font-bold text-xs px-2.5 py-1.5 rounded-lg focus:border-gold outline-none cursor-pointer"
-                  >
-                    <option value="ALL">⭐ All Users (Whole Report)</option>
-                    {registeredUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        👤 {u.name} (@{u.username})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Slot Selector */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 font-bold">Slot:</span>
-                  <select
-                    value={slotFilter}
-                    onChange={(e) => setSlotFilter(e.target.value as any)}
-                    className="bg-black border border-neutral-700 text-white text-xs px-2.5 py-1.5 rounded-lg focus:border-gold outline-none cursor-pointer"
-                  >
-                    <option value="ALL">All Slots</option>
-                    {gameSlotsList.map((slot) => (
-                      <option key={slot} value={slot}>{slot}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Date Picker */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 font-bold">Date:</span>
+            {/* Single-Line FROM DATE & TO DATE Row + Search */}
+            <div className="bg-neutral-950 border border-neutral-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => userFromRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(fromDate)}
+                  </span>
                   <input
+                    ref={userFromRef}
                     type="date"
                     value={fromDate}
-                    onChange={(e) => {
-                      setFromDate(e.target.value);
-                      setToDate(e.target.value);
-                    }}
-                    className="bg-black border border-neutral-700 text-white font-mono text-xs px-2.5 py-1 rounded-lg focus:border-gold outline-none cursor-pointer"
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+
+                {/* TO DATE */}
+                <div
+                  onClick={() => userToRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    ref={userToRef}
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
                   />
                 </div>
               </div>
 
-              {/* Search Bar */}
+              {/* User Search Bar */}
               <div className="relative">
-                <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-2.5" />
+                <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search by Bill ID, Customer Name, Number..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-black border border-neutral-700 text-white text-xs pl-8 pr-3 py-1.5 rounded-lg focus:border-gold outline-none placeholder-neutral-500"
+                  placeholder="Search user by name or username..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="w-full bg-black border border-neutral-700 text-white text-xs pl-8 pr-3 py-2 rounded-xl focus:border-gold outline-none placeholder-neutral-500 font-sans"
                 />
               </div>
             </div>
 
-            {/* 3 Metrics Cards in a Single Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-neutral-950 p-2.5 rounded-xl border border-neutral-800 text-center">
-                <span className="text-[10px] text-neutral-400 uppercase font-bold block">Total Bills</span>
-                <span className="text-sm sm:text-lg font-black font-mono text-white">
-                  {salesFilteredTickets.length}
-                </span>
-              </div>
-
-              <div className="bg-neutral-950 p-2.5 rounded-xl border border-neutral-800 text-center">
-                <span className="text-[10px] text-neutral-400 uppercase font-bold block">Total Points</span>
-                <span className="text-sm sm:text-lg font-black font-mono text-neutral-300">
-                  {totalFilteredItemsCount}
-                </span>
-              </div>
-
-              <div className="bg-neutral-950 p-2.5 rounded-xl border border-gold/50 text-center">
-                <span className="text-[10px] text-gold uppercase font-bold block">Total Amount</span>
-                <span className="text-sm sm:text-lg font-black font-mono text-gold">
-                  ₹ {totalFilteredSalesAmount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Detailed Bills List */}
+            {/* Sales Report Table Card */}
             <div className="bg-neutral-950 border border-gold/40 rounded-xl overflow-hidden shadow-md">
-              <div className="p-2.5 border-b border-neutral-800 flex items-center justify-between">
-                <h3 className="font-black text-xs text-white uppercase tracking-wider">
-                  Bills List ({salesFilteredTickets.length})
+              <div className="p-3 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-black text-xs sm:text-sm text-white uppercase tracking-wider flex items-center gap-1.5">
+                  <ClipboardList className="w-4 h-4 text-gold" />
+                  <span>User Wise Sales Report ({userPerformanceList.length})</span>
                 </h3>
               </div>
 
-              {salesFilteredTickets.length === 0 ? (
-                <div className="p-6 text-center text-neutral-500 text-xs">
-                  No bills found for the selected filters.
+              {registeredUsers.length === 0 ? (
+                <div className="p-8 text-center text-neutral-500 text-sm">
+                  No users registered yet.
                 </div>
               ) : (
-                <div className="divide-y divide-neutral-900">
-                  {salesFilteredTickets.map((ticket) => (
-                    <div key={ticket.id} className="p-3 hover:bg-neutral-900/50 transition-all space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-1.5 text-xs">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          {/* Bill ID with Copy */}
-                          <div className="flex items-center gap-1 bg-neutral-900 px-2 py-0.5 rounded border border-neutral-700">
-                            <span className="text-[9px] text-neutral-400 font-bold uppercase">BILL:</span>
-                            <span className="font-mono font-black text-xs text-white">
-                              {ticket.ticketId || ticket.id}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => handleCopyBillId(ticket.ticketId || ticket.id, e)}
-                              className="ml-1 text-gold hover:text-white cursor-pointer"
-                              title="Copy Bill ID"
-                            >
-                              {copiedBillId === (ticket.ticketId || ticket.id) ? (
-                                <Check className="w-3 h-3 text-emerald-400" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                            </button>
-                          </div>
-
-                          <span className="px-1.5 py-0.5 text-[9px] font-black rounded bg-blue-950 text-sky-300 border border-sky-800 font-mono">
-                            {ticket.gameSlot}
-                          </span>
-
-                          {selectedUserId === 'ALL' && (
-                            <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-neutral-900 text-neutral-300 border border-neutral-700">
-                              👤 {(ticket as any).userName || (ticket as any).agencyName || ticket.userId}
-                            </span>
-                          )}
-
-                          {formatCustomerName(ticket.customerName) && (
-                            <span className="text-[10px] text-neutral-300 font-bold">
-                              Cust: <span className="text-white">{ticket.customerName}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="font-mono font-black text-xs sm:text-sm text-gold">
-                          ₹ {ticket.totalAmount.toLocaleString()}
-                        </div>
-                      </div>
-
-                      {/* Items Grid */}
-                      <div className="bg-black p-2 rounded-lg border border-neutral-800">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-1.5 text-xs">
-                          {ticket.items.map((item, idx) => (
-                            <div key={idx} className="bg-neutral-900/80 p-1.5 rounded border border-neutral-800 flex items-center justify-between">
-                              <div>
-                                <span className="text-[9px] text-gold font-black block uppercase">
-                                  {getDisplayGame(item)}
-                                </span>
-                                <span className="font-mono font-black text-xs text-white block">
-                                  {getDisplayNumber(item)}
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-[9px] text-neutral-400 block font-mono">
-                                  x{item.count || 1}
-                                </span>
-                                <span className="text-[10px] font-mono font-bold text-neutral-200 block">
-                                  ₹{item.totalAmount ?? item.amount ?? 0}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="text-[9px] text-neutral-500 font-mono text-right">
-                        {formatPlacedAtDate(ticket.placedAt || ticket.createdAt)}
-                      </div>
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse font-sans">
+                    <thead>
+                      <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
+                        <th className="py-2.5 px-3">User / Agency</th>
+                        <th className="py-2.5 px-2 text-center">Bills</th>
+                        <th className="py-2.5 px-2 text-right">Sales</th>
+                        <th className="py-2.5 px-2 text-right">Price</th>
+                        <th className="py-2.5 px-2 text-right">COMM</th>
+                        <th className="py-2.5 px-2 text-right">Net</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-900">
+                      {userPerformanceList.map(({ user, totalBills, totalGross, totalPayouts, totalCommission, net }) => (
+                        <tr
+                          key={user.id}
+                          onClick={() => setSelectedReportUser(user)}
+                          className="transition-colors cursor-pointer hover:bg-neutral-900/80 active:scale-[0.99]"
+                        >
+                          <td className="py-2.5 px-3">
+                            <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
+                            <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
+                          </td>
+                          <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
+                            {totalBills}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">
+                            {formatRupees(totalGross)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                            {formatRupees(totalPayouts)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                            {formatRupees(totalCommission)}
+                          </td>
+                          <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">
+                            {formatRupees(net)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
@@ -818,6 +848,163 @@ export const AdminReportsView: React.FC = () => {
         )}
 
       </div>
+
+      {/* ================= DEDICATED USER SALES REPORT FULL-SCREEN OVERLAY ================= */}
+      {selectedReportUser && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          {/* Header Banner */}
+          <HeaderBanner
+            title="USER SALES REPORT"
+            showBack={true}
+            onBackClick={() => {
+              setSelectedReportUser(null);
+              setReportFilterSearch('');
+            }}
+          />
+
+          <div className="max-w-xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+            {/* Gold Sub-header Metric Banner */}
+            <div className="bg-gold-metallic p-4 rounded-2xl text-black shadow-xl border-2 border-gold-dark space-y-2.5 font-mono">
+              <div className="flex items-center justify-between font-black text-base sm:text-lg uppercase tracking-wider">
+                <span className="truncate">{selectedReportUser.name}</span>
+              </div>
+              <div className="text-xs font-bold text-neutral-900 font-mono">
+                DATE: {fromDate === toDate ? formatDateDisplay(fromDate) : `${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}`}
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/30 text-xs sm:text-sm font-black text-center">
+                <div className="bg-black/10 p-2 rounded-lg">
+                  <span className="text-[10px] text-neutral-800 uppercase block font-bold">Total Bills</span>
+                  <span>{selectedUserTickets.length}</span>
+                </div>
+                <div className="bg-black/10 p-2 rounded-lg">
+                  <span className="text-[10px] text-neutral-800 uppercase block font-bold">Gross Sales</span>
+                  <span>{formatRupees(selectedUserTotalGross)}</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-2 pt-1 text-xs sm:text-sm font-black text-center">
+                <div className="bg-black/10 p-2 rounded-lg">
+                  <span className="text-[10px] text-rose-950 uppercase block font-bold">Price (Payouts)</span>
+                  <span className="text-rose-950">{formatRupees(selectedUserTotalPayouts)}</span>
+                </div>
+                <div className="bg-black/10 p-2 rounded-lg">
+                  <span className="text-[10px] text-rose-950 uppercase block font-bold">COMM</span>
+                  <span className="text-rose-950">{formatRupees(selectedUserCommission)}</span>
+                </div>
+                <div className="bg-black/10 p-2 rounded-lg">
+                  <span className="text-[10px] text-emerald-950 uppercase block font-bold">Net Revenue</span>
+                  <span>{formatRupees(selectedUserNet)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter / Search within user report */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by Bill ID, Number, Customer, Slot..."
+                value={reportFilterSearch}
+                onChange={(e) => setReportFilterSearch(e.target.value)}
+                className="w-full bg-neutral-950 border border-neutral-800 text-white text-xs pl-8 pr-3 py-2 rounded-xl focus:border-gold outline-none placeholder-neutral-500 font-sans"
+              />
+            </div>
+
+            {/* List of Bills matching User Sales Report in customer app */}
+            <div className="space-y-3">
+              {filteredUserTickets.length === 0 ? (
+                <div className="bg-neutral-950 p-6 rounded-2xl border border-neutral-800 text-center font-mono text-xs font-bold text-neutral-400">
+                  No bills found for {selectedReportUser.name} on the selected date.
+                </div>
+              ) : (
+                filteredUserTickets.map((tkt) => (
+                  <div
+                    key={tkt.id}
+                    className="bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 border-white/90 font-mono space-y-0"
+                  >
+                    {/* Card Top Header */}
+                    <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
+                      <div className="flex items-center justify-between font-mono">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-white text-sm">
+                            BILL ID: <strong className="text-gold font-bold">{tkt.ticketId || tkt.id}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyBillId(tkt.ticketId || tkt.id, e)}
+                            className="text-gold hover:text-white cursor-pointer"
+                            title="Copy Bill ID"
+                          >
+                            {copiedBillId === (tkt.ticketId || tkt.id) ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                        <span className="px-2 py-0.5 text-[10px] font-black rounded bg-blue-950 text-sky-300 border border-sky-800">
+                          {tkt.gameSlot}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                        <span>COUNT: <strong className="text-white font-bold">{tkt.items.reduce((s, it) => s + (it.count || 1), 0)}</strong></span>
+                        <span>{formatPlacedAtDate(tkt.placedAt || tkt.createdAt)}</span>
+                      </div>
+                      {formatCustomerName(tkt.customerName) && (
+                        <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
+                          <span>CUSTOMER: <strong className="text-neutral-200">{tkt.customerName}</strong></span>
+                          <span className="font-black text-gold text-sm">TOTAL: <strong className="text-gold">{formatRupees(tkt.totalAmount)}</strong></span>
+                        </div>
+                      )}
+                      {!formatCustomerName(tkt.customerName) && (
+                        <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-end pt-0.5">
+                          <span className="font-black text-gold text-sm">TOTAL: <strong className="text-gold">{formatRupees(tkt.totalAmount)}</strong></span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Table Header Row */}
+                    <div className="bg-neutral-900 text-gold font-black text-xs px-4 py-2 flex items-center justify-between shadow-md border-b border-neutral-800">
+                      <div className="flex items-center gap-7 font-mono">
+                        <span>GAME</span>
+                        <span>NUM</span>
+                        <span>CNT</span>
+                      </div>
+                      <span className="font-mono">T.AMT</span>
+                    </div>
+
+                    {/* Card Items Table */}
+                    <div className="bg-white text-black font-extrabold text-xs divide-y divide-neutral-200">
+                      {tkt.items.map((item: any, idx: number) => {
+                        const numStr = getDisplayNumber(item);
+                        const isMatch = reportFilterSearch.trim() && numStr.includes(reportFilterSearch.trim());
+                        return (
+                          <div
+                            key={idx}
+                            className={`flex items-center justify-between px-4 py-2.5 transition-colors ${
+                              isMatch
+                                ? 'bg-amber-200 text-black border-l-4 border-amber-600 font-black'
+                                : idx % 2 === 1
+                                ? 'bg-fuchsia-50/80'
+                                : 'bg-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-7 font-mono">
+                              <span className="font-black uppercase w-12 text-neutral-900">{getDisplayGame(item)}</span>
+                              <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{numStr}</span>
+                              <span className="font-black text-neutral-800">{item.count || 1}</span>
+                            </div>
+                            <span className="font-black text-neutral-900 font-mono">₹{item.totalAmount ?? item.amount ?? 0}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

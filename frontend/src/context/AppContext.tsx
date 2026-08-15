@@ -70,6 +70,56 @@ const defaultDemoUser: UserAccount = {
   createdAt: new Date().toISOString().split('T')[0],
 };
 
+const getInitialSampleTickets = (): PlacedTicket[] => {
+  const now = new Date();
+  const todayIso = now.toISOString();
+  return [
+    {
+      id: 'TKT-108291',
+      ticketId: 'TKT-108291',
+      userId: 'user_demo_001',
+      customerName: 'Raju Bhai',
+      gameSlot: '3 PM Game',
+      totalAmount: 350,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      items: [
+        { id: 'item-1', number: '742', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+        { id: 'item-2', number: '512', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-3', number: 'AB:42', count: 10, type: 'AB', unitPrice: 10, amount: 10, totalAmount: 100 },
+      ],
+    },
+    {
+      id: 'TKT-108292',
+      ticketId: 'TKT-108292',
+      userId: 'user_demo_001',
+      customerName: 'Anil Kumar',
+      gameSlot: '1 PM Game',
+      totalAmount: 500,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      items: [
+        { id: 'item-4', number: '819', count: 20, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-5', number: '350', count: 30, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 300 },
+      ],
+    },
+    {
+      id: 'TKT-108293',
+      ticketId: 'TKT-108293',
+      userId: 'user_demo_001',
+      customerName: 'Suresh',
+      gameSlot: '6 PM Game',
+      totalAmount: 400,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      items: [
+        { id: 'item-6', number: '194', count: 25, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 250 },
+        { id: 'item-7', number: 'A:7', count: 15, type: 'A', unitPrice: 10, amount: 10, totalAmount: 150 },
+      ],
+    },
+  ];
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -87,7 +137,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>([defaultDemoUser]);
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
-  const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
+  const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>(getInitialSampleTickets());
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
   const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>(initialResults);
   const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>({});
@@ -169,7 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const syncData = () => {
       if (currentUser && !isAdminLoggedIn) {
         customerService.getUserTickets().then((tkts) => {
-          if (tkts) setPlacedTickets(tkts);
+          if (tkts && tkts.length > 0) setPlacedTickets(tkts);
         }).catch(() => {});
 
         customerService.getBankDetails().then((b) => {
@@ -190,7 +240,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }).catch(() => {});
 
         adminService.getAllTickets().then((tkts) => {
-          if (tkts) setPlacedTickets(tkts);
+          if (tkts && tkts.length > 0) setPlacedTickets(tkts);
         }).catch(() => {});
 
         adminService.getPayoutLogs().then((logs) => {
