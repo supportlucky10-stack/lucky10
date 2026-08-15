@@ -24,10 +24,12 @@ const formatPlacedAtDate = (str?: string): string => {
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   const yy = String(d.getFullYear()).slice(-2);
-  const hh = String(d.getHours()).padStart(2, '0');
+  const rawH = d.getHours();
+  const ampm = rawH >= 12 ? 'PM' : 'AM';
+  const hh = String(rawH % 12 || 12).padStart(2, '0');
   const min = String(d.getMinutes()).padStart(2, '0');
   const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss}`;
+  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
 };
 
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
