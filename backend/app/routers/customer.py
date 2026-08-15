@@ -37,7 +37,7 @@ def format_ticket(ticket: Ticket) -> dict:
             for item in ticket.items
         ],
         "totalAmount": ticket.total_amount,
-        "placedAt": ticket.placed_at.isoformat() if ticket.placed_at else datetime.now(timezone.utc).isoformat(),
+        "placedAt": (ticket.placed_at.replace(tzinfo=timezone.utc) if ticket.placed_at.tzinfo is None else ticket.placed_at).isoformat() if ticket.placed_at else datetime.now(timezone.utc).isoformat(),
         "status": ticket.status,
         "winAmount": ticket.win_amount,
     }

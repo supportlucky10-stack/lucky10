@@ -14,8 +14,12 @@ import {
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
-  // Use Date constructor so the browser automatically converts UTC -> local time
-  const d = new Date(str);
+  // SQLite stores datetimes without timezone — force UTC interpretation
+  let utcStr = str.trim();
+  if (!utcStr.endsWith('Z') && !utcStr.includes('+') && !utcStr.match(/[+-]\d{2}:\d{2}$/)) {
+    utcStr = utcStr.replace(' ', 'T') + 'Z';
+  }
+  const d = new Date(utcStr);
   if (isNaN(d.getTime())) return str;
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
