@@ -143,223 +143,16 @@ export const AdminUsersAndResultsView: React.FC = () => {
 
             <button
               onClick={() => {
-                setShowCreateForm(!showCreateForm);
+                setShowCreateForm(true);
                 setFormError('');
               }}
               className="px-3 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md flex items-center gap-1.5 cursor-pointer transition-all hover:opacity-95 active:scale-95"
             >
-              {showCreateForm ? <X className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
-              <span>{showCreateForm ? 'Cancel' : '+ Create User'}</span>
+              <UserPlus className="w-4 h-4" />
+              <span>+ Create User</span>
             </button>
           </div>
         </div>
-
-        {showCreateForm && (
-          <form
-            onSubmit={handleCreateUser}
-            className="p-5 bg-neutral-950 border border-gold/40 rounded-2xl space-y-4 animate-drop-in shadow-xl"
-          >
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <h3 className="font-extrabold text-sm text-gold uppercase tracking-wider flex items-center gap-2">
-                <UserPlus className="w-4 h-4 text-gold" />
-                Create New Agency / User
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="text-neutral-400 hover:text-white p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                  Agency Name :
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. WinnerAgency"
-                  value={agencyName}
-                  onChange={(e) => {
-                    setAgencyName(e.target.value);
-                    if (formError) setFormError('');
-                  }}
-                  className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
-                />
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                  Commission Mode :
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMode('With Commission')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      mode === 'With Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
-                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    With Commission
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMode('Without Commission')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      mode === 'Without Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
-                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    Without Commission
-                  </button>
-                </div>
-              </div>
-
-              {mode === 'With Commission' && (
-                <div className="sm:col-span-2">
-                  <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                    Commission Rate :
-                  </label>
-                  <div className="grid grid-cols-2 gap-3 max-w-xs">
-                    <button
-                      type="button"
-                      onClick={() => setCommissionRate('20%')}
-                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
-                        commissionRate === '20%'
-                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
-                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      20% Commission
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCommissionRate('30%')}
-                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
-                        commissionRate === '30%'
-                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
-                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      30% Commission
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                  Password :
-                </label>
-                <div className="relative w-full">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      if (formError) setFormError('');
-                    }}
-                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
-                      passwordsMismatch
-                        ? 'border-rose-500 focus:border-rose-500'
-                        : 'border-neutral-700 focus:border-gold'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1 flex items-center justify-between">
-                  <span>Confirm Password :</span>
-                  {password && confirmPassword && (
-                    <span
-                      className={`text-[10px] font-bold flex items-center gap-1 ${
-                        password === confirmPassword ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
-                    >
-                      {password === confirmPassword ? (
-                        <>
-                          <Check className="w-3 h-3" /> Passwords match
-                        </>
-                      ) : (
-                        <>
-                          <X className="w-3 h-3" /> Do not match
-                        </>
-                      )}
-                    </span>
-                  )}
-                </label>
-                <div className="relative w-full">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    required
-                    placeholder="Retype password"
-                    value={confirmPassword}
-                    onChange={(e) => {
-                      setConfirmPassword(e.target.value);
-                      if (formError) setFormError('');
-                    }}
-                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
-                      passwordsMismatch
-                        ? 'border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30'
-                        : 'border-neutral-700 focus:border-gold'
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-3.5 h-3.5" />
-                    ) : (
-                      <Eye className="w-3.5 h-3.5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {formError && (
-              <p className="text-rose-400 text-xs font-sans flex items-center gap-1 pt-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                {formError}
-              </p>
-            )}
-
-            <div className="flex justify-end gap-2 pt-2 border-t border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(false)}
-                className="px-4 py-2 bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting || passwordsMismatch || !agencyName.trim() || !password.trim() || !confirmPassword.trim()}
-                className="px-5 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:opacity-90"
-              >
-                {isSubmitting ? 'Creating...' : 'Submit & Create'}
-              </button>
-            </div>
-          </form>
-        )}
 
         <div className="space-y-3">
           {registeredUsers.length === 0 ? (
@@ -546,6 +339,224 @@ export const AdminUsersAndResultsView: React.FC = () => {
                   className="w-1/2 py-2 bg-gold-metallic text-black font-black text-xs rounded-xl shadow hover:opacity-95 disabled:opacity-50 cursor-pointer"
                 >
                   {isChangingPassword ? 'Updating...' : 'Update Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE USER MODAL POPUP */}
+      {showCreateForm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto animate-fade-in">
+          <div className="bg-neutral-950 border-2 border-gold rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-4 animate-drop-in text-white font-sans my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold flex items-center justify-center text-gold">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <h3 className="font-extrabold text-sm sm:text-base text-gold uppercase tracking-wider">
+                  Create New Agency / User
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(false)}
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleCreateUser} className="space-y-3.5">
+              {/* Agency Name */}
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Agency Name :
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. WinnerAgency"
+                  value={agencyName}
+                  onChange={(e) => {
+                    setAgencyName(e.target.value);
+                    if (formError) setFormError('');
+                  }}
+                  className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                />
+              </div>
+
+              {/* Commission Mode Selection */}
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Commission Mode :
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode('With Commission')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      mode === 'With Commission'
+                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    With Commission
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('Without Commission')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      mode === 'Without Commission'
+                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    Without Commission
+                  </button>
+                </div>
+              </div>
+
+              {/* Commission Rate (Only if With Commission is selected) */}
+              {mode === 'With Commission' && (
+                <div>
+                  <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                    Commission Rate :
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setCommissionRate('20%')}
+                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                        commissionRate === '20%'
+                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
+                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                      }`}
+                    >
+                      20% Commission
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCommissionRate('30%')}
+                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
+                        commissionRate === '30%'
+                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
+                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
+                      }`}
+                    >
+                      30% Commission
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Password */}
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Password :
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (formError) setFormError('');
+                    }}
+                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
+                      passwordsMismatch
+                        ? 'border-rose-500 focus:border-rose-500'
+                        : 'border-neutral-700 focus:border-gold'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1 flex items-center justify-between">
+                  <span>Confirm Password :</span>
+                  {password && confirmPassword && (
+                    <span
+                      className={`text-[10px] font-bold flex items-center gap-1 ${
+                        password === confirmPassword ? 'text-emerald-400' : 'text-rose-400'
+                      }`}
+                    >
+                      {password === confirmPassword ? (
+                        <>
+                          <Check className="w-3 h-3" /> Passwords match
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-3 h-3" /> Do not match
+                        </>
+                      )}
+                    </span>
+                  )}
+                </label>
+                <div className="relative w-full">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Retype password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (formError) setFormError('');
+                    }}
+                    className={`w-full bg-black border text-white px-3.5 py-2 pr-10 rounded-xl focus:outline-none font-sans text-xs transition-colors ${
+                      passwordsMismatch
+                        ? 'border-rose-500 focus:border-rose-500 ring-1 ring-rose-500/30'
+                        : 'border-neutral-700 focus:border-gold'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white focus:outline-none p-1 cursor-pointer"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-3.5 h-3.5" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {formError && (
+                <p className="text-rose-400 text-xs font-sans flex items-center gap-1 pt-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  {formError}
+                </p>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="w-1/2 py-2 bg-neutral-900 border border-neutral-700 hover:bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || passwordsMismatch || !agencyName.trim() || !password.trim() || !confirmPassword.trim()}
+                  className="w-1/2 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:opacity-90"
+                >
+                  {isSubmitting ? 'Creating...' : 'Submit & Create'}
                 </button>
               </div>
             </form>
