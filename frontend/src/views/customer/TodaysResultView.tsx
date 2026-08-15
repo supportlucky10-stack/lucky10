@@ -6,7 +6,7 @@ import type { GameSlot } from '../../types';
 
 export const TodaysResultView: React.FC = () => {
   const { gameResults } = useApp();
-  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('6 PM Game');
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );

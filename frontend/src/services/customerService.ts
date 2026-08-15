@@ -10,10 +10,10 @@ export const customerService = {
     return await apiRequest<GameResult[]>('/api/customer/results/previous', { method: 'GET' });
   },
 
-  async placeTicket(gameSlot: GameSlot, items: Omit<BetSlipItem, 'id'>[], totalAmount: number, actionType: 'PAY' | 'SAVE' = 'PAY'): Promise<PlacedTicket> {
+  async placeTicket(gameSlot: GameSlot, items: Omit<BetSlipItem, 'id'>[], totalAmount: number, actionType: 'PAY' | 'SAVE' = 'PAY', customerName?: string): Promise<PlacedTicket> {
     return await apiRequest<PlacedTicket>('/api/customer/tickets', {
       method: 'POST',
-      body: JSON.stringify({ gameSlot, items, totalAmount, actionType }),
+      body: JSON.stringify({ gameSlot, items, totalAmount, actionType, customerName }),
     });
   },
 

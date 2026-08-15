@@ -14,7 +14,7 @@ interface CountRowItem {
 }
 
 export const TotalCountView: React.FC = () => {
-  const { placedTickets } = useApp();
+  const { placedTickets, userTickets } = useApp();
 
   const todayStr = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
@@ -28,8 +28,7 @@ export const TotalCountView: React.FC = () => {
   
   const [searchNumber, setSearchNumber] = useState<string>('');
   
-  // Has the user clicked the CALCULATE button?
-  const [hasCalculated, setHasCalculated] = useState<boolean>(false);
+  const [showCountDetails, setShowCountDetails] = useState<boolean>(false);
 
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -98,17 +97,26 @@ export const TotalCountView: React.FC = () => {
   };
 
   const handleCalculate = () => {
-    setHasCalculated(true);
+    setShowCountDetails(true);
   };
 
-  // Dataset generator: combines real placed tickets with realistic sample count entries
+  // Dataset generator: parses real added bills into game count entries
   const countDataset: CountRowItem[] = useMemo(() => {
     const map = new Map<string, CountRowItem>();
+    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
 
-    // 1. First add real placed tickets for selected date
-    const matchedTickets = placedTickets.filter((t) => {
-      const ticketDate = t.placedAt?.split(' ')[0] || todayStr;
-      return ticketDate === selectedDate;
+    const matchedTickets = ticketSource.filter((t) => {
+      let tDate = todayStr;
+      if (t.placedAt) {
+        if (t.placedAt.includes('T')) {
+          tDate = t.placedAt.split('T')[0];
+        } else if (t.placedAt.includes(' ')) {
+          tDate = t.placedAt.split(' ')[0];
+        } else {
+          tDate = t.placedAt;
+        }
+      }
+      return !selectedDate || tDate === selectedDate;
     });
 
     matchedTickets.forEach((t, tIdx) => {
@@ -116,31 +124,29 @@ export const TotalCountView: React.FC = () => {
 
       t.items.forEach((item, idx) => {
         let game = 'BOX';
-        let num = item.number;
+        let num = item.number ? item.number.trim() : '';
         const typeStr = (item.type || '').toUpperCase();
 
-        if (typeStr === 'DIRECT' || typeStr === 'SUPER') {
+        if (num.includes(':')) {
+          const parts = num.split(':');
+          if (parts.length === 2) {
+            game = parts[0].toUpperCase();
+            num = parts[1];
+          }
+        } else if (typeStr === 'DIRECT' || typeStr === 'SUPER') {
           game = 'SUPER';
         } else if (typeStr === 'SHUFFLE' || typeStr === 'BOX') {
           game = 'BOX';
-        } else if (['AB', 'BC', 'AC', 'PAIR'].includes(typeStr)) {
-          if (num.includes(':')) {
-            const [pfx, n] = num.split(':');
-            game = pfx.toUpperCase();
-            num = n;
-          } else if (num.length === 2) {
-            game = 'AB';
-          } else {
-            game = 'A';
-          }
-        } else if (['A', 'B', 'C', 'POSITION'].includes(typeStr)) {
-          if (num.includes(':')) {
-            const [pfx, n] = num.split(':');
-            game = pfx.toUpperCase();
-            num = n;
-          } else {
-            game = 'A';
-          }
+        } else if (['AB', 'BC', 'AC'].includes(typeStr)) {
+          game = typeStr;
+        } else if (['A', 'B', 'C'].includes(typeStr)) {
+          game = typeStr;
+        } else if (num.length === 1) {
+          game = 'A';
+        } else if (num.length === 2) {
+          game = 'AB';
+        } else if (num.length === 3) {
+          game = 'SUPER';
         }
 
         const key = `${game}_${num}_${ticketSlot}`;
@@ -162,41 +168,8 @@ export const TotalCountView: React.FC = () => {
       });
     });
 
-    // 2. If no real tickets exist for selected date, provide a realistic demo dataset
-    if (map.size === 0) {
-      const demoData: CountRowItem[] = [
-        // 3 Digit SUPER & BOX
-        { id: 'demo_1', game: 'SUPER', number: '789', count: 12, amount: 120, slot: '8 PM', date: selectedDate },
-        { id: 'demo_2', game: 'BOX', number: '789', count: 25, amount: 250, slot: '8 PM', date: selectedDate },
-        { id: 'demo_3', game: 'SUPER', number: '123', count: 8, amount: 80, slot: '8 PM', date: selectedDate },
-        { id: 'demo_4', game: 'BOX', number: '123', count: 18, amount: 180, slot: '8 PM', date: selectedDate },
-        { id: 'demo_5', game: 'SUPER', number: '456', count: 15, amount: 150, slot: '6 PM', date: selectedDate },
-        { id: 'demo_6', game: 'BOX', number: '456', count: 30, amount: 300, slot: '6 PM', date: selectedDate },
-        { id: 'demo_7', game: 'SUPER', number: '007', count: 45, amount: 450, slot: '3 PM', date: selectedDate },
-        { id: 'demo_8', game: 'BOX', number: '007', count: 60, amount: 600, slot: '3 PM', date: selectedDate },
-
-        // 2 Digit AB, BC, AC
-        { id: 'demo_9', game: 'AB', number: '78', count: 40, amount: 400, slot: '8 PM', date: selectedDate },
-        { id: 'demo_10', game: 'BC', number: '89', count: 35, amount: 350, slot: '8 PM', date: selectedDate },
-        { id: 'demo_11', game: 'AC', number: '79', count: 22, amount: 220, slot: '8 PM', date: selectedDate },
-        { id: 'demo_12', game: 'AB', number: '12', count: 50, amount: 500, slot: '6 PM', date: selectedDate },
-        { id: 'demo_13', game: 'BC', number: '23', count: 28, amount: 280, slot: '6 PM', date: selectedDate },
-        { id: 'demo_14', game: 'AC', number: '13', count: 31, amount: 310, slot: '1 PM', date: selectedDate },
-
-        // 1 Digit A, B, C
-        { id: 'demo_15', game: 'A', number: '7', count: 85, amount: 850, slot: '8 PM', date: selectedDate },
-        { id: 'demo_16', game: 'B', number: '8', count: 70, amount: 700, slot: '8 PM', date: selectedDate },
-        { id: 'demo_17', game: 'C', number: '9', count: 95, amount: 950, slot: '8 PM', date: selectedDate },
-        { id: 'demo_18', game: 'A', number: '1', count: 60, amount: 600, slot: '3 PM', date: selectedDate },
-        { id: 'demo_19', game: 'B', number: '2', count: 48, amount: 480, slot: '3 PM', date: selectedDate },
-        { id: 'demo_20', game: 'C', number: '3', count: 52, amount: 520, slot: '1 PM', date: selectedDate },
-      ];
-
-      demoData.forEach((item) => map.set(item.id, item));
-    }
-
     return Array.from(map.values());
-  }, [placedTickets, selectedDate, todayStr]);
+  }, [placedTickets, userTickets, selectedDate, todayStr]);
 
   // Filter dataset based on selected criteria
   const filteredCountDataset = useMemo(() => {
@@ -276,7 +249,7 @@ export const TotalCountView: React.FC = () => {
                         : 'bg-black text-neutral-400 border-neutral-700 hover:border-neutral-500'
                     }`}
                   >
-                    {item.label}
+                    <span className={item.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{item.label}</span>
                   </button>
                 );
               })}
@@ -411,58 +384,71 @@ export const TotalCountView: React.FC = () => {
 
         </div>
 
-        {/* Summary Banner Card */}
-        <div className="border-2 border-gold/70 rounded-xl bg-black px-4 py-3 flex items-center justify-between shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono font-black text-xs sm:text-sm">
-          <div className="flex items-center gap-6">
-            <span className="text-gold">COUNT: <span className="text-white">{hasCalculated ? totalCount : 0}</span></span>
-            <span className="text-gold">TOT: <span className="text-white">₹{hasCalculated ? totalAmount.toFixed(1) : '0.0'}</span></span>
-          </div>
-          <button
-            type="button"
-            onClick={() => {}}
-            className="p-1.5 rounded-lg border border-gold/50 text-gold hover:bg-gold/10 transition-all cursor-pointer"
-            title="Download Report"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Data Table */}
-        <div className="w-full border border-neutral-800 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs font-bold shadow-xl animate-drop-in font-mono">
-          {/* Header Row */}
-          <div className="grid grid-cols-5 bg-neutral-900 border-b border-neutral-800 font-extrabold py-3 px-2 text-center uppercase tracking-wider text-gold text-[11px]">
-            <span>#</span>
-            <span className="text-left">GAME</span>
-            <span>NUM</span>
-            <span>CNT</span>
-            <span>AMT</span>
-          </div>
-
-          {/* Data Rows */}
-          <div className="divide-y divide-neutral-850 min-h-[220px] sm:min-h-[300px] max-h-[420px] sm:max-h-[500px] overflow-y-auto font-mono">
-            {hasCalculated ? (
-              filteredCountDataset.length > 0 ? (
-                filteredCountDataset.map((row, idx) => (
-                  <div key={row.id} className="grid grid-cols-5 py-2.5 px-2 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
-                    <span className="text-neutral-500 text-[11px]">{idx + 1}</span>
-                    <span className="text-left font-black text-gold text-xs">{row.game}</span>
-                    <span className="font-mono text-white text-xs font-black">{row.number}</span>
-                    <span className="font-mono text-neutral-200 text-xs">{row.count}</span>
-                    <span className="font-mono text-neutral-200 text-xs">₹{row.amount}</span>
-                  </div>
-                ))
-              ) : (
-                <div className="py-8 text-center text-neutral-400 font-sans text-xs">
-                  No count records match the selected filters.
-                </div>
-              )
-            ) : (
-              <div className="min-h-[220px] sm:min-h-[300px]" />
-            )}
-          </div>
-        </div>
-
       </div>
+
+      {/* Full-Screen Overlay Window for Calculated Total Count Results */}
+      {showCountDetails && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          
+          {/* Header Banner matching App Theme */}
+          <HeaderBanner
+            title="TOTAL COUNT RESULT"
+            showBack={true}
+            onBackClick={() => setShowCountDetails(false)}
+          />
+
+          <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+            
+            {/* Summary Banner Card */}
+            <div className="border-2 border-gold/70 rounded-xl bg-black px-4 py-3 flex items-center justify-between shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono font-black text-xs sm:text-sm">
+              <div className="flex items-center gap-6">
+                <span className="text-gold">COUNT: <span className="text-white">{totalCount}</span></span>
+                <span className="text-gold">TOT: <span className="text-white">₹{totalAmount.toFixed(1)}</span></span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {}}
+                className="p-1.5 rounded-lg border border-gold/50 text-gold hover:bg-gold/10 transition-all cursor-pointer"
+                title="Download Report"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Data Table */}
+            <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs font-bold shadow-[0_0_20px_rgba(212,175,55,0.15)] animate-drop-in font-mono">
+              {/* Header Row */}
+              <div className="grid grid-cols-5 bg-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 text-center uppercase tracking-wider text-gold text-[11px]">
+                <span>#</span>
+                <span className="text-left">GAME</span>
+                <span>NUM</span>
+                <span>CNT</span>
+                <span>AMT</span>
+              </div>
+
+              {/* Data Rows */}
+              <div className="divide-y divide-gold/70 min-h-[220px] sm:min-h-[300px] max-h-[420px] sm:max-h-[500px] overflow-y-auto font-mono">
+                {filteredCountDataset.length > 0 ? (
+                  filteredCountDataset.map((row, idx) => (
+                    <div key={row.id} className="grid grid-cols-5 py-2.5 px-2 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
+                      <span className="text-neutral-500 text-[11px]">{idx + 1}</span>
+                      <span className="text-left font-black text-white text-xs">{row.game}</span>
+                      <span className="font-mono text-white text-xs font-black">{row.number}</span>
+                      <span className="font-mono text-neutral-200 text-xs">{row.count}</span>
+                      <span className="font-mono text-neutral-200 text-xs">₹{row.amount}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-8 text-center text-neutral-400 font-sans text-xs">
+                    No count records match the selected filters.
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 };

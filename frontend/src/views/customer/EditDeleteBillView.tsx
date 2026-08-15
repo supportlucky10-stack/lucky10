@@ -4,62 +4,12 @@ import { useApp } from '../../context/AppContext';
 import { Search, Trash2 } from 'lucide-react';
 
 export const EditDeleteBillView: React.FC = () => {
-  const { userTickets } = useApp();
+  const { userTickets, placedTickets } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
   const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [deletedBillIds, setDeletedBillIds] = useState<string[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-
-  // Mock bills array to fallback if user has no placed tickets yet
-  const mockBills = [
-    {
-      id: '8127716',
-      gameSlot: '3 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 02:41:04 PM',
-      totalAmount: 110,
-      items: [
-        { type: 'SUPER', number: '053', count: 5, totalAmount: 50 },
-        { type: 'BOX', number: '748', count: 6, totalAmount: 60 },
-      ],
-    },
-    {
-      id: '8124807',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 11:41:04 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'SUPER', number: '053', count: 2, totalAmount: 20 },
-      ],
-    },
-    {
-      id: '8124430',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 11:03:51 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'BOX', number: '748', count: 2, totalAmount: 20 },
-      ],
-    },
-    {
-      id: '8124250',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 10:38:18 AM',
-      totalAmount: 60,
-      items: [
-        { type: 'SUPER', number: '282', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '282', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '262', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '262', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '590', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '590', count: 1, totalAmount: 10 },
-      ],
-    },
-  ];
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +24,7 @@ export const EditDeleteBillView: React.FC = () => {
       return;
     }
 
-    const allBillsPool = userTickets.length > 0 ? userTickets : mockBills;
+    const allBillsPool = placedTickets.length > 0 ? placedTickets : userTickets;
     const found = allBillsPool.find(
       (b: any) => b.id.toLowerCase() === query.toLowerCase()
     );

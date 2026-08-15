@@ -23,6 +23,7 @@ def format_ticket(ticket: Ticket) -> dict:
     return {
         "id": ticket.id,
         "userId": ticket.user_id,
+        "customerName": getattr(ticket, "customer_name", None) or "Customer",
         "gameSlot": ticket.game_slot,
         "items": [
             {
@@ -148,6 +149,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     new_ticket = Ticket(
         id=ticket_id,
         user_id=user.id,
+        customer_name=req.customerName or "Customer",
         game_slot=req.gameSlot,
         total_amount=req.totalAmount,
         status="PENDING",

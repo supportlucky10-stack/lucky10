@@ -56,11 +56,12 @@ export interface BetSlipItem {
 export interface PlacedTicket {
   id: string;
   userId: string;
+  customerName?: string;
   gameSlot: GameSlot;
   items: BetSlipItem[];
   totalAmount: number;
   placedAt: string;
-  status: 'PENDING' | 'WON' | 'LOST';
+  status: 'PENDING' | 'WON' | 'LOST' | 'PAID';
   winAmount?: number;
 }
 

@@ -17,10 +17,12 @@ class TicketCreateSchema(BaseModel):
     items: List[BetItemSchema]
     totalAmount: float
     actionType: Optional[str] = "PAY"  # PAY or SAVE
+    customerName: Optional[str] = "Customer"
 
 class PlacedTicketResponse(BaseModel):
     id: str
     userId: str
+    customerName: Optional[str] = "Customer"
     gameSlot: str
     items: List[BetItemSchema]
     totalAmount: float

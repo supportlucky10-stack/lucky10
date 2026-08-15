@@ -70,7 +70,7 @@ const formatPlacedAtDate = (str?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, currentUser } = useApp();
+  const { userTickets, placedTickets, currentUser } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
@@ -92,26 +92,12 @@ export const MyPlayReportView: React.FC = () => {
   const [deleteSingleTicketTarget, setDeleteSingleTicketTarget] = useState<any | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
-  const listLongPressTimerRef = React.useRef<any>(null);
   const detailLongPressTimerRef = React.useRef<any>(null);
-
-  const startListLongPress = (tkt: any) => {
-    listLongPressTimerRef.current = setTimeout(() => {
-      setSelectedSingleTicket(tkt);
-    }, 450);
-  };
-
-  const cancelListLongPress = () => {
-    if (listLongPressTimerRef.current) {
-      clearTimeout(listLongPressTimerRef.current);
-      listLongPressTimerRef.current = null;
-    }
-  };
 
   const startDetailLongPress = (tkt: any) => {
     detailLongPressTimerRef.current = setTimeout(() => {
       setDeleteSingleTicketTarget(tkt);
-    }, 450);
+    }, 750);
   };
 
   const cancelDetailLongPress = () => {
@@ -264,24 +250,6 @@ export const MyPlayReportView: React.FC = () => {
   const [showDailyReportOverlay, setShowDailyReportOverlay] = useState<boolean>(false);
   const [activeDailyOverlayTab, setActiveDailyOverlayTab] = useState<'DAY' | 'GAME'>('DAY');
 
-  // Sample Realistic Day-wise dataset matching Image 2
-  const sampleDailyRows = [
-    { date: '01-08-2026', sale: 2840, prize: 0 },
-    { date: '02-08-2026', sale: 2620, prize: 1100 },
-    { date: '03-08-2026', sale: 3220, prize: 540 },
-    { date: '04-08-2026', sale: 5150, prize: 1280 },
-    { date: '05-08-2026', sale: 4120, prize: 190 },
-    { date: '06-08-2026', sale: 3400, prize: 130 },
-    { date: '07-08-2026', sale: 3880, prize: 700 },
-    { date: '08-08-2026', sale: 5290, prize: 120 },
-    { date: '09-08-2026', sale: 4300, prize: 180 },
-    { date: '10-08-2026', sale: 4230, prize: 1560 },
-    { date: '11-08-2026', sale: 12990, prize: 5060 },
-    { date: '12-08-2026', sale: 7260, prize: 5040 },
-    { date: '13-08-2026', sale: 12600, prize: 22500 },
-    { date: '14-08-2026', sale: 440, prize: 0 },
-  ];
-
   // Helper to format YYYY-MM-DD -> DD-MM-YYYY
   const formatDateDisplay = (dateStr: string) => {
     const parts = dateStr.split('-');
@@ -291,34 +259,12 @@ export const MyPlayReportView: React.FC = () => {
     return dateStr;
   };
 
-  // Convert DD-MM-YYYY to YYYY-MM-DD for comparison
-  const parseDDMMYYYYtoYYYYMMDD = (dStr: string) => {
-    const parts = dStr.split('-');
-    if (parts.length === 3) {
-      return `${parts[2]}-${parts[1]}-${parts[0]}`;
-    }
-    return dStr;
-  };
-
-  // Dynamically filter daily rows between dailyFromDate and dailyToDate (inclusive)
+  // Dynamically filter daily rows between dailyFromDate and dailyToDate (inclusive) strictly from placed tickets
   const filteredDailyRows = React.useMemo(() => {
     const dateMap = new Map<string, { date: string; sale: number; prize: number }>();
-    
-    // 1. Process sample baseline data within selected range
-    sampleDailyRows.forEach((r) => {
-      const isoDate = parseDDMMYYYYtoYYYYMMDD(r.date);
-      if (isoDate >= dailyFromDate && isoDate <= dailyToDate) {
-        const slotScale = dailySlotFilter === 'ALL' ? 1 : 0.25;
-        dateMap.set(isoDate, {
-          date: r.date,
-          sale: Math.round(r.sale * slotScale),
-          prize: Math.round(r.prize * slotScale),
-        });
-      }
-    });
+    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
 
-    // 2. Incorporate actual tickets placed by the user
-    userTickets.forEach((t) => {
+    ticketSource.forEach((t) => {
       const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
       if (tDate >= dailyFromDate && tDate <= dailyToDate) {
         if (dailySlotFilter === 'ALL' || t.gameSlot.toUpperCase().startsWith(dailySlotFilter.toUpperCase())) {
@@ -345,7 +291,7 @@ export const MyPlayReportView: React.FC = () => {
     return Array.from(dateMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([_, val]) => val);
-  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets]);
+  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets, placedTickets, todayStr]);
 
   // Aggregate dynamically calculated daily totals based on selected dates and filter
   const currentDailyTotalSale = filteredDailyRows.reduce((acc, r) => acc + r.sale, 0);
@@ -354,18 +300,17 @@ export const MyPlayReportView: React.FC = () => {
 
   // Game slot rows dynamically reflecting the selected date range & user tickets
   const dynamicGameRows = React.useMemo(() => {
-    const daysCount = Math.max(1, filteredDailyRows.length);
-    const dayRatio = daysCount / 14;
-
     const baseSlots = [
-      { slotName: '1 PM', baseSale: 16840, basePrize: 21800, slotKey: '1 PM Game' },
-      { slotName: '3 PM', baseSale: 15360, basePrize: 3100, slotKey: '3 PM Game' },
-      { slotName: '6 PM', baseSale: 15980, basePrize: 7740, slotKey: '6 PM Game' },
-      { slotName: '8 PM', baseSale: 24160, basePrize: 5760, slotKey: '8 PM Game' },
+      { slotName: '1 PM', slotKey: '1 PM Game' },
+      { slotName: '3 PM', slotKey: '3 PM Game' },
+      { slotName: '6 PM', slotKey: '6 PM Game' },
+      { slotName: '8 PM', slotKey: '8 PM Game' },
     ];
 
+    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+
     return baseSlots.map((slot) => {
-      const slotTickets = userTickets.filter((t) => {
+      const slotTickets = ticketSource.filter((t) => {
         const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
         return (
           tDate >= dailyFromDate &&
@@ -378,107 +323,19 @@ export const MyPlayReportView: React.FC = () => {
         .filter((t) => t.status === 'WON')
         .reduce((acc, t) => acc + (t.winAmount || 0), 0);
 
-      const computedSale = Math.round(slot.baseSale * dayRatio) + userSale;
-      const computedPrize = Math.round(slot.basePrize * dayRatio) + userPrize;
-
       return {
         slotName: slot.slotName,
-        sale: computedSale,
-        prize: computedPrize,
+        sale: userSale,
+        prize: userPrize,
       };
     });
-  }, [filteredDailyRows, dailyFromDate, dailyToDate, userTickets]);
+  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr]);
 
   const filteredGameRows = dailySlotFilter === 'ALL'
     ? dynamicGameRows
     : dynamicGameRows.filter((r) => r.slotName === dailySlotFilter);
 
-
-
-  // Mock Realistic Ticket Data matching user's reference screenshots
-  const sampleTickets = [
-    {
-      id: '8127716',
-      gameSlot: '3 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 02:41:04 PM',
-      totalAmount: 110,
-      items: [
-        { type: 'SUPER', number: '053', count: 5, totalAmount: 50 },
-        { type: 'BOX', number: '748', count: 6, totalAmount: 60 },
-      ],
-    },
-    {
-      id: '8127579',
-      gameSlot: '3 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 02:22:15 PM',
-      totalAmount: 70,
-      items: [
-        { type: 'A', number: '8', count: 7, totalAmount: 70 },
-      ],
-    },
-    {
-      id: '8124807',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 11:41:04 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'SUPER', number: '053', count: 2, totalAmount: 20 },
-      ],
-    },
-    {
-      id: '8124430',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 11:03:51 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'BOX', number: '748', count: 2, totalAmount: 20 },
-      ],
-    },
-    {
-      id: '8124250',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 10:38:18 AM',
-      totalAmount: 60,
-      items: [
-        { type: 'SUPER', number: '282', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '282', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '262', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '262', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '590', count: 1, totalAmount: 10 },
-        { type: 'BOX', number: '590', count: 1, totalAmount: 10 },
-      ],
-    },
-    {
-      id: '8124215',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '14-08-2026 10:29:32 AM',
-      totalAmount: 20,
-      items: [
-        { type: 'SUPER', number: '568', count: 1, totalAmount: 10 },
-        { type: 'SUPER', number: '567', count: 1, totalAmount: 10 },
-      ],
-    },
-    {
-      id: '8113930',
-      gameSlot: '1 PM Game',
-      customerName: 'Demo Customer',
-      placedAt: '13-08-2026 12:57:46 PM',
-      totalAmount: 60,
-      items: [
-        { type: 'SUPER', number: '786', count: 2, totalAmount: 20 },
-        { type: 'SUPER', number: '286', count: 2, totalAmount: 20 },
-        { type: 'SUPER', number: '886', count: 2, totalAmount: 20 },
-      ],
-    },
-  ];
-
-  const allTickets = userTickets.length > 0 ? userTickets : sampleTickets;
+  const allTickets = placedTickets.length > 0 ? placedTickets : userTickets;
 
   // Filter items matching digitFilter & subOptionFilter
   const isItemMatch = (item: any, digitF: string, subF: string) => {
@@ -545,71 +402,6 @@ export const MyPlayReportView: React.FC = () => {
     0
   );
   const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.filteredTotalAmount, 0);
-
-  // Realistic Winning Report Data matching Image 2
-  const sampleWinningCategories = [
-    {
-      category: 'BOX',
-      cards: [
-        {
-          id: 'w1',
-          prize: '1ST PRIZE',
-          number: '386',
-          count: 1,
-          total: 3000,
-          theme: 'bg-[#cbe6d4] text-[#134927]', // Light green header
-          slot: '3 PM Game',
-          type: 'BOX',
-        },
-        {
-          id: 'w2',
-          prize: '2ND PRIZE',
-          number: '638',
-          count: 1,
-          total: 800,
-          theme: 'bg-[#dcd0f0] text-[#3c1e6e]', // Light purple header
-          slot: '3 PM Game',
-          type: 'BOX',
-        },
-      ],
-    },
-    {
-      category: 'SUPER',
-      cards: [
-        {
-          id: 'w3',
-          prize: '1ST PRIZE',
-          number: '386',
-          count: 2,
-          total: 10000,
-          theme: 'bg-[#cbe6d4] text-[#134927]', // Light green header
-          slot: '3 PM Game',
-          type: 'SUPER',
-        },
-        {
-          id: 'w4',
-          prize: '5TH PRIZE',
-          number: '805',
-          count: 2,
-          total: 100,
-          theme: 'bg-[#e5d9cc] text-[#4a341e]', // Light warm taupe header
-          slot: '1 PM Game',
-          type: 'SUPER',
-        },
-        {
-          id: 'w5',
-          prize: '6TH PRIZE',
-          number: '184',
-          count: 5,
-          total: 250,
-          theme: 'bg-[#cfdff6] text-[#17335c]', // Light blue header
-          slot: '1 PM Game',
-          type: 'SUPER',
-        },
-      ],
-    },
-  ];
-
   const getWinnerCardTheme = (prize: string) => {
     if (prize.includes('1ST')) {
       return {
@@ -671,29 +463,38 @@ export const MyPlayReportView: React.FC = () => {
     };
   };
 
-  // Filter winning categories based on winningSlotFilter, winningDigitFilter, winningSubOptionFilter & winningSearchNumber
-  const displayWinningCategories = sampleWinningCategories
-    .map((cat) => {
-      const matchingCards = cat.cards.filter((card) => {
-        if (winningSlotFilter !== 'ALL' && !card.slot.startsWith(winningSlotFilter)) {
-          return false;
-        }
-        if (winningSearchNumber.trim() && !card.number.includes(winningSearchNumber.trim())) {
-          return false;
-        }
-        if (isWinningFullView) {
-          return isItemMatch(card, winningDigitFilter, winningSubOptionFilter);
-        }
-        return true;
-      });
+  // Filter winning categories strictly from placed winning tickets
+  const displayWinningCategories = React.useMemo(() => {
+    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+    const winningTickets = ticketSource.filter((t) => t.status === 'WON');
+    
+    if (winningTickets.length === 0) return [];
 
-      if (matchingCards.length === 0) return null;
-      return {
-        ...cat,
-        cards: matchingCards,
-      };
-    })
-    .filter(Boolean) as any[];
+    const catMap = new Map<string, any[]>();
+    winningTickets.forEach((tkt) => {
+      if (winningSlotFilter !== 'ALL' && !tkt.gameSlot.startsWith(winningSlotFilter)) return;
+      tkt.items.forEach((item: any) => {
+        if (winningSearchNumber.trim() && !item.number.includes(winningSearchNumber.trim())) return;
+        if (isWinningFullView && !isItemMatch(item, winningDigitFilter, winningSubOptionFilter)) return;
+
+        const catName = (item.type || 'SUPER').toUpperCase();
+        const existing = catMap.get(catName) || [];
+        existing.push({
+          id: item.id || `w_${Math.random()}`,
+          prize: '1ST PRIZE',
+          number: item.number,
+          count: item.count,
+          total: (tkt.winAmount || item.totalAmount * 100),
+          theme: 'bg-[#cbe6d4] text-[#134927]',
+          slot: tkt.gameSlot,
+          type: item.type,
+        });
+        catMap.set(catName, existing);
+      });
+    });
+
+    return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
+  }, [placedTickets, userTickets, winningSlotFilter, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter]);
 
   const winningTotalCount = displayWinningCategories.reduce(
     (acc, cat) => acc + cat.cards.reduce((cAcc: number, c: any) => cAcc + c.count, 0),
@@ -921,13 +722,12 @@ export const MyPlayReportView: React.FC = () => {
               {isFullView && (
                 <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
                   
-                  {/* Single Combined Line for SELECT DIGIT TYPE & Sub-Options */}
-                  <div className="space-y-1.5">
+                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) - Compact Size */}
+                  <div className="space-y-1">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE &amp; OPTIONS
+                      SELECT DIGIT TYPE
                     </span>
-                    <div className="flex items-center justify-center gap-2 flex-nowrap overflow-x-auto py-1">
-                      {/* Digit Type Buttons (*, 1, 2, 3) */}
+                    <div className="flex items-center justify-center gap-2.5">
                       {[
                         { id: 'ALL', label: '★' },
                         { id: '1', label: '1' },
@@ -961,145 +761,148 @@ export const MyPlayReportView: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
                               isSelected
                                 ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
                                 : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
                             }`}
                           >
-                            {item.label}
+                            <span className={item.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{item.label}</span>
                           </button>
                         );
                       })}
-
-                      {/* Divider */}
-                      <div className="w-px h-6 bg-neutral-700 shrink-0 mx-1" />
-
-                      {/* Active Sub-Options inline right next to digit buttons */}
-                      {digitFilter === '1' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'A', label: 'A' },
-                          { id: 'B', label: 'B' },
-                          { id: 'C', label: 'C' },
-                        ].map((opt) => {
-                          const isSelected =
-                            subOptionFilter === 'ALL'
-                              ? true
-                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {digitFilter === '2' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'AB', label: 'AB' },
-                          { id: 'AC', label: 'AC' },
-                          { id: 'BC', label: 'BC' },
-                        ].map((opt) => {
-                          const isSelected =
-                            subOptionFilter === 'ALL'
-                              ? true
-                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`px-3 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {digitFilter === '3' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'SUPER', label: 'SUPER' },
-                          { id: 'BOX', label: 'BOX' },
-                          { id: 'BOTH', label: 'BOTH' },
-                        ].map((opt) => {
-                          const isSelected =
-                            subOptionFilter === 'ALL'
-                              ? true
-                              : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`px-2.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {(digitFilter === 'ALL' || digitFilter === 'NONE') && (
-                        [
-                          { id: 'ALL', label: '★' },
-                        ].map((opt) => {
-                          const isSelected = subOptionFilter === 'ALL';
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
-                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
                     </div>
+                  </div>
+
+                  {/* Row 2: Sub-options on Second Line - Compact Size */}
+                  <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-nowrap overflow-x-auto">
+                    {digitFilter === '1' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'A', label: 'A' },
+                        { id: 'B', label: 'B' },
+                        { id: 'C', label: 'C' },
+                      ].map((opt) => {
+                        const isSelected =
+                          subOptionFilter === 'ALL'
+                            ? true
+                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {digitFilter === '2' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'AB', label: 'AB' },
+                        { id: 'AC', label: 'AC' },
+                        { id: 'BC', label: 'BC' },
+                      ].map((opt) => {
+                        const isSelected =
+                          subOptionFilter === 'ALL'
+                            ? true
+                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`${
+                              opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2.5 py-1 rounded-full text-[11px]'
+                            } font-black flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {digitFilter === '3' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'SUPER', label: 'SUPER' },
+                        { id: 'BOX', label: 'BOX' },
+                        { id: 'BOTH', label: 'BOTH' },
+                      ].map((opt) => {
+                        const isSelected =
+                          subOptionFilter === 'ALL'
+                            ? true
+                            : subOptionFilter !== 'NONE' && subOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setSubOptionFilter(subOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`${
+                              opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2 py-1 rounded-full text-[10px] uppercase'
+                            } font-black flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {(digitFilter === 'ALL' || digitFilter === 'NONE') && (
+                      [
+                        { id: 'ALL', label: '★' },
+                      ].map((opt) => {
+                        const isSelected = subOptionFilter === 'ALL';
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => setSubOptionFilter(subOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className="text-base sm:text-lg leading-none font-black">★</span>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
 
                   {/* Row 3: Number Search Box (Crisp White Border) */}
@@ -1257,13 +1060,12 @@ export const MyPlayReportView: React.FC = () => {
               {isWinningFullView && (
                 <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
                   
-                  {/* Single Combined Line for SELECT DIGIT TYPE & Sub-Options */}
-                  <div className="space-y-1.5">
+                  {/* Row 1: Digit Count Selector (*, 1, 2, 3) - Compact Size */}
+                  <div className="space-y-1">
                     <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      SELECT DIGIT TYPE &amp; OPTIONS
+                      SELECT DIGIT TYPE
                     </span>
-                    <div className="flex items-center justify-center gap-2 flex-nowrap overflow-x-auto py-1">
-                      {/* Digit Type Buttons (*, 1, 2, 3) */}
+                    <div className="flex items-center justify-center gap-2.5">
                       {[
                         { id: 'ALL', label: '★' },
                         { id: '1', label: '1' },
@@ -1297,145 +1099,148 @@ export const MyPlayReportView: React.FC = () => {
                                 }
                               }
                             }}
-                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-sm flex items-center justify-center transition-all cursor-pointer shrink-0 border ${
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${
                               isSelected
                                 ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
                                 : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
                             }`}
                           >
-                            {item.label}
+                            <span className={item.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{item.label}</span>
                           </button>
                         );
                       })}
-
-                      {/* Divider */}
-                      <div className="w-px h-6 bg-neutral-700 shrink-0 mx-1" />
-
-                      {/* Active Sub-Options inline right next to digit buttons */}
-                      {winningDigitFilter === '1' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'A', label: 'A' },
-                          { id: 'B', label: 'B' },
-                          { id: 'C', label: 'C' },
-                        ].map((opt) => {
-                          const isSelected =
-                            winningSubOptionFilter === 'ALL'
-                              ? true
-                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {winningDigitFilter === '2' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'AB', label: 'AB' },
-                          { id: 'AC', label: 'AC' },
-                          { id: 'BC', label: 'BC' },
-                        ].map((opt) => {
-                          const isSelected =
-                            winningSubOptionFilter === 'ALL'
-                              ? true
-                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`px-3 py-1.5 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {winningDigitFilter === '3' && (
-                        [
-                          { id: 'ALL', label: '★' },
-                          { id: 'SUPER', label: 'SUPER' },
-                          { id: 'BOX', label: 'BOX' },
-                          { id: 'BOTH', label: 'BOTH' },
-                        ].map((opt) => {
-                          const isSelected =
-                            winningSubOptionFilter === 'ALL'
-                              ? true
-                              : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => {
-                                if (opt.id === 'ALL') {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
-                                } else {
-                                  setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
-                                }
-                              }}
-                              className={`px-2.5 py-1.5 rounded-full font-black text-xs uppercase flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
-
-                      {(winningDigitFilter === 'ALL' || winningDigitFilter === 'NONE') && (
-                        [
-                          { id: 'ALL', label: '★' },
-                        ].map((opt) => {
-                          const isSelected = winningSubOptionFilter === 'ALL';
-                          return (
-                            <button
-                              type="button"
-                              key={opt.id}
-                              onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
-                              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
-                                isSelected
-                                  ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
-                                  : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })
-                      )}
                     </div>
+                  </div>
+
+                  {/* Row 2: Sub-options on Second Line - Compact Size */}
+                  <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-nowrap overflow-x-auto">
+                    {winningDigitFilter === '1' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'A', label: 'A' },
+                        { id: 'B', label: 'B' },
+                        { id: 'C', label: 'C' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {winningDigitFilter === '2' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'AB', label: 'AB' },
+                        { id: 'AC', label: 'AC' },
+                        { id: 'BC', label: 'BC' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`${
+                              opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2.5 py-1 rounded-full text-[11px]'
+                            } font-black flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {winningDigitFilter === '3' && (
+                      [
+                        { id: 'ALL', label: '★' },
+                        { id: 'SUPER', label: 'SUPER' },
+                        { id: 'BOX', label: 'BOX' },
+                        { id: 'BOTH', label: 'BOTH' },
+                      ].map((opt) => {
+                        const isSelected =
+                          winningSubOptionFilter === 'ALL'
+                            ? true
+                            : winningSubOptionFilter !== 'NONE' && winningSubOptionFilter === opt.id;
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => {
+                              if (opt.id === 'ALL') {
+                                setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL');
+                              } else {
+                                setWinningSubOptionFilter(winningSubOptionFilter === opt.id ? 'NONE' : opt.id);
+                              }
+                            }}
+                            className={`${
+                              opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2 py-1 rounded-full text-[10px] uppercase'
+                            } font-black flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })
+                    )}
+
+                    {(winningDigitFilter === 'ALL' || winningDigitFilter === 'NONE') && (
+                      [
+                        { id: 'ALL', label: '★' },
+                      ].map((opt) => {
+                        const isSelected = winningSubOptionFilter === 'ALL';
+                        return (
+                          <button
+                            type="button"
+                            key={opt.id}
+                            onClick={() => setWinningSubOptionFilter(winningSubOptionFilter === 'ALL' ? 'NONE' : 'ALL')}
+                            className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-neutral-800 text-white border-2 border-white shadow-[0_0_10px_rgba(255,255,255,0.3)] scale-105'
+                                : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'
+                            }`}
+                          >
+                            <span className="text-base sm:text-lg leading-none font-black">★</span>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
 
                   {/* Row 3: Number Search Box (Crisp White Border) */}
@@ -1702,11 +1507,7 @@ export const MyPlayReportView: React.FC = () => {
                     return (
                       <div
                         key={tkt.id}
-                        onMouseDown={() => startListLongPress(tkt)}
-                        onMouseUp={cancelListLongPress}
-                        onMouseLeave={cancelListLongPress}
-                        onTouchStart={() => startListLongPress(tkt)}
-                        onTouchEnd={cancelListLongPress}
+                        onClick={() => setSelectedSingleTicket(tkt)}
                         className={`bg-neutral-950 text-white rounded-2xl p-4 shadow-xl border-2 transition-all cursor-pointer active:scale-[0.99] space-y-2 font-mono ${
                           isSelected
                             ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
@@ -1756,11 +1557,7 @@ export const MyPlayReportView: React.FC = () => {
                     return (
                       <div
                         key={tkt.id}
-                        onMouseDown={() => startListLongPress(tkt)}
-                        onMouseUp={cancelListLongPress}
-                        onMouseLeave={cancelListLongPress}
-                        onTouchStart={() => startListLongPress(tkt)}
-                        onTouchEnd={cancelListLongPress}
+                        onClick={() => setSelectedSingleTicket(tkt)}
                         className={`bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer group active:scale-[0.99] ${
                           isSelected
                             ? 'border-gold shadow-[0_0_15px_rgba(212,175,55,0.5)]'
@@ -2385,7 +2182,7 @@ export const MyPlayReportView: React.FC = () => {
             {/* Summary Table */}
             <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
               {/* Header Row */}
-              <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-neutral-800 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
+              <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
                 <span className="text-left pl-2">GAME</span>
                 <span>COUNT</span>
                 <span>RATE</span>
@@ -2393,10 +2190,10 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Data Rows */}
-              <div className="divide-y divide-neutral-850">
+              <div className="divide-y divide-gold/70">
                 {countReportRows.map((row) => (
                   <div key={row.name} className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
-                    <span className="text-left font-black text-gold pl-2 tracking-wide text-xs">{row.name}</span>
+                    <span className="text-left font-black text-white pl-2 tracking-wide text-xs">{row.name}</span>
                     <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? row.count : '-'}</span>
                     <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? (typeof row.rate === 'number' ? `₹${row.rate}` : row.rate) : '-'}</span>
                     <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.cash > 0 ? `₹${row.cash.toFixed(0)}` : '-'}</span>
@@ -2405,7 +2202,7 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Total Row */}
-              <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/50 bg-black font-black text-xs sm:text-sm">
+              <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/70 bg-black font-black text-xs sm:text-sm">
                 <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
                 <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCount > 0 ? countReportTotalCount : '-'}</span>
                 <span className="font-mono text-neutral-500">-</span>

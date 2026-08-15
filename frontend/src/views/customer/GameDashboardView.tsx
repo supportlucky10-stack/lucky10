@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2 } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown } from 'lucide-react';
+import type { GameSlot } from '../../types';
 
 interface SlotTheme {
   name: string;
@@ -104,6 +105,7 @@ const slotThemes: Record<string, SlotTheme> = {
 export const GameDashboardView: React.FC = () => {
   const {
     activeGameSlot,
+    setActiveGameSlot,
     betSlip,
     addToBetSlip,
     removeFromBetSlip,
@@ -112,6 +114,8 @@ export const GameDashboardView: React.FC = () => {
     setCurrentView,
     addToast,
   } = useApp();
+
+  const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
 
   const theme = slotThemes[activeGameSlot] || slotThemes['3 PM Game'];
 
@@ -170,7 +174,7 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
-  // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required
+  // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 5) {
@@ -184,6 +188,8 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
+    const unitPrice1Digit = 12; // ₹12 per count for 1-digit game
+
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
     targetNums.forEach((n) => {
       positions.forEach((p) => {
@@ -191,8 +197,8 @@ export const GameDashboardView: React.FC = () => {
           number: `${p}:${n}`,
           count: cnt,
           type: 'Pair',
-          unitPrice,
-          totalAmount: cnt * unitPrice,
+          unitPrice: unitPrice1Digit,
+          totalAmount: cnt * unitPrice1Digit,
         });
       });
     });
@@ -332,9 +338,10 @@ export const GameDashboardView: React.FC = () => {
         {/* Right: SAVE Button */}
         <button
           onClick={async () => {
-            const billId = await saveTicket();
+            const billId = await saveTicket(customerName);
             if (billId) {
               setSavedBillId(billId);
+              setCustomerName('');
             }
           }}
           className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer`}
@@ -343,12 +350,46 @@ export const GameDashboardView: React.FC = () => {
         </button>
       </div>
 
-      {/* Sub-Header Ribbon: Dynamic Slot Color Badge */}
-      <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none pointer-events-none">
-        <div className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-center text-center uppercase tracking-wide cursor-default select-none pointer-events-none caret-transparent transition-all`}>
-          <span className="inline-block select-none pointer-events-none caret-transparent">
-            {activeGameSlot}
-          </span>
+      {/* Sub-Header Ribbon: Interactive Game Slot Switcher Dropdown */}
+      <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none relative z-30">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)}
+            className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-between gap-2 cursor-pointer transition-all hover:brightness-110 active:scale-95`}
+          >
+            <span>{activeGameSlot}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSlotDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Slot Selector Dropdown Menu (1PM, 3PM, 6PM, 8PM) */}
+          {isSlotDropdownOpen && (
+            <div className="absolute left-0 top-9 w-44 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-50">
+              {(['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'] as GameSlot[]).map((slot) => {
+                const slotTheme = slotThemes[slot];
+                const isSelected = slot === activeGameSlot;
+                return (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => {
+                      setActiveGameSlot(slot);
+                      setIsSlotDropdownOpen(false);
+                      addToast(`Switched to ${slot}`, 'info');
+                    }}
+                    className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
+                      isSelected
+                        ? `${slotTheme.badgeBg} ${slotTheme.badgeText} border ${slotTheme.badgeBorder}`
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
+                    }`}
+                  >
+                    <span>{slot}</span>
+                    {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
