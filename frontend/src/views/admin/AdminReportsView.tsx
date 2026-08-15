@@ -734,38 +734,18 @@ export const AdminReportsView: React.FC = () => {
                   <table className="w-full text-left text-xs border-collapse font-sans">
                     <thead>
                       <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                        <th className="py-2.5 px-3">User / Agency</th>
-                        <th className="py-2.5 px-2 text-center">Bills</th>
-                        <th className="py-2.5 px-2 text-right">Sales</th>
-                        <th className="py-2.5 px-2 text-right">Price</th>
-                        <th className="py-2.5 px-2 text-right">COMM</th>
-                        <th className="py-2.5 px-2 text-right">Net</th>
+                        <th className="py-2.5 px-4">User / Agency</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-900">
-                      {userPerformanceList.map(({ user, totalBills, totalGross, totalPayouts, totalCommission, net }) => (
+                      {userPerformanceList.map(({ user }) => (
                         <tr
                           key={user.id}
                           onClick={() => setSelectedReportUser(user)}
                           className="transition-colors cursor-pointer hover:bg-neutral-900/80 active:scale-[0.99]"
                         >
-                          <td className="py-2.5 px-3">
+                          <td className="py-3 px-4">
                             <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
-                          </td>
-                          <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
-                            {totalBills}
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">
-                            {formatRupees(totalGross)}
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
-                            {formatRupees(totalPayouts)}
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
-                            {formatRupees(totalCommission)}
-                          </td>
-                          <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">
-                            {formatRupees(net)}
                           </td>
                         </tr>
                       ))}
