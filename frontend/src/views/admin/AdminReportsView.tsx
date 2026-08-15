@@ -104,6 +104,9 @@ export const AdminReportsView: React.FC = () => {
   const [selectedReportUser, setSelectedReportUser] = useState<UserAccount | null>(null);
   const [reportFilterSearch, setReportFilterSearch] = useState<string>('');
 
+  // Selected User for User Wise Performance Sub-view
+  const [selectedPerformanceUser, setSelectedPerformanceUser] = useState<UserAccount | null>(null);
+
   const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     navigator.clipboard.writeText(id);
@@ -123,22 +126,22 @@ export const AdminReportsView: React.FC = () => {
     );
   }, [selectedUserId, registeredUsers]);
 
-  // Filter tickets by selected user
+  // Filter tickets by selected user and date range
   const userFilteredTickets = useMemo(() => {
-    if (selectedUserId === 'ALL') return placedTickets;
     return placedTickets.filter((t) => {
-      if (t.userId && (t.userId === selectedUserId || (selectedUser && t.userId === selectedUser.id))) {
-        return true;
+      if (selectedUserId !== 'ALL') {
+        const matchesUser =
+          (t.userId && (t.userId === selectedUserId || (selectedUser && t.userId === selectedUser.id))) ||
+          ((t as any).agencyName && selectedUser && (t as any).agencyName === selectedUser.username) ||
+          ((t as any).userName && selectedUser && (t as any).userName === selectedUser.name);
+        if (!matchesUser) return false;
       }
-      if ((t as any).agencyName && selectedUser && (t as any).agencyName === selectedUser.username) {
-        return true;
-      }
-      if ((t as any).userName && selectedUser && (t as any).userName === selectedUser.name) {
-        return true;
-      }
-      return false;
+      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      if (fromDate && tDate < fromDate) return false;
+      if (toDate && tDate > toDate) return false;
+      return true;
     });
-  }, [placedTickets, selectedUserId, selectedUser]);
+  }, [placedTickets, selectedUserId, selectedUser, fromDate, toDate, todayStr]);
 
   // Compute User Performance List filtered by fromDate, toDate, and userSearchQuery
   const userPerformanceList = useMemo(() => {
@@ -274,6 +277,75 @@ export const AdminReportsView: React.FC = () => {
     });
   }, [selectedUserTickets, reportFilterSearch]);
 
+  // Performance data for selectedPerformanceUser
+  const selectedUserPerf = useMemo(() => {
+    if (!selectedPerformanceUser) return null;
+    const userTkts = placedTickets.filter((t) => {
+      const matches =
+        t.userId === selectedPerformanceUser.id ||
+        (t as any).userName === selectedPerformanceUser.name ||
+        (t as any).agencyName === selectedPerformanceUser.username;
+      if (!matches) return false;
+      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      if (fromDate && tDate < fromDate) return false;
+      if (toDate && tDate > toDate) return false;
+      return true;
+    });
+
+    const userPays = payoutLogs.filter((p) => {
+      const matches = p.userId === selectedPerformanceUser.id || p.userName === selectedPerformanceUser.name;
+      if (!matches) return false;
+      const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
+      if (fromDate && pDate < fromDate) return false;
+      if (toDate && pDate > toDate) return false;
+      return true;
+    });
+
+    const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+    const totalPayouts = userPays.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalBills = userTkts.length;
+
+    let commissionPercent = 0;
+    const userMode = selectedPerformanceUser.mode || '';
+    if (userMode.includes('30%')) {
+      commissionPercent = 0.30;
+    } else if (userMode.includes('With Commission') || userMode.includes('20%')) {
+      commissionPercent = 0.20;
+    }
+    const totalCommission = Math.round(totalGross * commissionPercent);
+    const net = totalGross - totalPayouts - totalCommission;
+
+    // Slot breakdown
+    const slotBreakdown = (['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'] as GameSlot[]).map((slot) => {
+      const slotTkts = userTkts.filter((t) => t.gameSlot === slot);
+      const slotGross = slotTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
+      const slotBills = slotTkts.length;
+      const slotComm = Math.round(slotGross * commissionPercent);
+      const slotPayouts = userPays
+        .filter((p) => (p as any).gameSlot === slot)
+        .reduce((sum, p) => sum + (p.amount || 0), 0);
+      const slotNet = slotGross - slotPayouts - slotComm;
+      return {
+        slot,
+        bills: slotBills,
+        gross: slotGross,
+        payouts: slotPayouts,
+        commission: slotComm,
+        net: slotNet,
+      };
+    });
+
+    return {
+      user: selectedPerformanceUser,
+      totalBills,
+      totalGross,
+      totalPayouts,
+      totalCommission,
+      net,
+      slotBreakdown,
+    };
+  }, [selectedPerformanceUser, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
+
   // Winning Tickets Computation
   const winningTicketsList = useMemo(() => {
     const wins: {
@@ -380,35 +452,6 @@ export const AdminReportsView: React.FC = () => {
       <HeaderBanner title="Reports" />
 
       <div className="px-4 sm:px-6 py-4 space-y-4 max-w-5xl mx-auto w-full">
-        {/* Metric Cards in a SINGLE ROW */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="bg-neutral-950 border border-neutral-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-neutral-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
-              Gross Sales
-            </span>
-            <span className="text-white font-black text-sm sm:text-xl font-mono block">
-              {formatRupees(globalTotalGross)}
-            </span>
-          </div>
-
-          <div className="bg-neutral-950 border border-rose-500/40 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-rose-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
-              Payouts
-            </span>
-            <span className="text-rose-300 font-black text-sm sm:text-xl font-mono block">
-              {formatRupees(globalTotalPayouts)}
-            </span>
-          </div>
-
-          <div className="bg-neutral-950 border border-gold/60 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
-            <span className="text-gold text-[10px] sm:text-xs font-black uppercase tracking-wider block truncate">
-              Net Revenue
-            </span>
-            <span className="text-gold font-black text-sm sm:text-xl font-mono block">
-              {formatRupees(globalNet)}
-            </span>
-          </div>
-        </div>
         {/* Top 4 Section Navigation Tabs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1 bg-neutral-950 rounded-xl sm:rounded-2xl border border-gold/40 shadow-sm">
           <button
@@ -421,7 +464,7 @@ export const AdminReportsView: React.FC = () => {
             }`}
           >
             <Users className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">1. Users List</span>
+            <span className="truncate">1. Performance Report</span>
           </button>
 
           <button
@@ -447,7 +490,7 @@ export const AdminReportsView: React.FC = () => {
             }`}
           >
             <Trophy className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">3. Winning</span>
+            <span className="truncate">3. Winning Report</span>
           </button>
 
           <button
@@ -460,13 +503,42 @@ export const AdminReportsView: React.FC = () => {
             }`}
           >
             <Calendar className="w-3.5 h-3.5 shrink-0" />
-            <span className="truncate">4. Daily</span>
+            <span className="truncate">4. Daily Report</span>
           </button>
         </div>
 
         {/* TAB 1: USERS LIST & REPORT PERFORMANCE TABLE */}
         {activeTab === 'USERS' && (
           <div className="space-y-3 animate-drop-in">
+            {/* Metric Cards in a SINGLE ROW */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="bg-neutral-950 border border-neutral-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+                <span className="text-neutral-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
+                  Gross Sales
+                </span>
+                <span className="text-white font-black text-sm sm:text-xl font-mono block">
+                  {formatRupees(globalTotalGross)}
+                </span>
+              </div>
+
+              <div className="bg-neutral-950 border border-rose-500/40 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+                <span className="text-rose-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider block truncate">
+                  Payouts
+                </span>
+                <span className="text-rose-300 font-black text-sm sm:text-xl font-mono block">
+                  {formatRupees(globalTotalPayouts)}
+                </span>
+              </div>
+
+              <div className="bg-neutral-950 border border-gold/60 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-center space-y-0.5 shadow-sm">
+                <span className="text-gold text-[10px] sm:text-xs font-black uppercase tracking-wider block truncate">
+                  Net Revenue
+                </span>
+                <span className="text-gold font-black text-sm sm:text-xl font-mono block">
+                  {formatRupees(globalNet)}
+                </span>
+              </div>
+            </div>
             {/* Single-Line FROM DATE & TO DATE Row + User Search */}
             <div className="bg-neutral-950 border border-neutral-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
               <div className="flex items-center gap-2.5 sm:gap-3">
@@ -553,11 +625,11 @@ export const AdminReportsView: React.FC = () => {
                       {userPerformanceList.map(({ user, totalBills, totalGross, totalPayouts, totalCommission, net }) => (
                         <tr
                           key={user.id}
-                          className="transition-colors hover:bg-neutral-900/50"
+                          onClick={() => setSelectedPerformanceUser(user)}
+                          className="transition-colors cursor-pointer hover:bg-neutral-900/80 active:scale-[0.99]"
                         >
                           <td className="py-2.5 px-3">
-                            <div className="font-black text-white text-xs">{user.name}</div>
-                            <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
+                            <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
                           </td>
                           <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
                             {totalBills}
@@ -679,7 +751,6 @@ export const AdminReportsView: React.FC = () => {
                         >
                           <td className="py-2.5 px-3">
                             <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
-                            <div className="text-[10px] text-neutral-400 font-mono">@{user.username}</div>
                           </td>
                           <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
                             {totalBills}
@@ -709,6 +780,51 @@ export const AdminReportsView: React.FC = () => {
         {/* TAB 3: WINNING REPORT */}
         {activeTab === 'WINNING' && (
           <div className="space-y-3 animate-drop-in">
+            {/* Single-Line FROM DATE & TO DATE Row */}
+            <div className="bg-neutral-950 border border-neutral-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => userFromRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(fromDate)}
+                  </span>
+                  <input
+                    ref={userFromRef}
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+
+                {/* TO DATE */}
+                <div
+                  onClick={() => userToRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    ref={userToRef}
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="bg-neutral-950 border border-gold/60 p-3 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-black p-1.5 flex items-center justify-center border border-gold/80 shrink-0">
@@ -808,11 +924,56 @@ export const AdminReportsView: React.FC = () => {
         {/* TAB 4: DAILY REPORT */}
         {activeTab === 'DAILY' && (
           <div className="space-y-3 animate-drop-in">
+            {/* Single-Line FROM DATE & TO DATE Row */}
+            <div className="bg-neutral-950 border border-neutral-800 p-3 sm:p-4 rounded-2xl shadow-md space-y-3">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => userFromRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    From date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(fromDate)}
+                  </span>
+                  <input
+                    ref={userFromRef}
+                    type="date"
+                    value={fromDate}
+                    onChange={(e) => e.target.value && setFromDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+
+                {/* TO DATE */}
+                <div
+                  onClick={() => userToRef.current?.showPicker?.()}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    To date
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(toDate)}
+                  </span>
+                  <input
+                    ref={userToRef}
+                    type="date"
+                    value={toDate}
+                    onChange={(e) => e.target.value && setToDate(e.target.value)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="bg-neutral-950 border border-neutral-800 p-3 rounded-xl space-y-3 shadow-sm">
               <div className="flex items-center justify-between border-b border-neutral-800 pb-2">
                 <h3 className="text-xs font-black text-white flex items-center gap-1.5">
                   <TrendingUp className="w-3.5 h-3.5 text-gold" />
-                  <span>Daily Breakdown ({fromDate})</span>
+                  <span>Daily Breakdown ({fromDate === toDate ? formatDateDisplay(fromDate) : `${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}`})</span>
                 </h3>
                 <span className="text-[11px] text-gold font-mono font-bold">
                   {selectedUser ? selectedUser.name : 'All Users'}
@@ -821,10 +982,7 @@ export const AdminReportsView: React.FC = () => {
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {gameSlotsList.map((slot) => {
-                  const slotTkts = userFilteredTickets.filter((t) => {
-                    const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
-                    return t.gameSlot === slot && tDate === fromDate;
-                  });
+                  const slotTkts = userFilteredTickets.filter((t) => t.gameSlot === slot);
 
                   const gross = slotTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
                   const billsCount = slotTkts.length;
@@ -1001,6 +1159,113 @@ export const AdminReportsView: React.FC = () => {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= DEDICATED USER WISE PERFORMANCE FULL-SCREEN PAGE ================= */}
+      {selectedPerformanceUser && selectedUserPerf && (
+        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+          {/* Header Banner */}
+          <HeaderBanner
+            title="USER WISE PERFORMANCE"
+            showBack={true}
+            onBackClick={() => setSelectedPerformanceUser(null)}
+          />
+
+          <div className="max-w-xl mx-auto w-full px-4 sm:px-6 py-4 space-y-4">
+            {/* Performance Card exactly like the image */}
+            <div className="bg-neutral-950 border border-gold/40 rounded-xl overflow-hidden shadow-md">
+              <div className="p-3 border-b border-neutral-800 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-gold" />
+                <h3 className="font-black text-xs sm:text-sm text-white uppercase tracking-wider">
+                  User Performance
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse font-sans">
+                  <thead>
+                    <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-2.5 px-3">User / Agency</th>
+                      <th className="py-2.5 px-2 text-center">Bills</th>
+                      <th className="py-2.5 px-2 text-right">Sales</th>
+                      <th className="py-2.5 px-2 text-right">Price</th>
+                      <th className="py-2.5 px-2 text-right">COMM</th>
+                      <th className="py-2.5 px-2 text-right">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="bg-neutral-900/40">
+                      <td className="py-2.5 px-3">
+                        <div className="font-black text-white text-xs">{selectedPerformanceUser.name}</div>
+                      </td>
+                      <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">
+                        {selectedUserPerf.totalBills}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">
+                        {formatRupees(selectedUserPerf.totalGross)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                        {formatRupees(selectedUserPerf.totalPayouts)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">
+                        {formatRupees(selectedUserPerf.totalCommission)}
+                      </td>
+                      <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">
+                        {formatRupees(selectedUserPerf.net)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Slot-wise Breakdown Table Card */}
+            <div className="bg-neutral-950 border border-neutral-800 rounded-xl overflow-hidden shadow-md">
+              <div className="p-3 border-b border-neutral-800 flex items-center justify-between">
+                <h3 className="font-black text-xs sm:text-sm text-white uppercase tracking-wider">
+                  Slot Wise Performance
+                </h3>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse font-sans">
+                  <thead>
+                    <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
+                      <th className="py-2.5 px-3">Slot</th>
+                      <th className="py-2.5 px-2 text-center">Bills</th>
+                      <th className="py-2.5 px-2 text-right">Sales</th>
+                      <th className="py-2.5 px-2 text-right">Price</th>
+                      <th className="py-2.5 px-2 text-right">COMM</th>
+                      <th className="py-2.5 px-2 text-right">Net</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-900">
+                    {selectedUserPerf.slotBreakdown.map((s) => (
+                      <tr key={s.slot} className="hover:bg-neutral-900/50 transition-colors">
+                        <td className="py-2.5 px-3 font-bold text-white text-xs">{s.slot}</td>
+                        <td className="py-2.5 px-2 text-center font-mono font-bold text-neutral-300">{s.bills}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">{formatRupees(s.gross)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">{formatRupees(s.payouts)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">{formatRupees(s.commission)}</td>
+                        <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">{formatRupees(s.net)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="bg-neutral-900/90 border-t border-neutral-800 font-bold">
+                      <td className="py-2.5 px-3 text-gold uppercase text-[10px] tracking-wider">Total</td>
+                      <td className="py-2.5 px-2 text-center font-mono font-bold text-white">{selectedUserPerf.totalBills}</td>
+                      <td className="py-2.5 px-2 text-right font-mono font-black text-white whitespace-nowrap">{formatRupees(selectedUserPerf.totalGross)}</td>
+                      <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">{formatRupees(selectedUserPerf.totalPayouts)}</td>
+                      <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-400 whitespace-nowrap">{formatRupees(selectedUserPerf.totalCommission)}</td>
+                      <td className="py-2.5 px-2 text-right font-mono font-black text-gold whitespace-nowrap">{formatRupees(selectedUserPerf.net)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
             </div>
           </div>
         </div>
