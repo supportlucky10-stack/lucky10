@@ -12,59 +12,18 @@ import {
 
 
 
-const format24HourTime = (timeStr?: string): string => {
-  if (!timeStr) return '';
-  const cleanTime = timeStr.trim().split('.')[0]; // remove milliseconds
-  const parts = cleanTime.split(':');
-  if (parts.length >= 2) {
-    const h = String(parseInt(parts[0], 10) || 0).padStart(2, '0');
-    const m = String(parseInt(parts[1], 10) || 0).padStart(2, '0');
-    const s = parts[2] ? String(parseInt(parts[2], 10) || 0).padStart(2, '0') : '';
-    return s ? `${h}:${m}:${s}` : `${h}:${m}`;
-  }
-  return cleanTime;
-};
-
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
-  const trimmed = str.trim();
-  
-  if (trimmed.includes('T')) {
-    const [datePart, timePart] = trimmed.split('T');
-    const [y, m, d] = datePart.split('-');
-    const cleanTime = timePart ? timePart.split('.')[0] : '';
-    const yy = y ? y.slice(-2) : '';
-    const formattedTime = format24HourTime(cleanTime);
-    return `${d}/${m}/${yy} ${formattedTime}`.trim();
-  }
-
-  if (trimmed.includes('-')) {
-    const spaceParts = trimmed.split(' ');
-    const datePart = spaceParts[0];
-    const timePart = spaceParts.slice(1).join(' ');
-    const parts = datePart.split('-');
-    if (parts.length === 3) {
-      const formattedTime = format24HourTime(timePart);
-      if (parts[0].length === 4) {
-        // YYYY-MM-DD -> DD/MM/YY
-        return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)} ${formattedTime}`.trim();
-      }
-      if (parts[2].length === 4) {
-        // DD-MM-YYYY -> DD/MM/YY
-        return `${parts[0]}/${parts[1]}/${parts[2].slice(-2)} ${formattedTime}`.trim();
-      }
-    }
-  }
-
-  if (trimmed.includes('/')) {
-    const spaceParts = trimmed.split(' ');
-    const datePart = spaceParts[0];
-    const timePart = spaceParts.slice(1).join(' ');
-    const formattedTime = format24HourTime(timePart);
-    return `${datePart} ${formattedTime}`.trim();
-  }
-
-  return trimmed.replace('T', ' ');
+  // Use Date constructor so the browser automatically converts UTC -> local time
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss}`;
 };
 
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';

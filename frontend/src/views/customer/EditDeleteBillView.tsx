@@ -3,6 +3,19 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Search, Trash2 } from 'lucide-react';
 
+const formatPlacedAtDate = (str?: string): string => {
+  if (!str) return '';
+  const d = new Date(str);
+  if (isNaN(d.getTime())) return str;
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yy = String(d.getFullYear()).slice(-2);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${dd}/${mm}/${yy} ${hh}:${min}:${ss}`;
+};
+
 export const EditDeleteBillView: React.FC = () => {
   const { userTickets, placedTickets } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
@@ -105,7 +118,7 @@ export const EditDeleteBillView: React.FC = () => {
 
                   <div className="text-right">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
-                    <span className="text-white font-extrabold text-xs">{searchedBill.placedAt}</span>
+                    <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(searchedBill.placedAt)}</span>
                   </div>
                 </div>
 
