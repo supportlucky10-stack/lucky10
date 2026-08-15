@@ -1,5 +1,5 @@
 import { apiRequest } from './api';
-import type { UserAccount, GameResult, PayoutLog, GameSlot } from '../types';
+import type { UserAccount, GameResult, PayoutLog, GameSlot, PlacedTicket } from '../types';
 
 export const adminService = {
   async getAllUsers(): Promise<UserAccount[]> {
@@ -76,5 +76,9 @@ export const adminService = {
 
   async getReports() {
     return await apiRequest<any>('/api/admin/reports', { method: 'GET' });
+  },
+
+  async getAllTickets(): Promise<PlacedTicket[]> {
+    return await apiRequest<PlacedTicket[]>('/api/admin/tickets', { method: 'GET' });
   },
 };

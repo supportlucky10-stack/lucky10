@@ -244,6 +244,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (users) setRegisteredUsers(users);
         }).catch(() => {});
 
+        adminService.getAllTickets().then((tkts) => {
+          if (tkts) setPlacedTickets(tkts);
+        }).catch(() => {});
+
         adminService.getPayoutLogs().then((logs) => {
           if (logs) setPayoutLogs(logs);
         }).catch(() => {});

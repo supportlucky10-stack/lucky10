@@ -300,6 +300,37 @@ def update_issue_status(issue_id: str, admin_payload: dict = Depends(get_current
         "status": issue.status,
     }
 
+@router.get("/tickets")
+def get_all_admin_tickets(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    tickets = db.query(Ticket).order_by(Ticket.placed_at.desc()).all()
+    out = []
+    for t in tickets:
+        user_name = t.user.name if t.user else ""
+        agency_name = t.user.username if t.user else ""
+        out.append({
+            "id": t.id,
+            "ticketId": t.id,
+            "userId": t.user_id,
+            "userName": user_name,
+            "agencyName": agency_name,
+            "customerName": t.customer_name or "",
+            "gameSlot": t.game_slot,
+            "items": [
+                {
+                    "number": item.number,
+                    "count": item.count,
+                    "amount": item.amount,
+                    "type": item.type,
+                }
+                for item in t.items
+            ],
+            "totalAmount": t.total_amount,
+            "actionType": t.action_type,
+            "placedAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+            "createdAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+        })
+    return out
+
 @router.get("/reports")
 def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     tickets = db.query(Ticket).all()
@@ -320,3 +351,4 @@ def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = 
         "todayNet": today_net,
         "todayBetsCount": len(today_tickets),
     }
+

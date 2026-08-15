@@ -50,20 +50,26 @@ export interface BetSlipItem {
   id: string;
   number: string;
   count: number;
-  type: 'Direct' | 'Shuffle' | 'Pair';
-  unitPrice: number; // e.g. 10 per count
+  type: string;
+  unitPrice: number;
   totalAmount: number;
+  amount?: number;
 }
 
 export interface PlacedTicket {
   id: string;
+  ticketId?: string;
   userId: string;
+  userName?: string;
+  agencyName?: string;
   customerName?: string;
   gameSlot: GameSlot;
   items: BetSlipItem[];
   totalAmount: number;
   placedAt: string;
-  status: 'PENDING' | 'WON' | 'LOST' | 'PAID';
+  createdAt?: string;
+  actionType?: string;
+  status?: 'PENDING' | 'WON' | 'LOST' | 'PAID';
   winAmount?: number;
 }
 
