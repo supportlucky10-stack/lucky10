@@ -228,42 +228,6 @@ export const AdminReportsView: React.FC = () => {
     });
   }, [selectedReportUser, placedTickets, fromDate, toDate, todayStr]);
 
-  const selectedUserTotalGross = useMemo(() => {
-    return selectedUserTickets.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-  }, [selectedUserTickets]);
-
-  const selectedUserTotalPayouts = useMemo(() => {
-    if (!selectedReportUser) return 0;
-    return payoutLogs
-      .filter((p) => {
-        const matchesUser = p.userId === selectedReportUser.id || p.userName === selectedReportUser.name;
-        if (!matchesUser) return false;
-        const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
-        if (fromDate && pDate < fromDate) return false;
-        if (toDate && pDate > toDate) return false;
-        return true;
-      })
-      .reduce((sum, p) => sum + (p.amount || 0), 0);
-  }, [selectedReportUser, payoutLogs, fromDate, toDate, todayStr]);
-
-  const selectedUserCommission = useMemo(() => {
-    if (!selectedReportUser) return 0;
-    let commissionPercent = 0;
-    const userMode = selectedReportUser.mode || '';
-    if (userMode.includes('30%')) {
-      commissionPercent = 0.30;
-    } else if (userMode.includes('With Commission') || userMode.includes('20%')) {
-      commissionPercent = 0.20;
-    } else if (userMode === 'Without Commission') {
-      commissionPercent = 0;
-    } else if (userMode) {
-      commissionPercent = 0.20;
-    }
-    return Math.round(selectedUserTotalGross * commissionPercent);
-  }, [selectedReportUser, selectedUserTotalGross]);
-
-  const selectedUserNet = selectedUserTotalGross - selectedUserTotalPayouts - selectedUserCommission;
-
   // Filtered by internal search within user's report
   const filteredUserTickets = useMemo(() => {
     if (!reportFilterSearch.trim()) return selectedUserTickets;
@@ -1001,40 +965,6 @@ export const AdminReportsView: React.FC = () => {
           />
 
           <div className="max-w-xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
-            {/* Gold Sub-header Metric Banner */}
-            <div className="bg-gold-metallic p-4 rounded-2xl text-black shadow-xl border-2 border-gold-dark space-y-2.5 font-mono">
-              <div className="flex items-center justify-between font-black text-base sm:text-lg uppercase tracking-wider">
-                <span className="truncate">{selectedReportUser.name}</span>
-              </div>
-              <div className="text-xs font-bold text-neutral-900 font-mono">
-                DATE: {fromDate === toDate ? formatDateDisplay(fromDate) : `${formatDateDisplay(fromDate)} to ${formatDateDisplay(toDate)}`}
-              </div>
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-black/30 text-xs sm:text-sm font-black text-center">
-                <div className="bg-black/10 p-2 rounded-lg">
-                  <span className="text-[10px] text-neutral-800 uppercase block font-bold">Total Bills</span>
-                  <span>{selectedUserTickets.length}</span>
-                </div>
-                <div className="bg-black/10 p-2 rounded-lg">
-                  <span className="text-[10px] text-neutral-800 uppercase block font-bold">Gross Sales</span>
-                  <span>{formatRupees(selectedUserTotalGross)}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 pt-1 text-xs sm:text-sm font-black text-center">
-                <div className="bg-black/10 p-2 rounded-lg">
-                  <span className="text-[10px] text-rose-950 uppercase block font-bold">Price (Payouts)</span>
-                  <span className="text-rose-950">{formatRupees(selectedUserTotalPayouts)}</span>
-                </div>
-                <div className="bg-black/10 p-2 rounded-lg">
-                  <span className="text-[10px] text-rose-950 uppercase block font-bold">COMM</span>
-                  <span className="text-rose-950">{formatRupees(selectedUserCommission)}</span>
-                </div>
-                <div className="bg-black/10 p-2 rounded-lg">
-                  <span className="text-[10px] text-emerald-950 uppercase block font-bold">Net Revenue</span>
-                  <span>{formatRupees(selectedUserNet)}</span>
-                </div>
-              </div>
-            </div>
-
             {/* Filter / Search within user report */}
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
