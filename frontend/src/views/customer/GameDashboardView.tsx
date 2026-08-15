@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 interface SlotTheme {
@@ -125,6 +125,7 @@ export const GameDashboardView: React.FC = () => {
   const [isReverse, setIsReverse] = useState(false); // Checkbox 'R' (Range Mode)
   const [isSet, setIsSet] = useState(false);
   const [savedBillId, setSavedBillId] = useState<string | null>(null);
+  const [copiedSavedBill, setCopiedSavedBill] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -756,8 +757,23 @@ export const GameDashboardView: React.FC = () => {
             </div>
             <div className="space-y-1 font-mono">
               <h4 className="font-black text-white text-base uppercase tracking-wide">Successfully Saved</h4>
-              <p className="text-sm text-gold font-bold">
-                BILL ID: <span className="text-white font-black">{savedBillId}</span>
+              <p className="text-sm text-gold font-bold flex items-center justify-center gap-2">
+                <span>BILL ID: <span className="text-white font-black">{savedBillId}</span></span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (savedBillId) {
+                      navigator.clipboard.writeText(savedBillId);
+                      setCopiedSavedBill(true);
+                      addToast(`Copied Bill ID #${savedBillId}`, 'success');
+                      setTimeout(() => setCopiedSavedBill(false), 2000);
+                    }
+                  }}
+                  className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700"
+                  title="Copy Bill ID"
+                >
+                  {copiedSavedBill ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
               </p>
             </div>
             <button

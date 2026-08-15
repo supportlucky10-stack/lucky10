@@ -8,6 +8,8 @@ import {
   Calendar,
   ChevronRight,
   Trash2,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 
@@ -30,6 +32,33 @@ const formatPlacedAtDate = (str?: string): string => {
   const min = String(d.getMinutes()).padStart(2, '0');
   const ss = String(d.getSeconds()).padStart(2, '0');
   return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
+};
+
+const getDisplayGame = (item: { number?: string; type?: string }): string => {
+  const num = item.number || '';
+  if (num.includes(':')) {
+    return num.split(':')[0].toUpperCase();
+  }
+  const typeStr = (item.type || '').toUpperCase();
+  if (typeStr === 'DIRECT' || typeStr === 'SUPER') return 'SUPER';
+  if (typeStr === 'SHUFFLE' || typeStr === 'BOX') return 'BOX';
+  if (['AB', 'BC', 'AC', 'A', 'B', 'C'].includes(typeStr)) return typeStr;
+  if (num.length === 1) return 'A';
+  if (num.length === 2) return 'AB';
+  return item.type || 'SUPER';
+};
+
+const getDisplayNumber = (item: { number?: string; type?: string }): string => {
+  const num = item.number || '';
+  if (num.includes(':')) {
+    return num.split(':')[1];
+  }
+  return num;
+};
+
+const formatCustomerName = (name?: string): string => {
+  if (!name || name.trim().toLowerCase() === 'customer') return '';
+  return name.trim();
 };
 
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
@@ -57,7 +86,17 @@ export const MyPlayReportView: React.FC = () => {
   const [deleteSingleTicketTarget, setDeleteSingleTicketTarget] = useState<any | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
+  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
   const detailLongPressTimerRef = React.useRef<any>(null);
+
+  const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    setCopiedBillId(id);
+    setTimeout(() => {
+      setCopiedBillId((prev) => (prev === id ? null : prev));
+    }, 2000);
+  };
 
   const startDetailLongPress = (tkt: any) => {
     detailLongPressTimerRef.current = setTimeout(() => {
@@ -1490,7 +1529,7 @@ export const MyPlayReportView: React.FC = () => {
                         </div>
 
                         <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
-                          <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{(tkt as any).customerName || 'Customer'}</strong></span>
+                          <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{formatCustomerName((tkt as any).customerName)}</strong></span>
                         </div>
                       </div>
                     );
@@ -1540,7 +1579,7 @@ export const MyPlayReportView: React.FC = () => {
                             <span>{formatPlacedAtDate((tkt as any).placedAt || (tkt as any).createdAt || (tkt as any).timestamp || (tkt as any).date)}</span>
                           </div>
                           <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
-                            <span>CUSTOMER: <strong className="text-neutral-200">{(tkt as any).customerName || 'Customer'}</strong></span>
+                            <span>CUSTOMER: <strong className="text-neutral-200">{formatCustomerName((tkt as any).customerName)}</strong></span>
                           </div>
                         </div>
 
@@ -1560,8 +1599,8 @@ export const MyPlayReportView: React.FC = () => {
                                 }`}
                               >
                                 <div className="flex items-center gap-7 font-mono">
-                                  <span className="font-black uppercase w-12 text-neutral-900">{item.type}</span>
-                                  <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{item.number}</span>
+                                  <span className="font-black uppercase w-12 text-neutral-900">{getDisplayGame(item)}</span>
+                                  <span className={`font-black tracking-wider w-10 ${isMatch ? 'text-amber-950 underline font-extrabold scale-105' : 'text-neutral-900'}`}>{getDisplayNumber(item)}</span>
                                   <span className="font-black text-neutral-800">{item.count}</span>
                                 </div>
                                 <span className="font-black text-neutral-900 font-mono">{item.totalAmount}</span>
@@ -1709,7 +1748,21 @@ export const MyPlayReportView: React.FC = () => {
               <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
-                  <span className="text-gold font-black text-base">#{selectedSingleTicket.id}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold font-black text-base">#{selectedSingleTicket.id}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyBillId(selectedSingleTicket.id, e)}
+                      className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                      title="Copy Bill ID"
+                    >
+                      {copiedBillId === selectedSingleTicket.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-right">
@@ -1721,7 +1774,7 @@ export const MyPlayReportView: React.FC = () => {
               {/* Customer & Slot Info Bar */}
               <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
                 <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{selectedSingleTicket.gameSlot}</strong></span>
-                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(selectedSingleTicket as any).customerName || 'Customer'}</strong></span>
+                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></span>
               </div>
 
               {/* Table Column Headers Bar */}
@@ -1744,8 +1797,8 @@ export const MyPlayReportView: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-10">
-                      <span className="w-16 uppercase text-gold font-black">{item.type}</span>
-                      <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
+                      <span className="w-16 uppercase text-gold font-black">{getDisplayGame(item)}</span>
+                      <span className="w-16 text-white font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
                       <span className="text-rose-400 font-black text-sm">{item.count}</span>
                     </div>
                     <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
@@ -1785,7 +1838,21 @@ export const MyPlayReportView: React.FC = () => {
               <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
-                  <span className="text-gold font-black text-base">#{deleteSingleTicketTarget.id}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gold font-black text-base">#{deleteSingleTicketTarget.id}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyBillId(deleteSingleTicketTarget.id, e)}
+                      className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                      title="Copy Bill ID"
+                    >
+                      {copiedBillId === deleteSingleTicketTarget.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="text-right">
@@ -1797,7 +1864,7 @@ export const MyPlayReportView: React.FC = () => {
               {/* Customer & Slot Info Bar */}
               <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
                 <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{deleteSingleTicketTarget.gameSlot}</strong></span>
-                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(deleteSingleTicketTarget as any).customerName || 'Customer'}</strong></span>
+                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((deleteSingleTicketTarget as any).customerName)}</strong></span>
               </div>
 
               {/* Table Column Headers Bar */}
@@ -1820,8 +1887,8 @@ export const MyPlayReportView: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-10">
-                      <span className="w-16 uppercase text-gold font-black">{item.type}</span>
-                      <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
+                      <span className="w-16 uppercase text-gold font-black">{getDisplayGame(item)}</span>
+                      <span className="w-16 text-white font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
                       <span className="text-rose-400 font-black text-sm">{item.count}</span>
                     </div>
                     <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>

@@ -6,6 +6,14 @@ export const customerService = {
     return await apiRequest<Record<GameSlot, GameResult>>('/api/customer/results/today', { method: 'GET' });
   },
 
+  async getResultsByDate(date?: string): Promise<Record<GameSlot, GameResult>> {
+    return await apiRequest<Record<GameSlot, GameResult>>(`/api/customer/results/by-date${date ? `?date=${date}` : ''}`, { method: 'GET' });
+  },
+
+  async getAllResults(): Promise<Record<string, GameResult>> {
+    return await apiRequest<Record<string, GameResult>>('/api/customer/results/all', { method: 'GET' });
+  },
+
   async getPreviousResults(): Promise<GameResult[]> {
     return await apiRequest<GameResult[]>('/api/customer/results/previous', { method: 'GET' });
   },

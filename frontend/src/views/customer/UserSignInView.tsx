@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export const UserSignInView: React.FC = () => {
   const { loginUser } = useApp();
-  const [username, setUsername] = useState('demo');
-  const [password, setPassword] = useState('demo123');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   // Lock iOS Safari rubber-band scrolling and set browser tab title
   useEffect(() => {
@@ -21,9 +24,17 @@ export const UserSignInView: React.FC = () => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    loginUser(username || 'demo', password || 'demo123');
+    setLoginError('');
+    if (!username.trim()) {
+      setLoginError('Please enter Agency Name / Username');
+      return;
+    }
+    const res = await loginUser(username.trim(), password.trim());
+    if (!res.success) {
+      setLoginError(res.error || 'Invalid Agency Name / Username or Password.');
+    }
   };
 
   return (
@@ -47,22 +58,47 @@ export const UserSignInView: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Username"
+              placeholder="Agency Name / Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (loginError) setLoginError('');
+              }}
               className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
             />
           </div>
 
           <div className="relative">
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
+              onChange={(e) => {
+                setPassword(e.target.value);
+                if (loginError) setLoginError('');
+              }}
+              className="w-full bg-transparent border-b border-neutral-400 focus:border-[#0c3827] py-2.5 pr-10 text-neutral-900 placeholder-neutral-500 font-medium text-sm sm:text-base focus:outline-none transition-colors"
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-900 p-1 cursor-pointer"
+              title={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4 text-neutral-600" />
+              ) : (
+                <Eye className="w-4 h-4 text-neutral-600" />
+              )}
+            </button>
           </div>
+
+          {loginError && (
+            <div className="p-2.5 bg-rose-100 border border-rose-300 text-rose-800 rounded-xl text-xs sm:text-sm font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{loginError}</span>
+            </div>
+          )}
 
           <div className="pt-2 space-y-3">
             <button
@@ -79,7 +115,13 @@ export const UserSignInView: React.FC = () => {
           <span>Forgot password?</span>
           <button 
             type="button"
-            onClick={() => loginUser('demo', 'demo123')}
+            onClick={async () => {
+              setLoginError('');
+              const res = await loginUser('demo', 'demo123');
+              if (!res.success) {
+                setLoginError(res.error || 'Demo account is unavailable.');
+              }
+            }}
             className="text-[#0c3827] font-bold hover:underline cursor-pointer"
           >
             Demo Sign In →

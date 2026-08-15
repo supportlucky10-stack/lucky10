@@ -31,6 +31,8 @@ export interface UserAccount {
   password?: string;
   role?: string;
   balance: number;
+  mode?: string;
+  isActive?: boolean;
   bankDetails?: BankDetails;
   createdAt: string;
 }

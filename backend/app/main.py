@@ -12,6 +12,20 @@ from app.routers import auth, customer, admin
 # ── DB Init & Seed at import time (works in serverless where lifespan may not fire) ──
 try:
     Base.metadata.create_all(bind=engine)
+    from sqlalchemy import text
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN mode VARCHAR DEFAULT 'With Commission'"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT 1"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE tickets ADD COLUMN customer_name VARCHAR DEFAULT 'Customer'"))
+        except Exception:
+            pass
     print("[Lucky10] DB tables ensured")
 except Exception as e:
     print(f"[Lucky10] DB init warning: {e}")

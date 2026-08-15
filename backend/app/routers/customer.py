@@ -20,10 +20,13 @@ from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
 
 def format_ticket(ticket: Ticket) -> dict:
+    cust_name = getattr(ticket, "customer_name", "") or ""
+    if cust_name.lower() == "customer":
+        cust_name = ""
     return {
         "id": ticket.id,
         "userId": ticket.user_id,
-        "customerName": getattr(ticket, "customer_name", None) or "Customer",
+        "customerName": cust_name,
         "gameSlot": ticket.game_slot,
         "items": [
             {
@@ -73,6 +76,16 @@ def safe_format_dt(val, fmt="%Y-%m-%d") -> str:
             return str(val)
     return str(val)
 
+def check_user_active(user: Optional[User]) -> User:
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if hasattr(user, "is_active") and user.is_active is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is deactivated. Please contact administrator."
+        )
+    return user
+
 def format_user_account(user: User) -> dict:
     bank = None
     if user.bank_details:
@@ -91,22 +104,19 @@ def format_user_account(user: User) -> dict:
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
         "balance": float(user.balance) if user.balance is not None else 0.0,
+        "isActive": user.is_active if hasattr(user, 'is_active') and user.is_active is not None else True,
         "bankDetails": bank,
         "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),
     }
 
 @router.get("/profile")
 def get_customer_profile(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == payload["sub"]).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     return format_user_account(user)
 
 @router.get("/balance")
 def get_customer_balance(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == payload["sub"]).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Customer not found")
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     return {"balance": user.balance}
 
 @router.get("/results/today")
@@ -118,6 +128,24 @@ def get_today_results(db: Session = Depends(get_db)):
         out[r.game_slot] = format_result(r)
     return out
 
+@router.get("/results/by-date")
+def get_results_by_date(date: Optional[str] = None, db: Session = Depends(get_db)):
+    target_date = date.strip() if date and date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    results = db.query(GameResult).filter(GameResult.date == target_date).all()
+    out = {}
+    for r in results:
+        out[r.game_slot] = format_result(r)
+    return out
+
+@router.get("/results/all")
+def get_all_results(db: Session = Depends(get_db)):
+    results = db.query(GameResult).all()
+    out = {}
+    for r in results:
+        key = f"{r.date}_{r.game_slot}"
+        out[key] = format_result(r)
+    return out
+
 @router.get("/results/previous")
 def get_previous_results(db: Session = Depends(get_db)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -126,9 +154,7 @@ def get_previous_results(db: Session = Depends(get_db)):
 
 @router.post("/tickets")
 def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == payload["sub"]).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
 
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
@@ -146,10 +172,14 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     ticket_prefix = "PAY" if req.actionType == "PAY" else "TKT"
     ticket_id = f"{ticket_prefix}{int(datetime.now().timestamp() * 1000) % 900000 + 100000}"
 
+    c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
+    if c_name.lower() == "customer":
+        c_name = ""
+
     new_ticket = Ticket(
         id=ticket_id,
         user_id=user.id,
-        customer_name=req.customerName or "Customer",
+        customer_name=c_name,
         game_slot=req.gameSlot,
         total_amount=req.totalAmount,
         status="PENDING",
@@ -189,11 +219,13 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
 @router.get("/tickets")
 def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+    check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     tickets = db.query(Ticket).filter(Ticket.user_id == payload["sub"]).order_by(Ticket.placed_at.desc()).all()
     return [format_ticket(t) for t in tickets]
 
 @router.get("/bank-details")
 def get_bank_details(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+    check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     bank = db.query(BankDetails).filter(BankDetails.user_id == payload["sub"]).first()
     if not bank:
         return None
@@ -209,6 +241,7 @@ def get_bank_details(payload: dict = Depends(get_current_customer), db: Session 
 @router.put("/bank-details")
 def update_bank_details(req: BankDetailsSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
     user_id = payload["sub"]
+    check_user_active(db.query(User).filter(User.id == user_id).first())
     bank = db.query(BankDetails).filter(BankDetails.user_id == user_id).first()
 
     today_date = datetime.now(timezone.utc)
@@ -244,9 +277,7 @@ def update_bank_details(req: BankDetailsSchema, payload: dict = Depends(get_curr
 
 @router.post("/issues")
 def submit_issue(req: IssueCreateSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == payload["sub"]).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
 
     new_issue = IssueTicket(
         id=f"ISS_{int(datetime.now().timestamp() * 1000) % 900000 + 100000}",

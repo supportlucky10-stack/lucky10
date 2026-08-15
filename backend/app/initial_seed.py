@@ -29,21 +29,6 @@ def seed_db():
             db.add(admin_user)
             print("--> Seeded default Admin (admin / admin123)")
 
-        # 2. Seed Demo Customer
-        demo = db.query(User).filter(User.username == "demo").first()
-        if not demo:
-            demo_user = User(
-                id="user_demo_001",
-                name="Demo Player",
-                email="demo@lucky10.com",
-                username="demo",
-                password_hash=get_password_hash("demo123"),
-                role=UserRole.CUSTOMER,
-                balance=1000.0,
-            )
-            db.add(demo_user)
-            print("--> Seeded default Demo Player (demo / demo123)")
-
         # 2. Seed Games
         slots = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
         for slot in slots:

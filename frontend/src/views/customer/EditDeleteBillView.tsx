@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Search, Trash2 } from 'lucide-react';
+import { Search, Trash2, Copy, Check } from 'lucide-react';
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -23,13 +23,51 @@ const formatPlacedAtDate = (str?: string): string => {
   return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
 };
 
+const getDisplayGame = (item: { number?: string; type?: string }): string => {
+  const num = item.number || '';
+  if (num.includes(':')) {
+    return num.split(':')[0].toUpperCase();
+  }
+  const typeStr = (item.type || '').toUpperCase();
+  if (typeStr === 'DIRECT' || typeStr === 'SUPER') return 'SUPER';
+  if (typeStr === 'SHUFFLE' || typeStr === 'BOX') return 'BOX';
+  if (['AB', 'BC', 'AC', 'A', 'B', 'C'].includes(typeStr)) return typeStr;
+  if (num.length === 1) return 'A';
+  if (num.length === 2) return 'AB';
+  return item.type || 'SUPER';
+};
+
+const getDisplayNumber = (item: { number?: string; type?: string }): string => {
+  const num = item.number || '';
+  if (num.includes(':')) {
+    return num.split(':')[1];
+  }
+  return num;
+};
+
+const formatCustomerName = (name?: string): string => {
+  if (!name || name.trim().toLowerCase() === 'customer') return '';
+  return name.trim();
+};
+
 export const EditDeleteBillView: React.FC = () => {
-  const { userTickets, placedTickets } = useApp();
+  const { userTickets, placedTickets, addToast } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
   const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [deletedBillIds, setDeletedBillIds] = useState<string[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
+
+  const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    setCopiedBillId(id);
+    addToast(`Copied Bill ID #${id}`, 'success');
+    setTimeout(() => {
+      setCopiedBillId((prev) => (prev === id ? null : prev));
+    }, 2000);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +158,21 @@ export const EditDeleteBillView: React.FC = () => {
                 <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                   <div>
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
-                    <span className="text-gold font-black text-base">#{searchedBill.id}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gold font-black text-base">#{searchedBill.id}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyBillId(searchedBill.id, e)}
+                        className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                        title="Copy Bill ID"
+                      >
+                        {copiedBillId === searchedBill.id ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="text-right">
@@ -132,7 +184,7 @@ export const EditDeleteBillView: React.FC = () => {
                 {/* Customer & Slot Info Bar */}
                 <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
                   <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{searchedBill.gameSlot}</strong></span>
-                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{(searchedBill as any).customerName || 'Customer'}</strong></span>
+                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName)}</strong></span>
                 </div>
 
                 {/* Table Column Headers Bar */}
@@ -155,8 +207,8 @@ export const EditDeleteBillView: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center gap-10">
-                        <span className="w-16 uppercase text-gold font-black">{item.type}</span>
-                        <span className="w-16 text-white font-black tracking-wider text-sm">{item.number}</span>
+                        <span className="w-16 uppercase text-gold font-black">{getDisplayGame(item)}</span>
+                        <span className="w-16 text-white font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
                         <span className="text-rose-400 font-black text-sm">{item.count}</span>
                       </div>
                       <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>

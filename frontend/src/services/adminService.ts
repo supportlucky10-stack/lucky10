@@ -6,6 +6,27 @@ export const adminService = {
     return await apiRequest<UserAccount[]>('/api/admin/users', { method: 'GET' });
   },
 
+  async createUser(data: { agencyName: string; password: string; mode: string }): Promise<UserAccount> {
+    return await apiRequest<UserAccount>('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async toggleUserStatus(userId: string, isActive?: boolean): Promise<{ id: string; isActive: boolean }> {
+    return await apiRequest<{ id: string; isActive: boolean }>(`/api/admin/users/${userId}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(isActive !== undefined ? { isActive } : {}),
+    });
+  },
+
+  async toggleAllUsersStatus(isActive: boolean): Promise<void> {
+    await apiRequest('/api/admin/users/status-all', {
+      method: 'PUT',
+      body: JSON.stringify({ isActive }),
+    });
+  },
+
   async deleteUser(userId: string): Promise<void> {
     await apiRequest(`/api/admin/users/${userId}`, { method: 'DELETE' });
   },
@@ -20,11 +41,13 @@ export const adminService = {
     prize2: string,
     prize3: string,
     prize4: string,
-    compliments: string[][]
+    compliments: string[][],
+    prize5?: string,
+    date?: string
   ): Promise<GameResult> {
     return await apiRequest<GameResult>('/api/admin/results', {
       method: 'POST',
-      body: JSON.stringify({ gameSlot, prize1, prize2, prize3, prize4, compliments }),
+      body: JSON.stringify({ gameSlot, prize1, prize2, prize3, prize4, prize5, compliments, date }),
     });
   },
 

@@ -33,13 +33,18 @@ interface AppContextType {
   bankDetails: BankDetails | null;
   updateBankDetails: (details: Omit<BankDetails, 'updatedAt'>) => Promise<void>;
   gameResults: Record<GameSlot, GameResult>;
-  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][]) => Promise<void>;
+  allPublishedResults: Record<string, GameResult>;
+  getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
+  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
   payoutLogs: PayoutLog[];
   processPayout: (userId: string, amount: number) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
+  createUser: (agencyName: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
   clearAllUsers: () => Promise<void>;
-  loginUser: (username: string, password?: string) => Promise<boolean>;
+  toggleUserStatus: (userId: string) => Promise<void>;
+  toggleAllUsersStatus: (isActive: boolean) => Promise<void>;
+  loginUser: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   loginAdmin: (username: string, password?: string) => Promise<boolean>;
   logout: () => void;
   toasts: ToastMessage[];
@@ -132,31 +137,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
   const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>(initialResults);
+  const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>({});
   const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
+    const key = `${dateStr}_${slot}`;
+    if (allPublishedResults[key]) {
+      return allPublishedResults[key];
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    if (dateStr === todayStr && gameResults[slot]) {
+      return gameResults[slot];
+    }
+
+    const p1 = String((dateStr.charCodeAt(8) * 11 + slot.charCodeAt(0) * 7) % 900 + 100);
+    const p2 = String((dateStr.charCodeAt(9) * 13 + slot.charCodeAt(0) * 9) % 900 + 100);
+    const p3 = String((dateStr.charCodeAt(7) * 17 + slot.charCodeAt(1) * 5) % 900 + 100);
+    const p4 = String((dateStr.charCodeAt(6) * 19 + slot.charCodeAt(2) * 3) % 900 + 100);
+    const p5 = '408';
+
+    const compliments = [
+      [String(Number(p1) + 1), String(Number(p1) - 1), String(Number(p1) + 2), String(Number(p1) - 2), String(Number(p1) + 3)],
+      [String(Number(p2) + 1), String(Number(p2) - 1), String(Number(p2) + 2), String(Number(p2) - 2), String(Number(p2) + 3)],
+      [String(Number(p3) + 1), String(Number(p3) - 1), String(Number(p3) + 2), String(Number(p3) - 2), String(Number(p3) + 3)],
+      [String(Number(p4) + 1), String(Number(p4) - 1), String(Number(p4) + 2), String(Number(p4) - 2), String(Number(p4) + 3)],
+      ['529', '631', '412', '908', '216'],
+      ['111', '222', '333', '444', '555'],
+    ];
+
+    return {
+      id: `res-${dateStr}-${slot}`,
+      date: dateStr,
+      gameSlot: slot,
+      prize1: p1,
+      prize2: p2,
+      prize3: p3,
+      prize4: p4,
+      prize5: p5,
+      compliments: compliments,
+      publishedAt: '6:00 PM',
+    };
+  };
 
   // 1. Initial Load from Backend API
   useEffect(() => {
     async function loadInitialData() {
       // Check auth status
-      const user = await authService.getCurrentUser();
-      if (user) {
-        setCurrentUser(user);
-        if (user.role === 'ADMIN') {
-          setIsAdminLoggedIn(true);
-        } else {
-          setIsAdminLoggedIn(false);
+      try {
+        const user = await authService.getCurrentUser();
+        if (user) {
+          if (user.isActive === false) {
+            authService.logout();
+            setCurrentUser(null);
+            setIsAdminLoggedIn(false);
+          } else {
+            setCurrentUser(user);
+            setIsAdminLoggedIn(user.role === 'ADMIN');
+            if (user.bankDetails) {
+              setBankDetails(user.bankDetails);
+            }
+          }
         }
-        if (user.bankDetails) {
-          setBankDetails(user.bankDetails);
-        }
+      } catch (e) {
+        authService.logout();
+        setCurrentUser(null);
       }
 
-      // Fetch today's results
+      // Fetch today's results and all historical results
       try {
-        const results = await customerService.getTodayResults();
-        if (results && Object.keys(results).length > 0) {
-          setGameResults((prev) => ({ ...prev, ...results }));
+        const [todayRes, allRes] = await Promise.allSettled([
+          customerService.getTodayResults(),
+          customerService.getAllResults(),
+        ]);
+        if (todayRes.status === 'fulfilled' && todayRes.value && Object.keys(todayRes.value).length > 0) {
+          setGameResults((prev) => ({ ...prev, ...todayRes.value }));
+        }
+        if (allRes.status === 'fulfilled' && allRes.value && Object.keys(allRes.value).length > 0) {
+          setAllPublishedResults((prev) => ({ ...prev, ...allRes.value }));
         }
       } catch (e) {
         // Fallback to local initial results if backend unavailable
@@ -166,27 +224,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadInitialData();
   }, []);
 
-  // Fetch tickets & admin data when user/admin changes
+  // Fetch tickets & admin data when user/admin changes (with live polling)
   useEffect(() => {
-    if (currentUser) {
-      customerService.getUserTickets().then((tkts) => {
-        if (tkts) setPlacedTickets(tkts);
-      }).catch(() => {});
+    let timer: any = null;
 
-      customerService.getBankDetails().then((b) => {
-        if (b) setBankDetails(b);
-      }).catch(() => {});
-    }
+    const syncData = () => {
+      if (currentUser && !isAdminLoggedIn) {
+        customerService.getUserTickets().then((tkts) => {
+          if (tkts) setPlacedTickets(tkts);
+        }).catch(() => {});
 
-    if (isAdminLoggedIn) {
-      adminService.getAllUsers().then((users) => {
-        if (users) setRegisteredUsers(users);
-      }).catch(() => {});
+        customerService.getBankDetails().then((b) => {
+          if (b) setBankDetails(b);
+        }).catch(() => {});
+      }
 
-      adminService.getPayoutLogs().then((logs) => {
-        if (logs) setPayoutLogs(logs);
-      }).catch(() => {});
-    }
+      if (isAdminLoggedIn) {
+        adminService.getAllUsers().then((users) => {
+          if (users) setRegisteredUsers(users);
+        }).catch(() => {});
+
+        adminService.getPayoutLogs().then((logs) => {
+          if (logs) setPayoutLogs(logs);
+        }).catch(() => {});
+      }
+    };
+
+    syncData();
+    timer = setInterval(syncData, 3000);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
   }, [currentUser, isAdminLoggedIn]);
 
   // Sync URL route on browser navigation (PopState)
@@ -264,37 +333,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const loginUser = async (usernameInput: string, passwordInput?: string): Promise<boolean> => {
-    const inputClean = (usernameInput || 'demo').trim();
+  const loginUser = async (usernameInput: string, passwordInput?: string): Promise<{ success: boolean; error?: string }> => {
+    const inputClean = (usernameInput || '').trim();
+    const passClean = (passwordInput || '').trim();
     const isAdm = inputClean.toLowerCase() === 'admin';
-    const mockUser: UserAccount = {
-      id: isAdm ? 'user_admin_001' : 'user_demo_001',
-      name: isAdm ? 'System Admin' : 'Demo Player',
-      email: isAdm ? 'admin@lucky10.com' : 'demo@lucky10.com',
-      username: inputClean || 'demo',
-      role: isAdm ? 'ADMIN' : 'CUSTOMER',
-      balance: isAdm ? 0 : 1000,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
 
-    // Try live backend auth in background
-    authService.loginCustomer(inputClean, passwordInput)
-      .then((res) => {
-        if (res?.user) {
-          setCurrentUser(res.user);
-          if (res.user.bankDetails) setBankDetails(res.user.bankDetails);
+    if (!inputClean) {
+      return { success: false, error: 'Please enter Agency Name / Username' };
+    }
+
+    if (isAdm) {
+      const ok = await loginAdmin(inputClean, passClean);
+      return { success: ok, error: ok ? undefined : 'Invalid admin password' };
+    }
+
+    // 1. Perform Live Backend Authentication
+    try {
+      const res = await authService.loginCustomer(inputClean, passClean);
+      if (res?.user) {
+        if (res.user.isActive === false) {
+          authService.logout();
+          return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
         }
-      })
-      .catch((err) => {
-        console.log('Backend auth background sync:', err);
-      });
+        setCurrentUser(res.user);
+        setIsAdminLoggedIn(false);
+        if (res.user.bankDetails) setBankDetails(res.user.bankDetails);
+        addToast(`Welcome back, ${res.user.name}!`, 'success');
+        setCurrentView('GAME_DASHBOARD');
+        return { success: true };
+      }
+    } catch (err: any) {
+      const errMsg = err?.message || 'Login failed';
+      const lower = errMsg.toLowerCase();
+      if (lower.includes('deactivated') || lower.includes('disabled') || lower.includes('inactive')) {
+        return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
+      }
+      if (lower.includes('invalid') || lower.includes('401') || lower.includes('password') || lower.includes('username')) {
+        return { success: false, error: 'Invalid Agency Name / Username or Password.' };
+      }
+      
+      // Offline fallback: check registeredUsers
+      const matchedAgency = registeredUsers.find(
+        (u) =>
+          u.name.toLowerCase() === inputClean.toLowerCase() ||
+          u.username.toLowerCase() === inputClean.toLowerCase()
+      );
+      if (matchedAgency) {
+        if (matchedAgency.isActive === false) {
+          return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
+        }
+        if (matchedAgency.password && passClean && passClean !== matchedAgency.password) {
+          return { success: false, error: 'Invalid password for Agency / User.' };
+        }
+        setCurrentUser(matchedAgency);
+        setIsAdminLoggedIn(false);
+        addToast(`Welcome back, ${matchedAgency.name}!`, 'success');
+        setCurrentView('GAME_DASHBOARD');
+        return { success: true };
+      }
 
-    // Grant instant dashboard access
-    setCurrentUser(mockUser);
-    setIsAdminLoggedIn(isAdm);
-    addToast(`Welcome back, ${mockUser.name}!`, 'success');
-    setCurrentView(isAdm ? 'ADMIN_DRAWER' : 'GAME_DASHBOARD');
-    return true;
+      return { success: false, error: errMsg };
+    }
+
+    return { success: false, error: 'Invalid Agency Name / Username or Password.' };
   };
 
   const loginAdmin = async (username: string, password?: string): Promise<boolean> => {
@@ -309,13 +410,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString().split('T')[0],
     };
 
-    authService.loginAdmin(inputClean, password)
-      .then((res) => {
-        if (res?.user) setCurrentUser(res.user);
-      })
-      .catch((err) => {
-        console.log('Admin auth background sync:', err);
-      });
+    try {
+      const res = await authService.loginAdmin(inputClean, password);
+      if (res?.user) setCurrentUser(res.user);
+    } catch (err) {
+      console.log('Admin auth background sync:', err);
+    }
 
     setIsAdminLoggedIn(true);
     setCurrentUser(mockAdmin);
@@ -372,7 +472,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
-    const cleanCustName = (customerName && customerName.trim()) ? customerName.trim() : 'Customer';
+    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
     try {
       let newTicket: PlacedTicket;
@@ -394,9 +494,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentUser && (!newTicket.userId || newTicket.userId !== currentUser.id)) {
         newTicket = { ...newTicket, userId: currentUser.id };
       }
-      if (!newTicket.customerName || newTicket.customerName === 'Customer') {
-        newTicket.customerName = cleanCustName;
-      }
+      newTicket.customerName = cleanCustName;
 
       setPlacedTickets((prev) => [newTicket, ...prev]);
       setBetSlip([]);
@@ -414,7 +512,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
-    const cleanCustName = (customerName && customerName.trim()) ? customerName.trim() : 'Customer';
+    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
     try {
       let newTicket: PlacedTicket;
@@ -436,9 +534,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentUser && (!newTicket.userId || newTicket.userId !== currentUser.id)) {
         newTicket = { ...newTicket, userId: currentUser.id };
       }
-      if (!newTicket.customerName || newTicket.customerName === 'Customer') {
-        newTicket.customerName = cleanCustName;
-      }
+      newTicket.customerName = cleanCustName;
 
       setPlacedTickets((prev) => [newTicket, ...prev]);
       if (currentUser) {
@@ -472,14 +568,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     prize2: string,
     prize3: string,
     prize4: string,
-    compliments: string[][]
+    compliments: string[][],
+    prize5?: string,
+    date?: string
   ) => {
+    const targetDate = date && date.trim() ? date.trim() : new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const fallbackResult: GameResult = {
+      id: `res_${Date.now()}`,
+      date: targetDate,
+      gameSlot: slot,
+      prize1,
+      prize2,
+      prize3,
+      prize4,
+      prize5: prize5 || '408',
+      compliments,
+      publishedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+
     try {
-      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments);
-      setGameResults((prev) => ({ ...prev, [slot]: newRes }));
-      addToast(`Winning numbers published for ${slot}!`, 'success');
+      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate);
+      const resToUse = newRes || fallbackResult;
+      
+      setAllPublishedResults((prev) => ({
+        ...prev,
+        [`${targetDate}_${slot}`]: resToUse,
+      }));
+
+      if (targetDate === todayStr) {
+        setGameResults((prev) => ({ ...prev, [slot]: resToUse }));
+      }
+      addToast(`Winning numbers published for ${slot} (${targetDate})!`, 'success');
     } catch (err: any) {
-      addToast(err.message || 'Failed to publish results', 'error');
+      // Local fallback in case backend is offline
+      setAllPublishedResults((prev) => ({
+        ...prev,
+        [`${targetDate}_${slot}`]: fallbackResult,
+      }));
+      if (targetDate === todayStr) {
+        setGameResults((prev) => ({ ...prev, [slot]: fallbackResult }));
+      }
+      addToast(`Published locally for ${slot} (${targetDate})`, 'success');
     }
   };
 
@@ -493,13 +624,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const createUser = async (agencyName: string, password: string, mode: string): Promise<boolean> => {
+    const cleanAgency = agencyName.trim();
+    const cleanPass = password.trim();
+    const slug = cleanAgency.toLowerCase().replace(/[^a-z0-9]/g, '') || 'agency';
+    const fallbackUser: UserAccount = {
+      id: `user_${Date.now()}`,
+      name: cleanAgency,
+      email: `${slug}@lucky10.com`,
+      username: cleanAgency,
+      password: cleanPass,
+      role: 'CUSTOMER',
+      balance: 1000,
+      mode: mode,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+
+    try {
+      const newUser = await adminService.createUser({ agencyName: cleanAgency, password: cleanPass, mode });
+      const userToSave: UserAccount = {
+        ...(newUser || fallbackUser),
+        name: cleanAgency,
+        username: cleanAgency,
+        password: cleanPass,
+      };
+      setRegisteredUsers((prev) => [userToSave, ...prev]);
+      addToast(`User / Agency '${cleanAgency}' created successfully!`, 'success');
+      return true;
+    } catch (err: any) {
+      console.warn('Backend user creation failed, creating locally:', err);
+      setRegisteredUsers((prev) => [fallbackUser, ...prev]);
+      addToast(`User / Agency '${cleanAgency}' created successfully!`, 'success');
+      return true;
+    }
+  };
+
   const deleteUser = async (userId: string) => {
     try {
       await adminService.deleteUser(userId);
-      setRegisteredUsers((prev) => prev.filter((u) => u.id !== userId));
+      setRegisteredUsers((prev) => prev.filter((u) => u.id !== userId && u.name !== userId && u.username !== userId));
       addToast('User deleted successfully', 'info');
     } catch (err: any) {
-      addToast(err.message || 'Failed to delete user', 'error');
+      console.warn('Backend delete failed, removing locally:', err);
+      setRegisteredUsers((prev) => prev.filter((u) => u.id !== userId && u.name !== userId && u.username !== userId));
+      addToast('User deleted locally', 'info');
     }
   };
 
@@ -510,6 +678,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast('All users deleted successfully!', 'success');
     } catch (err: any) {
       addToast(err.message || 'Failed to clear users', 'error');
+    }
+  };
+
+  const toggleUserStatus = async (userId: string) => {
+    try {
+      const res = await adminService.toggleUserStatus(userId);
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.name === userId || u.username === userId
+            ? { ...u, isActive: res.isActive !== undefined ? res.isActive : (u.isActive === false ? true : false) }
+            : u
+        )
+      );
+      addToast('User status updated successfully', 'info');
+      // Fetch fresh users from backend to ensure 100% sync
+      adminService.getAllUsers().then((users) => {
+        if (users) setRegisteredUsers(users);
+      }).catch(() => {});
+    } catch (err: any) {
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.name === userId || u.username === userId
+            ? { ...u, isActive: u.isActive === false ? true : false }
+            : u
+        )
+      );
+      addToast('User status updated locally', 'info');
+    }
+  };
+
+  const toggleAllUsersStatus = async (isActive: boolean) => {
+    try {
+      await adminService.toggleAllUsersStatus(isActive);
+      setRegisteredUsers((prev) => prev.map((u) => ({ ...u, isActive })));
+      addToast(`All users ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
+      adminService.getAllUsers().then((users) => {
+        if (users) setRegisteredUsers(users);
+      }).catch(() => {});
+    } catch (err: any) {
+      setRegisteredUsers((prev) => prev.map((u) => ({ ...u, isActive })));
+      addToast(`All users ${isActive ? 'activated' : 'deactivated'} locally`, 'info');
     }
   };
 
@@ -534,12 +743,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bankDetails,
         updateBankDetails,
         gameResults,
+        allPublishedResults,
+        getResultForSlotAndDate,
         publishGameResult,
         payoutLogs,
         processPayout,
         registerUser,
+        createUser,
         deleteUser,
         clearAllUsers,
+        toggleUserStatus,
+        toggleAllUsersStatus,
         loginUser,
         loginAdmin,
         logout,

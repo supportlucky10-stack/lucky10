@@ -5,7 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import get_current_admin
+from app.core.security import get_current_admin, get_password_hash
 from app.models.user import User, UserRole
 from app.models.bank_details import BankDetails
 from app.models.game_result import GameResult
@@ -15,6 +15,7 @@ from app.models.issue import IssueTicket
 from app.models.transaction import TransactionLog
 from app.schemas.result import GameResultPublishSchema
 from app.schemas.payout import PayoutRequestCreate
+from app.schemas.user import UserCreateSchema
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
@@ -38,34 +39,117 @@ def get_all_users(admin_payload: dict = Depends(get_current_admin), db: Session 
             "name": u.name,
             "email": u.email,
             "username": u.username,
+            "mode": getattr(u, "mode", None) or "With Commission",
             "balance": u.balance,
+            "isActive": u.is_active if hasattr(u, 'is_active') and u.is_active is not None else True,
             "bankDetails": bank,
             "createdAt": u.created_at.strftime("%Y-%m-%d") if u.created_at else "",
         })
     return result
 
+@router.post("/users")
+def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    if not req.agencyName or not req.agencyName.strip():
+        raise HTTPException(status_code=400, detail="Agency Name is required")
+    if not req.password or len(req.password.strip()) < 3:
+        raise HTTPException(status_code=400, detail="Password must be at least 3 characters long")
+
+    agency_name = req.agencyName.strip()
+    username = agency_name
+    slug = "".join(c for c in agency_name.lower() if c.isalnum() or c == "_") or "agency"
+    email = f"{slug}@lucky10.com"
+
+    existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
+    if existing:
+        rand_suf = f"{int(datetime.now().timestamp()) % 1000}"
+        username = f"{agency_name}_{rand_suf}"
+        email = f"{slug}_{rand_suf}@lucky10.com"
+
+    new_user = User(
+        id=f"user_{uuid.uuid4().hex[:12]}",
+        name=agency_name,
+        email=email,
+        username=username,
+        password_hash=get_password_hash(req.password.strip()),
+        role=UserRole.CUSTOMER,
+        balance=1000.0,
+        mode=req.mode or "With Commission",
+        is_active=True,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "id": new_user.id,
+        "name": new_user.name,
+        "email": new_user.email,
+        "username": new_user.username,
+        "mode": new_user.mode,
+        "balance": new_user.balance,
+        "isActive": new_user.is_active,
+        "bankDetails": None,
+        "createdAt": new_user.created_at.strftime("%Y-%m-%d"),
+    }
+
+@router.put("/users/status-all")
+@router.patch("/users/status-all")
+def set_all_users_status(status_payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    is_active = status_payload.get("isActive", True)
+    db.query(User).filter(User.role == UserRole.CUSTOMER).update({"is_active": is_active}, synchronize_session=False)
+    db.commit()
+    return {"message": f"All users status updated to {'Active' if is_active else 'Deactivated'}"}
+
+@router.put("/users/{user_id}/status")
+@router.patch("/users/{user_id}/status")
+def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if status_payload and "isActive" in status_payload and status_payload["isActive"] is not None:
+        user.is_active = bool(status_payload["isActive"])
+    else:
+        user.is_active = not user.is_active
+        
+    db.commit()
+    db.refresh(user)
+    return {"id": user.id, "isActive": user.is_active, "message": "User status updated successfully"}
+
 @router.delete("/users/{user_id}")
 def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
+        user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Clean up any related TransactionLog records
+    db.query(TransactionLog).filter((TransactionLog.user_id == user.id) | (TransactionLog.user_name == user.name)).delete(synchronize_session=False)
+    
     db.delete(user)
     db.commit()
     return {"message": "User deleted successfully"}
 
 @router.delete("/users")
 def clear_all_users(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    db.query(User).filter(User.role == UserRole.CUSTOMER).delete(synchronize_session=False)
+    users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
+    for u in users:
+        db.query(TransactionLog).filter((TransactionLog.user_id == u.id) | (TransactionLog.user_name == u.name)).delete(synchronize_session=False)
+        db.delete(u)
     db.commit()
     return {"message": "All users deleted successfully"}
 
 @router.post("/results")
 def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target_date = req.date.strip() if req.date and req.date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
     
-    # Check if result already exists for slot today
+    # Check if result already exists for slot on target date
     existing = db.query(GameResult).filter(
-        GameResult.date == today_str,
+        GameResult.date == target_date,
         GameResult.game_slot == req.gameSlot
     ).first()
 
@@ -83,7 +167,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
     else:
         target_res = GameResult(
             id=f"res_{int(datetime.now().timestamp() * 1000)}",
-            date=today_str,
+            date=target_date,
             game_slot=req.gameSlot,
             prize1=req.prize1,
             prize2=req.prize2,

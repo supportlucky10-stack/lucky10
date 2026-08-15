@@ -41,6 +41,7 @@ def format_user_response(user: User) -> dict:
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
         "balance": float(user.balance) if user.balance is not None else 0.0,
+        "isActive": user.is_active if hasattr(user, 'is_active') and user.is_active is not None else True,
         "bankDetails": bank,
         "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),
     }
@@ -83,11 +84,14 @@ def login_customer(req: LoginRequest, db: Session = Depends(get_db)):
     p_input = req.password.strip()
 
     user = db.query(User).filter(
-        (User.username == u_input) | (User.email == u_input) | (User.name == req.username.strip())
+        (User.username.ilike(req.username.strip())) | (User.name.ilike(req.username.strip())) | (User.email.ilike(u_input))
     ).first()
 
     if not user or not verify_password(p_input, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid username or password")
+
+    if hasattr(user, 'is_active') and user.is_active is False:
+        raise HTTPException(status_code=403, detail="Your account is deactivated. Please contact administrator.")
 
     user_dict = format_user_response(user)
     access_token = create_access_token(data={"sub": user.id, "role": user.role.value if hasattr(user.role, 'value') else str(user.role)})

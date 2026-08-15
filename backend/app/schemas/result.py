@@ -9,6 +9,7 @@ class GameResultPublishSchema(BaseModel):
     prize4: str
     prize5: Optional[str] = None
     compliments: List[List[str]] = []
+    date: Optional[str] = None
 
 class GameResultResponse(BaseModel):
     id: str

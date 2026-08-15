@@ -5,7 +5,7 @@ import { CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 export const TodaysResultView: React.FC = () => {
-  const { gameResults } = useApp();
+  const { getResultForSlotAndDate } = useApp();
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
   const [selectedDate, setSelectedDate] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -57,42 +57,9 @@ export const TodaysResultView: React.FC = () => {
     }
   };
 
-  const getResultForSlotAndDate = (slot: GameSlot, dateStr: string) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    if (dateStr === todayStr && gameResults[slot]) {
-      return gameResults[slot];
-    }
-
-    const p1 = String((dateStr.charCodeAt(8) * 11 + slot.charCodeAt(0) * 7) % 900 + 100);
-    const p2 = String((dateStr.charCodeAt(9) * 13 + slot.charCodeAt(0) * 9) % 900 + 100);
-    const p3 = String((dateStr.charCodeAt(7) * 17 + slot.charCodeAt(1) * 5) % 900 + 100);
-    const p4 = String((dateStr.charCodeAt(6) * 19 + slot.charCodeAt(2) * 3) % 900 + 100);
-
-    const compliments = [
-      [String(Number(p1) + 1), String(Number(p1) - 1), String(Number(p1) + 2), String(Number(p1) - 2), String(Number(p1) + 3)],
-      [String(Number(p2) + 1), String(Number(p2) - 1), String(Number(p2) + 2), String(Number(p2) - 2), String(Number(p2) + 3)],
-      [String(Number(p3) + 1), String(Number(p3) - 1), String(Number(p3) + 2), String(Number(p3) - 2), String(Number(p3) + 3)],
-      [String(Number(p4) + 1), String(Number(p4) - 1), String(Number(p4) + 2), String(Number(p4) - 2), String(Number(p4) + 3)],
-      ['529', '631', '412', '908', '216'],
-      ['111', '222', '333', '444', '555'],
-    ];
-
-    return {
-      id: `res-${dateStr}-${slot}`,
-      date: dateStr,
-      gameSlot: slot,
-      prize1: p1 || '389',
-      prize2: p2 || '145',
-      prize3: p3 || '720',
-      prize4: p4 || '963',
-      prize5: '521',
-      compliments: compliments,
-      publishedAt: '6:00 PM',
-    };
-  };
-
   const activeDate = selectedDate;
   const currentResult = getResultForSlotAndDate(activeGameSlot, activeDate);
+
   const currentTheme = slotThemeStyles[activeGameSlot];
 
   // Format active date as DD-MM-YYYY for clear display

@@ -18,6 +18,7 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     role = Column(SQLEnum(UserRole), default=UserRole.CUSTOMER, nullable=False)
     balance = Column(Float, default=1000.0, nullable=False)
+    mode = Column(String, default="With Commission", nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
