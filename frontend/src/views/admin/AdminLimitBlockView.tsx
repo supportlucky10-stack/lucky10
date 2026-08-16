@@ -22,13 +22,13 @@ export const AdminLimitBlockView: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'LIMIT_COUNT' | 'BLOCK_NUMBER' | 'LIMIT_ALL'>('LIMIT_COUNT');
 
-  // Option 1: Limit Count Form State
-  const [selectedAgencyId, setSelectedAgencyId] = useState<string>(registeredUsers[0]?.id || 'user_demo_001');
+  // Option 1: Limit Count Form State (Default: 'ALL' for All Agencies)
+  const [selectedAgencyId, setSelectedAgencyId] = useState<string>('ALL');
   const [limitSlot, setLimitSlot] = useState<GameSlot | 'ALL'>('ALL');
   const [limitNumber, setLimitNumber] = useState<string>('');
   const [limitMaxCount, setLimitMaxCount] = useState<string>('50');
 
-  // Option 2: Block Number Form State (No reason input needed)
+  // Option 2: Block Number Form State
   const [blockNumberInput, setBlockNumberInput] = useState<string>('');
   const [blockSlot, setBlockSlot] = useState<GameSlot | 'ALL'>('ALL');
 
@@ -175,30 +175,27 @@ export const AdminLimitBlockView: React.FC = () => {
         {activeTab === 'LIMIT_COUNT' && (
           <div className="space-y-4 animate-drop-in">
             {/* Limit Count Form Card */}
-            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-4">
-              <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
-                <ShieldAlert className="w-5 h-5 text-gold" />
-                <div>
-                  <h2 className="text-sm font-black text-white tracking-wide uppercase">Agency-Wise Number Limit</h2>
-                  <p className="text-[11px] text-neutral-400">Set max allowed bet count for a specific agency & number</p>
-                </div>
+            <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-neutral-800 pb-2.5">
+                <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5 text-gold" />
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase">SET COUNT LIMIT</h2>
               </div>
 
-              <form onSubmit={handleSaveAgencyLimit} className="space-y-3.5">
+              <form onSubmit={handleSaveAgencyLimit} className="space-y-3">
                 {/* Agency Selection */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                    Select Agency
+                    SELECT
                   </label>
                   <select
                     value={selectedAgencyId}
                     onChange={(e) => setSelectedAgencyId(e.target.value)}
-                    className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
+                    className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
                   >
-                    <option value="ALL">All Agencies (Universal)</option>
+                    <option value="ALL">All Agencies</option>
                     {registeredUsers.map((user) => (
                       <option key={user.id} value={user.id}>
-                        {user.name} ({user.username})
+                        {user.name}
                       </option>
                     ))}
                   </select>
@@ -207,12 +204,12 @@ export const AdminLimitBlockView: React.FC = () => {
                 {/* Game Slot Selector */}
                 <div className="space-y-1">
                   <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                    Game Slot
+                    GAME SLOT
                   </label>
                   <select
                     value={limitSlot}
                     onChange={(e) => setLimitSlot(e.target.value as any)}
-                    className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
+                    className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
                   >
                     <option value="ALL">All Slots</option>
                     <option value="1 PM Game">1 PM Game</option>
@@ -223,10 +220,10 @@ export const AdminLimitBlockView: React.FC = () => {
                 </div>
 
                 {/* Number & Max Count in Grid */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Game Number
+                      GAME NUMBER
                     </label>
                     <input
                       type="text"
@@ -234,13 +231,13 @@ export const AdminLimitBlockView: React.FC = () => {
                       placeholder="e.g. 742"
                       value={limitNumber}
                       onChange={(e) => setLimitNumber(e.target.value.replace(/[^0-9]/g, ''))}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-sm sm:text-base font-mono font-black text-gold focus:border-gold outline-none"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-gold focus:border-gold outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Limit Count
+                      LIMIT COUNT
                     </label>
                     <input
                       type="number"
@@ -248,18 +245,20 @@ export const AdminLimitBlockView: React.FC = () => {
                       placeholder="e.g. 50"
                       value={limitMaxCount}
                       onChange={(e) => setLimitMaxCount(e.target.value)}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-sm sm:text-base font-mono font-black text-white focus:border-gold outline-none"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-white focus:border-gold outline-none"
                     />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer mt-2"
-                >
-                  <PlusCircle className="w-4 h-4" />
-                  <span>SET AGENCY LIMIT</span>
-                </button>
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="submit"
+                    className="px-8 py-2 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    <span>SET LIMIT</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -284,19 +283,19 @@ export const AdminLimitBlockView: React.FC = () => {
                     return (
                       <div
                         key={rule.id}
-                        className="bg-neutral-950 border border-neutral-800 hover:border-gold/50 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
+                        className="bg-neutral-950 border border-neutral-800 hover:border-gold/50 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
                       >
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <span className="text-base sm:text-lg font-black text-gold bg-black px-2.5 py-0.5 rounded-lg border border-gold/40 shadow-inner">
+                            <span className="text-sm sm:text-base font-black text-gold bg-black px-2 py-0.5 rounded-lg border border-gold/40 shadow-inner">
                               #{rule.number}
                             </span>
                             <span className="text-xs font-black text-white uppercase truncate max-w-[150px]">
                               {rule.agencyName}
                             </span>
                           </div>
-                          <div className="flex items-center gap-2 text-[11px] text-neutral-400">
-                            <span className="bg-neutral-900 px-2 py-0.5 rounded border border-neutral-800 text-[10px]">
+                          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-neutral-400">
+                            <span className="bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800 text-[10px]">
                               {rule.gameSlot}
                             </span>
                             <span>Max: <strong className="text-white font-bold">{rule.maxCount}</strong></span>
@@ -309,10 +308,10 @@ export const AdminLimitBlockView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => removeAgencyLimit(rule.id)}
-                          className="p-2 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
+                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
                           title="Remove Limit"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     );
@@ -327,20 +326,17 @@ export const AdminLimitBlockView: React.FC = () => {
         {activeTab === 'BLOCK_NUMBER' && (
           <div className="space-y-4 animate-drop-in">
             {/* Block Number Form Card */}
-            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-4">
-              <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
-                <Ban className="w-5 h-5 text-rose-400" />
-                <div>
-                  <h2 className="text-sm font-black text-white tracking-wide uppercase">Block Game Number</h2>
-                  <p className="text-[11px] text-neutral-400">Blocked numbers cannot be played by any agency</p>
-                </div>
+            <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-3.5">
+              <div className="flex items-center gap-2 border-b border-neutral-800 pb-2.5">
+                <Ban className="w-4 h-4 sm:w-5 sm:h-5 text-rose-400" />
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase">BLOCK NUMBER</h2>
               </div>
 
-              <form onSubmit={handleSaveBlockNumber} className="space-y-3.5">
-                <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleSaveBlockNumber} className="space-y-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Game Number
+                      GAME NUMBER
                     </label>
                     <input
                       type="text"
@@ -348,18 +344,18 @@ export const AdminLimitBlockView: React.FC = () => {
                       placeholder="e.g. 742"
                       value={blockNumberInput}
                       onChange={(e) => setBlockNumberInput(e.target.value.replace(/[^0-9]/g, ''))}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-sm sm:text-base font-mono font-black text-rose-400 focus:border-rose-500 outline-none"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-rose-400 focus:border-rose-500 outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Game Slot
+                      GAME SLOT
                     </label>
                     <select
                       value={blockSlot}
                       onChange={(e) => setBlockSlot(e.target.value as any)}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-white focus:border-rose-500 outline-none cursor-pointer"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white focus:border-rose-500 outline-none cursor-pointer"
                     >
                       <option value="ALL">All Slots</option>
                       <option value="1 PM Game">1 PM Game</option>
@@ -370,13 +366,15 @@ export const AdminLimitBlockView: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-b from-rose-500 via-rose-600 to-rose-800 hover:brightness-110 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer mt-2"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>BLOCK THIS NUMBER</span>
-                </button>
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="submit"
+                    className="px-8 py-2 bg-gradient-to-b from-rose-500 via-rose-600 to-rose-800 hover:brightness-110 text-white font-black text-xs sm:text-sm rounded-xl shadow-md active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>BLOCK NUMBER</span>
+                  </button>
+                </div>
               </form>
             </div>
 
@@ -397,10 +395,10 @@ export const AdminLimitBlockView: React.FC = () => {
                   {blockedNumbers.map((blk) => (
                     <div
                       key={blk.id}
-                      className="bg-neutral-950 border border-rose-900/40 hover:border-rose-600/70 p-3.5 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
+                      className="bg-neutral-950 border border-rose-900/40 hover:border-rose-600/70 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-base sm:text-lg font-black text-rose-400 bg-black px-3 py-1 rounded-xl border border-rose-800/60 shadow-inner">
+                        <span className="text-sm sm:text-base font-black text-rose-400 bg-black px-2.5 py-1 rounded-xl border border-rose-800/60 shadow-inner">
                           #{blk.number}
                         </span>
                         <div className="flex flex-col">
@@ -412,7 +410,7 @@ export const AdminLimitBlockView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => removeBlockedNumber(blk.id)}
-                        className="px-3.5 py-2 text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-700 rounded-xl border border-rose-800/60 transition-all font-black text-xs cursor-pointer shrink-0 uppercase tracking-wide"
+                        className="px-3 py-1.5 text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-700 rounded-xl border border-rose-800/60 transition-all font-black text-xs cursor-pointer shrink-0 uppercase tracking-wide"
                       >
                         Unblock
                       </button>
@@ -428,18 +426,15 @@ export const AdminLimitBlockView: React.FC = () => {
         {activeTab === 'LIMIT_ALL' && (
           <div className="space-y-4 animate-drop-in">
             {/* Limit All Settings Card */}
-            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-4 font-sans">
-              <div className="flex items-center gap-2 border-b border-neutral-800 pb-3">
-                <Globe className="w-5 h-5 text-gold" />
-                <div>
-                  <h2 className="text-sm font-black text-white tracking-wide uppercase">Limit All Numbers</h2>
-                  <p className="text-[11px] text-neutral-400">Set universal count limit for all numbers across all agencies</p>
-                </div>
+            <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-3.5 font-sans">
+              <div className="flex items-center gap-2 border-b border-neutral-800 pb-2.5">
+                <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gold" />
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase">LIMIT ALL</h2>
               </div>
 
-              <form onSubmit={handleSaveGlobalLimit} className="space-y-4">
+              <form onSubmit={handleSaveGlobalLimit} className="space-y-3.5">
                 {/* Enable/Disable Toggle */}
-                <div className="bg-black border border-neutral-800 p-4 rounded-xl flex items-center justify-between">
+                <div className="bg-black border border-neutral-800 p-3.5 rounded-xl flex items-center justify-between">
                   <div className="space-y-0.5">
                     <span className="text-xs font-black text-white uppercase tracking-wider block">
                       Universal Cap Status
@@ -461,10 +456,10 @@ export const AdminLimitBlockView: React.FC = () => {
                 </div>
 
                 {/* Global Max Count & Slot */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Limit Count (Max Count)
+                      LIMIT COUNT
                     </label>
                     <input
                       type="number"
@@ -472,18 +467,18 @@ export const AdminLimitBlockView: React.FC = () => {
                       placeholder="e.g. 50"
                       value={globalMaxCount}
                       onChange={(e) => setGlobalMaxCount(e.target.value)}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-sm sm:text-base font-mono font-black text-gold focus:border-gold outline-none"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-gold focus:border-gold outline-none"
                     />
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">
-                      Applied Slot
+                      APPLIED SLOT
                     </label>
                     <select
                       value={globalSlot}
                       onChange={(e) => setGlobalSlot(e.target.value as any)}
-                      className="w-full bg-black border border-neutral-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
+                      className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-white focus:border-gold outline-none cursor-pointer"
                     >
                       <option value="ALL">All Slots</option>
                       <option value="1 PM Game">1 PM Game</option>
@@ -494,13 +489,15 @@ export const AdminLimitBlockView: React.FC = () => {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  <span>APPLY LIMIT ALL</span>
-                </button>
+                <div className="pt-2 flex justify-center">
+                  <button
+                    type="submit"
+                    className="px-8 py-2 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-[0.98] transition-all uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>APPLY LIMIT ALL</span>
+                  </button>
+                </div>
               </form>
             </div>
           </div>
