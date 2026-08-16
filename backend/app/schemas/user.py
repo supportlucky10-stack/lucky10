@@ -14,6 +14,7 @@ class BankDetailsSchema(BaseModel):
 
 class UserCreateSchema(BaseModel):
     agencyName: str
+    username: Optional[str] = None
     password: str
     mode: Optional[str] = "With Commission"
 

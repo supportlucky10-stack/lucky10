@@ -32,12 +32,12 @@ export const AdminUsersAndResultsView: React.FC = () => {
   // Create User Form State
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [agencyName, setAgencyName] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
-  const [mode, setMode] = useState<'With Commission' | 'Without Commission'>('With Commission');
   const [commissionRate, setCommissionRate] = useState<'20%' | '30%'>('20%');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -51,6 +51,10 @@ export const AdminUsersAndResultsView: React.FC = () => {
       setFormError('Please enter an Agency Name');
       return;
     }
+    if (!username.trim()) {
+      setFormError('Please enter a Username');
+      return;
+    }
     if (!password.trim()) {
       setFormError('Please enter Password');
       return;
@@ -60,19 +64,17 @@ export const AdminUsersAndResultsView: React.FC = () => {
       return;
     }
 
-    let finalMode: string = mode;
-    if (mode === 'With Commission') {
-      finalMode = `With Commission (${commissionRate})`;
-    }
+    const finalMode = `With Commission (${commissionRate})`;
 
     setIsSubmitting(true);
     try {
-      const ok = await createUser(agencyName.trim(), password.trim(), finalMode);
+      const ok = await createUser(agencyName.trim(), username.trim(), password.trim(), finalMode);
       if (ok) {
         setAgencyName('');
+        setUsername('');
         setPassword('');
         setConfirmPassword('');
-        setMode('With Commission');
+        setCommissionRate('20%');
         setShowCreateForm(false);
       }
     } finally {
@@ -389,35 +391,22 @@ export const AdminUsersAndResultsView: React.FC = () => {
                 />
               </div>
 
-              {/* Commission Rate (20% or 30%) */}
+              {/* Username */}
               <div>
                 <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                  Commission Rate :
+                  Username :
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCommissionRate('20%')}
-                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      commissionRate === '20%'
-                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
-                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    20% Commission
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCommissionRate('30%')}
-                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      commissionRate === '30%'
-                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
-                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
-                    }`}
-                  >
-                    30% Commission
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. winner123"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (formError) setFormError('');
+                  }}
+                  className="w-full bg-black border border-neutral-700 text-white px-3.5 py-2 rounded-xl focus:outline-none focus:border-gold font-sans text-xs"
+                />
               </div>
 
               {/* Password */}
@@ -503,6 +492,37 @@ export const AdminUsersAndResultsView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Commission Rate (20% or 30%) */}
+              <div>
+                <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
+                  Commission Rate :
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setCommissionRate('20%')}
+                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      commissionRate === '20%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    20% Commission
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCommissionRate('30%')}
+                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      commissionRate === '30%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    30% Commission
+                  </button>
+                </div>
+              </div>
+
               {formError && (
                 <p className="text-rose-400 text-xs font-sans flex items-center gap-1 pt-1">
                   <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
@@ -520,7 +540,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmitting || passwordsMismatch || !agencyName.trim() || !password.trim() || !confirmPassword.trim()}
+                  disabled={isSubmitting || passwordsMismatch || !agencyName.trim() || !username.trim() || !password.trim() || !confirmPassword.trim()}
                   className="w-1/2 py-2 bg-gold-metallic text-black font-extrabold text-xs rounded-xl shadow-md cursor-pointer disabled:opacity-50 transition-all hover:opacity-90"
                 >
                   {isSubmitting ? 'Creating...' : 'Submit & Create'}

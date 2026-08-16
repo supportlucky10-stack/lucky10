@@ -28,12 +28,12 @@ export const UserSignInView: React.FC = () => {
     e.preventDefault();
     setLoginError('');
     if (!username.trim()) {
-      setLoginError('Please enter Agency Name / Username');
+      setLoginError('Please enter Username');
       return;
     }
     const res = await loginUser(username.trim(), password.trim());
     if (!res.success) {
-      setLoginError(res.error || 'Invalid Agency Name / Username or Password.');
+      setLoginError(res.error || 'Invalid Username or Password.');
     }
   };
 
@@ -58,7 +58,7 @@ export const UserSignInView: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Agency Name / Username"
+              placeholder="Username"
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);

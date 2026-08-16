@@ -6,7 +6,7 @@ export const adminService = {
     return await apiRequest<UserAccount[]>('/api/admin/users', { method: 'GET' });
   },
 
-  async createUser(data: { agencyName: string; password: string; mode: string }): Promise<UserAccount> {
+  async createUser(data: { agencyName: string; username?: string; password: string; mode: string }): Promise<UserAccount> {
     return await apiRequest<UserAccount>('/api/admin/users', {
       method: 'POST',
       body: JSON.stringify(data),

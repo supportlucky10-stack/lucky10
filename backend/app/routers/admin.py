@@ -55,15 +55,13 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
         raise HTTPException(status_code=400, detail="Password must be at least 3 characters long")
 
     agency_name = req.agencyName.strip()
-    username = agency_name
-    slug = "".join(c for c in agency_name.lower() if c.isalnum() or c == "_") or "agency"
+    username = (req.username.strip() if req.username and req.username.strip() else agency_name)
+    slug = "".join(c for c in username.lower() if c.isalnum() or c == "_") or "agency"
     email = f"{slug}@lucky10.com"
 
-    existing = db.query(User).filter((User.username == username) | (User.email == email)).first()
+    existing = db.query(User).filter(User.username == username).first()
     if existing:
-        rand_suf = f"{int(datetime.now().timestamp()) % 1000}"
-        username = f"{agency_name}_{rand_suf}"
-        email = f"{slug}_{rand_suf}@lucky10.com"
+        raise HTTPException(status_code=400, detail=f"Username '{username}' already exists. Please choose a different username.")
 
     new_user = User(
         id=f"user_{uuid.uuid4().hex[:12]}",

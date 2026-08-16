@@ -42,7 +42,7 @@ interface AppContextType {
   payoutLogs: PayoutLog[];
   processPayout: (userId: string, amount: number) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
-  createUser: (agencyName: string, password: string, mode: string) => Promise<boolean>;
+  createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
   changeUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
   clearAllUsers: () => Promise<void>;
@@ -938,10 +938,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
       }
       
-      // Offline / Local fallback: check registeredUsers
+      // Offline / Local fallback: check registeredUsers by username
       const matchedAgency = registeredUsers.find(
         (u) =>
-          u.name.toLowerCase() === inputClean.toLowerCase() ||
           u.username.toLowerCase() === inputClean.toLowerCase()
       );
       if (matchedAgency) {
@@ -1358,15 +1357,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const createUser = async (agencyName: string, password: string, mode: string): Promise<boolean> => {
+  const createUser = async (agencyName: string, username: string, password: string, mode: string): Promise<boolean> => {
     const cleanAgency = agencyName.trim();
+    const cleanUsername = username.trim() || cleanAgency;
     const cleanPass = password.trim();
-    const slug = cleanAgency.toLowerCase().replace(/[^a-z0-9]/g, '') || 'agency';
+    const slug = cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '') || 'agency';
     const fallbackUser: UserAccount = {
       id: `user_${Date.now()}`,
       name: cleanAgency,
       email: `${slug}@lucky10.com`,
-      username: cleanAgency,
+      username: cleanUsername,
       password: cleanPass,
       role: 'CUSTOMER',
       balance: 1000,
@@ -1375,20 +1375,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     try {
-      const newUser = await adminService.createUser({ agencyName: cleanAgency, password: cleanPass, mode });
+      const newUser = await adminService.createUser({ agencyName: cleanAgency, username: cleanUsername, password: cleanPass, mode });
       const userToSave: UserAccount = {
         ...(newUser || fallbackUser),
         name: cleanAgency,
-        username: cleanAgency,
+        username: cleanUsername,
         password: cleanPass,
+        mode: mode,
       };
       setRegisteredUsers((prev) => [userToSave, ...prev]);
-      addToast(`User / Agency '${cleanAgency}' created successfully!`, 'success');
+      addToast(`Agency '${cleanAgency}' (User: ${cleanUsername}) created successfully!`, 'success');
       return true;
     } catch (err: any) {
       console.warn('Backend user creation failed, creating locally:', err);
       setRegisteredUsers((prev) => [fallbackUser, ...prev]);
-      addToast(`User / Agency '${cleanAgency}' created successfully!`, 'success');
+      addToast(`Agency '${cleanAgency}' (User: ${cleanUsername}) created successfully!`, 'success');
       return true;
     }
   };

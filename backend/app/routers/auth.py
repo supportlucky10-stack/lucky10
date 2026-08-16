@@ -84,7 +84,7 @@ def login_customer(req: LoginRequest, db: Session = Depends(get_db)):
     p_input = req.password.strip()
 
     user = db.query(User).filter(
-        (User.username.ilike(req.username.strip())) | (User.name.ilike(req.username.strip())) | (User.email.ilike(u_input))
+        (User.username.ilike(req.username.strip()))
     ).first()
 
     valid_password = False

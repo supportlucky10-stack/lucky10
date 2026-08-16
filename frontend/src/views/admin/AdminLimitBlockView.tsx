@@ -17,7 +17,6 @@ export const AdminLimitBlockView: React.FC = () => {
     removeBlockedNumber,
     updateGlobalLimit,
     addToast,
-    placedTickets,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'LIMIT_COUNT' | 'BLOCK_NUMBER' | 'LIMIT_ALL'>('LIMIT_COUNT');
@@ -33,7 +32,6 @@ export const AdminLimitBlockView: React.FC = () => {
   const [blockSlot, setBlockSlot] = useState<GameSlot | 'ALL'>('ALL');
 
   // Option 3: Limit All Form State
-  const [globalEnabled, setGlobalEnabled] = useState<boolean>(globalLimitRule.isEnabled);
   const [globalMaxCount, setGlobalMaxCount] = useState<string>(String(globalLimitRule.defaultMaxCount || 50));
   const [globalSlot, setGlobalSlot] = useState<GameSlot | 'ALL'>(globalLimitRule.gameSlot || 'ALL');
 
@@ -91,33 +89,10 @@ export const AdminLimitBlockView: React.FC = () => {
     }
 
     updateGlobalLimit({
-      isEnabled: globalEnabled,
+      isEnabled: true,
       defaultMaxCount: countNum,
       gameSlot: globalSlot,
     });
-  };
-
-  // Helper to calculate live placed count today for agency + number + slot
-  const getLivePlacedCount = (agencyId: string, number: string, slot: GameSlot | 'ALL') => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const matchingTickets = placedTickets.filter((t) => {
-      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
-      const matchDate = tDate === todayStr;
-      const matchSlot = slot === 'ALL' || t.gameSlot === slot;
-      const matchAgency = agencyId === 'ALL' || t.userId === agencyId;
-      return matchDate && matchSlot && matchAgency;
-    });
-
-    let sum = 0;
-    matchingTickets.forEach((t) => {
-      t.items.forEach((it) => {
-        const itNum = it.number.includes(':') ? it.number.split(':')[1] : it.number;
-        if (itNum.trim() === number.trim()) {
-          sum += it.count || 1;
-        }
-      });
-    });
-    return sum;
   };
 
   return (
@@ -276,46 +251,36 @@ export const AdminLimitBlockView: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {agencyNumberLimits.map((rule) => {
-                    const currentPlaced = getLivePlacedCount(rule.agencyId, rule.number, rule.gameSlot);
-                    const isLimitReached = currentPlaced >= rule.maxCount;
-
-                    return (
-                      <div
-                        key={rule.id}
-                        className="bg-neutral-950 border border-neutral-800 hover:border-gold/50 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm sm:text-base font-black text-gold bg-black px-2 py-0.5 rounded-lg border border-gold/40 shadow-inner">
-                              #{rule.number}
-                            </span>
-                            <span className="text-xs font-black text-white uppercase truncate max-w-[150px]">
-                              {rule.agencyName}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-neutral-400">
-                            <span className="bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800 text-[10px]">
-                              {rule.gameSlot}
-                            </span>
-                            <span>Max: <strong className="text-white font-bold">{rule.maxCount}</strong></span>
-                            <span className={isLimitReached ? 'text-rose-400 font-bold' : 'text-emerald-400 font-bold'}>
-                              (Used: {currentPlaced}/{rule.maxCount})
-                            </span>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => removeAgencyLimit(rule.id)}
-                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
-                          title="Remove Limit"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                  {agencyNumberLimits.map((rule) => (
+                    <div
+                      key={rule.id}
+                      className="bg-neutral-950 border border-neutral-800 hover:border-gold/50 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
+                    >
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className="text-sm sm:text-base font-black text-gold bg-black px-2.5 py-0.5 rounded-lg border border-gold/40 shadow-inner">
+                          #{rule.number}
+                        </span>
+                        <span className="text-xs font-black text-white uppercase truncate max-w-[150px]">
+                          {rule.agencyName}
+                        </span>
+                        <span className="bg-neutral-900 text-neutral-400 font-bold px-2 py-0.5 rounded border border-neutral-800 text-[10px]">
+                          {rule.gameSlot}
+                        </span>
+                        <span className="bg-gold/10 text-gold font-black px-2 py-0.5 rounded border border-gold/30 text-[11px]">
+                          Limit: {rule.maxCount}
+                        </span>
                       </div>
-                    );
-                  })}
+
+                      <button
+                        type="button"
+                        onClick={() => removeAgencyLimit(rule.id)}
+                        className="p-1.5 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
+                        title="Remove Limit"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -401,10 +366,7 @@ export const AdminLimitBlockView: React.FC = () => {
                         <span className="text-sm sm:text-base font-black text-rose-400 bg-black px-2.5 py-1 rounded-xl border border-rose-800/60 shadow-inner">
                           #{blk.number}
                         </span>
-                        <div className="flex flex-col">
-                          <span className="text-xs font-bold text-white uppercase">{blk.gameSlot}</span>
-                          <span className="text-[10px] text-neutral-400">{blk.createdAt}</span>
-                        </div>
+                        <span className="text-xs font-bold text-white uppercase">{blk.gameSlot}</span>
                       </div>
 
                       <button
@@ -429,32 +391,10 @@ export const AdminLimitBlockView: React.FC = () => {
             <div className="bg-neutral-950 border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-3.5 font-sans">
               <div className="flex items-center gap-2 border-b border-neutral-800 pb-2.5">
                 <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-gold" />
-                <h2 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase">LIMIT ALL</h2>
+                <h2 className="text-xs sm:text-sm font-black text-white tracking-wide uppercase">ALL NUMBERS COUNT LIMIT</h2>
               </div>
 
               <form onSubmit={handleSaveGlobalLimit} className="space-y-3.5">
-                {/* Enable/Disable Toggle */}
-                <div className="bg-black border border-neutral-800 p-3.5 rounded-xl flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <span className="text-xs font-black text-white uppercase tracking-wider block">
-                      Universal Cap Status
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      {globalEnabled ? 'Enforcing universal cap on all numbers' : 'Universal limit is disabled'}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setGlobalEnabled(!globalEnabled)}
-                    className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
-                      globalEnabled ? 'bg-gold justify-end' : 'bg-neutral-800 justify-start'
-                    }`}
-                  >
-                    <div className={`w-4 h-4 rounded-full shadow-md transition-all ${globalEnabled ? 'bg-black' : 'bg-neutral-500'}`} />
-                  </button>
-                </div>
-
                 {/* Global Max Count & Slot */}
                 <div className="grid grid-cols-2 gap-2.5">
                   <div className="space-y-1">
