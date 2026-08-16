@@ -129,11 +129,11 @@ export const MyPlayReportView: React.FC = () => {
   const [dailyToDate, setDailyToDate] = useState<string>(todayStr);
   const [dailySlotFilter, setDailySlotFilter] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
 
-  // Dates & Form State for Over Count Report (matching original Count Report view)
-  const [countTab, setCountTab] = useState<'TODAY' | 'PREVIOUS'>('TODAY');
+  // Dates & Form State for Over Count Report (Count Report)
   const [overCountDate, setOverCountDate] = useState<string>(todayStr);
   const [overCountToDate, setOverCountToDate] = useState<string>(todayStr);
   const [overCountSlot, setOverCountSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
+  const [showCountReportTable, setShowCountReportTable] = useState<boolean>(false);
 
   const salesFromRef = React.useRef<HTMLInputElement>(null);
   const salesToRef = React.useRef<HTMLInputElement>(null);
@@ -168,21 +168,25 @@ export const MyPlayReportView: React.FC = () => {
     setDailyToDate(currentToday);
     setOverCountDate(currentToday);
     setOverCountToDate(currentToday);
-    setCountTab('TODAY');
+    setShowCountReportTable(false);
   };
 
   const { countReportRows, countReportTotalCount, countReportTotalCash } = React.useMemo(() => {
-    const targetFrom = countTab === 'TODAY' ? todayStr : overCountDate;
-    const targetTo = countTab === 'TODAY' ? todayStr : overCountToDate;
+    const targetFrom = overCountDate;
+    const targetTo = overCountToDate;
+    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
 
-    const filtered = userTickets.filter((tkt) => {
+    const filtered = ticketSource.filter((tkt) => {
       if (overCountSlot !== 'ALL') {
         const slotPrefix = overCountSlot.split(' ')[0];
         if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(overCountSlot)) {
           return false;
         }
       }
-      const tktDate = tkt.placedAt?.split(' ')[0] || todayStr;
+      let tktDate = todayStr;
+      if (tkt.placedAt) {
+        tktDate = tkt.placedAt.includes('T') ? tkt.placedAt.split('T')[0] : tkt.placedAt.split(' ')[0];
+      }
       if (tktDate < targetFrom || tktDate > targetTo) {
         return false;
       }
@@ -247,7 +251,7 @@ export const MyPlayReportView: React.FC = () => {
     const totalCash = superCash + boxCash + pairCash + singleCash;
 
     return { countReportRows: rows, countReportTotalCount: totalCount, countReportTotalCash: totalCash };
-  }, [userTickets, overCountDate, overCountToDate, overCountSlot, todayStr, countTab]);
+  }, [userTickets, placedTickets, overCountDate, overCountToDate, overCountSlot, todayStr]);
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -799,7 +803,7 @@ export const MyPlayReportView: React.FC = () => {
                       ].map((item) => {
                         const isSelected =
                           digitFilter === 'ALL'
-                            ? item.id === 'ALL'
+                            ? true
                             : digitFilter !== 'NONE' && digitFilter === item.id;
                         return (
                           <button
@@ -914,7 +918,6 @@ export const MyPlayReportView: React.FC = () => {
                         { id: 'ALL', label: '★' },
                         { id: 'SUPER', label: 'SUPER' },
                         { id: 'BOX', label: 'BOX' },
-                        { id: 'BOTH', label: 'BOTH' },
                       ].map((opt) => {
                         const isSelected =
                           subOptionFilter === 'ALL'
@@ -1137,7 +1140,7 @@ export const MyPlayReportView: React.FC = () => {
                       ].map((item) => {
                         const isSelected =
                           winningDigitFilter === 'ALL'
-                            ? item.id === 'ALL'
+                            ? true
                             : winningDigitFilter !== 'NONE' && winningDigitFilter === item.id;
                         return (
                           <button
@@ -1252,7 +1255,6 @@ export const MyPlayReportView: React.FC = () => {
                         { id: 'ALL', label: '★' },
                         { id: 'SUPER', label: 'SUPER' },
                         { id: 'BOX', label: 'BOX' },
-                        { id: 'BOTH', label: 'BOTH' },
                       ].map((opt) => {
                         const isSelected =
                           winningSubOptionFilter === 'ALL'
@@ -2176,149 +2178,129 @@ export const MyPlayReportView: React.FC = () => {
         </div>
       )}
 
-        {/* ================= 4. COUNT REPORT SUB-VIEW (Original View) ================= */}
+        {/* ================= 4. COUNT REPORT SUB-VIEW ================= */}
         {activeSection === 'OVER_COUNT' && (
           <div className="space-y-4 pt-1 px-3 sm:px-5 animate-drop-in">
-            
-            {/* Top Tab Bar: Today's Report vs Previous History */}
-            <div className="bg-neutral-950 border border-neutral-800 p-1.5 rounded-2xl flex items-center gap-1.5 font-sans shadow-xl">
-              <button
-                type="button"
-                onClick={() => setCountTab('TODAY')}
-                className={`flex-1 py-2.5 px-2 sm:px-3 rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  countTab === 'TODAY'
-                    ? 'bg-gold-metallic text-black shadow-md border border-gold-dark'
-                    : 'bg-black/40 text-neutral-300 border border-neutral-800/80 hover:text-white hover:border-neutral-700'
-                }`}
-              >
-                <ClipboardList className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Today's Report</span>
-              </button>
+            {/* Input Form Box with FROM DATE & TO DATE */}
+            <div className="bg-[#0c0c0c] border border-neutral-800 p-4 sm:p-5 rounded-2xl shadow-xl space-y-4 font-sans">
+              {/* Single-Line FROM DATE & TO DATE Row */}
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* FROM DATE */}
+                <div
+                  onClick={() => triggerDatePicker(countFromRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    FROM DATE
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(overCountDate)}
+                  </span>
+                  <input
+                    ref={countFromRef}
+                    type="date"
+                    value={overCountDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setOverCountDate(e.target.value);
+                        setShowCountReportTable(false);
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
 
-              <button
-                type="button"
-                onClick={() => setCountTab('PREVIOUS')}
-                className={`flex-1 py-2.5 px-2 sm:px-3 rounded-xl font-black text-[11px] sm:text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  countTab === 'PREVIOUS'
-                    ? 'bg-gold-metallic text-black shadow-md border border-gold-dark'
-                    : 'bg-black/40 text-neutral-300 border border-neutral-800/80 hover:text-white hover:border-neutral-700'
-                }`}
-              >
-                <Calendar className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Previous History</span>
-              </button>
+                {/* TO DATE */}
+                <div
+                  onClick={() => triggerDatePicker(countToRef)}
+                  className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
+                >
+                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
+                    TO DATE
+                  </span>
+                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
+                    {formatDateDisplay(overCountToDate)}
+                  </span>
+                  <input
+                    ref={countToRef}
+                    type="date"
+                    value={overCountToDate}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setOverCountToDate(e.target.value);
+                        setShowCountReportTable(false);
+                      }
+                    }}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
+                  />
+                </div>
+              </div>
+
+              {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) */}
+              <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full pt-1">
+                {(['ALL', '1 PM', '3 PM', '6 PM', '8 PM'] as const).map((opt) => {
+                  const isSelected = overCountSlot === opt;
+                  return (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setOverCountSlot(opt)}
+                      className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-xl border transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-gold-metallic text-black border-gold-dark shadow-md scale-[1.02]'
+                          : 'bg-black text-white border-neutral-800 hover:border-neutral-700'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* SHOW REPORT Banner Button */}
+              <div className="w-full pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCountReportTable(true)}
+                  className="w-full py-3 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all border border-gold-dark"
+                >
+                  SHOW REPORT
+                </button>
+              </div>
             </div>
 
-            {/* Input Form Box (Shown ONLY when Previous History tab is selected) */}
-            {countTab === 'PREVIOUS' && (
-              <div className="bg-[#0c0c0c] border border-neutral-800 p-3.5 sm:p-4 rounded-2xl shadow-xl space-y-3.5 font-sans animate-drop-in">
-                {/* Single-Line FROM DATE & TO DATE Row */}
-                <div className="flex items-center gap-2.5 sm:gap-3">
-                  {/* FROM DATE */}
-                  <div
-                    onClick={() => triggerDatePicker(countFromRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
-                  >
-                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
-                      FROM DATE
-                    </span>
-                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
-                      {formatDateDisplay(overCountDate)}
-                    </span>
-                    <input
-                      ref={countFromRef}
-                      type="date"
-                      value={overCountDate}
-                      onChange={(e) => e.target.value && setOverCountDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
+            {/* Summary Table (Rendered ONLY when SHOW REPORT is clicked) */}
+            {showCountReportTable && (
+              <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
+                {/* Header Row */}
+                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
+                  <span className="text-left pl-2">GAME</span>
+                  <span>COUNT</span>
+                  <span>RATE</span>
+                  <span>CASH</span>
+                </div>
 
-                  {/* TO DATE */}
-                  <div
-                    onClick={() => triggerDatePicker(countToRef)}
-                    className="relative flex-1 bg-black border border-neutral-700 [@media(hover:hover)]:hover:border-gold/60 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center"
-                  >
-                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">
-                      TO DATE
-                    </span>
-                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">
-                      {formatDateDisplay(overCountToDate)}
-                    </span>
-                    <input
-                      ref={countToRef}
-                      type="date"
-                      value={overCountToDate}
-                      onChange={(e) => e.target.value && setOverCountToDate(e.target.value)}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-                    />
-                  </div>
+                {/* Data Rows */}
+                <div className="divide-y divide-gold/70">
+                  {countReportRows.map((row) => (
+                    <div key={row.name} className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
+                      <span className="text-left font-black text-white pl-2 tracking-wide text-xs">{row.name}</span>
+                      <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? row.count : '-'}</span>
+                      <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? (typeof row.rate === 'number' ? `₹${row.rate}` : row.rate) : '-'}</span>
+                      <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.cash > 0 ? `₹${row.cash.toFixed(0)}` : '-'}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Total Row */}
+                <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/70 bg-black font-black text-xs sm:text-sm">
+                  <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
+                  <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCount > 0 ? countReportTotalCount : '-'}</span>
+                  <span className="font-mono text-neutral-500">-</span>
+                  <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCash > 0 ? `₹${countReportTotalCash.toFixed(0)}` : '-'}</span>
                 </div>
               </div>
             )}
-
-            {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) */}
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2 w-full pt-0.5 px-0.5">
-              {(['ALL', '1 PM', '3 PM', '6 PM', '8 PM'] as const).map((opt) => {
-                const isSelected = overCountSlot === opt;
-                return (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => setOverCountSlot(opt)}
-                    className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-xl border transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-gold-metallic text-black border-gold-dark shadow-md scale-[1.02]'
-                        : 'bg-[#0c0c0c] text-white border-neutral-800 hover:border-neutral-700'
-                    }`}
-                  >
-                    {opt}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* SHOW REPORT Banner Button */}
-            <div className="w-full flex justify-center py-1.5">
-              <button
-                type="button"
-                onClick={() => {}}
-                className="px-9 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all border border-gold-dark"
-              >
-                SHOW REPORT
-              </button>
-            </div>
-
-            {/* Summary Table */}
-            <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
-              {/* Header Row */}
-              <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
-                <span className="text-left pl-2">GAME</span>
-                <span>COUNT</span>
-                <span>RATE</span>
-                <span>CASH</span>
-              </div>
-
-              {/* Data Rows */}
-              <div className="divide-y divide-gold/70">
-                {countReportRows.map((row) => (
-                  <div key={row.name} className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
-                    <span className="text-left font-black text-white pl-2 tracking-wide text-xs">{row.name}</span>
-                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? row.count : '-'}</span>
-                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? (typeof row.rate === 'number' ? `₹${row.rate}` : row.rate) : '-'}</span>
-                    <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.cash > 0 ? `₹${row.cash.toFixed(0)}` : '-'}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Total Row */}
-              <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/70 bg-black font-black text-xs sm:text-sm">
-                <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
-                <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCount > 0 ? countReportTotalCount : '-'}</span>
-                <span className="font-mono text-neutral-500">-</span>
-                <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCash > 0 ? `₹${countReportTotalCash.toFixed(0)}` : '-'}</span>
-              </div>
-            </div>
 
           </div>
         )}
