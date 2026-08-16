@@ -427,6 +427,8 @@ export const AdminReportsView: React.FC = () => {
             id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
             ticketId: ticket.ticketId || ticket.id,
             userName: (ticket as any).userName || (ticket as any).agencyName || ticket.userId,
+            agencyName: (ticket as any).agencyName || (ticket as any).userName || 'Agency',
+            customerName: (ticket as any).customerName || 'Customer',
             prize: prizeTitle,
             number: num,
             count: count,
@@ -1313,11 +1315,32 @@ export const AdminReportsView: React.FC = () => {
                       const theme = getWinnerCardTheme(card.prize);
                       return (
                         <div key={card.id} onClick={() => setSelectedWinningCardId(isSelected ? null : card.id)} className={`${theme.cardBg} rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${isSelected ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.6)] scale-[1.01]' : `${theme.cardBorder} hover:scale-[1.005]`}`}>
+                          {/* Prize & Number Header Bar */}
                           <div className={`${theme.headerBg} px-4 py-3 font-mono flex items-center justify-between`}>
                             <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${theme.badge}`}>{card.prize}</span>
                             <div className="text-right"><span className="text-neutral-300 text-xs font-bold uppercase">NUMBER:</span><span className={`font-black text-base font-mono tracking-wider ml-1.5 ${theme.numberText}`}>{card.number}</span></div>
                           </div>
-                          <div className="bg-black/90 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
+                          
+                          {/* Agency & Customer Info Bar */}
+                          <div className="bg-black/75 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 text-xs font-mono">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">AGENCY:</span>
+                              <span className="text-amber-400 font-extrabold text-xs tracking-wide">{card.agencyName || card.userName}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
+                              <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                            </div>
+                          </div>
+
+                          {/* Bill ID & Slot Info Bar */}
+                          <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
+                            <span>Bill: <strong className="text-neutral-300 font-bold">#{card.ticketId}</strong></span>
+                            <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
+                          </div>
+
+                          {/* Count & Win Amount Footer */}
+                          <div className="bg-black/95 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
                             <span className="text-neutral-300">COUNT: <strong className="text-white font-black text-sm ml-1 font-mono">{card.count}</strong></span>
                             <span className="text-gold font-bold">TOTAL: <strong className={`font-black text-base ml-1 font-mono ${theme.totalText}`}>₹{card.total}</strong></span>
                           </div>
@@ -1473,11 +1496,32 @@ export const AdminReportsView: React.FC = () => {
                           const theme = getWinnerCardTheme(card.prize);
                           return (
                             <div key={card.id} onClick={() => setSelectedUserWinCardId(isSelected ? null : card.id)} className={`${theme.cardBg} rounded-2xl overflow-hidden shadow-xl border-2 transition-all cursor-pointer font-mono active:scale-[0.99] ${isSelected ? 'border-gold shadow-[0_0_20px_rgba(212,175,55,0.6)] scale-[1.01]' : `${theme.cardBorder} hover:scale-[1.005]`}`}>
+                              {/* Prize & Number Header Bar */}
                               <div className={`${theme.headerBg} px-4 py-3 font-mono flex items-center justify-between`}>
                                 <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${theme.badge}`}>{card.prize}</span>
                                 <div className="text-right"><span className="text-neutral-300 text-xs font-bold uppercase">NUMBER:</span><span className={`font-black text-base font-mono tracking-wider ml-1.5 ${theme.numberText}`}>{card.number}</span></div>
                               </div>
-                              <div className="bg-black/90 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
+
+                              {/* Agency & Customer Info Bar */}
+                              <div className="bg-black/75 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 text-xs font-mono">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">AGENCY:</span>
+                                  <span className="text-amber-400 font-extrabold text-xs tracking-wide">{card.agencyName || card.userName}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
+                                  <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                                </div>
+                              </div>
+
+                              {/* Bill ID & Slot Info Bar */}
+                              <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
+                                <span>Bill: <strong className="text-neutral-300 font-bold">#{card.ticketId}</strong></span>
+                                <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
+                              </div>
+
+                              {/* Count & Win Amount Footer */}
+                              <div className="bg-black/95 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
                                 <span className="text-neutral-300">COUNT: <strong className="text-white font-black text-sm ml-1 font-mono">{card.count}</strong></span>
                                 <span className="text-gold font-bold">TOTAL: <strong className={`font-black text-base ml-1 font-mono ${theme.totalText}`}>₹{card.total}</strong></span>
                               </div>

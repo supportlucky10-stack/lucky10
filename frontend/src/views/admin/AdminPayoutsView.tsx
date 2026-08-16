@@ -31,7 +31,7 @@ interface WinnerRecord {
 }
 
 export const AdminPayoutsView: React.FC = () => {
-  const { registeredUsers, processPayout, payoutLogs, addToast } = useApp();
+  const { registeredUsers, processPayout, payoutLogs, addToast, placedTickets, getResultForSlotAndDate } = useApp();
   const [activeTab, setActiveTab] = useState<'ADD' | 'DAILY' | 'PREVIOUS'>('ADD');
   const [selectedGameSlot, setSelectedGameSlot] = useState<GameSlot>('1 PM Game');
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,29 +44,64 @@ export const AdminPayoutsView: React.FC = () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const gameSlots: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
-  // Winners data per game slot
+  // Winners data per game slot computed dynamically from placedTickets & results
   const slotWinnersMap: Record<GameSlot, WinnerRecord[]> = useMemo(() => {
-    if (registeredUsers.length === 0) {
-      return {
-        '1 PM Game': [],
-        '3 PM Game': [],
-        '6 PM Game': [],
-        '8 PM Game': [],
-      };
-    }
-    const u0 = registeredUsers[0];
-    const u1 = registeredUsers[1] || u0;
-
-    return {
-      '1 PM Game': [
-        { id: 'WIN-101', userId: u0.id, ticketNo: 'TKT-742', winAmount: 50000, ticketType: 'Direct 1st Prize (742)' },
-        { id: 'WIN-102', userId: u1.id, ticketNo: 'TKT-819', winAmount: 10000, ticketType: 'Direct 2nd Prize (819)' },
-      ],
+    const map: Record<GameSlot, WinnerRecord[]> = {
+      '1 PM Game': [],
       '3 PM Game': [],
       '6 PM Game': [],
       '8 PM Game': [],
     };
-  }, [registeredUsers]);
+
+    gameSlots.forEach((slot) => {
+      const res = getResultForSlotAndDate(slot, todayStr);
+      const slotTkts = placedTickets.filter((t) => t.gameSlot === slot);
+
+      slotTkts.forEach((tkt) => {
+        tkt.items.forEach((item: any) => {
+          const num = item.number ? (item.number.includes(':') ? item.number.split(':')[1] : item.number) : '';
+          const count = item.count || 1;
+          let prizeTitle = '';
+          let winAmt = 0;
+
+          if (res && res.prize1) {
+            if (num === res.prize1) {
+              prizeTitle = `Direct 1st Prize (${num})`;
+              winAmt = count * 500;
+            } else if (num === res.prize2) {
+              prizeTitle = `Direct 2nd Prize (${num})`;
+              winAmt = count * 250;
+            } else if (num === res.prize3) {
+              prizeTitle = `Direct 3rd Prize (${num})`;
+              winAmt = count * 100;
+            } else if (num === res.prize4) {
+              prizeTitle = `Direct 4th Prize (${num})`;
+              winAmt = count * 50;
+            } else if (num === res.prize5) {
+              prizeTitle = `Direct 5th Prize (${num})`;
+              winAmt = count * 30;
+            }
+          } else if (tkt.status === 'WON') {
+            prizeTitle = `Direct 1st Prize (${num})`;
+            winAmt = tkt.winAmount || (count * 500);
+          }
+
+          if (prizeTitle && winAmt > 0) {
+            const custLabel = tkt.customerName ? ` • Cust: ${tkt.customerName}` : '';
+            map[slot].push({
+              id: `WIN-${tkt.id}-${item.id || num}`,
+              userId: tkt.userId,
+              ticketNo: `${tkt.id}${custLabel}`,
+              winAmount: winAmt,
+              ticketType: prizeTitle,
+            });
+          }
+        });
+      });
+    });
+
+    return map;
+  }, [placedTickets, registeredUsers, getResultForSlotAndDate, todayStr]);
 
   const currentSlotAllWinners = slotWinnersMap[selectedGameSlot] || [];
 

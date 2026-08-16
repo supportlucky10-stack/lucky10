@@ -181,10 +181,11 @@ export const EditDeleteBillView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Customer & Slot Info Bar */}
-                <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
+                {/* Agency, Customer & Slot Info Bar */}
+                <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                  <span className="text-neutral-300">Agency <strong className="text-amber-400 font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
+                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
                   <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{searchedBill.gameSlot}</strong></span>
-                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName)}</strong></span>
                 </div>
 
                 {/* Table Column Headers Bar */}

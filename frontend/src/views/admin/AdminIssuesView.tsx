@@ -19,7 +19,49 @@ export const AdminIssuesView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'RESOLVED'>('ALL');
 
-  const [issuesList, setIssuesList] = useState<IssueTicket[]>([]);
+  const defaultSampleIssues: IssueTicket[] = [
+    {
+      id: 'ISS_109281',
+      userName: 'Sri Ganesh Agency',
+      userEmail: 'sriganesh@lucky10.com',
+      category: 'Payment Issues',
+      description: 'Payout of ₹5,000 successfully processed, requesting formal receipt for accounts.',
+      attachment: 'payment_receipt.pdf',
+      status: 'RESOLVED',
+      date: new Date(Date.now() - 14400000).toLocaleString(),
+    },
+    {
+      id: 'ISS_109282',
+      userName: 'Lucky Star Agency',
+      userEmail: 'luckystar@lucky10.com',
+      category: 'Game Related',
+      description: 'Customer Raju Bhai won 1st Prize in 1 PM Game, prize confirmation and wallet credit verification requested.',
+      attachment: 'ticket_scan.jpg',
+      status: 'RESOLVED',
+      date: new Date(Date.now() - 9000000).toLocaleString(),
+    },
+    {
+      id: 'ISS_109283',
+      userName: 'Balaji Lottery Agency',
+      userEmail: 'balaji_agency@lucky10.com',
+      category: 'Account Issues',
+      description: 'Request to update new IFSC code and branch name for our bank account.',
+      attachment: 'bank_cheque.png',
+      status: 'PENDING',
+      date: new Date(Date.now() - 3000000).toLocaleString(),
+    },
+    {
+      id: 'ISS_109284',
+      userName: 'Royal Fortune Agency',
+      userEmail: 'royal_fortune@lucky10.com',
+      category: 'Other Queries',
+      description: 'Inquiry regarding bulk ticket booking options for festive special slots.',
+      status: 'PENDING',
+      date: new Date(Date.now() - 900000).toLocaleString(),
+    },
+  ];
+
+  const [issuesList, setIssuesList] = useState<IssueTicket[]>(defaultSampleIssues);
 
   const toggleStatus = (id: string) => {
     setIssuesList((prev) =>

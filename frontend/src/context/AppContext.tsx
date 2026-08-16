@@ -55,70 +55,513 @@ interface AppContextType {
   goBack: () => void;
 }
 
-const initialResults: Record<GameSlot, GameResult> = {} as Record<GameSlot, GameResult>;
+const defaultAgenciesList: UserAccount[] = [
+  {
+    id: 'user_demo_001',
+    name: 'Demo Agency',
+    username: 'demo',
+    email: 'demo@lucky10.com',
+    password: '123',
+    role: 'CUSTOMER',
+    balance: 8500,
+    mode: 'With Commission (20%)',
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0],
+    bankDetails: {
+      accountHolderName: 'Demo Agency Pvt Ltd',
+      accountNo: '50100438291032',
+      bankName: 'HDFC Bank',
+      ifsc: 'HDFC0001234',
+      branchName: 'MG Road, Bengaluru',
+      updatedAt: new Date().toISOString().split('T')[0],
+    },
+  },
+  {
+    id: 'user_sriganesh_002',
+    name: 'Sri Ganesh Agency',
+    username: 'sriganesh',
+    email: 'sriganesh@lucky10.com',
+    password: '123',
+    role: 'CUSTOMER',
+    balance: 18450,
+    mode: 'With Commission (20%)',
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0],
+    bankDetails: {
+      accountHolderName: 'Sri Ganesh Enterprises',
+      accountNo: '30981029384756',
+      bankName: 'State Bank of India',
+      ifsc: 'SBIN0004521',
+      branchName: 'Gandhi Nagar, Chennai',
+      updatedAt: new Date().toISOString().split('T')[0],
+    },
+  },
+  {
+    id: 'user_luckystar_003',
+    name: 'Lucky Star Agency',
+    username: 'luckystar',
+    email: 'luckystar@lucky10.com',
+    password: '123',
+    role: 'CUSTOMER',
+    balance: 24800,
+    mode: 'With Commission (30%)',
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0],
+    bankDetails: {
+      accountHolderName: 'Lucky Star Agency',
+      accountNo: '91202004819283',
+      bankName: 'ICICI Bank',
+      ifsc: 'ICIC0000982',
+      branchName: 'Koti, Hyderabad',
+      updatedAt: new Date().toISOString().split('T')[0],
+    },
+  },
+  {
+    id: 'user_balaji_004',
+    name: 'Balaji Lottery Agency',
+    username: 'balaji_agency',
+    email: 'balaji_agency@lucky10.com',
+    password: '123',
+    role: 'CUSTOMER',
+    balance: 12300,
+    mode: 'Without Commission',
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0],
+    bankDetails: {
+      accountHolderName: 'Balaji Agencies',
+      accountNo: '18491020003948',
+      bankName: 'Axis Bank',
+      ifsc: 'UTIB0001093',
+      branchName: 'Camp, Pune',
+      updatedAt: new Date().toISOString().split('T')[0],
+    },
+  },
+  {
+    id: 'user_royal_005',
+    name: 'Royal Fortune Agency',
+    username: 'royal_fortune',
+    email: 'royal_fortune@lucky10.com',
+    password: '123',
+    role: 'CUSTOMER',
+    balance: 31500,
+    mode: 'With Commission (20%)',
+    isActive: true,
+    createdAt: new Date().toISOString().split('T')[0],
+    bankDetails: {
+      accountHolderName: 'Royal Fortune Ltd',
+      accountNo: '00281040001928',
+      bankName: 'Punjab National Bank',
+      ifsc: 'PUNB0123400',
+      branchName: 'Connaught Place, Delhi',
+      updatedAt: new Date().toISOString().split('T')[0],
+    },
+  },
+];
 
-const defaultDemoUser: UserAccount = {
-  id: 'user_demo_001',
-  name: 'Demo Player',
-  username: 'demo',
-  email: 'demo@lucky10.com',
-  password: '123',
-  role: 'CUSTOMER',
-  balance: 5000,
-  mode: 'Without Commission',
-  isActive: true,
-  createdAt: new Date().toISOString().split('T')[0],
+const defaultDemoUser: UserAccount = defaultAgenciesList[0];
+
+const generateSampleCompliments = (baseStr: string, offset = 1): string[][] => {
+  const base = parseInt(baseStr, 10) || 100;
+  const list: string[] = [];
+  for (let i = 1; i <= 30; i++) {
+    const num = (base + i * offset) % 1000;
+    list.push(String(num).padStart(3, '0'));
+  }
+  const rows: string[][] = [];
+  for (let i = 0; i < 30; i += 5) {
+    rows.push(list.slice(i, i + 5));
+  }
+  return rows;
+};
+
+const getInitialSampleGameResults = (): { todayResults: Record<GameSlot, GameResult>; allResults: Record<string, GameResult> } => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const yDate = new Date(now.getTime() - 86400000);
+  const yesterdayStr = yDate.toISOString().split('T')[0];
+
+  const todayResults: Record<GameSlot, GameResult> = {
+    '1 PM Game': {
+      id: `res-${todayStr}-1pm`,
+      date: todayStr,
+      gameSlot: '1 PM Game',
+      prize1: '742',
+      prize2: '819',
+      prize3: '350',
+      prize4: '194',
+      prize5: '408',
+      compliments: generateSampleCompliments('742', 1),
+      publishedAt: `${todayStr}T13:05:00Z`,
+    },
+    '3 PM Game': {
+      id: `res-${todayStr}-3pm`,
+      date: todayStr,
+      gameSlot: '3 PM Game',
+      prize1: '512',
+      prize2: '934',
+      prize3: '601',
+      prize4: '287',
+      prize5: '739',
+      compliments: generateSampleCompliments('512', 2),
+      publishedAt: `${todayStr}T15:05:00Z`,
+    },
+    '6 PM Game': {
+      id: `res-${todayStr}-6pm`,
+      date: todayStr,
+      gameSlot: '6 PM Game',
+      prize1: '389',
+      prize2: '145',
+      prize3: '720',
+      prize4: '963',
+      prize5: '521',
+      compliments: generateSampleCompliments('389', 3),
+      publishedAt: `${todayStr}T18:05:00Z`,
+    },
+    '8 PM Game': {
+      id: `res-${todayStr}-8pm`,
+      date: todayStr,
+      gameSlot: '8 PM Game',
+      prize1: '624',
+      prize2: '471',
+      prize3: '809',
+      prize4: '536',
+      prize5: '315',
+      compliments: generateSampleCompliments('624', 1),
+      publishedAt: `${todayStr}T20:05:00Z`,
+    },
+  };
+
+  const allResults: Record<string, GameResult> = {
+    [`${todayStr}_1 PM Game`]: todayResults['1 PM Game'],
+    [`${todayStr}_3 PM Game`]: todayResults['3 PM Game'],
+    [`${todayStr}_6 PM Game`]: todayResults['6 PM Game'],
+    [`${todayStr}_8 PM Game`]: todayResults['8 PM Game'],
+    [`${yesterdayStr}_1 PM Game`]: {
+      id: `res-${yesterdayStr}-1pm`,
+      date: yesterdayStr,
+      gameSlot: '1 PM Game',
+      prize1: '418',
+      prize2: '725',
+      prize3: '291',
+      prize4: '634',
+      prize5: '802',
+      compliments: generateSampleCompliments('418', 1),
+      publishedAt: `${yesterdayStr}T13:05:00Z`,
+    },
+    [`${yesterdayStr}_3 PM Game`]: {
+      id: `res-${yesterdayStr}-3pm`,
+      date: yesterdayStr,
+      gameSlot: '3 PM Game',
+      prize1: '893',
+      prize2: '314',
+      prize3: '570',
+      prize4: '129',
+      prize5: '468',
+      compliments: generateSampleCompliments('893', 2),
+      publishedAt: `${yesterdayStr}T15:05:00Z`,
+    },
+    [`${yesterdayStr}_6 PM Game`]: {
+      id: `res-${yesterdayStr}-6pm`,
+      date: yesterdayStr,
+      gameSlot: '6 PM Game',
+      prize1: '165',
+      prize2: '902',
+      prize3: '438',
+      prize4: '781',
+      prize5: '250',
+      compliments: generateSampleCompliments('165', 1),
+      publishedAt: `${yesterdayStr}T18:05:00Z`,
+    },
+    [`${yesterdayStr}_8 PM Game`]: {
+      id: `res-${yesterdayStr}-8pm`,
+      date: yesterdayStr,
+      gameSlot: '8 PM Game',
+      prize1: '730',
+      prize2: '249',
+      prize3: '615',
+      prize4: '382',
+      prize5: '904',
+      compliments: generateSampleCompliments('730', 3),
+      publishedAt: `${yesterdayStr}T20:05:00Z`,
+    },
+  };
+
+  return { todayResults, allResults };
 };
 
 const getInitialSampleTickets = (): PlacedTicket[] => {
   const now = new Date();
   const todayIso = now.toISOString();
+  const yIso = new Date(now.getTime() - 86400000).toISOString();
+
   return [
     {
-      id: 'TKT-108291',
-      ticketId: 'TKT-108291',
-      userId: 'user_demo_001',
+      id: 'PAY-108291',
+      ticketId: 'PAY-108291',
+      userId: 'user_sriganesh_002',
+      userName: 'Sri Ganesh Agency',
+      agencyName: 'Sri Ganesh Agency',
       customerName: 'Raju Bhai',
-      gameSlot: '3 PM Game',
+      gameSlot: '1 PM Game',
       totalAmount: 350,
       placedAt: todayIso,
       createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 5000,
       items: [
         { id: 'item-1', number: '742', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
-        { id: 'item-2', number: '512', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-2', number: '819', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
         { id: 'item-3', number: 'AB:42', count: 10, type: 'AB', unitPrice: 10, amount: 10, totalAmount: 100 },
       ],
     },
     {
-      id: 'TKT-108292',
-      ticketId: 'TKT-108292',
-      userId: 'user_demo_001',
-      customerName: 'Anil Kumar',
+      id: 'PAY-108292',
+      ticketId: 'PAY-108292',
+      userId: 'user_sriganesh_002',
+      userName: 'Sri Ganesh Agency',
+      agencyName: 'Sri Ganesh Agency',
+      customerName: 'Vikram Patel',
       gameSlot: '1 PM Game',
       totalAmount: 500,
       placedAt: todayIso,
       createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 3750,
       items: [
-        { id: 'item-4', number: '819', count: 20, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 200 },
-        { id: 'item-5', number: '350', count: 30, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 300 },
+        { id: 'item-4', number: '819', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-5', number: '350', count: 20, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-6', number: 'A:7', count: 15, type: 'A', unitPrice: 10, amount: 10, totalAmount: 150 },
       ],
     },
     {
-      id: 'TKT-108293',
-      ticketId: 'TKT-108293',
-      userId: 'user_demo_001',
-      customerName: 'Suresh',
+      id: 'PAY-108293',
+      ticketId: 'PAY-108293',
+      userId: 'user_luckystar_003',
+      userName: 'Lucky Star Agency',
+      agencyName: 'Lucky Star Agency',
+      customerName: 'Priya Sharma',
+      gameSlot: '3 PM Game',
+      totalAmount: 600,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 10000,
+      items: [
+        { id: 'item-7', number: '512', count: 20, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-8', number: '934', count: 20, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-9', number: 'BC:12', count: 20, type: 'BC', unitPrice: 10, amount: 10, totalAmount: 200 },
+      ],
+    },
+    {
+      id: 'PAY-108294',
+      ticketId: 'PAY-108294',
+      userId: 'user_luckystar_003',
+      userName: 'Lucky Star Agency',
+      agencyName: 'Lucky Star Agency',
+      customerName: 'Suresh Raina',
+      gameSlot: '3 PM Game',
+      totalAmount: 450,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 1500,
+      items: [
+        { id: 'item-10', number: '601', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-11', number: '287', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-12', number: '739', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+      ],
+    },
+    {
+      id: 'PAY-108295',
+      ticketId: 'PAY-108295',
+      userId: 'user_balaji_004',
+      userName: 'Balaji Lottery Agency',
+      agencyName: 'Balaji Lottery Agency',
+      customerName: 'Anil Kumar',
       gameSlot: '6 PM Game',
+      totalAmount: 700,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 12500,
+      items: [
+        { id: 'item-13', number: '389', count: 25, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 250 },
+        { id: 'item-14', number: '145', count: 20, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-15', number: 'AB:38', count: 25, type: 'AB', unitPrice: 10, amount: 10, totalAmount: 250 },
+      ],
+    },
+    {
+      id: 'PAY-108296',
+      ticketId: 'PAY-108296',
+      userId: 'user_balaji_004',
+      userName: 'Balaji Lottery Agency',
+      agencyName: 'Balaji Lottery Agency',
+      customerName: 'Amit Shah',
+      gameSlot: '6 PM Game',
+      totalAmount: 300,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'PENDING',
+      winAmount: 0,
+      items: [
+        { id: 'item-16', number: '720', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+        { id: 'item-17', number: '963', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+        { id: 'item-18', number: '521', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+      ],
+    },
+    {
+      id: 'PAY-108297',
+      ticketId: 'PAY-108297',
+      userId: 'user_royal_005',
+      userName: 'Royal Fortune Agency',
+      agencyName: 'Royal Fortune Agency',
+      customerName: 'Deepak Verma',
+      gameSlot: '8 PM Game',
+      totalAmount: 800,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 15000,
+      items: [
+        { id: 'item-19', number: '624', count: 30, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 300 },
+        { id: 'item-20', number: '471', count: 25, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 250 },
+        { id: 'item-21', number: 'AC:64', count: 25, type: 'AC', unitPrice: 10, amount: 10, totalAmount: 250 },
+      ],
+    },
+    {
+      id: 'PAY-108298',
+      ticketId: 'PAY-108298',
+      userId: 'user_royal_005',
+      userName: 'Royal Fortune Agency',
+      agencyName: 'Royal Fortune Agency',
+      customerName: 'Kavita Rao',
+      gameSlot: '8 PM Game',
       totalAmount: 400,
       placedAt: todayIso,
       createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 2500,
       items: [
-        { id: 'item-6', number: '194', count: 25, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 250 },
-        { id: 'item-7', number: 'A:7', count: 15, type: 'A', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-22', number: '471', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+        { id: 'item-23', number: '809', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-24', number: 'B:7', count: 15, type: 'B', unitPrice: 10, amount: 10, totalAmount: 150 },
+      ],
+    },
+    {
+      id: 'PAY-108299',
+      ticketId: 'PAY-108299',
+      userId: 'user_demo_001',
+      userName: 'Demo Agency',
+      agencyName: 'Demo Agency',
+      customerName: 'Mahesh Babu',
+      gameSlot: '1 PM Game',
+      totalAmount: 300,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 1000,
+      items: [
+        { id: 'item-25', number: '194', count: 20, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-26', number: '408', count: 10, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 100 },
+      ],
+    },
+    {
+      id: 'PAY-108300',
+      ticketId: 'PAY-108300',
+      userId: 'user_demo_001',
+      userName: 'Demo Agency',
+      agencyName: 'Demo Agency',
+      customerName: 'Rajesh Sharma',
+      gameSlot: '3 PM Game',
+      totalAmount: 550,
+      placedAt: todayIso,
+      createdAt: todayIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 7500,
+      items: [
+        { id: 'item-27', number: '512', count: 15, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 150 },
+        { id: 'item-28', number: '934', count: 20, type: 'BOX', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-29', number: 'C:2', count: 20, type: 'C', unitPrice: 10, amount: 10, totalAmount: 200 },
+      ],
+    },
+    {
+      id: 'PAY-107101',
+      ticketId: 'PAY-107101',
+      userId: 'user_sriganesh_002',
+      userName: 'Sri Ganesh Agency',
+      agencyName: 'Sri Ganesh Agency',
+      customerName: 'Sunil Shetty',
+      gameSlot: '1 PM Game',
+      totalAmount: 400,
+      placedAt: yIso,
+      createdAt: yIso,
+      actionType: 'PAY',
+      status: 'WON',
+      winAmount: 10000,
+      items: [
+        { id: 'item-30', number: '418', count: 20, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 200 },
+        { id: 'item-31', number: '725', count: 20, type: 'SUPER', unitPrice: 10, amount: 10, totalAmount: 200 },
       ],
     },
   ];
 };
+
+const getInitialSamplePayoutLogs = (): PayoutLog[] => {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  const yesterdayStr = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
+
+  return [
+    {
+      id: 'pay_001',
+      userId: 'user_sriganesh_002',
+      userName: 'Sri Ganesh Agency',
+      amount: 5000,
+      bankAccount: 'SBIN0004521 - 30981029384756',
+      status: 'SUCCESS',
+      date: todayStr,
+    },
+    {
+      id: 'pay_002',
+      userId: 'user_luckystar_003',
+      userName: 'Lucky Star Agency',
+      amount: 10000,
+      bankAccount: 'ICIC0000982 - 91202004819283',
+      status: 'SUCCESS',
+      date: todayStr,
+    },
+    {
+      id: 'pay_003',
+      userId: 'user_balaji_004',
+      userName: 'Balaji Lottery Agency',
+      amount: 7500,
+      bankAccount: 'UTIB0001093 - 18491020003948',
+      status: 'SUCCESS',
+      date: todayStr,
+    },
+    {
+      id: 'pay_004',
+      userId: 'user_royal_005',
+      userName: 'Royal Fortune Agency',
+      amount: 12000,
+      bankAccount: 'PUNB0123400 - 00281040001928',
+      status: 'PROCESSING',
+      date: yesterdayStr,
+    },
+  ];
+};
+
+const { todayResults: initialTodayResults, allResults: initialAllResults } = getInitialSampleGameResults();
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -134,14 +577,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [viewHistory, setViewHistory] = useState<ViewType[]>([initialRouteView()]);
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
-  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>([defaultDemoUser]);
+  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(defaultAgenciesList);
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>(getInitialSampleTickets());
   const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
-  const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>(initialResults);
-  const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>({});
-  const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>([]);
+  const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>(initialTodayResults);
+  const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>(initialAllResults);
+  const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>(getInitialSamplePayoutLogs());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
@@ -511,8 +954,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       }
 
-      if (currentUser && (!newTicket.userId || newTicket.userId !== currentUser.id)) {
-        newTicket = { ...newTicket, userId: currentUser.id };
+      if (currentUser) {
+        newTicket = {
+          ...newTicket,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          agencyName: currentUser.username,
+        };
       }
       newTicket.customerName = cleanCustName;
 
@@ -551,8 +999,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
       }
 
-      if (currentUser && (!newTicket.userId || newTicket.userId !== currentUser.id)) {
-        newTicket = { ...newTicket, userId: currentUser.id };
+      if (currentUser) {
+        newTicket = {
+          ...newTicket,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          agencyName: currentUser.username,
+        };
       }
       newTicket.customerName = cleanCustName;
 

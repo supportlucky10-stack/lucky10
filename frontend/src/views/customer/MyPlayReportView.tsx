@@ -64,7 +64,7 @@ const formatCustomerName = (name?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, placedTickets, currentUser } = useApp();
+  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
@@ -467,38 +467,97 @@ export const MyPlayReportView: React.FC = () => {
     };
   };
 
-  // Filter winning categories strictly from placed winning tickets
+  // Filter winning categories strictly from placed tickets matching winning numbers / status
   const displayWinningCategories = React.useMemo(() => {
-    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
-    const winningTickets = ticketSource.filter((t) => t.status === 'WON');
-    
-    if (winningTickets.length === 0) return [];
+    const allPool = placedTickets.length > 0 ? placedTickets : userTickets;
+    const myTickets = currentUser
+      ? allPool.filter(
+          (t) =>
+            t.userId === currentUser.id ||
+            (t as any).agencyName === currentUser.username ||
+            (t as any).agencyName === currentUser.name ||
+            (t as any).userName === currentUser.name ||
+            (currentUser.role === 'ADMIN')
+        )
+      : allPool;
 
+    const ticketsToCheck = myTickets.length > 0 ? myTickets : allPool;
     const catMap = new Map<string, any[]>();
-    winningTickets.forEach((tkt) => {
-      if (winningSlotFilter !== 'ALL' && !tkt.gameSlot.startsWith(winningSlotFilter)) return;
-      tkt.items.forEach((item: any) => {
-        if (winningSearchNumber.trim() && !item.number.includes(winningSearchNumber.trim())) return;
+
+    ticketsToCheck.forEach((ticket) => {
+      const tDate = ticket.placedAt ? ticket.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      if (winningFromDate && tDate < winningFromDate) return;
+      if (winningToDate && tDate > winningToDate) return;
+      if (winningSlotFilter !== 'ALL' && !ticket.gameSlot.toUpperCase().startsWith(winningSlotFilter.toUpperCase())) return;
+
+      const res = getResultForSlotAndDate(ticket.gameSlot, tDate);
+
+      ticket.items.forEach((item: any) => {
+        const num = getDisplayNumber(item);
+        const count = item.count || 1;
+
+        if (winningSearchNumber.trim() && !num.includes(winningSearchNumber.trim())) return;
         if (isWinningFullView && !isItemMatch(item, winningDigitFilter, winningSubOptionFilter)) return;
 
-        const catName = (item.type || 'SUPER').toUpperCase();
-        const existing = catMap.get(catName) || [];
-        existing.push({
-          id: item.id || `w_${Math.random()}`,
-          prize: '1ST PRIZE',
-          number: item.number,
-          count: item.count,
-          total: (tkt.winAmount || item.totalAmount * 100),
-          theme: 'bg-[#cbe6d4] text-[#134927]',
-          slot: tkt.gameSlot,
-          type: item.type,
-        });
-        catMap.set(catName, existing);
+        let prizeTitle = '';
+        let winAmt = 0;
+
+        if (res && res.prize1) {
+          const p1 = res.prize1;
+          const p2 = res.prize2;
+          const p3 = res.prize3;
+          const p4 = res.prize4;
+          const p5 = res.prize5;
+          const comps = res.compliments ? res.compliments.flat() : [];
+
+          if (num === p1) {
+            prizeTitle = '1ST PRIZE';
+            winAmt = count * 500;
+          } else if (num === p2) {
+            prizeTitle = '2ND PRIZE';
+            winAmt = count * 250;
+          } else if (num === p3) {
+            prizeTitle = '3RD PRIZE';
+            winAmt = count * 100;
+          } else if (num === p4) {
+            prizeTitle = '4TH PRIZE';
+            winAmt = count * 50;
+          } else if (num === p5) {
+            prizeTitle = '5TH PRIZE';
+            winAmt = count * 30;
+          } else if (comps.includes(num)) {
+            prizeTitle = 'COMPLIMENTARY PRIZE';
+            winAmt = count * 10;
+          }
+        } else if (ticket.status === 'WON') {
+          prizeTitle = '1ST PRIZE';
+          winAmt = ticket.winAmount || (count * 500);
+        }
+
+        if (prizeTitle) {
+          const catName = `${ticket.gameSlot} - ${(item.type || getDisplayGame(item)).toUpperCase()}`;
+          const existing = catMap.get(catName) || [];
+          existing.push({
+            id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
+            ticketId: ticket.ticketId || ticket.id,
+            userName: (ticket as any).userName || (ticket as any).agencyName || currentUser?.name || 'Agency',
+            agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || 'Agency',
+            customerName: (ticket as any).customerName || 'Customer',
+            prize: prizeTitle,
+            number: num,
+            count: count,
+            total: winAmt,
+            slot: ticket.gameSlot,
+            type: item.type || getDisplayGame(item),
+            placedAt: ticket.placedAt,
+          });
+          catMap.set(catName, existing);
+        }
       });
     });
 
     return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
-  }, [placedTickets, userTickets, winningSlotFilter, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter]);
+  }, [placedTickets, userTickets, currentUser, winningSlotFilter, winningFromDate, winningToDate, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter, getResultForSlotAndDate, todayStr]);
 
   const winningTotalCount = displayWinningCategories.reduce(
     (acc, cat) => acc + cat.cards.reduce((cAcc: number, c: any) => cAcc + c.count, 0),
@@ -1699,8 +1758,26 @@ export const MyPlayReportView: React.FC = () => {
                             </div>
                           </div>
 
+                          {/* Agency & Customer Info Bar */}
+                          <div className="bg-black/75 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 text-xs font-mono">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">AGENCY:</span>
+                              <span className="text-amber-400 font-extrabold text-xs tracking-wide">{card.agencyName || card.userName || currentUser?.name || 'Agency'}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
+                              <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                            </div>
+                          </div>
+
+                          {/* Bill ID & Slot Info Bar */}
+                          <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
+                            <span>Bill: <strong className="text-neutral-300 font-bold">#{card.ticketId}</strong></span>
+                            <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
+                          </div>
+
                           {/* Card Bottom Row with distinct text colors */}
-                          <div className="bg-black/90 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
+                          <div className="bg-black/95 px-4 py-3 flex items-center justify-between font-mono text-xs border-t border-white/5">
                             <span className="text-neutral-300">
                               COUNT: <strong className="text-white font-black text-sm ml-1 font-mono">{card.count}</strong>
                             </span>
@@ -1771,10 +1848,11 @@ export const MyPlayReportView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Customer & Slot Info Bar */}
-              <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex items-center justify-between text-xs font-mono">
+              {/* Agency, Customer & Slot Info Bar */}
+              <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
+                <span className="text-neutral-300">Agency <strong className="text-amber-400 font-bold">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || 'Agency'}</strong></span>
+                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((selectedSingleTicket as any).customerName) || 'Customer'}</strong></span>
                 <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{selectedSingleTicket.gameSlot}</strong></span>
-                <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></span>
               </div>
 
               {/* Table Column Headers Bar */}
