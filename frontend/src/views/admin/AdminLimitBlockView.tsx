@@ -256,29 +256,34 @@ export const AdminLimitBlockView: React.FC = () => {
                       key={rule.id}
                       className="bg-neutral-950 border border-neutral-800 hover:border-gold/50 p-3 rounded-2xl flex items-center justify-between gap-3 shadow-md transition-all font-mono"
                     >
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="text-sm sm:text-base font-black text-gold bg-black px-2.5 py-0.5 rounded-lg border border-gold/40 shadow-inner">
-                          #{rule.number}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className="text-sm sm:text-base font-black text-gold bg-black px-2.5 py-1 rounded-xl border border-gold/40 shadow-inner shrink-0">
+                          {rule.number}
                         </span>
-                        <span className="text-xs font-black text-white uppercase truncate max-w-[150px]">
-                          {rule.agencyName}
-                        </span>
-                        <span className="bg-neutral-900 text-neutral-400 font-bold px-2 py-0.5 rounded border border-neutral-800 text-[10px]">
-                          {rule.gameSlot}
-                        </span>
-                        <span className="bg-gold/10 text-gold font-black px-2 py-0.5 rounded border border-gold/30 text-[11px]">
-                          Limit: {rule.maxCount}
-                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-black text-white uppercase truncate">
+                            {rule.agencyName}
+                          </div>
+                          <div className="text-[10px] text-neutral-400 font-sans mt-0.5">
+                            {rule.gameSlot}
+                          </div>
+                        </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => removeAgencyLimit(rule.id)}
-                        className="p-1.5 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
-                        title="Remove Limit"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="bg-gold/10 text-gold border border-gold/30 px-2.5 py-1 rounded-xl text-xs font-black font-mono">
+                          Limit: {rule.maxCount}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => removeAgencyLimit(rule.id)}
+                          className="p-1.5 text-neutral-400 hover:text-rose-400 bg-black hover:bg-rose-950/40 rounded-xl border border-neutral-800 hover:border-rose-700/50 transition-all cursor-pointer shrink-0"
+                          title="Remove Limit"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -364,7 +369,7 @@ export const AdminLimitBlockView: React.FC = () => {
                     >
                       <div className="flex items-center gap-3">
                         <span className="text-sm sm:text-base font-black text-rose-400 bg-black px-2.5 py-1 rounded-xl border border-rose-800/60 shadow-inner">
-                          #{blk.number}
+                          {blk.number}
                         </span>
                         <span className="text-xs font-bold text-white uppercase">{blk.gameSlot}</span>
                       </div>

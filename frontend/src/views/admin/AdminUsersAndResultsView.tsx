@@ -64,7 +64,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
       return;
     }
 
-    const finalMode = `With Commission (${commissionRate})`;
+    const finalMode = `Commission (${commissionRate})`;
 
     setIsSubmitting(true);
     try {
@@ -176,7 +176,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-extrabold text-white text-base block">{u.name}</span>
                         <span className="bg-gold/15 border border-gold/40 text-gold text-[10px] font-extrabold px-2 py-0.5 rounded-md">
-                          {u.mode || 'With Commission'}
+                          {(u.mode || 'Commission (20%)').replace(/^With\s+/i, '')}
                         </span>
                         <span
                           className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md flex items-center gap-1 border ${
@@ -193,7 +193,10 @@ export const AdminUsersAndResultsView: React.FC = () => {
                           {isUserActive ? 'Active' : 'Deactivated'}
                         </span>
                       </div>
-                      <span className="text-neutral-400 text-xs font-mono flex items-center gap-1 mt-1">
+                      <div className="text-neutral-400 text-xs font-mono flex items-center gap-1.5 mt-1">
+                        <span>Username: <strong className="text-neutral-200 font-bold">{u.username || u.name}</strong></span>
+                      </div>
+                      <span className="text-neutral-500 text-xs font-mono flex items-center gap-1 mt-0.5">
                         <Calendar className="w-3.5 h-3.5 text-gold shrink-0" /> Create Date: {formatDateDDMMYY(u.createdAt)}
                       </span>
                     </div>
