@@ -334,15 +334,20 @@ def get_all_admin_tickets(admin_payload: dict = Depends(get_current_admin), db: 
             "gameSlot": t.game_slot,
             "items": [
                 {
+                    "id": item.id,
                     "number": item.number,
                     "count": item.count,
-                    "amount": item.amount,
+                    "amount": item.total_amount,
+                    "totalAmount": item.total_amount,
+                    "unitPrice": item.unit_price,
                     "type": item.type,
                 }
                 for item in t.items
             ],
             "totalAmount": t.total_amount,
-            "actionType": t.action_type,
+            "actionType": "PAY" if (t.id and t.id.startswith("PAY")) else "SAVE",
+            "status": t.status,
+            "winAmount": t.win_amount,
             "placedAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
             "createdAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
         })

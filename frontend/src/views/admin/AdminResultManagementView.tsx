@@ -254,9 +254,6 @@ export const AdminResultManagementView: React.FC = () => {
 
         {activeTab === 'publish' && (
           <div className="bg-neutral-950 border border-gold/40 p-5 rounded-2xl space-y-5 shadow-md overflow-visible relative">
-            <div className="border-b border-neutral-800 pb-3">
-              <h2 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">Positions &amp; Compliments</h2>
-            </div>
             <div className="relative z-30">
               <button type="button" onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)} className={`w-full py-2.5 px-4 ${activeSlotTheme.badgeBg} ${activeSlotTheme.badgeText} font-black text-xs sm:text-sm rounded-xl border ${activeSlotTheme.badgeBorder} shadow-lg flex items-center justify-between gap-3 cursor-pointer transition-all`}>
                 <div className="flex items-center gap-2"><span className="opacity-80 text-[10px] tracking-wider uppercase">SLOT:</span><span>{selectedSlot}</span></div>
