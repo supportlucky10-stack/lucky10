@@ -114,7 +114,7 @@ export const EditDeleteBillView: React.FC = () => {
                   setBillIdInput(e.target.value);
                   setHasSearched(false);
                 }}
-                placeholder="e.g. 8127716"
+                placeholder="e.g. 2243297"
                 className="w-full bg-black border border-neutral-700 focus:border-gold text-white font-mono font-black text-sm px-4 py-3 rounded-xl placeholder:text-neutral-600 outline-none transition-all shadow-inner"
               />
               {billIdInput && (

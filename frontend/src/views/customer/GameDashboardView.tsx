@@ -703,7 +703,7 @@ export const GameDashboardView: React.FC = () => {
               <span>Action</span>
             </div>
 
-            <div className="divide-y divide-gray-200 min-h-[220px] sm:min-h-[320px] max-h-[400px] sm:max-h-[550px] overflow-y-auto text-xs sm:text-sm font-bold">
+            <div className="divide-y divide-gray-200 min-h-[380px] sm:min-h-[480px] max-h-[560px] sm:max-h-[700px] overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = item.number.includes(':')

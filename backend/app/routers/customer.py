@@ -174,8 +174,19 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     if req.actionType == "PAY":
         user.balance -= req.totalAmount
 
-    ticket_prefix = "PAY" if req.actionType == "PAY" else "TKT"
-    ticket_id = f"{ticket_prefix}{int(datetime.now().timestamp() * 1000) % 900000 + 100000}"
+    # Determine next sequential ticket ID starting from 2243297
+    all_tickets = db.query(Ticket).all()
+    max_num = 2243296
+    for t in all_tickets:
+        digits = ''.join(filter(str.isdigit, t.id or ''))
+        if digits:
+            try:
+                val = int(digits)
+                if val > max_num:
+                    max_num = val
+            except Exception:
+                pass
+    ticket_id = str(max_num + 1)
 
     c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
     if c_name.lower() == "customer":

@@ -309,8 +309,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
 
   return [
     {
-      id: 'PAY-108291',
-      ticketId: 'PAY-108291',
+      id: '2243297',
+      ticketId: '2243297',
       userId: 'user_sriganesh_002',
       userName: 'Sri Ganesh Agency',
       agencyName: 'Sri Ganesh Agency',
@@ -329,8 +329,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108292',
-      ticketId: 'PAY-108292',
+      id: '2243298',
+      ticketId: '2243298',
       userId: 'user_sriganesh_002',
       userName: 'Sri Ganesh Agency',
       agencyName: 'Sri Ganesh Agency',
@@ -349,8 +349,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108293',
-      ticketId: 'PAY-108293',
+      id: '2243299',
+      ticketId: '2243299',
       userId: 'user_luckystar_003',
       userName: 'Lucky Star Agency',
       agencyName: 'Lucky Star Agency',
@@ -369,8 +369,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108294',
-      ticketId: 'PAY-108294',
+      id: '2243300',
+      ticketId: '2243300',
       userId: 'user_luckystar_003',
       userName: 'Lucky Star Agency',
       agencyName: 'Lucky Star Agency',
@@ -389,8 +389,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108295',
-      ticketId: 'PAY-108295',
+      id: '2243301',
+      ticketId: '2243301',
       userId: 'user_balaji_004',
       userName: 'Balaji Lottery Agency',
       agencyName: 'Balaji Lottery Agency',
@@ -409,8 +409,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108296',
-      ticketId: 'PAY-108296',
+      id: '2243302',
+      ticketId: '2243302',
       userId: 'user_balaji_004',
       userName: 'Balaji Lottery Agency',
       agencyName: 'Balaji Lottery Agency',
@@ -429,8 +429,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108297',
-      ticketId: 'PAY-108297',
+      id: '2243303',
+      ticketId: '2243303',
       userId: 'user_royal_005',
       userName: 'Royal Fortune Agency',
       agencyName: 'Royal Fortune Agency',
@@ -449,8 +449,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108298',
-      ticketId: 'PAY-108298',
+      id: '2243304',
+      ticketId: '2243304',
       userId: 'user_royal_005',
       userName: 'Royal Fortune Agency',
       agencyName: 'Royal Fortune Agency',
@@ -469,8 +469,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108299',
-      ticketId: 'PAY-108299',
+      id: '2243305',
+      ticketId: '2243305',
       userId: 'user_demo_001',
       userName: 'Demo Agency',
       agencyName: 'Demo Agency',
@@ -488,8 +488,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-108300',
-      ticketId: 'PAY-108300',
+      id: '2243306',
+      ticketId: '2243306',
       userId: 'user_demo_001',
       userName: 'Demo Agency',
       agencyName: 'Demo Agency',
@@ -508,8 +508,8 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
     {
-      id: 'PAY-107101',
-      ticketId: 'PAY-107101',
+      id: '2243307',
+      ticketId: '2243307',
       userId: 'user_sriganesh_002',
       userName: 'Sri Ganesh Agency',
       agencyName: 'Sri Ganesh Agency',
@@ -527,6 +527,22 @@ const getInitialSampleTickets = (): PlacedTicket[] => {
       ],
     },
   ];
+};
+
+const START_BILL_ID = 2243297;
+
+const getNextSequentialBillId = (tickets: PlacedTicket[]): string => {
+  let maxId = START_BILL_ID - 1;
+  tickets.forEach((t) => {
+    const raw = (t.id || t.ticketId || '').replace(/\D/g, '');
+    if (raw) {
+      const n = parseInt(raw, 10);
+      if (!isNaN(n) && n > maxId) {
+        maxId = n;
+      }
+    }
+  });
+  return String(maxId + 1);
 };
 
 const getInitialSamplePayoutLogs = (): PayoutLog[] => {
@@ -1191,8 +1207,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE', cleanCustName);
       } catch (e) {
+        const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
-          id: `TKT${Math.floor(100000 + Math.random() * 900000)}`,
+          id: nextId,
+          ticketId: nextId,
           userId: currentUser?.id || 'user_demo_001',
           customerName: cleanCustName,
           gameSlot: activeGameSlot,
@@ -1247,8 +1265,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'PAY', cleanCustName);
       } catch (e) {
+        const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
-          id: `PAY${Math.floor(100000 + Math.random() * 900000)}`,
+          id: nextId,
+          ticketId: nextId,
           userId: currentUser?.id || 'user_demo_001',
           customerName: cleanCustName,
           gameSlot: activeGameSlot,
