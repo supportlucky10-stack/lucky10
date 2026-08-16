@@ -52,13 +52,13 @@ export const UserDrawerView: React.FC = () => {
             </button>
           ))}
 
-          {/* LOGOUT Button in Gold Metallic Style */}
+          {/* Exit Button in Gold Metallic Style */}
           <div className="pt-8 sm:pt-10 pb-10">
             <button
               onClick={logout}
-              className="px-7 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide cursor-pointer"
+              className="px-8 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide cursor-pointer"
             >
-              LOGOUT
+              Exit
             </button>
           </div>
         </div>

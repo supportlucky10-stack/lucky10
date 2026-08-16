@@ -25,6 +25,7 @@ import { AdminReportsView } from './views/admin/AdminReportsView';
 import { AdminPayoutsView } from './views/admin/AdminPayoutsView';
 import { AdminTransactionLogsView } from './views/admin/AdminTransactionLogsView';
 import { AdminIssuesView } from './views/admin/AdminIssuesView';
+import { AdminLimitBlockView } from './views/admin/AdminLimitBlockView';
 
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
@@ -78,6 +79,8 @@ const ViewRouter: React.FC = () => {
         return <AdminTransactionLogsView />;
       case 'ADMIN_ISSUES':
         return <AdminIssuesView />;
+      case 'ADMIN_LIMIT_BLOCK':
+        return <AdminLimitBlockView />;
       default:
         return <UserSignInView />;
     }

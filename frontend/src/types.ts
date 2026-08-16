@@ -19,9 +19,34 @@ export type ViewType =
   | 'ADMIN_REPORTS'
   | 'ADMIN_PAYOUTS'
   | 'ADMIN_TRANSACTION_LOGS'
-  | 'ADMIN_ISSUES';
+  | 'ADMIN_ISSUES'
+  | 'ADMIN_LIMIT_BLOCK';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
+
+export interface AgencyNumberLimit {
+  id: string;
+  agencyId: string;
+  agencyName: string;
+  number: string;
+  gameSlot: GameSlot | 'ALL';
+  maxCount: number;
+  createdAt: string;
+}
+
+export interface BlockedNumberRule {
+  id: string;
+  number: string;
+  gameSlot: GameSlot | 'ALL';
+  reason?: string;
+  createdAt: string;
+}
+
+export interface GlobalLimitRule {
+  defaultMaxCount: number;
+  isEnabled: boolean;
+  gameSlot: GameSlot | 'ALL';
+}
 
 export interface UserAccount {
   id: string;

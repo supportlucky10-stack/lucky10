@@ -967,7 +967,6 @@ export const AdminReportsView: React.FC = () => {
                             <tr key={user.id} onClick={() => { setSelectedWinningUser(user); setUserWinFromDate(winningFromDate); setUserWinToDate(winningToDate); }} className="transition-colors cursor-pointer hover:bg-neutral-900/80 active:scale-[0.99]">
                               <td className="py-3 px-4">
                                 <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
-                                <div className="text-[10px] text-neutral-400 font-mono">{user.username}</div>
                               </td>
                             </tr>
                           ))}
@@ -1103,7 +1102,6 @@ export const AdminReportsView: React.FC = () => {
                             <tr key={user.id} onClick={() => { setSelectedDailyUser(user); setUserDailyFromDate(dailyFromDate); setUserDailyToDate(dailyToDate); }} className="transition-colors cursor-pointer hover:bg-neutral-900/80 active:scale-[0.99]">
                               <td className="py-3 px-4">
                                 <div className="font-black text-white text-xs hover:text-gold transition-colors">{user.name}</div>
-                                <div className="text-[10px] text-neutral-400 font-mono">{user.username}</div>
                               </td>
                             </tr>
                           ))}
@@ -1358,116 +1356,129 @@ export const AdminReportsView: React.FC = () => {
       {/* ================= DEDICATED USER WINNING REPORT FULL-SCREEN OVERLAY ================= */}
       {selectedWinningUser && (
         <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
-          <HeaderBanner title={`WINNING REPORT - ${selectedWinningUser.name.toUpperCase()}`} showBack={true} onBackClick={() => { setSelectedWinningUser(null); setShowUserWinningDetails(false); }} />
+          <HeaderBanner
+            title={`WINNING REPORT - ${selectedWinningUser.name.toUpperCase()}`}
+            showBack={true}
+            onBackClick={() => {
+              if (showUserWinningDetails) {
+                setShowUserWinningDetails(false);
+              } else {
+                setSelectedWinningUser(null);
+                setShowUserWinningDetails(false);
+              }
+            }}
+          />
           <div className="max-w-xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
-            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5">
-              <div className="flex items-center gap-2.5 sm:gap-3">
-                <div onClick={() => triggerDatePicker(userWinFromRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
-                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">From date</span>
-                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userWinFromDate)}</span>
-                  <input ref={userWinFromRef} type="date" value={userWinFromDate} onChange={(e) => e.target.value && setUserWinFromDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
+            {!showUserWinningDetails ? (
+              /* --- VIEW 1: FILTER SELECTION FORM --- */
+              <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 animate-drop-in">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div onClick={() => triggerDatePicker(userWinFromRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">From date</span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userWinFromDate)}</span>
+                    <input ref={userWinFromRef} type="date" value={userWinFromDate} onChange={(e) => e.target.value && setUserWinFromDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
+                  </div>
+                  <div onClick={() => triggerDatePicker(userWinToRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">To date</span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userWinToDate)}</span>
+                    <input ref={userWinToRef} type="date" value={userWinToDate} onChange={(e) => e.target.value && setUserWinToDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
+                  </div>
                 </div>
-                <div onClick={() => triggerDatePicker(userWinToRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
-                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">To date</span>
-                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userWinToDate)}</span>
-                  <input ref={userWinToRef} type="date" value={userWinToDate} onChange={(e) => e.target.value && setUserWinToDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
+
+                <div className="flex items-center justify-between pt-1 pb-1">
+                  <span className="text-xs sm:text-sm font-black text-neutral-300 tracking-wide">Full View</span>
+                  <button type="button" onClick={() => setIsUserWinFullView(!isUserWinFullView)} className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${isUserWinFullView ? 'bg-gold-metallic' : 'bg-slate-300'}`}>
+                    <div className={`w-5 h-5 rounded-full bg-black shadow-md transition-transform ${isUserWinFullView ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between pt-1 pb-1">
-                <span className="text-xs sm:text-sm font-black text-neutral-300 tracking-wide">Full View</span>
-                <button type="button" onClick={() => setIsUserWinFullView(!isUserWinFullView)} className={`w-12 h-6 rounded-full transition-colors p-0.5 relative cursor-pointer ${isUserWinFullView ? 'bg-gold-metallic' : 'bg-slate-300'}`}>
-                  <div className={`w-5 h-5 rounded-full bg-black shadow-md transition-transform ${isUserWinFullView ? 'translate-x-6' : 'translate-x-0'}`} />
-                </button>
-              </div>
-
-              <div className="pt-2 border-t border-neutral-900 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {[{ id: 'ALL', label: 'All' }, { id: '1 PM', label: '1 PM' }, { id: '3 PM', label: '3 PM' }, { id: '6 PM', label: '6 PM' }, { id: '8 PM', label: '8 PM' }].map((opt) => {
-                    const isChecked = userWinSlotFilter === opt.id;
-                    return (
-                      <label key={opt.id} onClick={() => setUserWinSlotFilter(opt.id as any)} className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isChecked ? 'border-gold bg-black' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
-                          {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
-                        </div>
-                        <span className={`text-xs font-black tracking-wide ${isChecked ? 'text-gold' : 'text-neutral-300'}`}>{opt.label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="pt-2 border-t border-neutral-900 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {[{ id: 'ALL', label: 'All' }, { id: '1 PM', label: '1 PM' }, { id: '3 PM', label: '3 PM' }, { id: '6 PM', label: '6 PM' }, { id: '8 PM', label: '8 PM' }].map((opt) => {
+                      const isChecked = userWinSlotFilter === opt.id;
+                      return (
+                        <label key={opt.id} onClick={() => setUserWinSlotFilter(opt.id as any)} className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isChecked ? 'border-gold bg-black' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
+                            {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
+                          </div>
+                          <span className={`text-xs font-black tracking-wide ${isChecked ? 'text-gold' : 'text-neutral-300'}`}>{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
-              {isUserWinFullView && (
-                <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">SELECT DIGIT TYPE</span>
-                    <div className="flex items-center justify-center gap-2.5">
-                      {[{ id: 'ALL', label: '★' }, { id: '1', label: '1' }, { id: '2', label: '2' }, { id: '3', label: '3' }].map((item) => {
-                        const isSelected = userWinDigitFilter === 'ALL' ? item.id === 'ALL' : userWinDigitFilter !== 'NONE' && userWinDigitFilter === item.id;
+                {isUserWinFullView && (
+                  <div className="pt-3 border-t border-neutral-900 space-y-3.5 animate-drop-in">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">SELECT DIGIT TYPE</span>
+                      <div className="flex items-center justify-center gap-2.5">
+                        {[{ id: 'ALL', label: '★' }, { id: '1', label: '1' }, { id: '2', label: '2' }, { id: '3', label: '3' }].map((item) => {
+                          const isSelected = userWinDigitFilter === 'ALL' ? item.id === 'ALL' : userWinDigitFilter !== 'NONE' && userWinDigitFilter === item.id;
+                          return (
+                            <button key={item.id} type="button" onClick={() => {
+                              if (item.id === 'ALL') {
+                                setUserWinDigitFilter(userWinDigitFilter === 'ALL' ? 'NONE' : 'ALL');
+                                setUserWinSubOptionFilter('NONE');
+                              } else {
+                                setUserWinDigitFilter(userWinDigitFilter === item.id ? 'NONE' : item.id as any);
+                                setUserWinSubOptionFilter('NONE');
+                              }
+                            }} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
+                              <span className={item.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{item.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-nowrap overflow-x-auto">
+                      {userWinDigitFilter === '1' && [{ id: 'ALL', label: '★' }, { id: 'A', label: 'A' }, { id: 'B', label: 'B' }, { id: 'C', label: 'C' }].map((opt) => {
+                        const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
                         return (
-                          <button key={item.id} type="button" onClick={() => {
-                            if (item.id === 'ALL') {
-                              setUserWinDigitFilter(userWinDigitFilter === 'ALL' ? 'NONE' : 'ALL');
-                              setUserWinSubOptionFilter('NONE');
-                            } else {
-                              setUserWinDigitFilter(userWinDigitFilter === item.id ? 'NONE' : item.id as any);
-                              setUserWinSubOptionFilter('NONE');
-                            }
-                          }} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center transition-all cursor-pointer shadow border ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
-                            <span className={item.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{item.label}</span>
+                          <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'}`}>
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                      {userWinDigitFilter === '2' && [{ id: 'ALL', label: '★' }, { id: 'AB', label: 'AB' }, { id: 'AC', label: 'AC' }, { id: 'BC', label: 'BC' }].map((opt) => {
+                        const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
+                        return (
+                          <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`${opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2.5 py-1 rounded-full text-[11px]'} font-black flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
+                          </button>
+                        );
+                      })}
+                      {userWinDigitFilter === '3' && [{ id: 'ALL', label: '★' }, { id: 'SUPER', label: 'SUPER' }, { id: 'BOX', label: 'BOX' }, { id: 'BOTH', label: 'BOTH' }].map((opt) => {
+                        const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
+                        return (
+                          <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`${opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2 py-1 rounded-full text-[10px] uppercase'} font-black flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
+                            <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
                           </button>
                         );
                       })}
                     </div>
-                  </div>
 
-                  <div className="flex items-center justify-center gap-1.5 pt-0.5 flex-nowrap overflow-x-auto">
-                    {userWinDigitFilter === '1' && [{ id: 'ALL', label: '★' }, { id: 'A', label: 'A' }, { id: 'B', label: 'B' }, { id: 'C', label: 'C' }].map((opt) => {
-                      const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
-                      return (
-                        <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full font-black text-xs flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black border-neutral-700 text-neutral-300 hover:border-neutral-500'}`}>
-                          <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                    {userWinDigitFilter === '2' && [{ id: 'ALL', label: '★' }, { id: 'AB', label: 'AB' }, { id: 'AC', label: 'AC' }, { id: 'BC', label: 'BC' }].map((opt) => {
-                      const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
-                      return (
-                        <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`${opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2.5 py-1 rounded-full text-[11px]'} font-black flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
-                          <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                    {userWinDigitFilter === '3' && [{ id: 'ALL', label: '★' }, { id: 'SUPER', label: 'SUPER' }, { id: 'BOX', label: 'BOX' }, { id: 'BOTH', label: 'BOTH' }].map((opt) => {
-                      const isSelected = userWinSubOptionFilter === 'ALL' ? true : userWinSubOptionFilter !== 'NONE' && userWinSubOptionFilter === opt.id;
-                      return (
-                        <button key={opt.id} type="button" onClick={() => setUserWinSubOptionFilter(userWinSubOptionFilter === opt.id ? 'NONE' : opt.id)} className={`${opt.id === 'ALL' ? 'w-7 h-7 sm:w-8 sm:h-8 rounded-full' : 'px-2 py-1 rounded-full text-[10px] uppercase'} font-black flex items-center justify-center border transition-all cursor-pointer ${isSelected ? 'bg-neutral-800 text-white border-2 border-white scale-105 shadow-[0_0_10px_rgba(255,255,255,0.3)]' : 'bg-black text-neutral-300 border-neutral-700 hover:border-neutral-500'}`}>
-                          <span className={opt.label === '★' ? 'text-base sm:text-lg leading-none font-black' : ''}>{opt.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="space-y-1 pt-1">
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">SEARCH BY NUMBER</span>
-                    <div className="relative">
-                      <input type="text" maxLength={3} value={userWinSearchNumber} onChange={(e) => setUserWinSearchNumber(e.target.value.replace(/\D/g, ''))} placeholder="Number" className="w-full bg-black border-2 border-white/90 focus:border-gold text-white font-mono font-black text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner" />
-                      {userWinSearchNumber && (
-                        <button type="button" onClick={() => setUserWinSearchNumber('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold">Clear</button>
-                      )}
+                    <div className="space-y-1 pt-1">
+                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider block">SEARCH BY NUMBER</span>
+                      <div className="relative">
+                        <input type="text" maxLength={3} value={userWinSearchNumber} onChange={(e) => setUserWinSearchNumber(e.target.value.replace(/\D/g, ''))} placeholder="Number" className="w-full bg-black border-2 border-white/90 focus:border-gold text-white font-mono font-black text-sm px-4 py-2.5 rounded-xl placeholder:text-neutral-400 outline-none transition-all shadow-inner" />
+                        {userWinSearchNumber && (
+                          <button type="button" onClick={() => setUserWinSearchNumber('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs font-bold">Clear</button>
+                        )}
+                      </div>
                     </div>
                   </div>
+                )}
+
+                <div className="pt-2">
+                  <button type="button" onClick={() => setShowUserWinningDetails(true)} className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <span>SHOW REPORT</span>
+                  </button>
                 </div>
-              )}
-
-              <div className="pt-2">
-                <button type="button" onClick={() => setShowUserWinningDetails(true)} className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer">
-                  <span>SHOW REPORT</span>
-                </button>
               </div>
-            </div>
-
-            {showUserWinningDetails && (
+            ) : (
+              /* --- VIEW 2: DEDICATED REPORT OUTPUT VIEW --- */
               <div className="space-y-4 animate-drop-in">
                 <div className="bg-gold-metallic p-4 rounded-xl text-black shadow-lg border border-gold-dark space-y-2.5 font-mono">
                   <div className="flex items-center justify-between font-black text-lg sm:text-xl uppercase tracking-wider">
@@ -1478,6 +1489,13 @@ export const AdminReportsView: React.FC = () => {
                     <span>Total: ₹ {userWinningGrandTotal.toLocaleString()}</span>
                   </div>
                 </div>
+
+                {userWinSearchNumber.trim() && (
+                  <div className="bg-neutral-900 border border-gold/60 p-3 rounded-xl flex items-center justify-between text-xs font-mono shadow-md">
+                    <span className="text-neutral-300">SEARCHING NUMBER: <strong className="text-gold font-bold text-sm">"{userWinSearchNumber}"</strong></span>
+                    <span className="text-emerald-400 font-extrabold">{userWinningCategories.length} Category(s) Matched</span>
+                  </div>
+                )}
 
                 {userWinningCategories.length === 0 ? (
                   <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
@@ -1628,70 +1646,83 @@ export const AdminReportsView: React.FC = () => {
       {/* ================= DEDICATED USER DAILY REPORT FULL-SCREEN OVERLAY ================= */}
       {selectedDailyUser && (
         <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
-          <HeaderBanner title={`DAILY REPORT - ${selectedDailyUser.name.toUpperCase()}`} showBack={true} onBackClick={() => { setSelectedDailyUser(null); setShowUserDailyOverlay(false); }} />
+          <HeaderBanner
+            title={`DAILY REPORT - ${selectedDailyUser.name.toUpperCase()}`}
+            showBack={true}
+            onBackClick={() => {
+              if (showUserDailyOverlay) {
+                setShowUserDailyOverlay(false);
+              } else {
+                setSelectedDailyUser(null);
+                setShowUserDailyOverlay(false);
+              }
+            }}
+          />
           <div className="max-w-md mx-auto w-full px-3 sm:px-4 py-4 space-y-4">
-            <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 font-sans">
-              <div className="flex items-center gap-2.5 sm:gap-3">
-                <div onClick={() => triggerDatePicker(userDailyFromRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
-                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">FROM DATE</span>
-                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userDailyFromDate)}</span>
-                  <input ref={userDailyFromRef} type="date" value={userDailyFromDate} onChange={(e) => e.target.value && setUserDailyFromDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
-                </div>
-                <div onClick={() => triggerDatePicker(userDailyToRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
-                  <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">TO DATE</span>
-                  <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userDailyToDate)}</span>
-                  <input ref={userDailyToRef} type="date" value={userDailyToDate} onChange={(e) => e.target.value && setUserDailyToDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-neutral-900 flex items-center justify-start gap-8">
-                <label onClick={() => { setUserIsDayDetail(true); setUserIsGameDetail(false); setActiveUserDailyOverlayTab('DAY'); }} className="flex items-center gap-2.5 cursor-pointer group select-none">
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${userIsDayDetail ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
-                    {userIsDayDetail && (
-                      <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
-                        <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+            {!showUserDailyOverlay ? (
+              /* --- VIEW 1: FILTER SELECTION FORM --- */
+              <div className="bg-neutral-950 border border-neutral-800 p-5 rounded-2xl shadow-xl space-y-5 font-sans animate-drop-in">
+                <div className="flex items-center gap-2.5 sm:gap-3">
+                  <div onClick={() => triggerDatePicker(userDailyFromRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">FROM DATE</span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userDailyFromDate)}</span>
+                    <input ref={userDailyFromRef} type="date" value={userDailyFromDate} onChange={(e) => e.target.value && setUserDailyFromDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
                   </div>
-                  <span className={`text-xs sm:text-sm font-black tracking-wide ${userIsDayDetail ? 'text-gold' : 'text-neutral-300'}`}>Day Detail</span>
-                </label>
-
-                <label onClick={() => { setUserIsGameDetail(true); setUserIsDayDetail(false); setActiveUserDailyOverlayTab('GAME'); }} className="flex items-center gap-2.5 cursor-pointer group select-none">
-                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${userIsGameDetail ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
-                    {userIsGameDetail && (
-                      <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
-                        <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
+                  <div onClick={() => triggerDatePicker(userDailyToRef)} className="relative flex-1 bg-black border border-neutral-700 rounded-xl px-3 sm:px-4 py-2 cursor-pointer group transition-all block overflow-hidden shadow-inner h-[44px] flex flex-col justify-center">
+                    <span className="text-[9px] sm:text-[10px] font-black text-neutral-400 uppercase tracking-wider block pointer-events-none leading-none">TO DATE</span>
+                    <span className="text-white font-black text-xs sm:text-sm tracking-wide block mt-0.5 font-mono pointer-events-none truncate">{formatDateDisplay(userDailyToDate)}</span>
+                    <input ref={userDailyToRef} type="date" value={userDailyToDate} onChange={(e) => e.target.value && setUserDailyToDate(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input" />
                   </div>
-                  <span className={`text-xs sm:text-sm font-black tracking-wide ${userIsGameDetail ? 'text-gold' : 'text-neutral-300'}`}>Game Detail</span>
-                </label>
-              </div>
+                </div>
 
-              <div className="pt-2 border-t border-neutral-900 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {[{ id: 'ALL', label: 'All' }, { id: '1 PM', label: '1 PM' }, { id: '3 PM', label: '3 PM' }, { id: '6 PM', label: '6 PM' }, { id: '8 PM', label: '8 PM' }].map((opt) => {
-                    const isChecked = userDailySlotFilter === opt.id;
-                    return (
-                      <label key={opt.id} onClick={() => setUserDailySlotFilter(opt.id as any)} className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all">
-                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isChecked ? 'border-gold bg-black' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
-                          {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
-                        </div>
-                        <span className={`text-xs font-black tracking-wide ${isChecked ? 'text-gold' : 'text-neutral-300'}`}>{opt.label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="pt-2 border-t border-neutral-900 flex items-center justify-start gap-8">
+                  <label onClick={() => { setUserIsDayDetail(true); setUserIsGameDetail(false); setActiveUserDailyOverlayTab('DAY'); }} className="flex items-center gap-2.5 cursor-pointer group select-none">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${userIsDayDetail ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
+                      {userIsDayDetail && (
+                        <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
+                          <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-xs sm:text-sm font-black tracking-wide ${userIsDayDetail ? 'text-gold' : 'text-neutral-300'}`}>Day Detail</span>
+                  </label>
+
+                  <label onClick={() => { setUserIsGameDetail(true); setUserIsDayDetail(false); setActiveUserDailyOverlayTab('GAME'); }} className="flex items-center gap-2.5 cursor-pointer group select-none">
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${userIsGameDetail ? 'border-gold bg-gold text-black shadow-[0_0_10px_rgba(212,175,55,0.4)]' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
+                      {userIsGameDetail && (
+                        <svg className="w-3.5 h-3.5 fill-current stroke-current stroke-2" viewBox="0 0 24 24">
+                          <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className={`text-xs sm:text-sm font-black tracking-wide ${userIsGameDetail ? 'text-gold' : 'text-neutral-300'}`}>Game Detail</span>
+                  </label>
+                </div>
+
+                <div className="pt-2 border-t border-neutral-900 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    {[{ id: 'ALL', label: 'All' }, { id: '1 PM', label: '1 PM' }, { id: '3 PM', label: '3 PM' }, { id: '6 PM', label: '6 PM' }, { id: '8 PM', label: '8 PM' }].map((opt) => {
+                      const isChecked = userDailySlotFilter === opt.id;
+                      return (
+                        <label key={opt.id} onClick={() => setUserDailySlotFilter(opt.id as any)} className="flex items-center gap-1.5 cursor-pointer group py-1 px-1 rounded-lg transition-all">
+                          <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${isChecked ? 'border-gold bg-black' : 'border-neutral-600 bg-black group-hover:border-neutral-400'}`}>
+                            {isChecked && <div className="w-2 h-2 rounded-full bg-gold-metallic" />}
+                          </div>
+                          <span className={`text-xs font-black tracking-wide ${isChecked ? 'text-gold' : 'text-neutral-300'}`}>{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button type="button" onClick={() => setShowUserDailyOverlay(true)} className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer">
+                    <span>SHOW REPORT</span>
+                  </button>
                 </div>
               </div>
-
-              <div className="pt-2">
-                <button type="button" onClick={() => setShowUserDailyOverlay(true)} className="w-full py-3.5 px-4 bg-gold-metallic hover:brightness-110 active:scale-[0.98] text-black font-black text-sm tracking-wider uppercase rounded-xl shadow-lg border border-gold-dark flex items-center justify-center gap-2 transition-all cursor-pointer">
-                  <span>SHOW REPORT</span>
-                </button>
-              </div>
-            </div>
-
-            {showUserDailyOverlay && (
+            ) : (
+              /* --- VIEW 2: DEDICATED REPORT OUTPUT VIEW --- */
               <div className="space-y-4 animate-drop-in">
                 {userIsDayDetail && userIsGameDetail && (
                   <div className="flex bg-neutral-900 p-1 rounded-xl border border-neutral-800 text-xs font-black">

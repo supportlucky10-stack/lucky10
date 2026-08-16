@@ -9,6 +9,9 @@ import type {
   GameResult,
   PayoutLog,
   ToastMessage,
+  AgencyNumberLimit,
+  BlockedNumberRule,
+  GlobalLimitRule,
 } from '../types';
 import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
@@ -53,6 +56,16 @@ interface AppContextType {
   removeToast: (id: string) => void;
   viewHistory: ViewType[];
   goBack: () => void;
+  // Limit / Block Management
+  agencyNumberLimits: AgencyNumberLimit[];
+  blockedNumbers: BlockedNumberRule[];
+  globalLimitRule: GlobalLimitRule;
+  addAgencyLimit: (limit: Omit<AgencyNumberLimit, 'id' | 'createdAt'>) => void;
+  removeAgencyLimit: (id: string) => void;
+  addBlockedNumber: (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => void;
+  removeBlockedNumber: (id: string) => void;
+  updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
+  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number) => { ok: boolean; reason?: string };
 }
 
 const defaultAgenciesList: UserAccount[] = [
@@ -561,6 +574,59 @@ const getInitialSamplePayoutLogs = (): PayoutLog[] => {
   ];
 };
 
+const defaultAgencyLimits: AgencyNumberLimit[] = [
+  {
+    id: 'lim_demo_742',
+    agencyId: 'user_demo_001',
+    agencyName: 'Demo Agency',
+    number: '742',
+    gameSlot: 'ALL',
+    maxCount: 50,
+    createdAt: new Date().toISOString().split('T')[0],
+  },
+  {
+    id: 'lim_ganesh_512',
+    agencyId: 'user_sriganesh_002',
+    agencyName: 'Sri Ganesh Agency',
+    number: '512',
+    gameSlot: 'ALL',
+    maxCount: 100,
+    createdAt: new Date().toISOString().split('T')[0],
+  },
+  {
+    id: 'lim_lucky_819',
+    agencyId: 'user_luckystar_003',
+    agencyName: 'Lucky Star Agency',
+    number: '819',
+    gameSlot: 'ALL',
+    maxCount: 75,
+    createdAt: new Date().toISOString().split('T')[0],
+  },
+];
+
+const defaultBlockedNumbers: BlockedNumberRule[] = [
+  {
+    id: 'blk_999',
+    number: '999',
+    gameSlot: 'ALL',
+    reason: 'Admin Blocked / Risk Control',
+    createdAt: new Date().toISOString().split('T')[0],
+  },
+  {
+    id: 'blk_777',
+    number: '777',
+    gameSlot: '1 PM Game',
+    reason: 'Admin Blocked for 1 PM',
+    createdAt: new Date().toISOString().split('T')[0],
+  },
+];
+
+const defaultGlobalLimitRule: GlobalLimitRule = {
+  defaultMaxCount: 100,
+  isEnabled: false,
+  gameSlot: 'ALL',
+};
+
 const { todayResults: initialTodayResults, allResults: initialAllResults } = getInitialSampleGameResults();
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -586,6 +652,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>(initialAllResults);
   const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>(getInitialSamplePayoutLogs());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
+
+  // Limit / Block States
+  const [agencyNumberLimits, setAgencyNumberLimits] = useState<AgencyNumberLimit[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lucky10_agency_limits');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return defaultAgencyLimits;
+  });
+
+  const [blockedNumbers, setBlockedNumbers] = useState<BlockedNumberRule[]>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lucky10_blocked_numbers');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return defaultBlockedNumbers;
+  });
+
+  const [globalLimitRule, setGlobalLimitRule] = useState<GlobalLimitRule>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('lucky10_global_limit');
+      if (saved) {
+        try { return JSON.parse(saved); } catch (e) {}
+      }
+    }
+    return defaultGlobalLimitRule;
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lucky10_agency_limits', JSON.stringify(agencyNumberLimits));
+    }
+  }, [agencyNumberLimits]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lucky10_blocked_numbers', JSON.stringify(blockedNumbers));
+    }
+  }, [blockedNumbers]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lucky10_global_limit', JSON.stringify(globalLimitRule));
+    }
+  }, [globalLimitRule]);
 
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
     const key = `${dateStr}_${slot}`;
@@ -900,7 +1015,132 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // ================= LIMIT & BLOCK VALIDATION AND MANAGEMENT =================
+  const checkBetEligibility = (
+    agencyIdOrName: string,
+    slot: GameSlot,
+    number: string,
+    newCount: number
+  ): { ok: boolean; reason?: string } => {
+    const rawNum = number.includes(':') ? number.split(':')[1] : number;
+    const cleanNum = rawNum.trim();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // 1. Check if number is blocked globally or for this slot
+    const isBlocked = blockedNumbers.some(
+      (b) => b.number === cleanNum && (b.gameSlot === 'ALL' || b.gameSlot === slot)
+    );
+    if (isBlocked) {
+      return {
+        ok: false,
+        reason: `Cannot play on number ${cleanNum}`,
+      };
+    }
+
+    // Calculate existing count already placed today for this number in this slot across this agency
+    const agencyTickets = placedTickets.filter((t) => {
+      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const matchesDate = tDate === todayStr;
+      const matchesSlot = t.gameSlot === slot;
+      const matchesAgency =
+        !agencyIdOrName ||
+        agencyIdOrName === 'ALL' ||
+        t.userId === agencyIdOrName ||
+        (t as any).agencyName === agencyIdOrName ||
+        (t as any).userName === agencyIdOrName;
+      return matchesDate && matchesSlot && matchesAgency;
+    });
+
+    let currentAgencyPlacedCount = 0;
+    agencyTickets.forEach((t) => {
+      t.items.forEach((it) => {
+        const itNum = it.number.includes(':') ? it.number.split(':')[1] : it.number;
+        if (itNum.trim() === cleanNum) {
+          currentAgencyPlacedCount += it.count || 1;
+        }
+      });
+    });
+
+    // 2. Check Agency-Specific Limit (Option 1: Limit Count)
+    const specificLimit = agencyNumberLimits.find((l) => {
+      const matchesAgency =
+        l.agencyId === agencyIdOrName ||
+        l.agencyName.toLowerCase() === agencyIdOrName.toLowerCase() ||
+        l.agencyId === 'ALL';
+      const matchesNum = l.number === cleanNum;
+      const matchesSlot = l.gameSlot === 'ALL' || l.gameSlot === slot;
+      return matchesAgency && matchesNum && matchesSlot;
+    });
+
+    if (specificLimit) {
+      if (currentAgencyPlacedCount + newCount > specificLimit.maxCount) {
+        return {
+          ok: false,
+          reason: `Limit of ${specificLimit.maxCount} count reached for number ${cleanNum} (${specificLimit.agencyName})`,
+        };
+      }
+    }
+
+    // 3. Check Global Limit ("Limit All")
+    if (globalLimitRule.isEnabled) {
+      const appliesToSlot = globalLimitRule.gameSlot === 'ALL' || globalLimitRule.gameSlot === slot;
+      if (appliesToSlot) {
+        if (currentAgencyPlacedCount + newCount > globalLimitRule.defaultMaxCount) {
+          return {
+            ok: false,
+            reason: `Limit of ${globalLimitRule.defaultMaxCount} count reached for number ${cleanNum}`,
+          };
+        }
+      }
+    }
+
+    return { ok: true };
+  };
+
+  const addAgencyLimit = (limit: Omit<AgencyNumberLimit, 'id' | 'createdAt'>) => {
+    const newLimit: AgencyNumberLimit = {
+      ...limit,
+      id: `lim_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setAgencyNumberLimits((prev) => [newLimit, ...prev]);
+    addToast(`Limit set for ${limit.agencyName}: #${limit.number} (Max: ${limit.maxCount})`, 'success');
+  };
+
+  const removeAgencyLimit = (id: string) => {
+    setAgencyNumberLimits((prev) => prev.filter((l) => l.id !== id));
+    addToast('Agency limit removed successfully', 'info');
+  };
+
+  const addBlockedNumber = (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => {
+    const newRule: BlockedNumberRule = {
+      ...rule,
+      id: `blk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      createdAt: new Date().toISOString().split('T')[0],
+    };
+    setBlockedNumbers((prev) => [newRule, ...prev]);
+    addToast(`Number ${rule.number} is now BLOCKED for ${rule.gameSlot}`, 'success');
+  };
+
+  const removeBlockedNumber = (id: string) => {
+    setBlockedNumbers((prev) => prev.filter((b) => b.id !== id));
+    addToast('Number unblocked successfully', 'info');
+  };
+
+  const updateGlobalLimit = (rule: Partial<GlobalLimitRule>) => {
+    setGlobalLimitRule((prev) => ({ ...prev, ...rule }));
+    addToast('Global limit rule updated', 'success');
+  };
+
   const addToBetSlip = (item: Omit<BetSlipItem, 'id'>) => {
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
+    const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
+    if (!validation.ok) {
+      addToast(validation.reason || 'Bet limit exceeded or number blocked', 'error');
+      return;
+    }
+
     const id = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     setBetSlip((prev) => [...prev, { ...item, id }]);
     addToast(`Added ${item.type} bet: ${item.number} (Count: ${item.count})`, 'success');
@@ -918,6 +1158,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (betSlip.length === 0) {
       addToast('Your bet slip is empty!', 'error');
       return null;
+    }
+
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    for (const item of betSlip) {
+      const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
+      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
+      if (!validation.ok) {
+        addToast(validation.reason || 'Booking blocked by admin limits', 'error');
+        return null;
+      }
     }
 
     const mode1Items = betSlip.filter((item) => {
@@ -979,6 +1229,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast('Your bet slip is empty!', 'error');
       return false;
     }
+
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    for (const item of betSlip) {
+      const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
+      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
+      if (!validation.ok) {
+        addToast(validation.reason || 'Payment blocked by admin limits', 'error');
+        return false;
+      }
+    }
+
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
     const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
@@ -1267,6 +1528,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeToast,
         viewHistory,
         goBack,
+        // Limit / Block Management
+        agencyNumberLimits,
+        blockedNumbers,
+        globalLimitRule,
+        addAgencyLimit,
+        removeAgencyLimit,
+        addBlockedNumber,
+        removeBlockedNumber,
+        updateGlobalLimit,
+        checkBetEligibility,
       }}
     >
       {children}

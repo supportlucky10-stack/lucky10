@@ -389,69 +389,36 @@ export const AdminUsersAndResultsView: React.FC = () => {
                 />
               </div>
 
-              {/* Commission Mode Selection */}
+              {/* Commission Rate (20% or 30%) */}
               <div>
                 <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                  Commission Mode :
+                  Commission Rate :
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setMode('With Commission')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      mode === 'With Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                    onClick={() => setCommissionRate('20%')}
+                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      commissionRate === '20%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
                         : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
                     }`}
                   >
-                    With Commission
+                    20% Commission
                   </button>
                   <button
                     type="button"
-                    onClick={() => setMode('Without Commission')}
-                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                      mode === 'Without Commission'
-                        ? 'bg-gold-metallic text-black border-gold shadow-md font-extrabold'
+                    onClick={() => setCommissionRate('30%')}
+                    className={`py-2 px-3 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      commissionRate === '30%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
                         : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
                     }`}
                   >
-                    Without Commission
+                    30% Commission
                   </button>
                 </div>
               </div>
-
-              {/* Commission Rate (Only if With Commission is selected) */}
-              {mode === 'With Commission' && (
-                <div>
-                  <label className="block text-neutral-400 font-bold uppercase text-[10px] mb-1">
-                    Commission Rate :
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setCommissionRate('20%')}
-                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
-                        commissionRate === '20%'
-                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
-                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      20% Commission
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCommissionRate('30%')}
-                      className={`py-1.5 px-3 text-xs font-bold rounded-lg border transition-all cursor-pointer text-center ${
-                        commissionRate === '30%'
-                          ? 'bg-amber-500/20 text-gold border-gold font-extrabold shadow-sm'
-                          : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
-                      }`}
-                    >
-                      30% Commission
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Password */}
               <div>

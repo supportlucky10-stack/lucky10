@@ -5,6 +5,7 @@ import { useApp } from '../../context/AppContext';
 import a1Icon from '../../assets/admin logo/a1.png';
 import a2Icon from '../../assets/admin logo/a2.png';
 import a3Icon from '../../assets/admin logo/a3.png';
+import a4Icon from '../../assets/admin logo/a4.png';
 
 export const AdminDrawerView: React.FC = () => {
   const { logout, setCurrentView } = useApp();
@@ -13,6 +14,7 @@ export const AdminDrawerView: React.FC = () => {
     { label: 'Users List', icon: a1Icon, action: () => setCurrentView('ADMIN_USERS_LIST') },
     { label: 'Result Management', icon: a2Icon, action: () => setCurrentView('ADMIN_RESULT_MANAGEMENT') },
     { label: 'Reports', icon: a3Icon, action: () => setCurrentView('ADMIN_REPORTS') },
+    { label: 'Limit / Block', icon: a4Icon, action: () => setCurrentView('ADMIN_LIMIT_BLOCK') },
   ];
 
   return (
@@ -22,7 +24,7 @@ export const AdminDrawerView: React.FC = () => {
         <div className="w-full bg-gold-banner px-5 py-4 sm:py-5 flex items-center justify-between shadow-md border-b border-[#aa771c] min-h-[48px]">
         </div>
 
-        {/* Menu Items List (Payouts, Transaction Logs, Issues removed as requested) */}
+        {/* Menu Items List (Users List, Result Management, Reports, Limit / Block) */}
         <div className="pt-2 divide-y divide-neutral-800">
           {menuItems.map((item, index) => (
             <button
@@ -40,13 +42,13 @@ export const AdminDrawerView: React.FC = () => {
           ))}
         </div>
 
-        {/* Logout Button */}
+        {/* Exit Button */}
         <div className="pt-6 sm:pt-8 px-6 pb-10">
           <button
             onClick={logout}
-            className="px-6 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide cursor-pointer"
+            className="px-8 py-2.5 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm rounded-lg shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide cursor-pointer"
           >
-            Logout
+            Exit
           </button>
         </div>
       </div>
