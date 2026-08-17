@@ -324,9 +324,9 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans pb-4">
+    <div className="w-full h-screen max-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
       {/* Top Header Bar */}
-      <div className="w-full bg-neutral-950 px-3 sm:px-8 py-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md">
+      <div className="w-full bg-neutral-950 px-3 sm:px-8 py-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md shrink-0">
         {/* Left: Drawer Menu Toggle Icon Button */}
         <button
           onClick={() => setCurrentView('USER_DRAWER')}
@@ -352,7 +352,7 @@ export const GameDashboardView: React.FC = () => {
       </div>
 
       {/* Sub-Header Ribbon: Interactive Game Slot Switcher Dropdown */}
-      <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none relative z-30">
+      <div className="w-full px-3 sm:px-8 py-1.5 bg-neutral-950/80 border-b border-neutral-900 flex items-center justify-start text-xs sm:text-sm select-none relative z-30 shrink-0">
         <div className="relative">
           <button
             type="button"
@@ -395,10 +395,10 @@ export const GameDashboardView: React.FC = () => {
       </div>
 
       {/* Main Layout Flow */}
-      <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto space-y-3 sm:space-y-4">
+      <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto flex-1 flex flex-col min-h-0 space-y-3 sm:space-y-4 overflow-hidden">
         
         {/* TABBED GAME ENTRY CARD */}
-        <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all`}>
+        <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all shrink-0`}>
           
           {/* Header Row inside Entry Card: Mode Tabs, Customer Box, R & Set Checkboxes */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-900 pb-2.5">
@@ -687,23 +687,23 @@ export const GameDashboardView: React.FC = () => {
 
           </div>
 
-          {/* Subtotal Summary Bar (COUNT & TOTAL) Placed Down Below Entry Card */}
-          <div className="bg-neutral-950 text-white px-4 py-3 rounded-xl border border-neutral-800 flex items-center justify-between text-sm sm:text-base md:text-lg font-black tracking-wider uppercase shadow-md">
-            <span>COUNT: {totalCount}</span>
-            <span>TOTAL: {totalAmount}</span>
+        {/* Subtotal Summary Bar (COUNT & TOTAL) Placed Down Below Entry Card */}
+        <div className="bg-neutral-950 text-white px-4 py-2.5 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm md:text-base font-black tracking-wider uppercase shadow-md shrink-0">
+          <span>COUNT: {totalCount}</span>
+          <span>TOTAL: {totalAmount}</span>
+        </div>
+
+        {/* Slip Table Placed Down Below Subtotal Bar (Reduced compact size with internal scroll) */}
+        <div className="w-full h-[220px] sm:h-[280px] max-h-[300px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
+          <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center shrink-0">
+            <span className="border-r border-gray-300">Type</span>
+            <span className="border-r border-gray-300">Number</span>
+            <span className="border-r border-gray-300">Count</span>
+            <span className="border-r border-gray-300">Amount</span>
+            <span>Action</span>
           </div>
 
-          {/* Slip Table Placed Down Below Subtotal Bar */}
-          <div className="w-full border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg">
-            <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center">
-              <span className="border-r border-gray-300">Type</span>
-              <span className="border-r border-gray-300">Number</span>
-              <span className="border-r border-gray-300">Count</span>
-              <span className="border-r border-gray-300">Amount</span>
-              <span>Action</span>
-            </div>
-
-            <div className="divide-y divide-gray-200 min-h-[380px] sm:min-h-[480px] max-h-[560px] sm:max-h-[700px] overflow-y-auto text-xs sm:text-sm font-bold">
+          <div className="divide-y divide-gray-200 flex-1 min-h-0 overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = item.number.includes(':')
@@ -765,7 +765,7 @@ export const GameDashboardView: React.FC = () => {
                     if (savedBillId) {
                       navigator.clipboard.writeText(savedBillId);
                       setCopiedSavedBill(true);
-                      addToast(`Copied Bill ID #${savedBillId}`, 'success');
+                      addToast(`Copied Bill ID ${savedBillId}`, 'success');
                       setTimeout(() => setCopiedSavedBill(false), 2000);
                     }
                   }}

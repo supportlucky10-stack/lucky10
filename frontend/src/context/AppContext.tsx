@@ -1022,6 +1022,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
     setIsAdminLoggedIn(false);
     setBetSlip([]);
+    setActiveGameSlot('1 PM Game');
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
       setCurrentView('ADMIN_SIGN_IN');

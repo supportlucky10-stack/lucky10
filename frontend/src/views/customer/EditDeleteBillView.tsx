@@ -63,7 +63,7 @@ export const EditDeleteBillView: React.FC = () => {
     if (e) e.stopPropagation();
     navigator.clipboard.writeText(id);
     setCopiedBillId(id);
-    addToast(`Copied Bill ID #${id}`, 'success');
+    addToast(`Copied Bill ID ${id}`, 'success');
     setTimeout(() => {
       setCopiedBillId((prev) => (prev === id ? null : prev));
     }, 2000);
@@ -159,7 +159,7 @@ export const EditDeleteBillView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-gold font-black text-base">#{searchedBill.id}</span>
+                      <span className="text-gold font-black text-base">{searchedBill.id}</span>
                       <button
                         type="button"
                         onClick={(e) => handleCopyBillId(searchedBill.id, e)}
@@ -251,7 +251,7 @@ export const EditDeleteBillView: React.FC = () => {
             <div>
               <h4 className="font-black text-white text-base uppercase">DELETE BILL PERMISSION</h4>
               <p className="text-xs text-neutral-400 mt-1 font-mono">
-                Are you sure you want to delete Bill ID <strong className="text-gold">#{confirmDeleteId}</strong> completely?
+                Are you sure you want to delete Bill ID <strong className="text-gold">{confirmDeleteId}</strong> completely?
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2">

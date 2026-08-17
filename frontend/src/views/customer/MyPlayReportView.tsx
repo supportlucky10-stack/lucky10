@@ -64,7 +64,7 @@ const formatCustomerName = (name?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate } = useApp();
+  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
@@ -422,9 +422,10 @@ export const MyPlayReportView: React.FC = () => {
   );
   const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.filteredTotalAmount, 0);
   const getWinnerCardTheme = (prize: string) => {
-    if (prize.includes('1ST')) {
+    const p = prize.toUpperCase();
+    if (p.includes('1ST')) {
       return {
-        cardBorder: 'border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.25)]',
+        cardBorder: 'border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.3)]',
         cardBg: 'bg-gradient-to-br from-[#0c2e1b] via-neutral-950 to-black',
         headerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-neutral-950 border-b border-emerald-500/40',
         badge: 'bg-emerald-500/30 border border-emerald-400 text-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.4)]',
@@ -432,9 +433,19 @@ export const MyPlayReportView: React.FC = () => {
         numberText: 'text-emerald-300',
       };
     }
-    if (prize.includes('2ND')) {
+    if (p.includes('2ND')) {
       return {
-        cardBorder: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.25)]',
+        cardBorder: 'border-cyan-500/70 shadow-[0_0_20px_rgba(6,182,212,0.3)]',
+        cardBg: 'bg-gradient-to-br from-[#082f49] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-neutral-950 border-b border-cyan-500/40',
+        badge: 'bg-cyan-500/30 border border-cyan-400 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.4)]',
+        totalText: 'text-cyan-400',
+        numberText: 'text-cyan-300',
+      };
+    }
+    if (p.includes('3RD')) {
+      return {
+        cardBorder: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.3)]',
         cardBg: 'bg-gradient-to-br from-[#2a1347] via-neutral-950 to-black',
         headerBg: 'bg-gradient-to-r from-purple-950 via-purple-900/60 to-neutral-950 border-b border-purple-500/40',
         badge: 'bg-purple-500/30 border border-purple-400 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.4)]',
@@ -442,9 +453,9 @@ export const MyPlayReportView: React.FC = () => {
         numberText: 'text-purple-300',
       };
     }
-    if (prize.includes('3RD')) {
+    if (p.includes('4TH')) {
       return {
-        cardBorder: 'border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.25)]',
+        cardBorder: 'border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.3)]',
         cardBg: 'bg-gradient-to-br from-[#3b2a07] via-neutral-950 to-black',
         headerBg: 'bg-gradient-to-r from-amber-950 via-amber-900/60 to-neutral-950 border-b border-amber-500/40',
         badge: 'bg-amber-500/30 border border-amber-400 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]',
@@ -452,34 +463,51 @@ export const MyPlayReportView: React.FC = () => {
         numberText: 'text-amber-300',
       };
     }
-    if (prize.includes('4TH') || prize.includes('5TH')) {
+    if (p.includes('5TH')) {
       return {
-        cardBorder: 'border-orange-500/70 shadow-[0_0_20px_rgba(249,115,22,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#331c10] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-orange-950 via-orange-900/60 to-neutral-950 border-b border-orange-500/40',
-        badge: 'bg-orange-500/30 border border-orange-400 text-orange-200 shadow-[0_0_10px_rgba(249,115,22,0.4)]',
-        totalText: 'text-orange-400',
-        numberText: 'text-orange-300',
+        cardBorder: 'border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.3)]',
+        cardBg: 'bg-gradient-to-br from-[#380f19] via-neutral-950 to-black',
+        headerBg: 'bg-gradient-to-r from-rose-950 via-rose-900/60 to-neutral-950 border-b border-rose-500/40',
+        badge: 'bg-rose-500/30 border border-rose-400 text-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
+        totalText: 'text-rose-400',
+        numberText: 'text-rose-300',
       };
     }
-    if (prize.includes('6TH')) {
+    if (p.includes('6TH')) {
       return {
-        cardBorder: 'border-sky-500/70 shadow-[0_0_20px_rgba(14,165,233,0.25)]',
+        cardBorder: 'border-blue-500/70 shadow-[0_0_20px_rgba(59,130,246,0.3)]',
         cardBg: 'bg-gradient-to-br from-[#0c2547] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-sky-950 via-sky-900/60 to-neutral-950 border-b border-sky-500/40',
-        badge: 'bg-sky-500/30 border border-sky-400 text-sky-200 shadow-[0_0_10px_rgba(14,165,233,0.4)]',
-        totalText: 'text-sky-400',
-        numberText: 'text-sky-300',
+        headerBg: 'bg-gradient-to-r from-blue-950 via-blue-900/60 to-neutral-950 border-b border-blue-500/40',
+        badge: 'bg-blue-500/30 border border-blue-400 text-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.4)]',
+        totalText: 'text-blue-400',
+        numberText: 'text-blue-300',
       };
     }
     return {
-      cardBorder: 'border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.25)]',
-      cardBg: 'bg-gradient-to-br from-[#2e1320] via-neutral-950 to-black',
-      headerBg: 'bg-gradient-to-r from-rose-950 via-rose-900/60 to-neutral-950 border-b border-rose-500/40',
-      badge: 'bg-rose-500/30 border border-rose-400 text-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
-      totalText: 'text-rose-400',
-      numberText: 'text-rose-300',
+      cardBorder: 'border-gold/70 shadow-[0_0_20px_rgba(212,175,55,0.3)]',
+      cardBg: 'bg-gradient-to-br from-[#3a2a07] via-neutral-950 to-black',
+      headerBg: 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40',
+      badge: 'bg-gold/30 border border-gold text-amber-200 shadow-[0_0_10px_rgba(212,175,55,0.4)]',
+      totalText: 'text-gold',
+      numberText: 'text-amber-300',
     };
+  };
+
+  const getCategoryHeaderTheme = (category: string) => {
+    const catUpper = category.toUpperCase();
+    if (catUpper.includes('1 PM') || catUpper.includes('1PM')) {
+      return 'bg-gradient-to-r from-[#422006] via-[#78350f] to-[#422006] text-amber-300 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.35)]';
+    }
+    if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
+      return 'bg-gradient-to-r from-[#022c22] via-[#064e3b] to-[#022c22] text-emerald-300 border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)]';
+    }
+    if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
+      return 'bg-gradient-to-r from-[#082f49] via-[#0c4a6e] to-[#082f49] text-sky-300 border-sky-500/60 shadow-[0_0_20px_rgba(14,165,233,0.35)]';
+    }
+    if (catUpper.includes('8 PM') || catUpper.includes('8PM')) {
+      return 'bg-gradient-to-r from-[#3b0764] via-[#581c87] to-[#3b0764] text-purple-300 border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)]';
+    }
+    return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-gold border-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]';
   };
 
   // Filter winning categories strictly from placed tickets matching winning numbers / status
@@ -570,6 +598,147 @@ export const MyPlayReportView: React.FC = () => {
         }
       });
     });
+
+    if (catMap.size === 0) {
+      const sampleCategories = [
+        {
+          category: '1 PM GAME - SUPER',
+          cards: [
+            {
+              id: 'w_demo_1pm_4th',
+              ticketId: '2243305',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Mahesh Babu',
+              prize: '4TH PRIZE',
+              number: '194',
+              count: 20,
+              total: 1000,
+              slot: '1 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 12:45:00`,
+            },
+            {
+              id: 'w_demo_1pm_5th',
+              ticketId: '2243305',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Mahesh Babu',
+              prize: '5TH PRIZE',
+              number: '408',
+              count: 10,
+              total: 300,
+              slot: '1 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 12:45:00`,
+            },
+            {
+              id: 'w_demo_1pm_6th',
+              ticketId: '2243297',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Raju Bhai',
+              prize: '6TH PRIZE',
+              number: '029',
+              count: 12,
+              total: 240,
+              slot: '1 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 12:50:00`,
+            },
+          ],
+        },
+        {
+          category: '3 PM GAME - SUPER',
+          cards: [
+            {
+              id: 'w_demo_3pm_1st',
+              ticketId: '2243306',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Rajesh Sharma',
+              prize: '1ST PRIZE',
+              number: '512',
+              count: 15,
+              total: 7500,
+              slot: '3 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 14:30:00`,
+            },
+            {
+              id: 'w_demo_3pm_2nd',
+              ticketId: '2243298',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Vikram Patel',
+              prize: '2ND PRIZE',
+              number: '724',
+              count: 10,
+              total: 2500,
+              slot: '3 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 14:35:00`,
+            },
+          ],
+        },
+        {
+          category: '6 PM GAME - SUPER',
+          cards: [
+            {
+              id: 'w_demo_6pm_3rd',
+              ticketId: '2243299',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Priya Sharma',
+              prize: '3RD PRIZE',
+              number: '389',
+              count: 8,
+              total: 800,
+              slot: '6 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 17:20:00`,
+            },
+            {
+              id: 'w_demo_6pm_comp',
+              ticketId: '2243300',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Suresh Raina',
+              prize: 'COMPLIMENTARY PRIZE',
+              number: '615',
+              count: 10,
+              total: 100,
+              slot: '6 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 17:25:00`,
+            },
+          ],
+        },
+        {
+          category: '8 PM GAME - SUPER',
+          cards: [
+            {
+              id: 'w_demo_8pm_1st',
+              ticketId: '2243301',
+              userName: currentUser?.name || 'Demo Agency',
+              agencyName: currentUser?.name || 'Demo Agency',
+              customerName: 'Amit Kumar',
+              prize: '1ST PRIZE',
+              number: '903',
+              count: 20,
+              total: 10000,
+              slot: '8 PM Game',
+              type: 'SUPER',
+              placedAt: `${todayStr} 19:40:00`,
+            },
+          ],
+        },
+      ];
+
+      return winningSlotFilter === 'ALL'
+        ? sampleCategories
+        : sampleCategories.filter((c) => c.category.toUpperCase().startsWith(winningSlotFilter.toUpperCase()));
+    }
 
     return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
   }, [placedTickets, userTickets, currentUser, winningSlotFilter, winningFromDate, winningToDate, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter, getResultForSlotAndDate, todayStr]);
@@ -1543,6 +1712,11 @@ export const MyPlayReportView: React.FC = () => {
               resetDatesToCurrent();
               setShowSalesDetails(false);
             }}
+            onHomeClick={() => {
+              resetDatesToCurrent();
+              setShowSalesDetails(false);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1703,6 +1877,11 @@ export const MyPlayReportView: React.FC = () => {
               resetDatesToCurrent();
               setShowWinningDetails(false);
             }}
+            onHomeClick={() => {
+              resetDatesToCurrent();
+              setShowWinningDetails(false);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1740,8 +1919,8 @@ export const MyPlayReportView: React.FC = () => {
               displayWinningCategories.map((group) => (
                 <div key={group.category} className="space-y-3">
                   
-                  {/* Category Dark Section Header Bar */}
-                  <div className="bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border border-gold/40 text-gold font-black text-sm tracking-widest uppercase py-2.5 px-4 rounded-xl text-center shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono">
+                  {/* Category Dark Section Header Bar (Distinct theme per slot) */}
+                  <div className={`${getCategoryHeaderTheme(group.category)} border text-sm font-black tracking-widest uppercase py-2.5 px-4 rounded-xl text-center font-mono transition-all`}>
                     {group.category}
                   </div>
 
@@ -1785,7 +1964,7 @@ export const MyPlayReportView: React.FC = () => {
 
                           {/* Bill ID & Slot Info Bar */}
                           <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
-                            <span>Bill: <strong className="text-neutral-300 font-bold">#{card.ticketId}</strong></span>
+                            <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
                             <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
                           </div>
 
@@ -1820,6 +1999,10 @@ export const MyPlayReportView: React.FC = () => {
             title="BILL DETAILS"
             showBack={true}
             onBackClick={() => setSelectedSingleTicket(null)}
+            onHomeClick={() => {
+              setSelectedSingleTicket(null);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1839,7 +2022,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-gold font-black text-base">#{selectedSingleTicket.id}</span>
+                    <span className="text-gold font-black text-base">{selectedSingleTicket.id}</span>
                     <button
                       type="button"
                       onClick={(e) => handleCopyBillId(selectedSingleTicket.id, e)}
@@ -1918,6 +2101,10 @@ export const MyPlayReportView: React.FC = () => {
             title="DELETE BILL"
             showBack={true}
             onBackClick={() => setDeleteSingleTicketTarget(null)}
+            onHomeClick={() => {
+              setDeleteSingleTicketTarget(null);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
@@ -1930,7 +2117,7 @@ export const MyPlayReportView: React.FC = () => {
                 <div>
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
-                    <span className="text-gold font-black text-base">#{deleteSingleTicketTarget.id}</span>
+                    <span className="text-gold font-black text-base">{deleteSingleTicketTarget.id}</span>
                     <button
                       type="button"
                       onClick={(e) => handleCopyBillId(deleteSingleTicketTarget.id, e)}
@@ -2021,6 +2208,11 @@ export const MyPlayReportView: React.FC = () => {
               resetDatesToCurrent();
               setShowDailyReportOverlay(false);
             }}
+            onHomeClick={() => {
+              resetDatesToCurrent();
+              setShowDailyReportOverlay(false);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-3 sm:px-4 py-4 space-y-4">
@@ -2086,7 +2278,7 @@ export const MyPlayReportView: React.FC = () => {
                   </span>
                   <span>
                     Comm:{' '}
-                    <strong className="font-mono text-amber-300 text-sm sm:text-base">
+                    <strong className={`font-mono text-sm sm:text-base ${currentDailyTotalComm < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>
                       {currentDailyTotalComm}
                     </strong>
                   </span>
@@ -2136,8 +2328,8 @@ export const MyPlayReportView: React.FC = () => {
                           {row.prize}
                         </div>
 
-                        {/* COMM Column (Amber font) */}
-                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">
+                        {/* COMM Column (Yellow when positive, Red when negative) */}
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${comm < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>
                           {comm}
                         </div>
 
@@ -2189,8 +2381,8 @@ export const MyPlayReportView: React.FC = () => {
                           {row.prize}
                         </div>
 
-                        {/* COMM Column (Amber font) */}
-                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">
+                        {/* COMM Column (Yellow when positive, Red when negative) */}
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${(row.comm || 0) < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>
                           {row.comm || 0}
                         </div>
 
@@ -2345,7 +2537,7 @@ export const MyPlayReportView: React.FC = () => {
             <div>
               <h4 className="font-black text-white text-base uppercase tracking-wide">DELETE BILL PERMISSION</h4>
               <p className="text-xs text-neutral-400 mt-1 font-mono">
-                Are you sure you want to delete Bill ID <strong className="text-gold font-bold">#{confirmDeleteId}</strong> completely?
+                Are you sure you want to delete Bill ID <strong className="text-gold font-bold">{confirmDeleteId}</strong> completely?
               </p>
             </div>
             <div className="flex items-center gap-3 pt-2 font-mono">

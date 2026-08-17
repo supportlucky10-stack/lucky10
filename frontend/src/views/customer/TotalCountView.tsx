@@ -542,6 +542,10 @@ export const TotalCountView: React.FC = () => {
             title="TOTAL COUNT RESULT"
             showBack={true}
             onBackClick={() => setShowCountDetails(false)}
+            onHomeClick={() => {
+              setShowCountDetails(false);
+              setCurrentView('GAME_DASHBOARD');
+            }}
           />
 
           <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
