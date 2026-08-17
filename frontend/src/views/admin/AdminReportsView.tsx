@@ -177,7 +177,7 @@ const getCategoryHeaderTheme = (category: string) => {
     return 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]';
   }
   if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
-    return 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_15px_rgba(184,137,40,0.4)]';
+    return 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.4)]';
   }
   if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
     return 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]';

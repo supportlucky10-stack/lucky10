@@ -968,6 +968,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         setCurrentUser(matchedAgency);
         setIsAdminLoggedIn(false);
+        setActiveGameSlot('3 PM Game');
         addToast(`Welcome back, ${matchedAgency.name}!`, 'success');
         setCurrentView('GAME_DASHBOARD');
         return { success: true };
@@ -983,6 +984,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isDemo && isDemoPassValid) {
       setCurrentUser(defaultDemoUser);
       setIsAdminLoggedIn(false);
+      setActiveGameSlot('3 PM Game');
       addToast('Welcome back, Demo Player!', 'success');
       setCurrentView('GAME_DASHBOARD');
       return { success: true };
@@ -1022,7 +1024,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
     setIsAdminLoggedIn(false);
     setBetSlip([]);
-    setActiveGameSlot('1 PM Game');
+    setActiveGameSlot('3 PM Game');
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
       setCurrentView('ADMIN_SIGN_IN');

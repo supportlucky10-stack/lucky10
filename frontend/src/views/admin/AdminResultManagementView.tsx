@@ -28,14 +28,14 @@ const slotThemes: Record<string, {
   },
   '3 PM Game': {
     name: '3 PM Game',
-    badgeBg: 'bg-gold-metallic',
-    badgeText: 'text-black',
-    badgeBorder: 'border-gold-dark',
-    buttonGradient: 'bg-gradient-to-b from-[#e3bf45] via-[#b88928] to-[#805b11]',
-    buttonText: 'text-black',
-    pillActive: 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_12px_rgba(184,137,40,0.5)]',
-    cardBorder: 'border border-gold/90 shadow-[0_0_10px_rgba(184,137,40,0.2)]',
-    badgeActive: 'bg-gold-metallic text-black border-gold-dark',
+    badgeBg: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600',
+    badgeText: 'text-white',
+    badgeBorder: 'border-orange-300',
+    buttonGradient: 'bg-gradient-to-b from-orange-500 via-orange-600 to-amber-700',
+    buttonText: 'text-white',
+    pillActive: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.5)]',
+    cardBorder: 'border border-orange-400/90 shadow-[0_0_10px_rgba(249,115,22,0.2)]',
+    badgeActive: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-300',
   },
   '6 PM Game': {
     name: '6 PM Game',
@@ -356,7 +356,6 @@ export const AdminResultManagementView: React.FC = () => {
 
               {/* Compliments 30 Grid */}
               <div className="space-y-3 pt-2 border-t border-neutral-800">
-                <span className="text-xs font-black text-gold uppercase tracking-wider block">Compliments (30 Numbers)</span>
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                   {complimentBoxes.map((num, idx) => (
                     <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">

@@ -8,9 +8,9 @@ export const UserSignInView: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
-  // Lock iOS Safari rubber-band scrolling and set browser tab title to Liora Fashions
+  // Lock iOS Safari rubber-band scrolling and set browser tab title to Leora Fashions
   useEffect(() => {
-    document.title = 'Liora Fashions';
+    document.title = 'Leora Fashions';
     const originalOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
 
@@ -44,8 +44,8 @@ export const UserSignInView: React.FC = () => {
         
         {/* Brand Title & Notification Bell */}
         <div className="flex items-center justify-between">
-          <h1 className="font-serif font-black text-2xl sm:text-3xl text-black tracking-tight">
-            Liora Fashions
+          <h1 className="font-serif font-black text-xl sm:text-2xl text-black tracking-tight">
+            Leora Fashions
           </h1>
           <div className="relative cursor-pointer p-1">
             <Bell className="w-6 h-6 text-black fill-black/10 stroke-[2]" />

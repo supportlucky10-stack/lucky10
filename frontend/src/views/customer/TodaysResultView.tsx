@@ -24,10 +24,10 @@ export const TodaysResultView: React.FC = () => {
       textActive: 'text-sky-300',
     },
     '3 PM Game': {
-      pillActive: 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_12px_rgba(184,137,40,0.5)]',
-      cardBorder: 'border border-gold/90 shadow-[0_0_10px_rgba(184,137,40,0.2)]',
-      badgeActive: 'bg-gold-metallic text-black border-black',
-      textActive: 'text-gold',
+      pillActive: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.5)]',
+      cardBorder: 'border border-orange-400/90 shadow-[0_0_10px_rgba(249,115,22,0.2)]',
+      badgeActive: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-300',
+      textActive: 'text-orange-300',
     },
     '6 PM Game': {
       pillActive: 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_12px_rgba(217,70,239,0.5)]',
@@ -205,7 +205,7 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Winning Number Cards (All 5 Prizes Uniform Same Size) */}
+        {/* 5 Winning Number Cards (1st Prize slightly larger than other prizes) */}
         <div className="space-y-1.5 shrink-0">
           {[
             { id: 1, val: currentResult.prize1 || '389' },
@@ -216,7 +216,9 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1.5 sm:py-2 px-3.5 shadow-sm`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all ${
+                item.id === 1 ? 'py-2 sm:py-2.5 px-3.5 shadow-md border-opacity-100' : 'py-1.5 sm:py-2 px-3.5 shadow-sm'
+              }`}
             >
               <div className="flex items-center gap-3.5 w-full">
                 <div
@@ -225,7 +227,11 @@ export const TodaysResultView: React.FC = () => {
                   {item.id}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span className="font-black font-mono tracking-widest block text-white text-lg sm:text-xl">
+                  <span
+                    className={`font-black font-mono tracking-widest block text-white ${
+                      item.id === 1 ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
+                    }`}
+                  >
                     {item.val}
                   </span>
                 </div>

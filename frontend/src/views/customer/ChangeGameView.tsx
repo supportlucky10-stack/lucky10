@@ -14,8 +14,8 @@ export const ChangeGameView: React.FC = () => {
       inactive: 'bg-gradient-to-r from-blue-700/80 to-indigo-800/80 text-white hover:brightness-110 border border-blue-500/50',
     },
     '3 PM Game': {
-      active: 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_15px_rgba(184,137,40,0.4)]',
-      inactive: 'bg-gradient-to-r from-[#c89825]/80 to-[#996e19]/80 text-black hover:brightness-110 border border-gold/40',
+      active: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.5)]',
+      inactive: 'bg-gradient-to-r from-orange-700/80 to-amber-800/80 text-white hover:brightness-110 border border-orange-500/50',
     },
     '6 PM Game': {
       active: 'bg-gradient-to-r from-fuchsia-500 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]',

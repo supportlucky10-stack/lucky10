@@ -45,22 +45,22 @@ const slotThemes: Record<string, SlotTheme> = {
   },
   '3 PM Game': {
     name: '3 PM Game',
-    badgeBg: 'bg-gold-metallic',
-    badgeText: 'text-black',
-    badgeBorder: 'border-gold-dark',
-    cardBorder: 'border-gold-dark',
-    cardShadow: 'shadow-[0_0_20px_rgba(184,137,40,0.35)]',
-    buttonGradient: 'bg-gradient-to-b from-[#e3bf45] via-[#b88928] to-[#805b11] hover:from-[#f0cf5d] hover:to-[#996e19]',
-    buttonText: 'text-black',
-    buttonBorder: 'border-amber-200',
-    activeTabBg: 'bg-gold-metallic',
-    activeTabText: 'text-black',
-    activeTabBorder: 'border-gold-dark',
-    inactiveTabText: 'text-gold',
-    inactiveTabBorder: 'border-gold-dark',
-    menuIconText: 'text-gold',
-    saveBtnBg: 'bg-gold-metallic',
-    saveBtnText: 'text-black border border-gold-dark',
+    badgeBg: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600',
+    badgeText: 'text-white',
+    badgeBorder: 'border-orange-300',
+    cardBorder: 'border-orange-500/80',
+    cardShadow: 'shadow-[0_0_20px_rgba(249,115,22,0.35)]',
+    buttonGradient: 'bg-gradient-to-b from-orange-500 via-orange-600 to-amber-700 hover:from-orange-400 hover:to-amber-600',
+    buttonText: 'text-white',
+    buttonBorder: 'border-orange-300',
+    activeTabBg: 'bg-gradient-to-r from-orange-500 to-amber-600',
+    activeTabText: 'text-white',
+    activeTabBorder: 'border-orange-400',
+    inactiveTabText: 'text-orange-300',
+    inactiveTabBorder: 'border-orange-500/50',
+    menuIconText: 'text-orange-300',
+    saveBtnBg: 'bg-gradient-to-r from-orange-500 to-amber-600',
+    saveBtnText: 'text-white border border-orange-300',
   },
   '6 PM Game': {
     name: '6 PM Game',
@@ -693,8 +693,8 @@ export const GameDashboardView: React.FC = () => {
           <span>TOTAL: {totalAmount}</span>
         </div>
 
-        {/* Slip Table Placed Down Below Subtotal Bar (Reduced compact size with internal scroll) */}
-        <div className="w-full h-[220px] sm:h-[280px] max-h-[300px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
+        {/* Slip Table Placed Down Below Subtotal Bar (Increased length, clean internal scroll) */}
+        <div className="w-full flex-1 min-h-[260px] sm:min-h-[320px] max-h-[420px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
           <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center shrink-0">
             <span className="border-r border-gray-300">Type</span>
             <span className="border-r border-gray-300">Number</span>
