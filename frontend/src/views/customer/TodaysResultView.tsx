@@ -108,21 +108,37 @@ export const TodaysResultView: React.FC = () => {
 
   return (
     <div className="w-full h-screen min-h-screen bg-black text-white flex flex-col justify-between overflow-hidden antialiased select-none font-sans">
-      {/* Header Banner */}
-      <HeaderBanner title="RESULT" />
+      {/* Header Banner with WhatsApp Share Button on Right */}
+      <HeaderBanner
+        title="RESULT"
+        showHome={false}
+        rightElement={
+          <button
+            type="button"
+            onClick={handleShareToWhatsApp}
+            className="px-3 sm:px-3.5 py-1.5 bg-[#075e54] hover:bg-[#128c7e] active:scale-90 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-[#25d366]/40"
+            title="Share to WhatsApp"
+          >
+            <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
+              <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
+            </svg>
+            <span>Share</span>
+          </button>
+        }
+      />
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-2.5 flex-1 flex flex-col justify-start space-y-2.5">
+      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-3 flex-1 flex flex-col justify-start space-y-3">
         
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
-        <div className="space-y-2 shrink-0">
-          {/* Row 1: Date Pill & Change Date Button */}
+        <div className="space-y-2.5 shrink-0">
+          {/* Row 1: Date Pill (Increased Size & Prominence) & Change Date Button */}
           <div className="grid grid-cols-2 gap-2.5">
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-3.5 py-2 cursor-pointer transition-all flex items-center justify-center shadow-md h-[40px]"
+              className="bg-gold-metallic text-black rounded-xl px-4 py-2 cursor-pointer transition-all flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark"
             >
-              <span className="text-black font-black text-xs sm:text-sm tracking-wide font-mono">
+              <span className="text-black font-black text-sm sm:text-base md:text-lg tracking-wider font-mono">
                 {displayDateFormatted}
               </span>
             </div>
@@ -130,9 +146,9 @@ export const TodaysResultView: React.FC = () => {
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-200 rounded-xl px-3.5 py-2 cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md h-[40px]"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-4 py-2 cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md h-[46px] sm:h-[50px]"
             >
-              <Calendar className="w-4 h-4 text-gold shrink-0" />
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
               <span className="font-bold text-xs sm:text-sm tracking-wide">
                 Change date
               </span>
@@ -151,7 +167,7 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[40px] px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[42px] px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="opacity-80 text-[10px] tracking-wider uppercase">TIME:</span>
@@ -161,7 +177,7 @@ export const TodaysResultView: React.FC = () => {
             </button>
 
             {isGameDropdownOpen && (
-              <div className="absolute left-0 right-0 top-11 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
+              <div className="absolute left-0 right-0 top-12 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
                 {games.map((slot) => {
                   const theme = slotThemeStyles[slot];
                   const isSelected = slot === activeGameSlot;
@@ -218,7 +234,7 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table (Uniform Compact Sizing & Gold Title) */}
+        {/* COMPLIMENTS Matrix Table (Expanded & Increased in Size) */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const fallbackList = [
@@ -236,17 +252,17 @@ export const TodaysResultView: React.FC = () => {
           return (
             <div
               key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-xl p-2 sm:p-2.5 shadow-xl border border-neutral-800 space-y-1 shrink-0 my-0.5"
+              className="bg-neutral-950 text-white rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border border-neutral-800 space-y-1.5 shrink-0 my-0.5"
             >
-              <h3 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-wider shrink-0">
+              <h3 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-widest shrink-0">
                 COMPLIMENTS
               </h3>
 
-              <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono">
+              <div className="grid grid-cols-5 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
                 {compliments30.map((val, idx) => (
                   <div
                     key={idx}
-                    className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 sm:py-1.5"
+                    className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5 sm:py-2 rounded-lg border border-neutral-850 shadow-inner"
                   >
                     {val}
                   </div>
@@ -255,23 +271,6 @@ export const TodaysResultView: React.FC = () => {
             </div>
           );
         })()}
-
-        {/* SHARE RESULT TO WHATSAPP Action Button */}
-        <div className="pt-0.5 pb-1 w-full flex justify-center shrink-0">
-          <button
-            type="button"
-            onClick={handleShareToWhatsApp}
-            className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2 transition-all cursor-pointer group"
-          >
-            <svg
-              className="w-4 h-4 fill-white shrink-0 group-hover:rotate-6 transition-transform"
-              viewBox="0 0 24 24"
-            >
-              <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
-            </svg>
-            <span>SHARE RESULT TO WHATSAPP</span>
-          </button>
-        </div>
 
       </div>
     </div>

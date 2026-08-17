@@ -496,16 +496,16 @@ export const MyPlayReportView: React.FC = () => {
   const getCategoryHeaderTheme = (category: string) => {
     const catUpper = category.toUpperCase();
     if (catUpper.includes('1 PM') || catUpper.includes('1PM')) {
-      return 'bg-gradient-to-r from-[#422006] via-[#78350f] to-[#422006] text-amber-300 border-amber-500/60 shadow-[0_0_20px_rgba(245,158,11,0.35)]';
+      return 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]';
     }
     if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
-      return 'bg-gradient-to-r from-[#022c22] via-[#064e3b] to-[#022c22] text-emerald-300 border-emerald-500/60 shadow-[0_0_20px_rgba(16,185,129,0.35)]';
+      return 'bg-gold-metallic text-black border-2 border-gold-dark shadow-[0_0_15px_rgba(184,137,40,0.4)]';
     }
     if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
-      return 'bg-gradient-to-r from-[#082f49] via-[#0c4a6e] to-[#082f49] text-sky-300 border-sky-500/60 shadow-[0_0_20px_rgba(14,165,233,0.35)]';
+      return 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]';
     }
     if (catUpper.includes('8 PM') || catUpper.includes('8PM')) {
-      return 'bg-gradient-to-r from-[#3b0764] via-[#581c87] to-[#3b0764] text-purple-300 border-purple-500/60 shadow-[0_0_20px_rgba(168,85,247,0.35)]';
+      return 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600 text-black border-2 border-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.4)]';
     }
     return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-gold border-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]';
   };

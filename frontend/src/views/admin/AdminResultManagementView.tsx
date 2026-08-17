@@ -110,20 +110,20 @@ export const AdminResultManagementView: React.FC = () => {
     }
   };
 
-  const handlePublishPrizes = async () => {
+  const handlePublish1stPrize = async () => {
     const p1 = prize1.trim();
-    const p2 = prize2.trim();
-    const p3 = prize3.trim();
-    const p4 = prize4.trim();
-    const p5 = prize5.trim();
-
-    if (!p1 || !p2 || !p3 || !p4 || !p5) {
-      setErrorMessage('Please fill all 5 winning prize numbers before publishing.');
+    if (!p1) {
+      setErrorMessage('Please enter 1st Prize Number before publishing.');
       setShowErrorModal(true);
       return;
     }
 
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
+    const p2 = prize2.trim() || existing?.prize2 || '';
+    const p3 = prize3.trim() || existing?.prize3 || '';
+    const p4 = prize4.trim() || existing?.prize4 || '';
+    const p5 = prize5.trim() || existing?.prize5 || '';
+
     let complimentSets: string[][] = [];
     const validNums = complimentBoxes.filter((n) => n && n.trim().length > 0);
     if (validNums.length === 30) {
@@ -137,19 +137,25 @@ export const AdminResultManagementView: React.FC = () => {
     await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
-    setSuccessMessage(`Winning numbers for ${selectedSlot} have been published successfully!`);
+    setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
     setShowSuccessModal(true);
   };
 
-  const handlePublishCompliments = async () => {
+  const handlePublishOtherPrizesAndCompliments = async () => {
     const p1 = prize1.trim();
     const p2 = prize2.trim();
     const p3 = prize3.trim();
     const p4 = prize4.trim();
     const p5 = prize5.trim();
 
-    if (!p1 || !p2 || !p3 || !p4 || !p5) {
-      setErrorMessage('Please fill all 5 winning prize numbers first before publishing compliments.');
+    if (!p1) {
+      setErrorMessage('Please enter 1st Prize Number before publishing other prizes.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!p2 || !p3 || !p4 || !p5) {
+      setErrorMessage('Please fill 2nd, 3rd, 4th, and 5th prize numbers before publishing.');
       setShowErrorModal(true);
       return;
     }
@@ -169,7 +175,7 @@ export const AdminResultManagementView: React.FC = () => {
     await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
-    setSuccessMessage(`All 30 compliments for ${selectedSlot} have been published successfully!`);
+    setSuccessMessage(`All prizes and compliments for ${selectedSlot} have been published successfully!`);
     setShowSuccessModal(true);
   };
 
@@ -271,47 +277,116 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            <div className="space-y-3">
+            {/* 1st Prize Number with Dedicated Publish Button */}
+            <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
-                <span className="text-neutral-400 font-bold block mb-1">1st Prize Number</span>
-                <input type="text" maxLength={3} placeholder="000" value={prize1} onChange={(e) => setPrize1(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" />
+                <span className="text-neutral-400 font-bold block mb-1.5">1st Prize Number</span>
+                <input
+                  type="text"
+                  maxLength={3}
+                  placeholder="000"
+                  value={prize1}
+                  onChange={(e) => setPrize1(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white text-black font-mono font-black text-lg rounded-xl border-2 border-gold text-center shadow-inner focus:outline-none"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                <div><span className="text-neutral-400 font-bold block mb-1">2nd Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize2} onChange={(e) => setPrize2(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
-                <div><span className="text-neutral-400 font-bold block mb-1">3rd Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize3} onChange={(e) => setPrize3(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-2.5 text-xs">
-                <div><span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize4} onChange={(e) => setPrize4(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
-                <div><span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span><input type="text" maxLength={3} placeholder="000" value={prize5} onChange={(e) => setPrize5(e.target.value)} className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner" /></div>
-              </div>
-              <div className="flex justify-center pt-1">
+              <div className="flex justify-center pt-0.5">
                 <button
                   type="button"
-                  onClick={handlePublishPrizes}
-                  className="px-6 py-1.5 bg-gold-metallic text-black font-black text-xs rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
+                  onClick={handlePublish1stPrize}
+                  className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider border border-gold-dark"
                 >
                   PUBLISH ({shortSlot})
                 </button>
               </div>
             </div>
 
-            <div className="space-y-3 pt-2 border-t border-neutral-800">
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                {complimentBoxes.map((num, idx) => (
-                  <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
-                    <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
-                    <input type="text" maxLength={3} placeholder="000" value={num} onChange={(e) => { const upd = [...complimentBoxes]; upd[idx] = e.target.value; setComplimentBoxes(upd); }} className="w-full px-2 py-1.5 bg-white text-black font-mono font-black text-sm rounded-lg border-2 border-gold text-center focus:outline-none" />
+            {/* Other Prizes (2nd to 5th) and Compliments with Dedicated Publish Button */}
+            <div className="space-y-4 pt-1">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <span className="text-neutral-400 font-bold block mb-1">2nd Prize Number</span>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      placeholder="000"
+                      value={prize2}
+                      onChange={(e) => setPrize2(e.target.value)}
+                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <span className="text-neutral-400 font-bold block mb-1">3rd Prize Number</span>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      placeholder="000"
+                      value={prize3}
+                      onChange={(e) => setPrize3(e.target.value)}
+                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  <div>
+                    <span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      placeholder="000"
+                      value={prize4}
+                      onChange={(e) => setPrize4(e.target.value)}
+                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      placeholder="000"
+                      value={prize5}
+                      onChange={(e) => setPrize5(e.target.value)}
+                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                    />
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-center pt-1">
-                <button
-                  type="button"
-                  onClick={handlePublishCompliments}
-                  className="px-6 py-1.5 bg-gold-metallic text-black font-black text-xs rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
-                >
-                  PUBLISH ({shortSlot})
-                </button>
+
+              {/* Compliments 30 Grid */}
+              <div className="space-y-3 pt-2 border-t border-neutral-800">
+                <span className="text-xs font-black text-gold uppercase tracking-wider block">Compliments (30 Numbers)</span>
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                  {complimentBoxes.map((num, idx) => (
+                    <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
+                      <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
+                      <input
+                        type="text"
+                        maxLength={3}
+                        placeholder="000"
+                        value={num}
+                        onChange={(e) => {
+                          const upd = [...complimentBoxes];
+                          upd[idx] = e.target.value;
+                          setComplimentBoxes(upd);
+                        }}
+                        className="w-full px-2 py-1.5 bg-white text-black font-mono font-black text-sm rounded-lg border-2 border-gold text-center focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Publish Other Prizes & Compliments Button */}
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handlePublishOtherPrizesAndCompliments}
+                    className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider border border-gold-dark"
+                  >
+                    PUBLISH ({shortSlot})
+                  </button>
+                </div>
               </div>
             </div>
           </div>
