@@ -436,7 +436,7 @@ export const GameDashboardView: React.FC = () => {
             <div className="flex-1 min-w-[90px]">
               <input
                 type="text"
-                placeholder="Customer"
+                placeholder="Customer Name"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"

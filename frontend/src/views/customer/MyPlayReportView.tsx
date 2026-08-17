@@ -301,10 +301,19 @@ export const MyPlayReportView: React.FC = () => {
       .map(([_, val]) => val);
   }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets, placedTickets, todayStr]);
 
+  const userCommissionPercent = React.useMemo(() => {
+    const userMode = currentUser?.mode || '';
+    if (userMode.includes('30%') || userMode.includes('30')) return 0.30;
+    if (userMode.includes('20%') || userMode.includes('20')) return 0.20;
+    if (userMode === 'Without Commission') return 0;
+    return 0.20; // Default 20%
+  }, [currentUser]);
+
   // Aggregate dynamically calculated daily totals based on selected dates and filter
   const currentDailyTotalSale = filteredDailyRows.reduce((acc, r) => acc + r.sale, 0);
   const currentDailyTotalPrize = filteredDailyRows.reduce((acc, r) => acc + r.prize, 0);
-  const currentDailyNetTotal = currentDailyTotalSale - currentDailyTotalPrize;
+  const currentDailyTotalComm = Math.round(currentDailyTotalSale * userCommissionPercent);
+  const currentDailyNetTotal = currentDailyTotalSale - currentDailyTotalPrize - currentDailyTotalComm;
 
   // Game slot rows dynamically reflecting the selected date range & user tickets
   const dynamicGameRows = React.useMemo(() => {
@@ -330,14 +339,16 @@ export const MyPlayReportView: React.FC = () => {
       const userPrize = slotTickets
         .filter((t) => t.status === 'WON')
         .reduce((acc, t) => acc + (t.winAmount || 0), 0);
+      const userComm = Math.round(userSale * userCommissionPercent);
 
       return {
         slotName: slot.slotName,
         sale: userSale,
         prize: userPrize,
+        comm: userComm,
       };
     });
-  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr]);
+  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr, userCommissionPercent]);
 
   const filteredGameRows = dailySlotFilter === 'ALL'
     ? dynamicGameRows
@@ -2051,11 +2062,11 @@ export const MyPlayReportView: React.FC = () => {
                   {formatDateDisplay(dailyFromDate)} &nbsp;&nbsp; to &nbsp;&nbsp; {formatDateDisplay(dailyToDate)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800">
-                <div className="flex items-center gap-6">
+              <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800 gap-y-2">
+                <div className="flex items-center gap-4 sm:gap-6">
                   <span>
                     Total:{' '}
-                    <strong className="font-mono text-gold text-sm sm:text-base">
+                    <strong className={`font-mono text-sm sm:text-base ${currentDailyNetTotal < 0 ? 'text-rose-400' : 'text-gold'}`}>
                       {currentDailyNetTotal}
                     </strong>
                   </span>
@@ -2066,11 +2077,17 @@ export const MyPlayReportView: React.FC = () => {
                     </strong>
                   </span>
                 </div>
-                <div>
+                <div className="flex items-center gap-4 sm:gap-6">
                   <span>
                     Prize:{' '}
                     <strong className="font-mono text-rose-400 text-sm sm:text-base">
                       {currentDailyTotalPrize}
+                    </strong>
+                  </span>
+                  <span>
+                    Comm:{' '}
+                    <strong className="font-mono text-amber-300 text-sm sm:text-base">
+                      {currentDailyTotalComm}
                     </strong>
                   </span>
                 </div>
@@ -2081,28 +2098,30 @@ export const MyPlayReportView: React.FC = () => {
             {activeDailyOverlayTab === 'DAY' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                 {/* Table Header Bar */}
-                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
                   <span className="text-center">NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
+                  <span className="text-center">COMM</span>
                   <span className="text-center">TOTAL</span>
                 </div>
 
                 {/* Table Rows dynamically filtered by Date */}
                 <div className="divide-y divide-neutral-850 font-mono">
                   {filteredDailyRows.map((row, idx) => {
-                    const rowTotal = row.sale - row.prize;
+                    const comm = Math.round(row.sale * userCommissionPercent);
+                    const rowTotal = row.sale - row.prize - comm;
                     const customerDisplayName = currentUser?.name || currentUser?.username || 'DEMO PLAYER';
                     const isNegative = rowTotal < 0;
                     return (
                       <div
                         key={idx}
-                        className="grid grid-cols-4 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
+                        className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
                       >
                         {/* NAME Column: Date on top, Customer name below */}
                         <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
                           <span className="text-white font-bold">{row.date}</span>
-                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5">
+                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">
                             {customerDisplayName}
                           </span>
                         </div>
@@ -2115,6 +2134,11 @@ export const MyPlayReportView: React.FC = () => {
                         {/* PRIZE Column (Rose / Coral font) */}
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">
                           {row.prize}
+                        </div>
+
+                        {/* COMM Column (Amber font) */}
+                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">
+                          {comm}
                         </div>
 
                         {/* TOTAL Column (Sky Blue or Rose if negative) */}
@@ -2132,22 +2156,23 @@ export const MyPlayReportView: React.FC = () => {
             {activeDailyOverlayTab === 'GAME' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                 {/* Table Header Bar */}
-                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
                   <span className="text-center">NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
+                  <span className="text-center">COMM</span>
                   <span className="text-center">TOTAL</span>
                 </div>
 
                 {/* Table Rows for 1 PM, 3 PM, 6 PM, 8 PM (Filtered by selected slot) */}
                 <div className="divide-y divide-neutral-850 font-mono">
                   {filteredGameRows.map((row, idx) => {
-                    const rowTotal = row.sale - row.prize;
+                    const rowTotal = row.sale - row.prize - (row.comm || 0);
                     const isNegative = rowTotal < 0;
                     return (
                       <div
                         key={idx}
-                        className="grid grid-cols-4 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
+                        className="grid grid-cols-5 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
                       >
                         {/* NAME Column: Clean gold slot text */}
                         <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">
@@ -2162,6 +2187,11 @@ export const MyPlayReportView: React.FC = () => {
                         {/* PRIZE Column (Rose / Coral font) */}
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">
                           {row.prize}
+                        </div>
+
+                        {/* COMM Column (Amber font) */}
+                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">
+                          {row.comm || 0}
                         </div>
 
                         {/* TOTAL Column (Sky Blue or Rose if negative) */}

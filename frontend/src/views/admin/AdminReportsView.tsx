@@ -539,10 +539,22 @@ export const AdminReportsView: React.FC = () => {
       });
     }
 
-    const rows = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([_, val]) => val);
+    const rows = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([_, val]) => {
+      let commPct = 0.20;
+      if (val.userDisplayName) {
+        const matched = registeredUsers.find(
+          (u) => u.name.toLowerCase() === val.userDisplayName.toLowerCase() || u.username.toLowerCase() === val.userDisplayName.toLowerCase()
+        );
+        if (matched?.mode?.includes('30%')) commPct = 0.30;
+        else if (matched?.mode === 'Without Commission') commPct = 0;
+      }
+      const comm = Math.round(val.sale * commPct);
+      return { ...val, comm };
+    });
     const totalSale = rows.reduce((acc, r) => acc + r.sale, 0);
     const totalPrize = rows.reduce((acc, r) => acc + r.prize, 0);
-    const netTotal = totalSale - totalPrize;
+    const totalComm = rows.reduce((acc, r) => acc + (r.comm || 0), 0);
+    const netTotal = totalSale - totalPrize - totalComm;
 
     const baseSlots = [
       { slotName: '1 PM', slotKey: '1 PM Game' },
@@ -584,12 +596,22 @@ export const AdminReportsView: React.FC = () => {
         }
       });
 
-      return { slotName: slot.slotName, sale: userSale, prize: userPrize };
+      let commPct = 0.20;
+      if (userDisplayName) {
+        const matched = registeredUsers.find(
+          (u) => u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()
+        );
+        if (matched?.mode?.includes('30%')) commPct = 0.30;
+        else if (matched?.mode === 'Without Commission') commPct = 0;
+      }
+      const userComm = Math.round(userSale * commPct);
+
+      return { slotName: slot.slotName, sale: userSale, prize: userPrize, comm: userComm };
     });
 
     const filteredGameRows = slotF === 'ALL' ? gameRows : gameRows.filter((r) => r.slotName === slotF);
 
-    return { rows, totalSale, totalPrize, netTotal, filteredGameRows };
+    return { rows, totalSale, totalPrize, totalComm, netTotal, filteredGameRows };
   };
 
   const allUsersDailyData = useMemo(() => {
@@ -606,7 +628,7 @@ export const AdminReportsView: React.FC = () => {
   }, [registeredUsers, dailyUserSearch]);
 
   const userDailyData = useMemo(() => {
-    if (!selectedDailyUser) return { rows: [], totalSale: 0, totalPrize: 0, netTotal: 0, filteredGameRows: [] };
+    if (!selectedDailyUser) return { rows: [], totalSale: 0, totalPrize: 0, totalComm: 0, netTotal: 0, filteredGameRows: [] };
     const userTkts = placedTickets.filter(
       (t) => t.userId === selectedDailyUser.id || (t as any).agencyName === selectedDailyUser.username || (t as any).userName === selectedDailyUser.name
     );
@@ -1576,37 +1598,40 @@ export const AdminReportsView: React.FC = () => {
                 <span className="text-gold font-black">DATE</span>
                 <span className="font-mono tracking-wide text-white">{formatDateDisplay(dailyFromDate)} &nbsp;&nbsp; to &nbsp;&nbsp; {formatDateDisplay(dailyToDate)}</span>
               </div>
-              <div className="flex items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800">
-                <div className="flex items-center gap-6">
-                  <span>Total: <strong className="font-mono text-gold text-sm sm:text-base">{allUsersDailyData.netTotal}</strong></span>
+              <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800 gap-y-2">
+                <div className="flex items-center gap-4 sm:gap-6">
+                  <span>Total: <strong className={`font-mono text-sm sm:text-base ${allUsersDailyData.netTotal < 0 ? 'text-rose-400' : 'text-gold'}`}>{allUsersDailyData.netTotal}</strong></span>
                   <span>Sale: <strong className="font-mono text-white text-sm sm:text-base">{allUsersDailyData.totalSale}</strong></span>
                 </div>
-                <div>
+                <div className="flex items-center gap-4 sm:gap-6">
                   <span>Prize: <strong className="font-mono text-rose-400 text-sm sm:text-base">{allUsersDailyData.totalPrize}</strong></span>
+                  <span>Comm: <strong className="font-mono text-amber-300 text-sm sm:text-base">{allUsersDailyData.totalComm}</strong></span>
                 </div>
               </div>
             </div>
 
             {activeDailyOverlayTab === 'DAY' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
-                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
                   <span className="text-center">NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
+                  <span className="text-center">COMM</span>
                   <span className="text-center">TOTAL</span>
                 </div>
                 <div className="divide-y divide-neutral-850 font-mono">
                   {allUsersDailyData.rows.map((row, idx) => {
-                    const rowTotal = row.sale - row.prize;
+                    const rowTotal = row.sale - row.prize - (row.comm || 0);
                     const isNegative = rowTotal < 0;
                     return (
-                      <div key={idx} className="grid grid-cols-4 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
+                      <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
                         <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
                           <span className="text-white font-bold">{row.date}</span>
-                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5">{row.userDisplayName}</span>
+                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">{row.userDisplayName}</span>
                         </div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
+                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">{row.comm || 0}</div>
                         <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
                       </div>
                     );
@@ -1617,21 +1642,23 @@ export const AdminReportsView: React.FC = () => {
 
             {activeDailyOverlayTab === 'GAME' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
-                <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
                   <span className="text-center">NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
+                  <span className="text-center">COMM</span>
                   <span className="text-center">TOTAL</span>
                 </div>
                 <div className="divide-y divide-neutral-850 font-mono">
                   {allUsersDailyData.filteredGameRows.map((row, idx) => {
-                    const rowTotal = row.sale - row.prize;
+                    const rowTotal = row.sale - row.prize - (row.comm || 0);
                     const isNegative = rowTotal < 0;
                     return (
-                      <div key={idx} className="grid grid-cols-4 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
+                      <div key={idx} className="grid grid-cols-5 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
                         <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">{row.slotName}</div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
+                        <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">{row.comm || 0}</div>
                         <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
                       </div>
                     );
@@ -1739,69 +1766,74 @@ export const AdminReportsView: React.FC = () => {
                     <span className="text-gold font-black">DATE</span>
                     <span className="font-mono tracking-wide text-white">{formatDateDisplay(userDailyFromDate)} &nbsp;&nbsp; to &nbsp;&nbsp; {formatDateDisplay(userDailyToDate)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800">
-                    <div className="flex items-center gap-6">
-                      <span>Total: <strong className="font-mono text-gold text-sm sm:text-base">{userDailyData.netTotal}</strong></span>
-                      <span>Sale: <strong className="font-mono text-white text-sm sm:text-base">{userDailyData.totalSale}</strong></span>
-                    </div>
-                    <div>
-                      <span>Prize: <strong className="font-mono text-rose-400 text-sm sm:text-base">{userDailyData.totalPrize}</strong></span>
-                    </div>
+                <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800 gap-y-2">
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <span>Total: <strong className={`font-mono text-sm sm:text-base ${userDailyData.netTotal < 0 ? 'text-rose-400' : 'text-gold'}`}>{userDailyData.netTotal}</strong></span>
+                    <span>Sale: <strong className="font-mono text-white text-sm sm:text-base">{userDailyData.totalSale}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-4 sm:gap-6">
+                    <span>Prize: <strong className="font-mono text-rose-400 text-sm sm:text-base">{userDailyData.totalPrize}</strong></span>
+                    <span>Comm: <strong className="font-mono text-amber-300 text-sm sm:text-base">{userDailyData.totalComm}</strong></span>
                   </div>
                 </div>
+              </div>
 
-                {activeUserDailyOverlayTab === 'DAY' && (
-                  <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
-                    <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                      <span className="text-center">NAME</span>
-                      <span className="text-center">SALE</span>
-                      <span className="text-center">PRIZE</span>
-                      <span className="text-center">TOTAL</span>
-                    </div>
-                    <div className="divide-y divide-neutral-850 font-mono">
-                      {userDailyData.rows.map((row, idx) => {
-                        const rowTotal = row.sale - row.prize;
-                        const isNegative = rowTotal < 0;
-                        return (
-                          <div key={idx} className="grid grid-cols-4 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                            <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
-                              <span className="text-white font-bold">{row.date}</span>
-                              <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5">{selectedDailyUser.name}</span>
-                            </div>
-                            <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
-                            <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                            <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              {activeUserDailyOverlayTab === 'DAY' && (
+                <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
+                  <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                    <span className="text-center">NAME</span>
+                    <span className="text-center">SALE</span>
+                    <span className="text-center">PRIZE</span>
+                    <span className="text-center">COMM</span>
+                    <span className="text-center">TOTAL</span>
                   </div>
-                )}
+                  <div className="divide-y divide-neutral-850 font-mono">
+                    {userDailyData.rows.map((row, idx) => {
+                      const rowTotal = row.sale - row.prize - (row.comm || 0);
+                      const isNegative = rowTotal < 0;
+                      return (
+                        <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
+                          <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
+                            <span className="text-white font-bold">{row.date}</span>
+                            <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">{selectedDailyUser.name}</span>
+                          </div>
+                          <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
+                          <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
+                          <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">{row.comm || 0}</div>
+                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
-                {activeUserDailyOverlayTab === 'GAME' && (
-                  <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
-                    <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                      <span className="text-center">NAME</span>
-                      <span className="text-center">SALE</span>
-                      <span className="text-center">PRIZE</span>
-                      <span className="text-center">TOTAL</span>
-                    </div>
-                    <div className="divide-y divide-neutral-850 font-mono">
-                      {userDailyData.filteredGameRows.map((row, idx) => {
-                        const rowTotal = row.sale - row.prize;
-                        const isNegative = rowTotal < 0;
-                        return (
-                          <div key={idx} className="grid grid-cols-4 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                            <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">{row.slotName}</div>
-                            <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
-                            <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                            <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
-                          </div>
-                        );
-                      })}
-                    </div>
+              {activeUserDailyOverlayTab === 'GAME' && (
+                <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
+                  <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
+                    <span className="text-center">NAME</span>
+                    <span className="text-center">SALE</span>
+                    <span className="text-center">PRIZE</span>
+                    <span className="text-center">COMM</span>
+                    <span className="text-center">TOTAL</span>
                   </div>
-                )}
+                  <div className="divide-y divide-neutral-850 font-mono">
+                    {userDailyData.filteredGameRows.map((row, idx) => {
+                      const rowTotal = row.sale - row.prize - (row.comm || 0);
+                      const isNegative = rowTotal < 0;
+                      return (
+                        <div key={idx} className="grid grid-cols-5 items-center px-2 py-3.5 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
+                          <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">{row.slotName}</div>
+                          <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
+                          <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
+                          <div className="text-xs sm:text-sm font-black text-amber-300 font-mono flex items-center justify-center">{row.comm || 0}</div>
+                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               </div>
             )}
           </div>
