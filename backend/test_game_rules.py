@@ -19,22 +19,22 @@ def run_tests():
     # TEST 1: 1 DIGIT (A, B, C) — 1ST PRIZE ONLY
     # ----------------------------------------------------
     # A=7, B=4, C=2
-    # 1 count (₹60) -> ₹500 payout
-    res_a = evaluate_bet_item("A:7", "Pair", 1, p1, p2, p3, p4, p5, p6, compliments)
+    # 5 count (₹60) -> ₹500 payout
+    res_a = evaluate_bet_item("A:7", "Pair", 5, p1, p2, p3, p4, p5, p6, compliments)
     assert res_a["is_winner"] == True, "A:7 should win against 742"
     assert res_a["win_amount"] == 500.0, f"Expected 500.0, got {res_a['win_amount']}"
 
-    res_b = evaluate_bet_item("B:4", "Pair", 1, p1, p2, p3, p4, p5, p6, compliments)
+    res_b = evaluate_bet_item("B:4", "Pair", 5, p1, p2, p3, p4, p5, p6, compliments)
     assert res_b["is_winner"] == True, "B:4 should win against 742"
     assert res_b["win_amount"] == 500.0, f"Expected 500.0, got {res_b['win_amount']}"
 
-    res_c = evaluate_bet_item("C:2", "Pair", 2, p1, p2, p3, p4, p5, p6, compliments) # 2 count -> ₹1000
+    res_c = evaluate_bet_item("C:2", "Pair", 10, p1, p2, p3, p4, p5, p6, compliments) # 10 count -> ₹1000
     assert res_c["is_winner"] == True, "C:2 should win against 742"
     assert res_c["win_amount"] == 1000.0, f"Expected 1000.0, got {res_c['win_amount']}"
 
     # Critical: Check that 2nd Prize digits DO NOT win 1 Digit!
     # p2 is "381" -> A=3 in p2 must NOT win!
-    res_p2_a = evaluate_bet_item("A:3", "Pair", 1, p1, p2, p3, p4, p5, p6, compliments)
+    res_p2_a = evaluate_bet_item("A:3", "Pair", 5, p1, p2, p3, p4, p5, p6, compliments)
     assert res_p2_a["is_winner"] == False, "2nd prize must NOT trigger 1-Digit win"
 
     print("[PASS] TEST 1: 1 Digit (A, B, C) strictly uses 1st Prize.")
@@ -137,15 +137,15 @@ def run_tests():
     # ----------------------------------------------------
     # TEST 5: FULL RATE TABLE MATRIX ASSERTIONS
     # ----------------------------------------------------
-    # 1 Digit Table (₹60 per count -> ₹500 payout):
-    # 1 count -> ₹500
-    # 2 count -> ₹1,000
-    # 3 count -> ₹1,500
-    # 20 count -> ₹10,000
-    assert evaluate_bet_item("A:7", "Pair", 1, p1)["win_amount"] == 500.0
-    assert evaluate_bet_item("A:7", "Pair", 2, p1)["win_amount"] == 1000.0
-    assert evaluate_bet_item("A:7", "Pair", 3, p1)["win_amount"] == 1500.0
-    assert evaluate_bet_item("A:7", "Pair", 20, p1)["win_amount"] == 10000.0
+    # 1 Digit Table (₹12 per count, 5 count = ₹60 -> ₹500 payout):
+    # 5 count -> ₹500
+    # 10 count -> ₹1,000
+    # 15 count -> ₹1,500
+    # 100 count -> ₹10,000
+    assert evaluate_bet_item("A:7", "Pair", 5, p1)["win_amount"] == 500.0
+    assert evaluate_bet_item("A:7", "Pair", 10, p1)["win_amount"] == 1000.0
+    assert evaluate_bet_item("A:7", "Pair", 15, p1)["win_amount"] == 1500.0
+    assert evaluate_bet_item("A:7", "Pair", 100, p1)["win_amount"] == 10000.0
 
     # 2 Digit Table:
     # ₹10 (1 count) -> ₹700

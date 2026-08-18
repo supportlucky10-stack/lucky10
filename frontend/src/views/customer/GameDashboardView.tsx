@@ -175,11 +175,11 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
-  // Mode 1 Handlers (A, B, C, ALL) - ₹60 per count, no minimum count
+  // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1) {
-      addToast('Please enter a valid count', 'error');
+    if (!cnt || cnt < 5) {
+      addToast('Minimum 5 count is required for 1-digit game', 'error');
       return;
     }
 
@@ -189,7 +189,7 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const unitPrice1Digit = 60; // ₹60 per count for 1-digit game
+    const unitPrice1Digit = 12; // ₹12 per count for 1-digit game
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];

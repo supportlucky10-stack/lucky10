@@ -103,14 +103,14 @@ def evaluate_bet_item(
         if pos == "C" and val == p1C: match = True
 
         if match:
-            # 1 Digit Rate Table: 1 count (₹60) -> ₹500
-            win_amt = round(count * 500.0, 2)
+            # 1 Digit Rate Table: 5 count (₹60) -> ₹500 (₹100 per count)
+            win_amt = round(count * 100.0, 2)
             return {
                 "is_winner": True,
                 "prize_title": f"1 DIGIT ({pos})",
                 "win_amount": win_amt,
                 "matched_number": num_str,
-                "rate_multiplier": 500.0 / 60.0,
+                "rate_multiplier": 100.0 / 12.0,
                 "matched_position": f"1st Prize Position {pos}",
             }
         return not_won

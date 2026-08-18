@@ -100,15 +100,15 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
     if (pos === 'C' && val === p1C) match = true;
 
     if (match) {
-      // 1 Digit Rate Table: 1 count (₹60) -> ₹500
-      const winAmt = count * 500;
+      // 1 Digit Rate Table: 5 count (₹60) -> ₹500 (₹100 per count)
+      const winAmt = count * 100;
       return {
         isWinner: true,
         prizeTitle: `1 DIGIT (${pos})`,
         prizeCategory: '1DIGIT',
         winAmount: winAmt,
         matchedNumber: numStr,
-        rateMultiplier: 500 / 60,
+        rateMultiplier: 100 / 12,
         matchedPrizePosition: `1st Prize Position ${pos}`,
       };
     }

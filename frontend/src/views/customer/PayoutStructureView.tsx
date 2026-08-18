@@ -177,7 +177,7 @@ export const PayoutStructureView: React.FC = () => {
               <div className="space-y-2 pt-2 text-xs sm:text-sm font-bold">
                 <div className="flex justify-between text-gold border-b border-gray-700 pb-1.5 font-black text-xs sm:text-sm uppercase tracking-wide">
                   <span>Board Position</span>
-                  <span>Payout (per ₹60)</span>
+                  <span>Payout (5 Count)</span>
                 </div>
                 <div className="flex justify-between border-b border-gray-850 pb-1.5">
                   <div>
@@ -204,7 +204,7 @@ export const PayoutStructureView: React.FC = () => {
             </div>
 
             <p className="text-gold font-bold text-xs text-center pt-3 border-t border-neutral-900">
-              *₹60 unit price per 1 count (1 Count = ₹500 payout, no minimum count)
+              *₹12 unit price per count (Minimum 5 Count = ₹60 stake → ₹500 payout)
             </p>
           </div>
 
