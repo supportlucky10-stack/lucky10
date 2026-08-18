@@ -167,7 +167,10 @@ html, body {
   background-color: #000000;
   color: #ffffff;
   width: 100%;
+  min-height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -179,7 +182,10 @@ html, body {
 
 #root {
   width: 100%;
+  min-height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
 }
@@ -291,6 +297,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 html {
   width: 100%;
   min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   margin: 0;
   padding: 0;
   background-color: #000000;
@@ -301,7 +309,10 @@ html {
 
 body {
   width: 100%;
+  min-height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   margin: 0;
   padding: 0;
   background-color: #000000;
@@ -312,7 +323,10 @@ body {
 
 #root {
   width: 100%;
+  min-height: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { MobileContainer } from './components/MobileContainer';
 
@@ -27,10 +27,76 @@ import { AdminTransactionLogsView } from './views/admin/AdminTransactionLogsView
 import { AdminIssuesView } from './views/admin/AdminIssuesView';
 import { AdminLimitBlockView } from './views/admin/AdminLimitBlockView';
 
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X, Clock } from 'lucide-react';
 
 const ViewRouter: React.FC = () => {
-  const { currentView, toasts, removeToast, isAdminLoggedIn } = useApp();
+  const { currentView, toasts, removeToast, isAdminLoggedIn, currentUser, logout } = useApp();
+  const [showTimeoutModal, setShowTimeoutModal] = useState<boolean>(false);
+
+  const isUserInSession = Boolean(currentUser) || isAdminLoggedIn || (currentView !== 'USER_SIGN_IN' && currentView !== 'ADMIN_SIGN_IN');
+
+  // 30-Minute Inactivity Session Monitor
+  useEffect(() => {
+    if (!isUserInSession) {
+      localStorage.setItem('lucky10_last_active', String(Date.now()));
+      return;
+    }
+
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
+
+    const updateActivity = () => {
+      localStorage.setItem('lucky10_last_active', String(Date.now()));
+    };
+
+    let lastRecorded = 0;
+    const throttledUpdate = () => {
+      const now = Date.now();
+      if (now - lastRecorded > 1000) {
+        lastRecorded = now;
+        updateActivity();
+      }
+    };
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click', 'wheel'];
+    events.forEach((evt) => {
+      window.addEventListener(evt, throttledUpdate, { passive: true });
+    });
+
+    const checkInactivity = () => {
+      const now = Date.now();
+      const lastActiveStr = localStorage.getItem('lucky10_last_active');
+      const lastActive = lastActiveStr ? parseInt(lastActiveStr, 10) : now;
+      if (now - lastActive >= INACTIVITY_LIMIT_MS) {
+        setShowTimeoutModal(true);
+      }
+    };
+
+    const intervalId = setInterval(checkInactivity, 2000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkInactivity();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', checkInactivity);
+
+    return () => {
+      events.forEach((evt) => {
+        window.removeEventListener(evt, throttledUpdate);
+      });
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkInactivity);
+    };
+  }, [isUserInSession]);
+
+  const handleTimeoutOk = () => {
+    setShowTimeoutModal(false);
+    localStorage.setItem('lucky10_last_active', String(Date.now()));
+    logout();
+  };
 
   const renderView = () => {
     // Auth Guard for Admin Routes
@@ -116,6 +182,33 @@ const ViewRouter: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* 30-Minute Inactivity Session Timeout Modal */}
+      {showTimeoutModal && (
+        <div className="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in font-sans">
+          <div className="bg-gradient-to-b from-neutral-900 via-neutral-950 to-black border-2 border-gold/80 rounded-2xl p-6 max-w-sm w-full text-center shadow-[0_0_40px_rgba(212,175,55,0.35)] space-y-4 animate-drop-in font-mono">
+            <div className="w-16 h-16 mx-auto rounded-full bg-gold/10 border-2 border-gold/50 flex items-center justify-center shadow-[0_0_20px_rgba(212,175,55,0.25)]">
+              <Clock className="w-8 h-8 text-gold animate-pulse" />
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="text-xl font-black text-gold tracking-wider uppercase">
+                SESSION TIMEOUT
+              </h3>
+              <p className="text-xs text-neutral-300 font-medium leading-relaxed">
+                You have been inactive for 30 minutes. Your session has timed out for security.
+              </p>
+            </div>
+
+            <button
+              onClick={handleTimeoutOk}
+              className="w-full py-3.5 bg-gradient-to-r from-gold via-yellow-400 to-gold-dark text-black font-black text-sm uppercase tracking-widest rounded-xl shadow-lg hover:brightness-110 active:scale-95 transition-all cursor-pointer font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
 
       {renderView()}
     </MobileContainer>

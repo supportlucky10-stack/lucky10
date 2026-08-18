@@ -24,10 +24,10 @@ export const TodaysResultView: React.FC = () => {
       textActive: 'text-sky-300',
     },
     '3 PM Game': {
-      pillActive: 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_12px_rgba(249,115,22,0.5)]',
-      cardBorder: 'border border-orange-400/90 shadow-[0_0_10px_rgba(249,115,22,0.2)]',
-      badgeActive: 'bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-300',
-      textActive: 'text-orange-300',
+      pillActive: 'bg-gradient-to-r from-[#9a3412] via-[#7c2d12] to-[#5a1e06] text-white border-2 border-orange-400/60 shadow-[0_0_12px_rgba(154,52,18,0.4)]',
+      cardBorder: 'border border-orange-500/50 shadow-[0_0_10px_rgba(154,52,18,0.2)]',
+      badgeActive: 'bg-gradient-to-r from-[#9a3412] to-[#7c2d12] text-white border-orange-400/60',
+      textActive: 'text-orange-200',
     },
     '6 PM Game': {
       pillActive: 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_12px_rgba(217,70,239,0.5)]',
@@ -107,7 +107,7 @@ export const TodaysResultView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-screen min-h-screen bg-black text-white flex flex-col justify-between overflow-hidden antialiased select-none font-sans">
+    <div className="w-full min-h-[100dvh] min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto antialiased select-none font-sans pb-4">
       {/* Header Banner with WhatsApp Share Button on Right */}
       <HeaderBanner
         title="RESULT"

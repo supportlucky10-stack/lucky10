@@ -103,71 +103,71 @@ const getWinnerCardTheme = (prize: string) => {
   const p = prize.toUpperCase();
   if (p.includes('1ST')) {
     return {
-      cardBorder: 'border-emerald-500/70 shadow-[0_0_20px_rgba(16,185,129,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#0c2e1b] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-neutral-950 border-b border-emerald-500/40',
-      badge: 'bg-emerald-500/30 border border-emerald-400 text-emerald-200 shadow-[0_0_10px_rgba(16,185,129,0.4)]',
+      badge: 'bg-emerald-500/30 border-2 border-white text-emerald-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-emerald-400',
       numberText: 'text-emerald-300',
     };
   }
   if (p.includes('2ND')) {
     return {
-      cardBorder: 'border-cyan-500/70 shadow-[0_0_20px_rgba(6,182,212,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#082f49] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-neutral-950 border-b border-cyan-500/40',
-      badge: 'bg-cyan-500/30 border border-cyan-400 text-cyan-200 shadow-[0_0_10px_rgba(6,182,212,0.4)]',
+      badge: 'bg-cyan-500/30 border-2 border-white text-cyan-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-cyan-400',
       numberText: 'text-cyan-300',
     };
   }
   if (p.includes('3RD')) {
     return {
-      cardBorder: 'border-purple-500/70 shadow-[0_0_20px_rgba(168,85,247,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#2a1347] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-purple-950 via-purple-900/60 to-neutral-950 border-b border-purple-500/40',
-      badge: 'bg-purple-500/30 border border-purple-400 text-purple-200 shadow-[0_0_10px_rgba(168,85,247,0.4)]',
+      badge: 'bg-purple-500/30 border-2 border-white text-purple-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-purple-400',
       numberText: 'text-purple-300',
     };
   }
   if (p.includes('4TH')) {
     return {
-      cardBorder: 'border-amber-500/70 shadow-[0_0_20px_rgba(245,158,11,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#3b2a07] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-amber-950 via-amber-900/60 to-neutral-950 border-b border-amber-500/40',
-      badge: 'bg-amber-500/30 border border-amber-400 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.4)]',
+      badge: 'bg-amber-500/30 border-2 border-white text-amber-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-amber-400',
       numberText: 'text-amber-300',
     };
   }
   if (p.includes('5TH')) {
     return {
-      cardBorder: 'border-rose-500/70 shadow-[0_0_20px_rgba(244,63,94,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#380f19] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-rose-950 via-rose-900/60 to-neutral-950 border-b border-rose-500/40',
-      badge: 'bg-rose-500/30 border border-rose-400 text-rose-200 shadow-[0_0_10px_rgba(244,63,94,0.4)]',
+      badge: 'bg-rose-500/30 border-2 border-white text-rose-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-rose-400',
       numberText: 'text-rose-300',
     };
   }
   if (p.includes('6TH')) {
     return {
-      cardBorder: 'border-blue-500/70 shadow-[0_0_20px_rgba(59,130,246,0.3)]',
+      cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
       cardBg: 'bg-gradient-to-br from-[#0c2547] via-neutral-950 to-black',
       headerBg: 'bg-gradient-to-r from-blue-950 via-blue-900/60 to-neutral-950 border-b border-blue-500/40',
-      badge: 'bg-blue-500/30 border border-blue-400 text-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.4)]',
+      badge: 'bg-blue-500/30 border-2 border-white text-blue-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
       totalText: 'text-blue-400',
       numberText: 'text-blue-300',
     };
   }
   return {
-    cardBorder: 'border-gold/70 shadow-[0_0_20px_rgba(212,175,55,0.3)]',
-    cardBg: 'bg-gradient-to-br from-[#3a2a07] via-neutral-950 to-black',
-    headerBg: 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40',
-    badge: 'bg-gold/30 border border-gold text-amber-200 shadow-[0_0_10px_rgba(212,175,55,0.4)]',
+    cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
+    cardBg: 'bg-gradient-to-br from-[#2e2609] via-neutral-950 to-black',
+    headerBg: 'bg-gradient-to-r from-yellow-950 via-yellow-900/60 to-neutral-950 border-b border-gold/40',
+    badge: 'bg-gold/30 border-2 border-white text-yellow-200 shadow-[0_0_10px_rgba(212,175,55,0.4)]',
     totalText: 'text-gold',
-    numberText: 'text-amber-300',
+    numberText: 'text-gold-light',
   };
 };
 
@@ -177,7 +177,7 @@ const getCategoryHeaderTheme = (category: string) => {
     return 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]';
   }
   if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
-    return 'bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white border-2 border-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.4)]';
+    return 'bg-gradient-to-r from-[#9a3412] via-[#7c2d12] to-[#5a1e06] text-white border-2 border-orange-400/60 shadow-[0_0_12px_rgba(154,52,18,0.3)]';
   }
   if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
     return 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]';
@@ -1778,12 +1778,12 @@ export const AdminReportsView: React.FC = () => {
               </div>
               <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800 gap-y-2">
                 <div className="flex items-center gap-4 sm:gap-6">
-                  <span>Total: <strong className={`font-mono text-sm sm:text-base ${allUsersDailyData.netTotal < 0 ? 'text-rose-400' : 'text-gold'}`}>{allUsersDailyData.netTotal}</strong></span>
+                  <span>Total: <strong className={`font-mono text-sm sm:text-base ${allUsersDailyData.netTotal < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{allUsersDailyData.netTotal}</strong></span>
                   <span>Sale: <strong className="font-mono text-white text-sm sm:text-base">{allUsersDailyData.totalSale}</strong></span>
                 </div>
                 <div className="flex items-center gap-4 sm:gap-6">
                   <span>Prize: <strong className="font-mono text-rose-400 text-sm sm:text-base">{allUsersDailyData.totalPrize}</strong></span>
-                  <span>Comm: <strong className={`font-mono text-sm sm:text-base ${allUsersDailyData.totalComm < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{allUsersDailyData.totalComm}</strong></span>
+                  <span>Comm: <strong className="font-mono text-sm sm:text-base text-rose-400">{allUsersDailyData.totalComm}</strong></span>
                 </div>
               </div>
             </div>
@@ -1809,8 +1809,8 @@ export const AdminReportsView: React.FC = () => {
                         </div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${(row.comm || 0) < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{row.comm || 0}</div>
-                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                        <div className="text-xs sm:text-sm font-black font-mono flex items-center justify-center text-rose-400">{row.comm || 0}</div>
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-yellow-400'}`}>{rowTotal}</div>
                       </div>
                     );
                   })}
@@ -1836,8 +1836,8 @@ export const AdminReportsView: React.FC = () => {
                         <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">{row.slotName}</div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${(row.comm || 0) < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{row.comm || 0}</div>
-                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                        <div className="text-xs sm:text-sm font-black font-mono flex items-center justify-center text-rose-400">{row.comm || 0}</div>
+                        <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-yellow-400'}`}>{rowTotal}</div>
                       </div>
                     );
                   })}
@@ -1946,12 +1946,12 @@ export const AdminReportsView: React.FC = () => {
                   </div>
                 <div className="flex flex-wrap items-center justify-between text-xs sm:text-sm font-black pt-2 border-t border-neutral-800 gap-y-2">
                   <div className="flex items-center gap-4 sm:gap-6">
-                    <span>Total: <strong className={`font-mono text-sm sm:text-base ${userDailyData.netTotal < 0 ? 'text-rose-400' : 'text-gold'}`}>{userDailyData.netTotal}</strong></span>
+                    <span>Total: <strong className={`font-mono text-sm sm:text-base ${userDailyData.netTotal < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{userDailyData.netTotal}</strong></span>
                     <span>Sale: <strong className="font-mono text-white text-sm sm:text-base">{userDailyData.totalSale}</strong></span>
                   </div>
                   <div className="flex items-center gap-4 sm:gap-6">
                     <span>Prize: <strong className="font-mono text-rose-400 text-sm sm:text-base">{userDailyData.totalPrize}</strong></span>
-                    <span>Comm: <strong className={`font-mono text-sm sm:text-base ${userDailyData.totalComm < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{userDailyData.totalComm}</strong></span>
+                    <span>Comm: <strong className="font-mono text-sm sm:text-base text-rose-400">{userDailyData.totalComm}</strong></span>
                   </div>
                 </div>
               </div>
@@ -1977,8 +1977,8 @@ export const AdminReportsView: React.FC = () => {
                           </div>
                           <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                           <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${(row.comm || 0) < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{row.comm || 0}</div>
-                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                          <div className="text-xs sm:text-sm font-black font-mono flex items-center justify-center text-rose-400">{row.comm || 0}</div>
+                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-yellow-400'}`}>{rowTotal}</div>
                         </div>
                       );
                     })}
@@ -2004,8 +2004,8 @@ export const AdminReportsView: React.FC = () => {
                           <div className="text-gold font-black text-xs sm:text-sm flex items-center justify-center uppercase tracking-wider">{row.slotName}</div>
                           <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                           <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
-                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${(row.comm || 0) < 0 ? 'text-rose-400' : 'text-yellow-400'}`}>{row.comm || 0}</div>
-                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-sky-400'}`}>{rowTotal}</div>
+                          <div className="text-xs sm:text-sm font-black font-mono flex items-center justify-center text-rose-400">{row.comm || 0}</div>
+                          <div className={`text-xs sm:text-sm font-black font-mono flex items-center justify-center ${isNegative ? 'text-rose-400' : 'text-yellow-400'}`}>{rowTotal}</div>
                         </div>
                       );
                     })}
