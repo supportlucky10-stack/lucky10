@@ -13,9 +13,11 @@ from app.models.ticket import Ticket, BetItem
 from app.models.payout import PayoutRequest
 from app.models.issue import IssueTicket
 from app.models.transaction import TransactionLog
+from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
 from app.schemas.result import GameResultPublishSchema
 from app.schemas.payout import PayoutRequestCreate
 from app.schemas.user import UserCreateSchema
+from app.schemas.limit_rule import AgencyLimitCreate, BlockedNumberCreate, GlobalLimitUpdate
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
@@ -400,5 +402,138 @@ def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = 
         "todayPayouts": today_payout_amount,
         "todayNet": today_net,
         "todayBetsCount": len(today_tickets),
+    }
+
+# ── Limit & Block Rules API Endpoints ──────────────────────────────────────────
+
+@router.get("/limits/agency")
+def get_agency_limits(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    limits = db.query(AgencyNumberLimit).order_by(AgencyNumberLimit.created_at.desc()).all()
+    return [
+        {
+            "id": l.id,
+            "agencyId": l.agency_id,
+            "agencyName": l.agency_name,
+            "number": l.number,
+            "gameSlot": l.game_slot,
+            "maxCount": l.max_count,
+            "createdAt": l.created_at.strftime("%Y-%m-%d") if l.created_at else "",
+        }
+        for l in limits
+    ]
+
+@router.post("/limits/agency")
+def create_agency_limit(req: AgencyLimitCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    new_limit = AgencyNumberLimit(
+        id=f"lim_{int(datetime.now().timestamp() * 1000)}",
+        agency_id=req.agencyId,
+        agency_name=req.agencyName,
+        number=req.number.strip(),
+        game_slot=req.gameSlot or "ALL",
+        max_count=req.maxCount,
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(new_limit)
+    db.commit()
+    db.refresh(new_limit)
+    return {
+        "id": new_limit.id,
+        "agencyId": new_limit.agency_id,
+        "agencyName": new_limit.agency_name,
+        "number": new_limit.number,
+        "gameSlot": new_limit.game_slot,
+        "maxCount": new_limit.max_count,
+        "createdAt": new_limit.created_at.strftime("%Y-%m-%d"),
+    }
+
+@router.delete("/limits/agency/{limit_id}")
+def delete_agency_limit(limit_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    item = db.query(AgencyNumberLimit).filter(AgencyNumberLimit.id == limit_id).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Agency limit rule not found")
+    db.delete(item)
+    db.commit()
+    return {"message": "Agency limit removed"}
+
+@router.get("/limits/blocked")
+def get_blocked_numbers(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    blocked = db.query(BlockedNumberRule).order_by(BlockedNumberRule.created_at.desc()).all()
+    return [
+        {
+            "id": b.id,
+            "number": b.number,
+            "gameSlot": b.game_slot,
+            "reason": b.reason or "",
+            "createdAt": b.created_at.strftime("%Y-%m-%d") if b.created_at else "",
+        }
+        for b in blocked
+    ]
+
+@router.post("/limits/blocked")
+def create_blocked_number(req: BlockedNumberCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    new_rule = BlockedNumberRule(
+        id=f"blk_{int(datetime.now().timestamp() * 1000)}",
+        number=req.number.strip(),
+        game_slot=req.gameSlot or "ALL",
+        reason=req.reason or "",
+        created_at=datetime.now(timezone.utc),
+    )
+    db.add(new_rule)
+    db.commit()
+    db.refresh(new_rule)
+    return {
+        "id": new_rule.id,
+        "number": new_rule.number,
+        "gameSlot": new_rule.game_slot,
+        "reason": new_rule.reason,
+        "createdAt": new_rule.created_at.strftime("%Y-%m-%d"),
+    }
+
+@router.delete("/limits/blocked/{blocked_id}")
+def delete_blocked_number(blocked_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    rule = db.query(BlockedNumberRule).filter(BlockedNumberRule.id == blocked_id).first()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Blocked number rule not found")
+    db.delete(rule)
+    db.commit()
+    return {"message": "Blocked number rule removed"}
+
+@router.get("/limits/global")
+def get_global_limit(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    rule = db.query(GlobalLimitRule).first()
+    if not rule:
+        return {"defaultMaxCount": 100.0, "isEnabled": False, "gameSlot": "ALL"}
+    return {
+        "id": rule.id,
+        "defaultMaxCount": rule.default_max_count,
+        "isEnabled": rule.is_enabled,
+        "gameSlot": rule.game_slot,
+    }
+
+@router.put("/limits/global")
+def update_global_limit(req: GlobalLimitUpdate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    rule = db.query(GlobalLimitRule).first()
+    if not rule:
+        rule = GlobalLimitRule(
+            id="global_limit_main",
+            default_max_count=req.defaultMaxCount if req.defaultMaxCount is not None else 100.0,
+            is_enabled=req.isEnabled if req.isEnabled is not None else False,
+            game_slot=req.gameSlot or "ALL",
+        )
+        db.add(rule)
+    else:
+        if req.defaultMaxCount is not None:
+            rule.default_max_count = req.defaultMaxCount
+        if req.isEnabled is not None:
+            rule.is_enabled = req.isEnabled
+        if req.gameSlot is not None:
+            rule.game_slot = req.gameSlot
+    db.commit()
+    db.refresh(rule)
+    return {
+        "id": rule.id,
+        "defaultMaxCount": rule.default_max_count,
+        "isEnabled": rule.is_enabled,
+        "gameSlot": rule.game_slot,
     }
 

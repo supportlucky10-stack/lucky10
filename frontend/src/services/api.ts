@@ -1,6 +1,12 @@
 const isProd = import.meta.env.PROD;
-const defaultBaseUrl = isProd ? '' : 'http://localhost:8000';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : defaultBaseUrl;
+const rawApiUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+
+if (isProd && !rawApiUrl) {
+  console.error('[CRITICAL CONFIG ERROR] VITE_API_BASE_URL is not set in production build!');
+}
+
+const base = rawApiUrl || (isProd ? '' : 'http://localhost:8000');
+const API_BASE_URL = base.endsWith('/') ? base.slice(0, -1) : base;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem('lucky10_jwt_token');
@@ -18,6 +24,9 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  if (isProd && !rawApiUrl) {
+    throw new Error('VITE_API_BASE_URL is not configured. Please set VITE_API_BASE_URL in Vercel environment variables.');
+  }
   const token = getAuthToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',

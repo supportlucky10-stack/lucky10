@@ -551,28 +551,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const loginAdmin = async (username: string, password?: string): Promise<boolean> => {
     const inputClean = (username || 'admin').trim();
-    const mockAdmin: UserAccount = {
-      id: 'user_admin_001',
-      name: 'System Admin',
-      email: 'admin@lucky10.com',
-      username: inputClean || 'admin',
-      role: 'ADMIN',
-      balance: 0,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
     try {
       const res = await authService.loginAdmin(inputClean, password);
-      if (res?.user) setCurrentUser(res.user);
-    } catch (err) {
-      console.log('Admin auth background sync:', err);
+      if (res?.user) {
+        setCurrentUser(res.user);
+        setIsAdminLoggedIn(true);
+        addToast('Admin authenticated successfully', 'success');
+        setCurrentView('ADMIN_DRAWER');
+        return true;
+      }
+      addToast('Invalid admin credentials', 'error');
+      return false;
+    } catch (err: any) {
+      setIsAdminLoggedIn(false);
+      setCurrentUser(null);
+      addToast(err?.message || 'Invalid admin credentials', 'error');
+      return false;
     }
-
-    setIsAdminLoggedIn(true);
-    setCurrentUser(mockAdmin);
-    addToast('Admin authenticated successfully', 'success');
-    setCurrentView('ADMIN_DRAWER');
-    return true;
   };
 
   const logout = () => {

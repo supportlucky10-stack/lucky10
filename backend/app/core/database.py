@@ -8,7 +8,7 @@ db_url = settings.DATABASE_URL
 connect_args = {}
 
 if db_url.startswith("postgresql"):
-    connect_args = {"connect_timeout": 3}
+    connect_args = {"connect_timeout": 10}
 elif db_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
     try:
@@ -19,22 +19,17 @@ elif db_url.startswith("sqlite"):
     except Exception as e:
         print(f"[DB Init] Directory check note: {e}")
 
-is_vercel = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV") or os.getenv("VERCEL_URL"))
-
 try:
     engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
     with engine.connect() as conn:
         pass
 except Exception as err:
-    print(f"[DB Init] Primary connection failed ({err}), falling back to SQLite in temp dir")
-    tmp_file = os.path.join(tempfile.gettempdir(), "lucky10.db").replace("\\", "/")
-    db_url = f"sqlite:///{tmp_file}" if tmp_file.startswith("/") else f"sqlite:///{tmp_file}"
-    connect_args = {"check_same_thread": False}
-    try:
-        os.makedirs(os.path.dirname(tmp_file), exist_ok=True)
-    except Exception:
-        pass
-    engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
+    print(f"[FATAL DB ERROR] Primary database connection to '{db_url}' failed: {err}")
+    if db_url.startswith("sqlite"):
+        # For local sqlite, create engine without strict initial connection check
+        engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
+    else:
+        raise RuntimeError(f"Database connection failed for '{db_url}': {err}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

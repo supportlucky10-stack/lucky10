@@ -10,9 +10,8 @@ if raw_db_url.startswith("postgres://"):
 if raw_db_url:
     _db_url = raw_db_url
 else:
-    # Fallback to local / temp SQLite if DATABASE_URL is not set
-    tmp_file = os.path.join(tempfile.gettempdir(), "lucky10.db").replace("\\", "/")
-    _db_url = f"sqlite:///{tmp_file}" if tmp_file.startswith("/") else f"sqlite:///{tmp_file}"
+    # Default to local sqlite file for explicit local dev if DATABASE_URL is empty
+    _db_url = "sqlite:///lucky10.db"
 
 def _get_int(key: str, default: int) -> int:
     """Safely read an env var as int, falling back to default if missing or empty."""

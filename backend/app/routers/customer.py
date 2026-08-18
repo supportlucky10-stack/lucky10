@@ -12,6 +12,7 @@ from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
 from app.models.issue import IssueTicket
 from app.models.transaction import TransactionLog
+from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
 from app.schemas.user import BankDetailsSchema, UserAccountResponse
 from app.schemas.ticket import TicketCreateSchema, PlacedTicketResponse, BetItemSchema
 from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
@@ -164,6 +165,70 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
+
+    # ── SERVER-SIDE LIMIT & BLOCKED NUMBERS VALIDATION ──
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # 1. Fetch blocked numbers for this slot or ALL
+    blocked_rules = db.query(BlockedNumberRule).filter(
+        (BlockedNumberRule.game_slot == "ALL") | (BlockedNumberRule.game_slot == req.gameSlot)
+    ).all()
+    blocked_set = {b.number for b in blocked_rules}
+
+    # 2. Fetch agency limits for this user/username or ALL
+    agency_limits = db.query(AgencyNumberLimit).filter(
+        (AgencyNumberLimit.agency_id == user.id) |
+        (AgencyNumberLimit.agency_name == user.username) |
+        (AgencyNumberLimit.agency_name == user.name) |
+        (AgencyNumberLimit.agency_id == "ALL"),
+        (AgencyNumberLimit.game_slot == "ALL") | (AgencyNumberLimit.game_slot == req.gameSlot)
+    ).all()
+
+    # 3. Fetch global limit rule
+    global_limit = db.query(GlobalLimitRule).first()
+
+    for item in req.items:
+        clean_num = item.number.split(":")[1].strip() if ":" in item.number else item.number.strip()
+        
+        # Check if number is blocked
+        if clean_num in blocked_set:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot play on number {clean_num} (Number is currently blocked by administrator)"
+            )
+
+        # Calculate user's existing placed count today for clean_num in req.gameSlot
+        existing_tickets = db.query(Ticket).filter(
+            Ticket.user_id == user.id,
+            Ticket.game_slot == req.gameSlot
+        ).all()
+
+        current_placed_count = 0.0
+        for tkt in existing_tickets:
+            tkt_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else today_str
+            if tkt_date == today_str:
+                for bi in tkt.items:
+                    bi_num = bi.number.split(":")[1].strip() if ":" in bi.number else bi.number.strip()
+                    if bi_num == clean_num:
+                        current_placed_count += bi.count
+
+        # Check agency limit rule
+        spec_lim = next((l for l in agency_limits if l.number == clean_num), None)
+        if spec_lim:
+            if current_placed_count + item.count > spec_lim.max_count:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Limit of {spec_lim.max_count:.0f} count reached for number {clean_num}"
+                )
+
+        # Check global limit rule
+        if global_limit and global_limit.is_enabled:
+            if global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot:
+                if current_placed_count + item.count > global_limit.default_max_count:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Global limit of {global_limit.default_max_count:.0f} count reached for number {clean_num}"
+                    )
 
     if req.actionType == "PAY" and user.balance < req.totalAmount:
         raise HTTPException(

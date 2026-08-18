@@ -57,11 +57,23 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": f"Server Error: {str(exc)}"}
     )
 
-# Configure CORS
-origins = [o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+# Configure CORS based on environment
+raw_origins = [o.strip().rstrip('/') for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
+
+is_prod = (
+    os.getenv("ENVIRONMENT", "").lower() in ("production", "prod")
+    or os.getenv("RAILWAY_ENVIRONMENT") is not None
+)
+
+if is_prod and "*" in raw_origins:
+    print("[Lucky10 CORS Warning] Wildcard '*' removed from ALLOWED_ORIGINS in production")
+    raw_origins = [o for o in raw_origins if o != "*"]
+
+origins = raw_origins if raw_origins else ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins if origins else ["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

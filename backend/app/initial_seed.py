@@ -28,10 +28,17 @@ def generate_30_compliments(base_num: str, offset: int = 1) -> list:
         res.append(f"{num:03d}")
     return [res[i:i+5] for i in range(0, 30, 5)]
 
-def seed_db():
+def seed_db(force: bool = False):
     Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
     try:
+        force_env = os.getenv("FORCE_SEED", "").lower() in ("true", "1")
+        if not force and not force_env:
+            existing_count = db.query(User).count()
+            if existing_count > 0:
+                print("[Lucky10 Seed] Database already contains user data. Automatic seed skipped.")
+                return
+
         now_utc = datetime.now(timezone.utc)
         today_str = now_utc.strftime("%Y-%m-%d")
         yesterday_str = (now_utc - timedelta(days=1)).strftime("%Y-%m-%d")
