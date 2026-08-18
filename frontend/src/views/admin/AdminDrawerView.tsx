@@ -21,7 +21,10 @@ export const AdminDrawerView: React.FC = () => {
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none">
       <div>
         {/* Top Gold Banner Header (Hello Admin and Logo removed as requested) */}
-        <div className="w-full bg-gold-banner px-5 py-4 sm:py-5 flex items-center justify-between shadow-md border-b border-[#aa771c] min-h-[48px]">
+        <div
+          className="w-full bg-gold-banner px-5 pb-4 sm:pb-5 flex items-center justify-between shadow-md border-b border-[#aa771c] min-h-[48px]"
+          style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}
+        >
         </div>
 
         {/* Menu Items List (Users List, Result Management, Reports, Limit / Block) */}

@@ -37,10 +37,16 @@ export const UserSignInView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#f8f9fa] text-black flex flex-col justify-between antialiased select-none font-sans pb-20">
+    <div
+      className="w-full min-h-screen min-h-[100dvh] bg-[#f8f9fa] text-black flex flex-col justify-between antialiased select-none font-sans"
+      style={{ paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       
       {/* ================= 1. TOP YELLOW BRAND HEADER & SECRET LOGIN BAR ================= */}
-      <div className="w-full bg-[#FFD000] px-4 pt-3.5 pb-3.5 shadow-md space-y-2.5 shrink-0">
+      <div
+        className="w-full bg-[#FFD000] px-4 pb-3.5 shadow-md space-y-2.5 shrink-0"
+        style={{ paddingTop: 'max(14px, env(safe-area-inset-top, 0px))' }}
+      >
         
         {/* Brand Title & Notification Bell */}
         <div className="flex items-center justify-between">
@@ -257,7 +263,10 @@ export const UserSignInView: React.FC = () => {
       </div>
 
       {/* ================= 3. BOTTOM NAVIGATION BAR ================= */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 py-2 px-4 flex items-center justify-around z-40 shadow-lg">
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 pt-2 px-4 flex items-center justify-around z-40 shadow-lg"
+        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))' }}
+      >
         <div className="flex flex-col items-center gap-0.5 text-[#FFD000] cursor-pointer">
           <Home className="w-5 h-5 stroke-[2.5]" />
           <span className="text-[10px] font-black text-black">Home</span>

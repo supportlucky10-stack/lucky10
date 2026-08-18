@@ -37,7 +37,10 @@ export const UserDrawerView: React.FC = () => {
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between pb-24 sm:pb-32 antialiased select-none font-sans">
       <div>
         {/* Sidebar Menu Items in Dark Gold Aesthetic */}
-        <div className="px-5 sm:px-8 pt-6 sm:pt-8">
+        <div
+          className="px-5 sm:px-8 pb-6 sm:pb-8"
+          style={{ paddingTop: 'max(24px, env(safe-area-inset-top, 0px))' }}
+        >
           {menuItems.map((item, index) => (
             <button
               key={index}

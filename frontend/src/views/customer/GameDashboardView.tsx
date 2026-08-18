@@ -324,9 +324,12 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full h-screen max-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
+    <div className="w-full h-screen min-h-[100dvh] max-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
       {/* Top Header Bar */}
-      <div className="w-full bg-neutral-950 px-3 sm:px-8 py-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md shrink-0">
+      <div
+        className="w-full bg-neutral-950 px-3 sm:px-8 pb-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md shrink-0"
+        style={{ paddingTop: 'max(10px, env(safe-area-inset-top, 0px))' }}
+      >
         {/* Left: Drawer Menu Toggle Icon Button */}
         <button
           onClick={() => setCurrentView('USER_DRAWER')}
