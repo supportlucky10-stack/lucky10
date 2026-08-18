@@ -421,75 +421,14 @@ export const MyPlayReportView: React.FC = () => {
     0
   );
   const grandDetailTotal = displayTickets.reduce((acc, tkt) => acc + tkt.filteredTotalAmount, 0);
-  const getWinnerCardTheme = (prize: string) => {
-    const p = prize.toUpperCase();
-    if (p.includes('1ST')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#0c2e1b] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-emerald-950 via-emerald-900/60 to-neutral-950 border-b border-emerald-500/40',
-        badge: 'bg-emerald-500/30 border-2 border-white text-emerald-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-emerald-400',
-        numberText: 'text-emerald-300',
-      };
-    }
-    if (p.includes('2ND')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#082f49] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-cyan-950 via-cyan-900/60 to-neutral-950 border-b border-cyan-500/40',
-        badge: 'bg-cyan-500/30 border-2 border-white text-cyan-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-cyan-400',
-        numberText: 'text-cyan-300',
-      };
-    }
-    if (p.includes('3RD')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#2a1347] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-purple-950 via-purple-900/60 to-neutral-950 border-b border-purple-500/40',
-        badge: 'bg-purple-500/30 border-2 border-white text-purple-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-purple-400',
-        numberText: 'text-purple-300',
-      };
-    }
-    if (p.includes('4TH')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#3b2a07] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-amber-950 via-amber-900/60 to-neutral-950 border-b border-amber-500/40',
-        badge: 'bg-amber-500/30 border-2 border-white text-amber-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-amber-400',
-        numberText: 'text-amber-300',
-      };
-    }
-    if (p.includes('5TH')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#380f19] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-rose-950 via-rose-900/60 to-neutral-950 border-b border-rose-500/40',
-        badge: 'bg-rose-500/30 border-2 border-white text-rose-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-rose-400',
-        numberText: 'text-rose-300',
-      };
-    }
-    if (p.includes('6TH')) {
-      return {
-        cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-        cardBg: 'bg-gradient-to-br from-[#0c2547] via-neutral-950 to-black',
-        headerBg: 'bg-gradient-to-r from-blue-950 via-blue-900/60 to-neutral-950 border-b border-blue-500/40',
-        badge: 'bg-blue-500/30 border-2 border-white text-blue-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
-        totalText: 'text-blue-400',
-        numberText: 'text-blue-300',
-      };
-    }
+  const getWinnerCardTheme = (_prize?: string) => {
     return {
       cardBorder: 'border-white shadow-[0_0_15px_rgba(255,255,255,0.25)]',
-      cardBg: 'bg-gradient-to-br from-[#3a2a07] via-neutral-950 to-black',
-      headerBg: 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40',
-      badge: 'bg-gold/30 border-2 border-white text-amber-200 shadow-[0_0_10px_rgba(255,255,255,0.4)]',
+      cardBg: 'bg-neutral-950',
+      headerBg: 'bg-gold-metallic border-b border-black/30',
+      badge: 'border-2 border-black text-black bg-black/10 shadow-sm',
       totalText: 'text-gold',
-      numberText: 'text-amber-300',
+      numberText: 'text-black',
     };
   };
 
@@ -1945,7 +1884,7 @@ export const MyPlayReportView: React.FC = () => {
                               {card.prize}
                             </span>
                             <div className="text-right">
-                              <span className="text-neutral-300 text-xs font-bold uppercase">NUMBER:</span>
+                              <span className="text-black/80 text-xs font-black uppercase">NUMBER:</span>
                               <span className={`font-black text-base font-mono tracking-wider ml-1.5 ${theme.numberText}`}>{card.number}</span>
                             </div>
                           </div>
