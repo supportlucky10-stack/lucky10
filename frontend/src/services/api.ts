@@ -1,8 +1,8 @@
 const isProd = import.meta.env.PROD;
-const rawApiUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+const rawApiUrl = (import.meta.env.VITE_API_URL || import.meta.env.VITE_API_BASE_URL || '').trim();
 
 if (isProd && !rawApiUrl) {
-  console.error('[CRITICAL CONFIG ERROR] VITE_API_BASE_URL is not set in production build!');
+  console.error('[CRITICAL CONFIG ERROR] VITE_API_URL or VITE_API_BASE_URL is not set in production build!');
 }
 
 const base = rawApiUrl || (isProd ? '' : 'http://localhost:8000');
@@ -25,7 +25,7 @@ export async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   if (isProd && !rawApiUrl) {
-    throw new Error('VITE_API_BASE_URL is not configured. Please set VITE_API_BASE_URL in Vercel environment variables.');
+    throw new Error('API URL is not configured. Please set VITE_API_URL or VITE_API_BASE_URL in Vercel environment variables.');
   }
   const token = getAuthToken();
   const headers: Record<string, string> = {

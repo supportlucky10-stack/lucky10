@@ -3,6 +3,12 @@ import tempfile
 
 raw_db_url = os.getenv("DATABASE_URL", "").strip()
 
+# Strip accidental prefix if user pasted "DATABASE_URL postgresql://..."
+if raw_db_url.startswith("DATABASE_URL"):
+    raw_db_url = raw_db_url.replace("DATABASE_URL", "", 1).strip()
+    if raw_db_url.startswith("="):
+        raw_db_url = raw_db_url[1:].strip()
+
 # Normalize postgres:// to postgresql:// for SQLAlchemy compatibility
 if raw_db_url.startswith("postgres://"):
     raw_db_url = raw_db_url.replace("postgres://", "postgresql://", 1)
