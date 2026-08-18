@@ -16,6 +16,7 @@ from app.models.transaction import TransactionLog
 from app.schemas.result import GameResultPublishSchema
 from app.schemas.payout import PayoutRequestCreate
 from app.schemas.user import UserCreateSchema
+from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
@@ -158,6 +159,20 @@ def clear_all_users(admin_payload: dict = Depends(get_current_admin), db: Sessio
     db.commit()
     return {"message": "All users deleted successfully"}
 
+def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
+    flat_comps = get_flat_compliments(result.compliments_json)
+    res = evaluate_ticket_items(
+        items=ticket.items,
+        p1=result.prize1 or "",
+        p2=result.prize2 or "",
+        p3=result.prize3 or "",
+        p4=result.prize4 or "",
+        p5=result.prize5 or "",
+        p6=result.prize6 or "",
+        compliments=flat_comps,
+    )
+    return res["total_win_amount"]
+
 @router.post("/results")
 def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     target_date = req.date.strip() if req.date and req.date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -176,6 +191,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
         existing.prize3 = req.prize3
         existing.prize4 = req.prize4
         existing.prize5 = req.prize5 or ""
+        existing.prize6 = req.prize6 or ""
         existing.compliments_json = compliments_json
         existing.published_at = datetime.now(timezone.utc)
         target_res = existing
@@ -189,6 +205,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
             prize3=req.prize3,
             prize4=req.prize4,
             prize5=req.prize5 or "",
+            prize6=req.prize6 or "",
             compliments_json=compliments_json,
             published_at=datetime.now(timezone.utc),
         )
@@ -196,6 +213,18 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
 
     db.commit()
     db.refresh(target_res)
+
+    # Automatically calculate winners and update all tickets for this slot on this date
+    slot_tickets = db.query(Ticket).filter(Ticket.game_slot == req.gameSlot).all()
+    for tkt in slot_tickets:
+        t_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else target_date
+        if t_date == target_date:
+            calculated_win = evaluate_ticket_win(tkt, target_res)
+            tkt.win_amount = calculated_win
+            tkt.status = "WON" if calculated_win > 0 else "LOST"
+
+    db.commit()
+
     return {
         "id": target_res.id,
         "date": target_res.date,
@@ -205,6 +234,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
         "prize3": target_res.prize3,
         "prize4": target_res.prize4,
         "prize5": target_res.prize5 or "",
+        "prize6": target_res.prize6 or "",
         "compliments": req.compliments,
         "publishedAt": target_res.published_at.isoformat(),
     }

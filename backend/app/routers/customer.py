@@ -14,8 +14,8 @@ from app.models.issue import IssueTicket
 from app.models.transaction import TransactionLog
 from app.schemas.user import BankDetailsSchema, UserAccountResponse
 from app.schemas.ticket import TicketCreateSchema, PlacedTicketResponse, BetItemSchema
-from app.schemas.result import GameResultResponse
 from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
+from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
 
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
 
@@ -65,6 +65,7 @@ def format_result(res: GameResult) -> dict:
         "prize3": res.prize3,
         "prize4": res.prize4,
         "prize5": res.prize5 or "",
+        "prize6": res.prize6 or "",
         "compliments": compliments,
         "publishedAt": res.published_at.isoformat() if res.published_at else "",
     }
@@ -192,13 +193,39 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     if c_name.lower() == "customer":
         c_name = ""
 
+    # Check if result is already published for today
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    existing_res = db.query(GameResult).filter(
+        GameResult.date == today_str,
+        GameResult.game_slot == req.gameSlot
+    ).first()
+
+    status_val = "PENDING"
+    win_val = 0.0
+
+    if existing_res and existing_res.prize1:
+        flat_comps = get_flat_compliments(existing_res.compliments_json)
+        eval_res = evaluate_ticket_items(
+            items=req.items,
+            p1=existing_res.prize1 or "",
+            p2=existing_res.prize2 or "",
+            p3=existing_res.prize3 or "",
+            p4=existing_res.prize4 or "",
+            p5=existing_res.prize5 or "",
+            p6=existing_res.prize6 or "",
+            compliments=flat_comps,
+        )
+        win_val = eval_res["total_win_amount"]
+        status_val = "WON" if win_val > 0 else "LOST"
+
     new_ticket = Ticket(
         id=ticket_id,
         user_id=user.id,
         customer_name=c_name,
         game_slot=req.gameSlot,
         total_amount=req.totalAmount,
-        status="PENDING",
+        status=status_val,
+        win_amount=win_val,
         placed_at=datetime.now(timezone.utc),
     )
     db.add(new_ticket)

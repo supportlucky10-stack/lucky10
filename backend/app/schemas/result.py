@@ -8,6 +8,7 @@ class GameResultPublishSchema(BaseModel):
     prize3: str
     prize4: str
     prize5: Optional[str] = None
+    prize6: Optional[str] = None
     compliments: List[List[str]] = []
     date: Optional[str] = None
 
@@ -20,6 +21,7 @@ class GameResultResponse(BaseModel):
     prize3: str
     prize4: str
     prize5: Optional[str] = None
+    prize6: Optional[str] = None
     compliments: List[List[str]] = []
     publishedAt: str
 

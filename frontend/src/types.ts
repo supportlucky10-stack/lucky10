@@ -76,6 +76,7 @@ export interface BetSlipItem {
   number: string;
   count: number;
   type: string;
+  playMode?: string;
   unitPrice: number;
   totalAmount: number;
   amount?: number;
@@ -107,6 +108,7 @@ export interface GameResult {
   prize3: string;
   prize4: string;
   prize5?: string;
+  prize6?: string;
   compliments: string[][];
   publishedAt: string;
 }

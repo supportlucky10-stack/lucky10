@@ -50,11 +50,12 @@ export const adminService = {
     prize4: string,
     compliments: string[][],
     prize5?: string,
-    date?: string
+    date?: string,
+    prize6?: string
   ): Promise<GameResult> {
     return await apiRequest<GameResult>('/api/admin/results', {
       method: 'POST',
-      body: JSON.stringify({ gameSlot, prize1, prize2, prize3, prize4, prize5, compliments, date }),
+      body: JSON.stringify({ gameSlot, prize1, prize2, prize3, prize4, prize5, prize6, compliments, date }),
     });
   },
 

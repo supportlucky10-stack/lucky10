@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { History, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
+import { evaluateBetItem } from '../../utils/gameRulesEngine';
 
 export const TodaysWinningNumbersView: React.FC = () => {
-  const { goBack } = useApp();
+  const { goBack, placedTickets, userTickets, getResultForSlotAndDate } = useApp();
   const [activeTab, setActiveTab] = useState<'TODAYS_WINNERS' | 'PREVIOUS_HISTORY'>('TODAYS_WINNERS');
   const [selectedSlot, setSelectedSlot] = useState<string>('ALL');
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -15,37 +16,120 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const slotOptions = ['ALL', ...games];
 
-  // Today's published winners data
-  const todayWinners = [
-    { id: 'W-101', user: 'Rahul S.', slot: '1 PM Game' as GameSlot, prize: '1st Prize (Direct 742)', winAmount: '₹5,000', time: '1:05 PM' },
-    { id: 'W-102', user: 'Vikram M.', slot: '1 PM Game' as GameSlot, prize: '2nd Prize (Direct 819)', winAmount: '₹5,000', time: '1:05 PM' },
-    { id: 'W-103', user: 'Ankit P.', slot: '3 PM Game' as GameSlot, prize: 'Shuffle Winner (427)', winAmount: '₹3,000', time: '3:06 PM' },
-    { id: 'W-104', user: 'Priya K.', slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB:74)', winAmount: '₹500', time: '6:04 PM' },
-    { id: 'W-105', user: 'Suresh B.', slot: '8 PM Game' as GameSlot, prize: '1st Prize (Direct 819)', winAmount: '₹5,000', time: '8:05 PM' },
-  ];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+
+  // Dynamic Today's Winners calculation based on gameRulesEngine
+  const todayWinners = useMemo(() => {
+    const winnersList: Array<{
+      id: string;
+      user: string;
+      slot: GameSlot;
+      prize: string;
+      winAmount: string;
+      time: string;
+    }> = [];
+
+    games.forEach((slot) => {
+      const res = getResultForSlotAndDate(slot, todayStr);
+      const slotTickets = ticketSource.filter((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        return t.gameSlot === slot && tDate === todayStr;
+      });
+
+      slotTickets.forEach((tkt) => {
+        tkt.items.forEach((item) => {
+          const evalRes = evaluateBetItem(item, res);
+          if (evalRes.isWinner) {
+            winnersList.push({
+              id: `TW-${tkt.id}-${item.id || item.number}`,
+              user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
+              slot: slot,
+              prize: `${evalRes.prizeTitle} (${evalRes.matchedNumber})`,
+              winAmount: `₹${evalRes.winAmount.toLocaleString()}`,
+              time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
+            });
+          }
+        });
+      });
+    });
+
+    // Fallback demonstration entries if no tickets are placed yet
+    if (winnersList.length === 0) {
+      return [
+        { id: 'W-101', user: 'Rahul S.', slot: '1 PM Game' as GameSlot, prize: '1st Prize (742)', winAmount: '₹5,000', time: '1:05 PM' },
+        { id: 'W-102', user: 'Vikram M.', slot: '1 PM Game' as GameSlot, prize: '2nd Prize (819)', winAmount: '₹500', time: '1:05 PM' },
+        { id: 'W-103', user: 'Ankit P.', slot: '3 PM Game' as GameSlot, prize: 'Box Winner (215)', winAmount: '₹800', time: '3:06 PM' },
+        { id: 'W-104', user: 'Priya K.', slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB:38)', winAmount: '₹700', time: '6:04 PM' },
+        { id: 'W-105', user: 'Suresh B.', slot: '8 PM Game' as GameSlot, prize: '1st Prize (624)', winAmount: '₹5,000', time: '8:05 PM' },
+      ];
+    }
+
+    return winnersList;
+  }, [ticketSource, todayStr, getResultForSlotAndDate]);
 
   const filteredTodayWinners = selectedSlot === 'ALL'
     ? todayWinners
     : todayWinners.filter((w) => w.slot === selectedSlot);
 
-  // Dynamic previous winners calculation based on date and slot
-  const getPreviousWinners = (dateStr: string, slotFilter: string) => {
-    const mockAll = [
-      { id: 'PW-201', user: 'Adithyan P.', date: dateStr, slot: '1 PM Game' as GameSlot, prize: '1st Prize (Direct 742)', winAmount: '₹5,000', number: '742', time: '1:05 PM' },
-      { id: 'PW-202', user: 'Jerin V.', date: dateStr, slot: '1 PM Game' as GameSlot, prize: '2nd Prize (819)', winAmount: '₹5,000', number: '819', time: '1:06 PM' },
-      { id: 'PW-203', user: 'Rahul S.', date: dateStr, slot: '3 PM Game' as GameSlot, prize: '3rd Prize (350)', winAmount: '₹3,000', number: '350', time: '3:05 PM' },
-      { id: 'PW-204', user: 'Vikram M.', date: dateStr, slot: '3 PM Game' as GameSlot, prize: 'Shuffle Winner (053)', winAmount: '₹1,500', number: '053', time: '3:07 PM' },
-      { id: 'PW-205', user: 'Ankit P.', date: dateStr, slot: '6 PM Game' as GameSlot, prize: '4th Prize (194)', winAmount: '₹2,000', number: '194', time: '6:04 PM' },
-      { id: 'PW-206', user: 'Priya K.', date: dateStr, slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB:19)', winAmount: '₹500', number: '19', time: '6:06 PM' },
-      { id: 'PW-207', user: 'Suresh B.', date: dateStr, slot: '8 PM Game' as GameSlot, prize: '1st Prize (624)', winAmount: '₹5,000', number: '624', time: '8:05 PM' },
-      { id: 'PW-208', user: 'Deepak K.', date: dateStr, slot: '8 PM Game' as GameSlot, prize: 'Compliment Winner (625)', winAmount: '₹1,000', number: '625', time: '8:08 PM' },
-    ];
+  // Dynamic Previous Winners calculation based on selectedDate and slotFilter
+  const previousWinners = useMemo(() => {
+    const winnersList: Array<{
+      id: string;
+      user: string;
+      date: string;
+      slot: GameSlot;
+      prize: string;
+      winAmount: string;
+      number: string;
+      time: string;
+    }> = [];
 
-    if (slotFilter === 'ALL') return mockAll;
-    return mockAll.filter((w) => w.slot === slotFilter);
-  };
+    games.forEach((slot) => {
+      const res = getResultForSlotAndDate(slot, selectedDate);
+      const slotTickets = ticketSource.filter((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : '';
+        return t.gameSlot === slot && tDate === selectedDate;
+      });
 
-  const filteredPreviousWinners = getPreviousWinners(selectedDate, selectedSlot);
+      slotTickets.forEach((tkt) => {
+        tkt.items.forEach((item) => {
+          const evalRes = evaluateBetItem(item, res);
+          if (evalRes.isWinner) {
+            winnersList.push({
+              id: `PW-${tkt.id}-${item.id || item.number}`,
+              user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
+              date: selectedDate,
+              slot: slot,
+              prize: evalRes.prizeTitle,
+              winAmount: `₹${evalRes.winAmount.toLocaleString()}`,
+              number: evalRes.matchedNumber,
+              time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
+            });
+          }
+        });
+      });
+    });
+
+    if (winnersList.length === 0) {
+      return [
+        { id: 'PW-201', user: 'Adithyan P.', date: selectedDate, slot: '1 PM Game' as GameSlot, prize: '1st Prize', winAmount: '₹5,000', number: '418', time: '1:05 PM' },
+        { id: 'PW-202', user: 'Jerin V.', date: selectedDate, slot: '1 PM Game' as GameSlot, prize: '2nd Prize', winAmount: '₹500', number: '725', time: '1:06 PM' },
+        { id: 'PW-203', user: 'Rahul S.', date: selectedDate, slot: '3 PM Game' as GameSlot, prize: '3rd Prize', winAmount: '₹250', number: '291', time: '3:05 PM' },
+        { id: 'PW-204', user: 'Vikram M.', date: selectedDate, slot: '3 PM Game' as GameSlot, prize: 'Box Straight', winAmount: '₹3,000', number: '418', time: '3:07 PM' },
+        { id: 'PW-205', user: 'Ankit P.', date: selectedDate, slot: '6 PM Game' as GameSlot, prize: '4th Prize', winAmount: '₹100', number: '634', time: '6:04 PM' },
+        { id: 'PW-206', user: 'Priya K.', date: selectedDate, slot: '6 PM Game' as GameSlot, prize: 'Pair Winner (AB)', winAmount: '₹700', number: 'AB:41', time: '6:06 PM' },
+        { id: 'PW-207', user: 'Suresh B.', date: selectedDate, slot: '8 PM Game' as GameSlot, prize: '1st Prize', winAmount: '₹5,000', number: '624', time: '8:05 PM' },
+        { id: 'PW-208', user: 'Deepak K.', date: selectedDate, slot: '8 PM Game' as GameSlot, prize: 'Compliment Winner', winAmount: '₹20', number: '153', time: '8:08 PM' },
+      ];
+    }
+
+    return winnersList;
+  }, [ticketSource, selectedDate, getResultForSlotAndDate]);
+
+  const filteredPreviousWinners = selectedSlot === 'ALL'
+    ? previousWinners
+    : previousWinners.filter((w) => w.slot === selectedSlot);
 
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
@@ -122,7 +206,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
           </div>
         )}
 
-        {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) - Single View Grid */}
+        {/* Slot Selection Pills (ALL, 1 PM, 3 PM, 6 PM, 8 PM) */}
         <div className="grid grid-cols-5 gap-1 sm:gap-1.5 w-full">
           {slotOptions.map((opt) => {
             const isSelected = selectedSlot === opt;

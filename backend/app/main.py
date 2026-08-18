@@ -26,6 +26,10 @@ try:
             conn.execute(text("ALTER TABLE tickets ADD COLUMN customer_name VARCHAR DEFAULT 'Customer'"))
         except Exception:
             pass
+        try:
+            conn.execute(text("ALTER TABLE game_results ADD COLUMN prize6 VARCHAR DEFAULT ''"))
+        except Exception:
+            pass
     print("[Lucky10] DB tables ensured")
 except Exception as e:
     print(f"[Lucky10] DB init warning: {e}")

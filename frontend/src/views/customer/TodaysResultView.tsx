@@ -100,7 +100,7 @@ export const TodaysResultView: React.FC = () => {
     }
     const formattedCompliments = complimentRows.join('\n');
 
-    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '389'}\n2 - ${currentResult.prize2 || '145'}\n3 - ${currentResult.prize3 || '720'}\n4 - ${currentResult.prize4 || '963'}\n5 - ${currentResult.prize5 || '521'}\n\nOthers:-\n${formattedCompliments}`;
+    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '389'}\n2 - ${currentResult.prize2 || '145'}\n3 - ${currentResult.prize3 || '720'}\n4 - ${currentResult.prize4 || '963'}\n5 - ${currentResult.prize5 || '521'}\n6 - ${currentResult.prize6 || '804'}\n\nOthers:-\n${formattedCompliments}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
@@ -205,14 +205,15 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Winning Number Cards (1st Prize slightly larger than other prizes) */}
+        {/* 6 Winning Number Cards (1st Prize slightly larger than other prizes) */}
         <div className="space-y-1.5 shrink-0">
           {[
-            { id: 1, val: currentResult.prize1 || '389' },
-            { id: 2, val: currentResult.prize2 || '145' },
-            { id: 3, val: currentResult.prize3 || '720' },
-            { id: 4, val: currentResult.prize4 || '963' },
-            { id: 5, val: currentResult.prize5 || '521' },
+            { id: 1, label: '1', val: currentResult.prize1 || '389' },
+            { id: 2, label: '2', val: currentResult.prize2 || '145' },
+            { id: 3, label: '3', val: currentResult.prize3 || '720' },
+            { id: 4, label: '4', val: currentResult.prize4 || '963' },
+            { id: 5, label: '5', val: currentResult.prize5 || '521' },
+            { id: 6, label: '6', val: currentResult.prize6 || '804' },
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
@@ -224,7 +225,7 @@ export const TodaysResultView: React.FC = () => {
                 <div
                   className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
                 >
-                  {item.id}
+                  {item.label}
                 </div>
                 <div className="flex items-center flex-1">
                   <span

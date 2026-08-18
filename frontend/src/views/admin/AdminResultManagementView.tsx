@@ -75,6 +75,7 @@ export const AdminResultManagementView: React.FC = () => {
   const [prize3, setPrize3] = useState(existingInitial?.prize3 || '');
   const [prize4, setPrize4] = useState(existingInitial?.prize4 || '');
   const [prize5, setPrize5] = useState(existingInitial?.prize5 || '');
+  const [prize6, setPrize6] = useState(existingInitial?.prize6 || '');
 
   const [complimentBoxes, setComplimentBoxes] = useState<string[]>(() => {
     const comps = existingInitial?.compliments ? existingInitial.compliments.flat() : [];
@@ -97,6 +98,7 @@ export const AdminResultManagementView: React.FC = () => {
       setPrize3(existing.prize3);
       setPrize4(existing.prize4);
       setPrize5(existing.prize5 || '');
+      setPrize6(existing.prize6 || '');
 
       const comps = existing.compliments ? existing.compliments.flat() : [];
       setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
@@ -106,6 +108,7 @@ export const AdminResultManagementView: React.FC = () => {
       setPrize3('');
       setPrize4('');
       setPrize5('');
+      setPrize6('');
       setComplimentBoxes(Array(30).fill(''));
     }
   };
@@ -123,6 +126,7 @@ export const AdminResultManagementView: React.FC = () => {
     const p3 = prize3.trim() || existing?.prize3 || '';
     const p4 = prize4.trim() || existing?.prize4 || '';
     const p5 = prize5.trim() || existing?.prize5 || '';
+    const p6 = prize6.trim() || existing?.prize6 || '';
 
     let complimentSets: string[][] = [];
     const validNums = complimentBoxes.filter((n) => n && n.trim().length > 0);
@@ -134,7 +138,7 @@ export const AdminResultManagementView: React.FC = () => {
       complimentSets = existing.compliments;
     }
 
-    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
+    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr, p6);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
     setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
@@ -147,6 +151,7 @@ export const AdminResultManagementView: React.FC = () => {
     const p3 = prize3.trim();
     const p4 = prize4.trim();
     const p5 = prize5.trim();
+    const p6 = prize6.trim();
 
     if (!p1) {
       setErrorMessage('Please enter 1st Prize Number before publishing other prizes.');
@@ -172,7 +177,7 @@ export const AdminResultManagementView: React.FC = () => {
       complimentSets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
     }
 
-    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
+    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr, p6);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
     setSuccessMessage(`All prizes and compliments for ${selectedSlot} have been published successfully!`);
@@ -352,6 +357,17 @@ export const AdminResultManagementView: React.FC = () => {
                     />
                   </div>
                 </div>
+                <div className="text-xs">
+                  <span className="text-neutral-400 font-bold block mb-1">6th Prize (Compliment Prize)</span>
+                  <input
+                    type="text"
+                    maxLength={3}
+                    placeholder="000"
+                    value={prize6}
+                    onChange={(e) => setPrize6(e.target.value)}
+                    className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                  />
+                </div>
               </div>
 
               {/* Compliments 30 Grid */}
@@ -455,15 +471,16 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            {/* 5 Prize Cards & Compliments */}
+            {/* 6 Prize Cards & Compliments */}
             {(() => {
               const res = getResultForSlotAndDate(previewSlot, previewDate);
               const prizes = [
-                { id: 1, val: res?.prize1 || '—' },
-                { id: 2, val: res?.prize2 || '—' },
-                { id: 3, val: res?.prize3 || '—' },
-                { id: 4, val: res?.prize4 || '—' },
-                { id: 5, val: res?.prize5 || '—' },
+                { id: 1, label: '1', val: res?.prize1 || '—' },
+                { id: 2, label: '2', val: res?.prize2 || '—' },
+                { id: 3, label: '3', val: res?.prize3 || '—' },
+                { id: 4, label: '4', val: res?.prize4 || '—' },
+                { id: 5, label: '5', val: res?.prize5 || '—' },
+                { id: 6, label: '6', val: res?.prize6 || '—' },
               ];
               const comps = res?.compliments ? res.compliments.flat() : [];
               const display30 = Array.from({ length: 30 }, (_, i) => comps[i] || '—');
@@ -478,7 +495,7 @@ export const AdminResultManagementView: React.FC = () => {
                         <div
                           className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center mr-3 ${previewSlotTheme.badgeActive}`}
                         >
-                          {item.id}
+                          {item.label}
                         </div>
                         <span className="font-black font-mono tracking-widest text-white text-lg sm:text-xl">
                           {item.val}
@@ -519,7 +536,7 @@ export const AdminResultManagementView: React.FC = () => {
                       for (let i = 0; i < 30; i += 5) {
                         rows.push(display30.slice(i, i + 5).join(' | ') + ' |');
                       }
-                      const text = `${dateStr}\n${slotTimeMap[previewSlot] || previewSlot}\n\n1 - ${prizes[0].val}\n2 - ${prizes[1].val}\n3 - ${prizes[2].val}\n4 - ${prizes[3].val}\n5 - ${prizes[4].val}\n\nOthers:-\n${rows.join('\n')}`;
+                      const text = `${dateStr}\n${slotTimeMap[previewSlot] || previewSlot}\n\n1 - ${prizes[0].val}\n2 - ${prizes[1].val}\n3 - ${prizes[2].val}\n4 - ${prizes[3].val}\n5 - ${prizes[4].val}\n6 - ${prizes[5].val}\n\nOthers:-\n${rows.join('\n')}`;
                       window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                     }}
                     className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2 transition-all cursor-pointer group"

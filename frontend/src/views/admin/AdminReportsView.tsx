@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
+import { evaluateBetItem } from '../../utils/gameRulesEngine';
 import {
   Users,
   Calendar,
@@ -14,15 +15,23 @@ import {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const getDisplayGame = (item: { number?: string; type?: string }): string => {
-  const num = item.number || '';
-  if (num.includes(':')) return num.split(':')[0].toUpperCase();
+  const num = (item.number || '').trim();
+  if (num.includes(':')) return num.split(':')[0].trim().toUpperCase();
   const typeStr = (item.type || '').toUpperCase();
   if (typeStr === 'DIRECT' || typeStr === 'SUPER') return 'SUPER';
   if (typeStr === 'SHUFFLE' || typeStr === 'BOX') return 'BOX';
   if (['AB', 'BC', 'AC', 'A', 'B', 'C'].includes(typeStr)) return typeStr;
   if (num.length === 1) return 'A';
   if (num.length === 2) return 'AB';
-  return item.type || 'SUPER';
+  return 'SUPER';
+};
+
+const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: string }): string => {
+  if (item.playMode) return item.playMode.toUpperCase();
+  const typeStr = (item.type || '').toUpperCase();
+  if (typeStr.includes('SET')) return 'SET';
+  if (typeStr.includes('R') || typeStr.includes('RANGE')) return 'R';
+  return 'DIRECT';
 };
 
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
@@ -359,13 +368,6 @@ export const AdminReportsView: React.FC = () => {
       const res = getResultForSlotAndDate(ticket.gameSlot, tDate);
       if (!res) return;
 
-      const p1 = res.prize1;
-      const p2 = res.prize2;
-      const p3 = res.prize3;
-      const p4 = res.prize4;
-      const p5 = res.prize5;
-      const comps = res.compliments ? res.compliments.flat() : [];
-
       ticket.items.forEach((item: any) => {
         const num = getDisplayNumber(item);
         const count = item.count || 1;
@@ -373,31 +375,13 @@ export const AdminReportsView: React.FC = () => {
         if (searchNum.trim() && !num.includes(searchNum.trim())) return;
         if (isFullV && !isItemMatch(item, digitF, subF)) return;
 
-        let prizeTitle = '';
-        let winAmt = 0;
-
-        if (num === p1) {
-          prizeTitle = '1ST PRIZE';
-          winAmt = count * 500;
-        } else if (num === p2) {
-          prizeTitle = '2ND PRIZE';
-          winAmt = count * 250;
-        } else if (num === p3) {
-          prizeTitle = '3RD PRIZE';
-          winAmt = count * 100;
-        } else if (num === p4) {
-          prizeTitle = '4TH PRIZE';
-          winAmt = count * 50;
-        } else if (num === p5) {
-          prizeTitle = '5TH PRIZE';
-          winAmt = count * 30;
-        } else if (comps.includes(num)) {
-          prizeTitle = 'COMPLIMENTARY PRIZE';
-          winAmt = count * 10;
-        }
-
-        if (prizeTitle) {
-          const catName = `${ticket.gameSlot} - ${(item.type || getDisplayGame(item)).toUpperCase()}`;
+        const evalRes = evaluateBetItem(item, res);
+        if (evalRes.isWinner && evalRes.winAmount > 0) {
+          const prizeTitle = evalRes.prizeTitle;
+          const winAmt = evalRes.winAmount;
+          const gameTitle = getDisplayGame(item);
+          const playModeTitle = getDisplayPlayMode(item);
+          const catName = `${ticket.gameSlot} - ${gameTitle}`;
           const existing = catMap.get(catName) || [];
           existing.push({
             id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
@@ -410,154 +394,15 @@ export const AdminReportsView: React.FC = () => {
             count: count,
             total: winAmt,
             slot: ticket.gameSlot,
-            type: item.type || getDisplayGame(item),
+            type: gameTitle,
+            gameMode: gameTitle,
+            playMode: playModeTitle,
             placedAt: ticket.placedAt,
           });
           catMap.set(catName, existing);
         }
       });
     });
-
-    if (catMap.size === 0) {
-      const sampleCategories = [
-        {
-          category: '1 PM GAME - SUPER',
-          cards: [
-            {
-              id: 'w_admin_1pm_4th',
-              ticketId: '2243305',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Mahesh Babu',
-              prize: '4TH PRIZE',
-              number: '194',
-              count: 20,
-              total: 1000,
-              slot: '1 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 12:45:00`,
-            },
-            {
-              id: 'w_admin_1pm_5th',
-              ticketId: '2243305',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Mahesh Babu',
-              prize: '5TH PRIZE',
-              number: '408',
-              count: 10,
-              total: 300,
-              slot: '1 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 12:45:00`,
-            },
-            {
-              id: 'w_admin_1pm_6th',
-              ticketId: '2243297',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Raju Bhai',
-              prize: '6TH PRIZE',
-              number: '029',
-              count: 12,
-              total: 240,
-              slot: '1 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 12:50:00`,
-            },
-          ],
-        },
-        {
-          category: '3 PM GAME - SUPER',
-          cards: [
-            {
-              id: 'w_admin_3pm_1st',
-              ticketId: '2243306',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Rajesh Sharma',
-              prize: '1ST PRIZE',
-              number: '512',
-              count: 15,
-              total: 7500,
-              slot: '3 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 14:30:00`,
-            },
-            {
-              id: 'w_admin_3pm_2nd',
-              ticketId: '2243298',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Vikram Patel',
-              prize: '2ND PRIZE',
-              number: '724',
-              count: 10,
-              total: 2500,
-              slot: '3 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 14:35:00`,
-            },
-          ],
-        },
-        {
-          category: '6 PM GAME - SUPER',
-          cards: [
-            {
-              id: 'w_admin_6pm_3rd',
-              ticketId: '2243299',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Priya Sharma',
-              prize: '3RD PRIZE',
-              number: '389',
-              count: 8,
-              total: 800,
-              slot: '6 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 17:20:00`,
-            },
-            {
-              id: 'w_admin_6pm_comp',
-              ticketId: '2243300',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Suresh Raina',
-              prize: 'COMPLIMENTARY PRIZE',
-              number: '615',
-              count: 10,
-              total: 100,
-              slot: '6 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 17:25:00`,
-            },
-          ],
-        },
-        {
-          category: '8 PM GAME - SUPER',
-          cards: [
-            {
-              id: 'w_admin_8pm_1st',
-              ticketId: '2243301',
-              userName: 'Demo Agency',
-              agencyName: 'Demo Agency',
-              customerName: 'Amit Kumar',
-              prize: '1ST PRIZE',
-              number: '903',
-              count: 20,
-              total: 10000,
-              slot: '8 PM Game',
-              type: 'SUPER',
-              placedAt: `${todayStr} 19:40:00`,
-            },
-          ],
-        },
-      ];
-
-      return slotF === 'ALL'
-        ? sampleCategories
-        : sampleCategories.filter((c) => c.category.toUpperCase().startsWith(slotF.toUpperCase()));
-    }
 
     return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
   };
@@ -1470,9 +1315,10 @@ export const AdminReportsView: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Bill ID & Slot Info Bar */}
-                          <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
+                          {/* Bill ID, Play Mode & Slot Info Bar */}
+                          <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
                             <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                            <span>Play: <strong className="text-amber-400 font-bold">{card.playMode || 'DIRECT'}</strong></span>
                             <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
                           </div>
 
@@ -1671,9 +1517,10 @@ export const AdminReportsView: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Bill ID & Slot Info Bar */}
-                              <div className="bg-neutral-950/90 px-4 py-1.5 flex items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400">
+                              {/* Bill ID, Play Mode & Slot Info Bar */}
+                              <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
                                 <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                                <span>Play: <strong className="text-amber-400 font-bold">{card.playMode || 'DIRECT'}</strong></span>
                                 <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
                               </div>
 

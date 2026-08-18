@@ -20,5 +20,6 @@ class GameResult(Base):
     prize3 = Column(String, nullable=False)
     prize4 = Column(String, nullable=False)
     prize5 = Column(String, nullable=True)
+    prize6 = Column(String, nullable=True)   # 6th Prize / Compliment Prize (single 3-digit number)
     compliments_json = Column(Text, nullable=False, default="[]")
     published_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

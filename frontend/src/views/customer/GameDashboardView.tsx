@@ -175,11 +175,11 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
-  // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
+  // Mode 1 Handlers (A, B, C, ALL) - ₹60 per count, no minimum count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 5) {
-      addToast('Minimum 5 count is required for 1-digit game', 'error');
+    if (!cnt || cnt < 1) {
+      addToast('Please enter a valid count', 'error');
       return;
     }
 
@@ -189,7 +189,8 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const unitPrice1Digit = 12; // ₹12 per count for 1-digit game
+    const unitPrice1Digit = 60; // ₹60 per count for 1-digit game
+    const currentPlayMode = isReverse ? 'R' : 'DIRECT';
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
     targetNums.forEach((n) => {
@@ -198,6 +199,7 @@ export const GameDashboardView: React.FC = () => {
           number: `${p}:${n}`,
           count: cnt,
           type: 'Pair',
+          playMode: currentPlayMode,
           unitPrice: unitPrice1Digit,
           totalAmount: cnt * unitPrice1Digit,
         });
@@ -226,6 +228,7 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
+    const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
     targetNums.forEach((n) => {
       pairs.forEach((pr) => {
@@ -233,6 +236,7 @@ export const GameDashboardView: React.FC = () => {
           number: `${pr}:${n}`,
           count: cnt,
           type: 'Pair',
+          playMode: currentPlayMode,
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
@@ -261,6 +265,8 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
+    const currentPlayMode = isSet ? 'SET' : (isReverse ? 'R' : 'DIRECT');
+
     // Expand into rotational permutations if Set is checked
     if (isSet) {
       const setPerms = new Set<string>();
@@ -281,6 +287,7 @@ export const GameDashboardView: React.FC = () => {
           number: numStr,
           count: directCnt,
           type: 'Direct',
+          playMode: currentPlayMode,
           unitPrice,
           totalAmount: directCnt * unitPrice,
         });
@@ -289,6 +296,7 @@ export const GameDashboardView: React.FC = () => {
           number: numStr,
           count: boxAmt,
           type: 'Shuffle',
+          playMode: currentPlayMode,
           unitPrice,
           totalAmount: boxAmt * unitPrice,
         });
@@ -297,6 +305,7 @@ export const GameDashboardView: React.FC = () => {
           number: numStr,
           count: cnt,
           type: 'Shuffle',
+          playMode: currentPlayMode,
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
@@ -305,6 +314,7 @@ export const GameDashboardView: React.FC = () => {
           number: numStr,
           count: cnt,
           type: 'Direct',
+          playMode: currentPlayMode,
           unitPrice,
           totalAmount: cnt * unitPrice,
         });

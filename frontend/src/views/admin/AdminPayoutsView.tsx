@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
+import { evaluateBetItem } from '../../utils/gameRulesEngine';
 import {
   Send,
   CheckCircle2,
@@ -61,28 +62,12 @@ export const AdminPayoutsView: React.FC = () => {
         tkt.items.forEach((item: any) => {
           const num = item.number ? (item.number.includes(':') ? item.number.split(':')[1] : item.number) : '';
           const count = item.count || 1;
-          let prizeTitle = '';
-          let winAmt = 0;
+          const evalRes = evaluateBetItem(item, res);
+          let prizeTitle = evalRes.isWinner ? evalRes.prizeTitle : '';
+          let winAmt = evalRes.winAmount;
 
-          if (res && res.prize1) {
-            if (num === res.prize1) {
-              prizeTitle = `Direct 1st Prize (${num})`;
-              winAmt = count * 500;
-            } else if (num === res.prize2) {
-              prizeTitle = `Direct 2nd Prize (${num})`;
-              winAmt = count * 250;
-            } else if (num === res.prize3) {
-              prizeTitle = `Direct 3rd Prize (${num})`;
-              winAmt = count * 100;
-            } else if (num === res.prize4) {
-              prizeTitle = `Direct 4th Prize (${num})`;
-              winAmt = count * 50;
-            } else if (num === res.prize5) {
-              prizeTitle = `Direct 5th Prize (${num})`;
-              winAmt = count * 30;
-            }
-          } else if (tkt.status === 'WON') {
-            prizeTitle = `Direct 1st Prize (${num})`;
+          if (!prizeTitle && tkt.status === 'WON' && (tkt.winAmount || 0) > 0) {
+            prizeTitle = `Winning Bet (${num})`;
             winAmt = tkt.winAmount || (count * 500);
           }
 

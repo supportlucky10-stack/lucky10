@@ -204,6 +204,7 @@ def seed_db():
                 "prize3": "350",
                 "prize4": "194",
                 "prize5": "408",
+                "prize6": "625",
                 "compliments_json": json.dumps(generate_30_compliments("742", 1)),
             },
             {
@@ -215,6 +216,7 @@ def seed_db():
                 "prize3": "601",
                 "prize4": "287",
                 "prize5": "739",
+                "prize6": "416",
                 "compliments_json": json.dumps(generate_30_compliments("512", 2)),
             },
             {
@@ -226,6 +228,7 @@ def seed_db():
                 "prize3": "720",
                 "prize4": "963",
                 "prize5": "521",
+                "prize6": "804",
                 "compliments_json": json.dumps(generate_30_compliments("389", 3)),
             },
             {
@@ -237,6 +240,7 @@ def seed_db():
                 "prize3": "809",
                 "prize4": "536",
                 "prize5": "315",
+                "prize6": "918",
                 "compliments_json": json.dumps(generate_30_compliments("624", 1)),
             },
             # YESTERDAY
@@ -249,6 +253,7 @@ def seed_db():
                 "prize3": "291",
                 "prize4": "634",
                 "prize5": "802",
+                "prize6": "153",
                 "compliments_json": json.dumps(generate_30_compliments("418", 1)),
             },
             {
@@ -260,6 +265,7 @@ def seed_db():
                 "prize3": "570",
                 "prize4": "129",
                 "prize5": "468",
+                "prize6": "721",
                 "compliments_json": json.dumps(generate_30_compliments("893", 2)),
             },
             {
@@ -271,6 +277,7 @@ def seed_db():
                 "prize3": "438",
                 "prize4": "781",
                 "prize5": "250",
+                "prize6": "394",
                 "compliments_json": json.dumps(generate_30_compliments("165", 1)),
             },
             {
@@ -282,6 +289,7 @@ def seed_db():
                 "prize3": "615",
                 "prize4": "382",
                 "prize5": "904",
+                "prize6": "517",
                 "compliments_json": json.dumps(generate_30_compliments("730", 3)),
             },
             # DAY BEFORE YESTERDAY
@@ -294,6 +302,7 @@ def seed_db():
                 "prize3": "637",
                 "prize4": "420",
                 "prize5": "319",
+                "prize6": "806",
                 "compliments_json": json.dumps(generate_30_compliments("951", 1)),
             },
             {
@@ -305,6 +314,7 @@ def seed_db():
                 "prize3": "841",
                 "prize4": "715",
                 "prize5": "032",
+                "prize6": "495",
                 "compliments_json": json.dumps(generate_30_compliments("268", 2)),
             },
         ]
@@ -319,6 +329,7 @@ def seed_db():
                 existing.prize3 = res["prize3"]
                 existing.prize4 = res["prize4"]
                 existing.prize5 = res["prize5"]
+                existing.prize6 = res.get("prize6", "")
                 existing.compliments_json = res["compliments_json"]
 
         print("--> Seeded Game Results for multiple dates and slots")
