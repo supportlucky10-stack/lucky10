@@ -253,16 +253,37 @@ export const GameDashboardView: React.FC = () => {
 
   // Mode 3 Handlers (BOTH, BOX, SUPER) with Set Rotational Permutations
   const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
-    const cnt = parseInt(inputCount);
-    if (!cnt || cnt < 1) {
-      addToast('Please enter a valid count', 'error');
-      return;
-    }
-
     let targetNums = isReverse ? getRangeNumbers(3) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 3 || isNaN(Number(n)))) {
       addToast('Please enter a valid 3-digit number or range (000-999)', 'error');
       return;
+    }
+
+    const cDirect = parseInt(inputCount) || 0;
+    const cBox = parseInt(boxCount) || 0;
+
+    let directCnt = 0;
+    let boxAmt = 0;
+
+    if (modeType === 'BOTH') {
+      directCnt = cDirect > 0 ? cDirect : (cBox > 0 ? cBox : 0);
+      boxAmt = cBox > 0 ? cBox : (cDirect > 0 ? cDirect : 0);
+      if (directCnt < 1 && boxAmt < 1) {
+        addToast('Please enter a valid count or box count', 'error');
+        return;
+      }
+    } else if (modeType === 'BOX') {
+      boxAmt = cBox > 0 ? cBox : (cDirect > 0 ? cDirect : 0);
+      if (boxAmt < 1) {
+        addToast('Please enter a valid count or box count', 'error');
+        return;
+      }
+    } else if (modeType === 'SUPER') {
+      directCnt = cDirect > 0 ? cDirect : (cBox > 0 ? cBox : 0);
+      if (directCnt < 1) {
+        addToast('Please enter a valid count', 'error');
+        return;
+      }
     }
 
     const currentPlayMode = isSet ? 'SET' : (isReverse ? 'R' : 'DIRECT');
@@ -276,22 +297,29 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    const bCnt = parseInt(boxCount) || 0;
-
     targetNums.forEach((numStr) => {
       if (modeType === 'BOTH') {
-        const directCnt = cnt;
-        const boxAmt = bCnt > 0 ? bCnt : cnt;
-        // 1. Add SUPER (Direct) bet
-        addToBetSlip({
-          number: numStr,
-          count: directCnt,
-          type: 'Direct',
-          playMode: currentPlayMode,
-          unitPrice,
-          totalAmount: directCnt * unitPrice,
-        });
-        // 2. Add BOX (Shuffle) bet
+        if (directCnt > 0) {
+          addToBetSlip({
+            number: numStr,
+            count: directCnt,
+            type: 'Direct',
+            playMode: currentPlayMode,
+            unitPrice,
+            totalAmount: directCnt * unitPrice,
+          });
+        }
+        if (boxAmt > 0) {
+          addToBetSlip({
+            number: numStr,
+            count: boxAmt,
+            type: 'Shuffle',
+            playMode: currentPlayMode,
+            unitPrice,
+            totalAmount: boxAmt * unitPrice,
+          });
+        }
+      } else if (modeType === 'BOX') {
         addToBetSlip({
           number: numStr,
           count: boxAmt,
@@ -300,23 +328,14 @@ export const GameDashboardView: React.FC = () => {
           unitPrice,
           totalAmount: boxAmt * unitPrice,
         });
-      } else if (modeType === 'BOX') {
-        addToBetSlip({
-          number: numStr,
-          count: cnt,
-          type: 'Shuffle',
-          playMode: currentPlayMode,
-          unitPrice,
-          totalAmount: cnt * unitPrice,
-        });
       } else if (modeType === 'SUPER') {
         addToBetSlip({
           number: numStr,
-          count: cnt,
+          count: directCnt,
           type: 'Direct',
           playMode: currentPlayMode,
           unitPrice,
-          totalAmount: cnt * unitPrice,
+          totalAmount: directCnt * unitPrice,
         });
       }
     });
