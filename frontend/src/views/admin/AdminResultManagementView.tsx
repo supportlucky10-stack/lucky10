@@ -419,16 +419,16 @@ export const AdminResultManagementView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsPreviewSlotOpen(!isPreviewSlotOpen)}
-                className={`w-full h-10 px-4 rounded-xl font-black text-xs uppercase flex items-center justify-between transition-all cursor-pointer shadow border ${previewSlotTheme.pillActive}`}
+                className={`w-full h-[46px] px-4 rounded-xl font-black text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow border ${previewSlotTheme.pillActive}`}
               >
-                <div className="flex items-center gap-1.5">
-                  <span className="opacity-80 text-[10px] tracking-wider uppercase">TIME:</span>
-                  <span className="font-black tracking-wider">{previewSlot.replace(' Game', '')}</span>
+                <div className="flex items-center gap-2">
+                  <span className="opacity-85 text-xs font-bold tracking-wider uppercase">TIME:</span>
+                  <span className="font-black tracking-wider text-sm sm:text-base">{previewSlot.replace(' Game', '')}</span>
                 </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isPreviewSlotOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isPreviewSlotOpen ? 'rotate-180' : ''}`} />
               </button>
               {isPreviewSlotOpen && (
-                <div className="absolute left-0 right-0 top-11 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl z-40">
+                <div className="absolute left-0 right-0 top-13 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl z-40">
                   {gameSlots.map((slot) => {
                     const theme = slotThemes[slot];
                     const isSel = slot === previewSlot;
@@ -440,12 +440,14 @@ export const AdminResultManagementView: React.FC = () => {
                           setPreviewSlot(slot);
                           setIsPreviewSlotOpen(false);
                         }}
-                        className={`w-full py-1.5 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
-                          isSel ? theme.pillActive : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800'
+                        className={`w-full py-2 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
+                          isSel
+                            ? theme.pillActive
+                            : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                         }`}
                       >
                         <span>{slot.replace(' Game', '')}</span>
-                        {isSel && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                        {isSel && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                       </button>
                     );
                   })}

@@ -167,17 +167,17 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[42px] px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[46px] sm:h-[48px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="opacity-80 text-[10px] tracking-wider uppercase">TIME:</span>
-                <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot.replace(' Game', '')}</span>
+              <div className="flex items-center gap-2">
+                <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
+                <span className="font-black tracking-wider text-sm sm:text-base">{activeGameSlot.replace(' Game', '')}</span>
               </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isGameDropdownOpen && (
-              <div className="absolute left-0 right-0 top-12 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
+              <div className="absolute left-0 right-0 top-13 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
                 {games.map((slot) => {
                   const theme = slotThemeStyles[slot];
                   const isSelected = slot === activeGameSlot;
@@ -189,14 +189,14 @@ export const TodaysResultView: React.FC = () => {
                         setActiveGameSlot(slot);
                         setIsGameDropdownOpen(false);
                       }}
-                      className={`w-full py-1.5 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
+                      className={`w-full py-2 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
                         isSelected
                           ? theme.pillActive
                           : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                       }`}
                     >
                       <span>{slot.replace(' Game', '')}</span>
-                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                      {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                     </button>
                   );
                 })}
