@@ -103,27 +103,11 @@ export const MyPlayReportView: React.FC = () => {
   const handleShareBillToWhatsApp = () => {
     if (!selectedSingleTicket) return;
     const ticketId = selectedSingleTicket.id;
-    const dateFormatted = formatPlacedAtDate(selectedSingleTicket.placedAt);
-    const agencyName = (selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || 'Agency';
-    const customerName = formatCustomerName((selectedSingleTicket as any).customerName) || 'Customer';
-    const slot = selectedSingleTicket.gameSlot;
-    const totalAmount = selectedSingleTicket.totalAmount || 0;
-
-    let itemsSummary = selectedSingleTicket.items.map((item: any) => {
-      const gType = getDisplayGame(item);
-      const num = getDisplayNumber(item);
-      const cnt = item.count || 1;
-      const amt = item.totalAmount ?? (cnt * 10);
-      return `${gType} | ${num} | CNT: ${cnt} | ₹${amt}`;
-    }).join('\n');
-
-    const text = `BILL DETAILS\nBILL ID: ${ticketId}\nDATE & TIME: ${dateFormatted}\nAgency: ${agencyName} | Customer: ${customerName} | Slot: ${slot}\n\n${itemsSummary}\n\nTOTAL AMOUNT: ₹${totalAmount}`;
-
     captureAndShareElement({
       elementId: 'bill-details-card-container',
-      fileName: `bill_${ticketId}.png`,
+      fileName: `bill_${ticketId}.jpg`,
       title: `Bill Details - ${ticketId}`,
-      textSummary: text,
+      textSummary: '',
     });
   };
 

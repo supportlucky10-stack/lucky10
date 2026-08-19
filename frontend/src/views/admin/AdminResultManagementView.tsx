@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil } from 'lucide-react';
 import { getLocalDateStr } from '../../utils/dateUtils';
 
 const slotThemes: Record<string, {
@@ -90,10 +90,12 @@ export const AdminResultManagementView: React.FC = () => {
 
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
+  const [is1stPrizeEditing, setIs1stPrizeEditing] = useState(false);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
     setIsSlotDropdownOpen(false);
+    setIs1stPrizeEditing(false);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
     if (existing && existing.prize1) {
@@ -143,6 +145,7 @@ export const AdminResultManagementView: React.FC = () => {
     }
 
     await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr, p6);
+    setIs1stPrizeEditing(false);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
     setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
@@ -286,45 +289,55 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            {/* 1st Prize Number with Dedicated Publish Button */}
+            {/* 1st Prize Number with Dedicated Publish Button and Small Edit Icon Button */}
             <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-neutral-400 font-bold">1st Prize Number</span>
-                  {is1stPrizePublished && (
-                    <span className="text-[10px] font-black uppercase bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full">
-                      ✓ Published & Locked
-                    </span>
-                  )}
                 </div>
                 <input
                   type="text"
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
-                  disabled={is1stPrizePublished}
-                  readOnly={is1stPrizePublished}
+                  disabled={is1stPrizePublished && !is1stPrizeEditing}
+                  readOnly={is1stPrizePublished && !is1stPrizeEditing}
                   onChange={(e) => setPrize1(e.target.value)}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
-                    is1stPrizePublished
+                    is1stPrizePublished && !is1stPrizeEditing
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                       : 'bg-white text-black border-gold'
                   }`}
                 />
               </div>
-              <div className="flex justify-center pt-0.5">
+              <div className="flex items-center justify-center gap-2 pt-0.5">
                 <button
                   type="button"
-                  disabled={is1stPrizePublished}
+                  disabled={is1stPrizePublished && !is1stPrizeEditing}
                   onClick={handlePublish1stPrize}
                   className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                    is1stPrizePublished
+                    is1stPrizePublished && !is1stPrizeEditing
                       ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                       : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                   }`}
                 >
-                  {is1stPrizePublished ? 'PUBLISHED' : `PUBLISH (${shortSlot})`}
+                  {is1stPrizePublished && !is1stPrizeEditing ? 'PUBLISHED' : `PUBLISH (${shortSlot})`}
                 </button>
+
+                {is1stPrizePublished && (
+                  <button
+                    type="button"
+                    onClick={() => setIs1stPrizeEditing(!is1stPrizeEditing)}
+                    className={`p-2 rounded-full transition-all cursor-pointer border shadow-md active:scale-90 ${
+                      is1stPrizeEditing
+                        ? 'bg-gold text-black border-gold'
+                        : 'bg-neutral-800 hover:bg-neutral-700 text-gold border-gold/40'
+                    }`}
+                    title="Edit 1st Prize Number"
+                  >
+                    <Pencil className="w-4 h-4 stroke-[2.5]" />
+                  </button>
+                )}
               </div>
             </div>
 

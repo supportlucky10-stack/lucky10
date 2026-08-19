@@ -14,15 +14,17 @@ export interface ShareElementOptions {
 export const captureAndShareElement = async ({
   elementId,
   element,
-  fileName = 'share_image.png',
+  fileName = 'share_image.jpg',
   title = 'Share',
   textSummary = '',
 }: ShareElementOptions): Promise<void> => {
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
 
   if (!targetElem) {
-    const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-    window.open(fallbackUrl, '_blank');
+    if (textSummary) {
+      const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
+      window.open(fallbackUrl, '_blank');
+    }
     return;
   }
 
@@ -35,21 +37,28 @@ export const captureAndShareElement = async ({
       allowTaint: true,
     });
 
+    // Output snapshot image in JPG format (image/jpeg)
     canvas.toBlob(async (blob) => {
       if (!blob) {
-        const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-        window.open(fallbackUrl, '_blank');
+        if (textSummary) {
+          const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
+          window.open(fallbackUrl, '_blank');
+        }
         return;
       }
 
-      const file = new File([blob], fileName, { type: 'image/png' });
+      const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
+        ? fileName
+        : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
 
-      // Check if Web Share API supports file sharing (works on iOS Safari, Android Chrome/WebView)
+      const file = new File([blob], jpgFileName, { type: 'image/jpeg' });
+
+      // Check if Web Share API supports file sharing (iOS Safari, Android Chrome/WebView)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
             title: title,
-            text: textSummary,
+            text: '', // Omit text caption as requested — image only!
             files: [file],
           });
           return;
@@ -58,10 +67,10 @@ export const captureAndShareElement = async ({
         }
       }
 
-      // Fallback for desktop browsers / browsers without direct image share support:
-      // Download the rendered PNG screenshot image and open WhatsApp
+      // Fallback for desktop browsers / environments without direct image share support:
+      // Trigger download of JPG screenshot image and open WhatsApp
       const link = document.createElement('a');
-      link.download = fileName;
+      link.download = jpgFileName;
       link.href = URL.createObjectURL(blob);
       link.click();
 
@@ -69,13 +78,15 @@ export const captureAndShareElement = async ({
         URL.revokeObjectURL(link.href);
       }, 5000);
 
-      const whatsappText = `${textSummary}\n\n(Snapshot image saved to your downloads)`;
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(whatsappText)}`;
+      // Open WhatsApp Web/Desktop without text caption
+      const whatsappUrl = `https://api.whatsapp.com/send`;
       window.open(whatsappUrl, '_blank');
-    }, 'image/png');
+    }, 'image/jpeg', 0.95);
   } catch (err) {
     console.error('Failed to capture screen element image:', err);
-    const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-    window.open(fallbackUrl, '_blank');
+    if (textSummary) {
+      const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
+      window.open(fallbackUrl, '_blank');
+    }
   }
 };

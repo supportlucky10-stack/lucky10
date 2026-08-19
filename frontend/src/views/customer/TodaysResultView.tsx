@@ -81,35 +81,11 @@ export const TodaysResultView: React.FC = () => {
 
   const handleShareToWhatsApp = () => {
     const formattedDate = displayDateFormatted;
-
-    const slotTimeMap: Record<string, string> = {
-      '1 PM Game': '01:00 PM',
-      '3 PM Game': '03:00 PM',
-      '6 PM Game': '06:00 PM',
-      '8 PM Game': '08:00 PM',
-    };
-    const formattedTime = slotTimeMap[activeGameSlot] || activeGameSlot.replace(' Game', '');
-
-    const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
-    const compliments30 = Array.from({ length: 30 }, (_, index) => {
-      const val = rawList[index];
-      return val ? String(val).padStart(3, '0') : '---';
-    });
-
-    const complimentRows: string[] = [];
-    for (let i = 0; i < 30; i += 5) {
-      const row = compliments30.slice(i, i + 5).join(' | ') + ' |';
-      complimentRows.push(row);
-    }
-    const formattedCompliments = complimentRows.join('\n');
-
-    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '---'}\n2 - ${currentResult.prize2 || '---'}\n3 - ${currentResult.prize3 || '---'}\n4 - ${currentResult.prize4 || '---'}\n5 - ${currentResult.prize5 || '---'}\n6 - ${currentResult.prize6 || '---'}\n\nOthers:-\n${formattedCompliments}`;
-
     captureAndShareElement({
       elementId: 'result-view-container',
-      fileName: `result_${activeGameSlot.replace(/\s+/g, '_')}_${formattedDate}.png`,
-      title: `Result - ${activeGameSlot} (${formattedDate})`,
-      textSummary: text,
+      fileName: `result_${activeGameSlot.replace(/\s+/g, '_')}_${formattedDate}.jpg`,
+      title: `Result - ${activeGameSlot}`,
+      textSummary: '',
     });
   };
 

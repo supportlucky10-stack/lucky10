@@ -94,27 +94,11 @@ export const EditDeleteBillView: React.FC = () => {
   const handleShareBillToWhatsApp = () => {
     if (!searchedBill) return;
     const ticketId = searchedBill.id;
-    const dateFormatted = formatPlacedAtDate(searchedBill.placedAt);
-    const agencyName = (searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency';
-    const customerName = (searchedBill as any).customerName || 'Customer';
-    const slot = searchedBill.gameSlot;
-    const totalAmount = searchedBill.totalAmount || 0;
-
-    let itemsSummary = searchedBill.items.map((item: any) => {
-      const gType = getDisplayGame(item);
-      const num = getDisplayNumber(item);
-      const cnt = item.count || 1;
-      const amt = item.totalAmount ?? (cnt * 10);
-      return `${gType} | ${num} | CNT: ${cnt} | ₹${amt}`;
-    }).join('\n');
-
-    const text = `BILL DETAILS\nBILL ID: ${ticketId}\nDATE & TIME: ${dateFormatted}\nAgency: ${agencyName} | Customer: ${customerName} | Slot: ${slot}\n\n${itemsSummary}\n\nTOTAL AMOUNT: ₹${totalAmount}`;
-
     captureAndShareElement({
       elementId: 'edit-bill-card-container',
-      fileName: `bill_${ticketId}.png`,
+      fileName: `bill_${ticketId}.jpg`,
       title: `Bill Details - ${ticketId}`,
-      textSummary: text,
+      textSummary: '',
     });
   };
 
