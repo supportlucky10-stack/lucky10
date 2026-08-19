@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
 import { getLocalDateStr } from '../../utils/dateUtils';
+import { captureAndShareElement } from '../../utils/shareUtils';
 
 export const TodaysResultView: React.FC = () => {
   const { getResultForSlotAndDate } = useApp();
@@ -93,8 +94,12 @@ export const TodaysResultView: React.FC = () => {
 
     const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '---'}\n2 - ${currentResult.prize2 || '---'}\n3 - ${currentResult.prize3 || '---'}\n4 - ${currentResult.prize4 || '---'}\n5 - ${currentResult.prize5 || '---'}\n6 - ${currentResult.prize6 || '---'}\n\nOthers:-\n${formattedCompliments}`;
 
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(whatsappUrl, '_blank');
+    captureAndShareElement({
+      elementId: 'result-view-container',
+      fileName: `result_${activeGameSlot.replace(/\s+/g, '_')}_${formattedDate}.png`,
+      title: `Result - ${activeGameSlot} (${formattedDate})`,
+      textSummary: text,
+    });
   };
 
   return (
@@ -118,7 +123,7 @@ export const TodaysResultView: React.FC = () => {
         }
       />
 
-      <div className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-3 flex-1 flex flex-col justify-start space-y-3">
+      <div id="result-view-container" className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-3 flex-1 flex flex-col justify-start space-y-3 bg-black">
         
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
         <div className="space-y-2.5 shrink-0">

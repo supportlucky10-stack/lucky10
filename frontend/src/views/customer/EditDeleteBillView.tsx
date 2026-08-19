@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Search, Trash2, Copy, Check } from 'lucide-react';
+import { captureAndShareElement } from '../../utils/shareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -90,10 +91,55 @@ export const EditDeleteBillView: React.FC = () => {
     setSearchedBill(found || null);
   };
 
+  const handleShareBillToWhatsApp = () => {
+    if (!searchedBill) return;
+    const ticketId = searchedBill.id;
+    const dateFormatted = formatPlacedAtDate(searchedBill.placedAt);
+    const agencyName = (searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency';
+    const customerName = (searchedBill as any).customerName || 'Customer';
+    const slot = searchedBill.gameSlot;
+    const totalAmount = searchedBill.totalAmount || 0;
+
+    let itemsSummary = searchedBill.items.map((item: any) => {
+      const gType = getDisplayGame(item);
+      const num = getDisplayNumber(item);
+      const cnt = item.count || 1;
+      const amt = item.totalAmount ?? (cnt * 10);
+      return `${gType} | ${num} | CNT: ${cnt} | ₹${amt}`;
+    }).join('\n');
+
+    const text = `BILL DETAILS\nBILL ID: ${ticketId}\nDATE & TIME: ${dateFormatted}\nAgency: ${agencyName} | Customer: ${customerName} | Slot: ${slot}\n\n${itemsSummary}\n\nTOTAL AMOUNT: ₹${totalAmount}`;
+
+    captureAndShareElement({
+      elementId: 'edit-bill-card-container',
+      fileName: `bill_${ticketId}.png`,
+      title: `Bill Details - ${ticketId}`,
+      textSummary: text,
+    });
+  };
+
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-28 sm:pb-36 antialiased select-none font-sans">
       {/* Header Banner matching theme */}
-      <HeaderBanner title="DELETE BILL" showBack={true} />
+      <HeaderBanner
+        title="DELETE BILL"
+        showBack={true}
+        rightElement={
+          searchedBill ? (
+            <button
+              type="button"
+              onClick={handleShareBillToWhatsApp}
+              className="px-3 sm:px-3.5 py-1.5 bg-[#075e54] hover:bg-[#128c7e] active:scale-90 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-[#25d366]/40"
+              title="Share to WhatsApp"
+            >
+              <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
+                <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
+              </svg>
+              <span>Share</span>
+            </button>
+          ) : undefined
+        }
+      />
 
       <div className={`max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-6 flex-1 flex flex-col justify-center`}>
         
@@ -152,7 +198,7 @@ export const EditDeleteBillView: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
+              <div id="edit-bill-card-container" className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
                 
                 {/* Bill ID Header Bar (Clean layout without top delete button) */}
                 <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
