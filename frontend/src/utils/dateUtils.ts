@@ -20,3 +20,23 @@ export const formatDisplayDate = (dateStr: string): string => {
   }
   return dateStr;
 };
+
+/**
+ * Extracts a normalized YYYY-MM-DD date string from various raw date/timestamp formats
+ * (e.g. "2026-08-19 14:05:32", "2026-08-19T14:05:32", "19-08-2026 14:05:32", "19/08/2026").
+ */
+export const extractDateStr = (raw?: string): string => {
+  if (!raw) return getLocalDateStr();
+  const clean = raw.trim();
+  // Match YYYY-MM-DD or YYYY/MM/DD at start
+  const ymdMatch = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+  if (ymdMatch) {
+    return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+  }
+  // Match DD-MM-YYYY or DD/MM/YYYY at start
+  const dmyMatch = clean.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+  }
+  return clean.split('T')[0].split(' ')[0] || getLocalDateStr();
+};

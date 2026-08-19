@@ -83,13 +83,14 @@ def evaluate_bet_item(
     # ----------------------------------------------------
     # 1. 1-DIGIT (A, B, C) — BASED ONLY ON 1ST PRIZE
     # ----------------------------------------------------
-    if num_str.startswith("A:") or num_str.startswith("B:") or num_str.startswith("C:") or itype in ("A", "B", "C"):
-        pos = "A"
-        val = num_str
+    clean_digits_only = "".join([c for c in num_str if c.isdigit()])
+    if num_str.startswith("A:") or num_str.startswith("B:") or num_str.startswith("C:") or itype in ("A", "B", "C") or len(clean_digits_only) == 1:
+        pos = ""
+        val = clean_digits_only
         if ":" in num_str:
             parts = num_str.split(":")
             pos = parts[0].upper()
-            val = parts[1] if len(parts) > 1 else ""
+            val = parts[1] if len(parts) > 1 else val
         elif itype in ("A", "B", "C"):
             pos = itype
 
@@ -98,33 +99,38 @@ def evaluate_bet_item(
         p1C = p1[2]
 
         match = False
+        matched_pos = pos or "A"
         if pos == "A" and val == p1A: match = True
-        if pos == "B" and val == p1B: match = True
-        if pos == "C" and val == p1C: match = True
+        elif pos == "B" and val == p1B: match = True
+        elif pos == "C" and val == p1C: match = True
+        elif pos not in ("A", "B", "C"):
+            if val == p1A: match = True; matched_pos = "A"
+            elif val == p1B: match = True; matched_pos = "B"
+            elif val == p1C: match = True; matched_pos = "C"
 
         if match:
-            # 1 Digit Rate Table: 5 count (₹60) -> ₹500 (₹100 per count)
             win_amt = round(count * 100.0, 2)
             return {
                 "is_winner": True,
-                "prize_title": f"1 DIGIT ({pos})",
+                "prize_title": f"1 DIGIT ({matched_pos})",
                 "win_amount": win_amt,
                 "matched_number": num_str,
                 "rate_multiplier": 100.0 / 12.0,
-                "matched_position": f"1st Prize Position {pos}",
+                "matched_position": f"1st Prize Position {matched_pos}",
             }
-        return not_won
+        if len(clean_digits_only) == 1:
+            return not_won
 
     # ----------------------------------------------------
     # 2. 2-DIGIT (AB, BC, AC) — BASED ONLY ON 1ST PRIZE
     # ----------------------------------------------------
-    if num_str.startswith("AB:") or num_str.startswith("BC:") or num_str.startswith("AC:") or itype in ("AB", "BC", "AC"):
-        pos = "AB"
-        val = num_str
+    if num_str.startswith("AB:") or num_str.startswith("BC:") or num_str.startswith("AC:") or itype in ("AB", "BC", "AC") or len(clean_digits_only) == 2:
+        pos = ""
+        val = clean_digits_only
         if ":" in num_str:
             parts = num_str.split(":")
             pos = parts[0].upper()
-            val = parts[1] if len(parts) > 1 else ""
+            val = parts[1] if len(parts) > 1 else val
         elif itype in ("AB", "BC", "AC"):
             pos = itype
 
@@ -133,37 +139,42 @@ def evaluate_bet_item(
         p1AC = p1[0] + p1[2]
 
         match = False
+        matched_pos = pos or "AB"
         if pos == "AB" and val == p1AB: match = True
-        if pos == "BC" and val == p1BC: match = True
-        if pos == "AC" and val == p1AC: match = True
+        elif pos == "BC" and val == p1BC: match = True
+        elif pos == "AC" and val == p1AC: match = True
+        elif pos not in ("AB", "BC", "AC"):
+            if val == p1AB: match = True; matched_pos = "AB"
+            elif val == p1BC: match = True; matched_pos = "BC"
+            elif val == p1AC: match = True; matched_pos = "AC"
 
         if match:
-            # 2 Digit Rate Table: ₹10 -> ₹700 (70x multiplier)
             win_amt = count * 700.0
             return {
                 "is_winner": True,
-                "prize_title": f"2 DIGIT ({pos})",
+                "prize_title": f"2 DIGIT ({matched_pos})",
                 "win_amount": win_amt,
                 "matched_number": num_str,
                 "rate_multiplier": 70.0,
-                "matched_position": f"1st Prize Pair {pos}",
+                "matched_position": f"1st Prize Pair {matched_pos}",
             }
-        return not_won
+        if len(clean_digits_only) == 2:
+            return not_won
 
     # ----------------------------------------------------
     # 3. BOX / SHUFFLE — BASED ONLY ON 1ST PRIZE
     # ----------------------------------------------------
     if itype in ("SHUFFLE", "BOX"):
-        if len(num_str) == 3 and len(p1) == 3:
-            sorted_bet = "".join(sorted(num_str))
+        target_digits = clean_digits_only or num_str
+        if len(target_digits) == 3 and len(p1) == 3:
+            sorted_bet = "".join(sorted(target_digits))
             sorted_p1 = "".join(sorted(p1))
 
             if sorted_bet == sorted_p1:
                 unique_digits = len(set(p1))
 
                 if unique_digits == 3:
-                    if num_str == p1:
-                        # Straight: ₹3000
+                    if target_digits == p1:
                         return {
                             "is_winner": True,
                             "prize_title": "BOX (STRAIGHT)",
@@ -173,7 +184,6 @@ def evaluate_bet_item(
                             "matched_position": "1st Prize Exact Permutation",
                         }
                     else:
-                        # Ulta-Turn: ₹800
                         return {
                             "is_winner": True,
                             "prize_title": "BOX (ULTA-TURN)",
@@ -183,8 +193,7 @@ def evaluate_bet_item(
                             "matched_position": "1st Prize Rotational Permutation",
                         }
                 elif unique_digits == 2:
-                    if num_str == p1:
-                        # Double Direct: ₹3800
+                    if target_digits == p1:
                         return {
                             "is_winner": True,
                             "prize_title": "BOX (DOUBLE DIRECT)",
@@ -194,7 +203,6 @@ def evaluate_bet_item(
                             "matched_position": "1st Prize Double Direct",
                         }
                     else:
-                        # Double Turn: ₹1600
                         return {
                             "is_winner": True,
                             "prize_title": "BOX (DOUBLE TURN)",
@@ -204,7 +212,6 @@ def evaluate_bet_item(
                             "matched_position": "1st Prize Double Turn",
                         }
                 else:
-                    # 3 Identical (e.g. 777)
                     return {
                         "is_winner": True,
                         "prize_title": "BOX (STRAIGHT)",
@@ -218,62 +225,62 @@ def evaluate_bet_item(
     # ----------------------------------------------------
     # 4. 3-DIGIT SUPER — BASED ON ALL 6 PRIZES
     # ----------------------------------------------------
-    if itype in ("DIRECT", "SUPER", "3 DIGIT", "3-DIGIT"):
-        if len(num_str) == 3:
-            if num_str == p1:
-                return {
-                    "is_winner": True,
-                    "prize_title": "1ST PRIZE",
-                    "win_amount": count * 5000.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 500.0,
-                    "matched_position": "1st Prize (Primary)",
-                }
-            if p2 and num_str == p2:
-                return {
-                    "is_winner": True,
-                    "prize_title": "2ND PRIZE",
-                    "win_amount": count * 500.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 50.0,
-                    "matched_position": "2nd Prize",
-                }
-            if p3 and num_str == p3:
-                return {
-                    "is_winner": True,
-                    "prize_title": "3RD PRIZE",
-                    "win_amount": count * 250.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 25.0,
-                    "matched_position": "3rd Prize",
-                }
-            if p4 and num_str == p4:
-                return {
-                    "is_winner": True,
-                    "prize_title": "4TH PRIZE",
-                    "win_amount": count * 100.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 10.0,
-                    "matched_position": "4th Prize",
-                }
-            if p5 and num_str == p5:
-                return {
-                    "is_winner": True,
-                    "prize_title": "5TH PRIZE",
-                    "win_amount": count * 50.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 5.0,
-                    "matched_position": "5th Prize",
-                }
-            if (p6 and num_str == p6) or (num_str in compliments):
-                return {
-                    "is_winner": True,
-                    "prize_title": "6TH PRIZE / COMPLIMENT",
-                    "win_amount": count * 20.0,
-                    "matched_number": num_str,
-                    "rate_multiplier": 2.0,
-                    "matched_position": "6th Prize / Compliment",
-                }
+    target_3digit = clean_digits_only or num_str
+    if len(target_3digit) == 3:
+        if target_3digit == p1:
+            return {
+                "is_winner": True,
+                "prize_title": "1ST PRIZE",
+                "win_amount": count * 5000.0,
+                "matched_number": num_str,
+                "rate_multiplier": 500.0,
+                "matched_position": "1st Prize (Primary)",
+            }
+        if p2 and target_3digit == p2:
+            return {
+                "is_winner": True,
+                "prize_title": "2ND PRIZE",
+                "win_amount": count * 500.0,
+                "matched_number": num_str,
+                "rate_multiplier": 50.0,
+                "matched_position": "2nd Prize",
+            }
+        if p3 and target_3digit == p3:
+            return {
+                "is_winner": True,
+                "prize_title": "3RD PRIZE",
+                "win_amount": count * 250.0,
+                "matched_number": num_str,
+                "rate_multiplier": 25.0,
+                "matched_position": "3rd Prize",
+            }
+        if p4 and target_3digit == p4:
+            return {
+                "is_winner": True,
+                "prize_title": "4TH PRIZE",
+                "win_amount": count * 100.0,
+                "matched_number": num_str,
+                "rate_multiplier": 10.0,
+                "matched_position": "4th Prize",
+            }
+        if p5 and target_3digit == p5:
+            return {
+                "is_winner": True,
+                "prize_title": "5TH PRIZE",
+                "win_amount": count * 50.0,
+                "matched_number": num_str,
+                "rate_multiplier": 5.0,
+                "matched_position": "5th Prize",
+            }
+        if (p6 and target_3digit == p6) or (target_3digit in compliments):
+            return {
+                "is_winner": True,
+                "prize_title": "6TH PRIZE / COMPLIMENT",
+                "win_amount": count * 20.0,
+                "matched_number": num_str,
+                "rate_multiplier": 2.0,
+                "matched_position": "6th Prize / Compliment",
+            }
 
     return not_won
 

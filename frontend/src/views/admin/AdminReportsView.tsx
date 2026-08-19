@@ -3,6 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
 import { evaluateBetItem } from '../../utils/gameRulesEngine';
+import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
 import {
   Users,
   Calendar,
@@ -140,7 +141,7 @@ type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
   const { registeredUsers, placedTickets, getResultForSlotAndDate, payoutLogs } = useApp();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
 
   const triggerDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
     if (ref.current) {
@@ -360,13 +361,12 @@ export const AdminReportsView: React.FC = () => {
     const catMap = new Map<string, any[]>();
 
     tickets.forEach((ticket) => {
-      const tDate = ticket.placedAt ? ticket.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const tDate = extractDateStr(ticket.placedAt);
       if (fromDateStr && tDate < fromDateStr) return;
       if (toDateStr && tDate > toDateStr) return;
       if (slotF !== 'ALL' && !ticket.gameSlot.toUpperCase().startsWith(slotF.toUpperCase())) return;
 
       const res = getResultForSlotAndDate(ticket.gameSlot, tDate);
-      if (!res) return;
 
       ticket.items.forEach((item: any) => {
         const num = getDisplayNumber(item);
@@ -376,9 +376,11 @@ export const AdminReportsView: React.FC = () => {
         if (isFullV && !isItemMatch(item, digitF, subF)) return;
 
         const evalRes = evaluateBetItem(item, res);
-        if (evalRes.isWinner && evalRes.winAmount > 0) {
-          const prizeTitle = evalRes.prizeTitle;
-          const winAmt = evalRes.winAmount;
+        const isWin = evalRes.isWinner || (ticket.status === 'WON' && (ticket.winAmount || 0) > 0);
+        const winAmt = evalRes.isWinner ? evalRes.winAmount : (ticket.winAmount || count * 100);
+        const prizeTitle = evalRes.prizeTitle || (ticket.status === 'WON' ? 'WINNER' : '');
+
+        if (isWin && winAmt > 0) {
           const gameTitle = getDisplayGame(item);
           const playModeTitle = getDisplayPlayMode(item);
           const catName = `${ticket.gameSlot} - ${gameTitle}`;

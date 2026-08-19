@@ -78,14 +78,20 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
   // ----------------------------------------------------
   // 1. 1-DIGIT (A, B, C) — BASED ONLY ON 1ST PRIZE
   // ----------------------------------------------------
-  // Item format: 'A:7', 'B:4', 'C:2' (or number='7', type='A')
-  if (numStr.startsWith('A:') || numStr.startsWith('B:') || numStr.startsWith('C:') || ['A', 'B', 'C'].includes(itemType)) {
-    let pos = 'A';
-    let val = numStr;
+  const cleanDigitsOnly = numStr.replace(/\D/g, '');
+  if (
+    numStr.startsWith('A:') ||
+    numStr.startsWith('B:') ||
+    numStr.startsWith('C:') ||
+    ['A', 'B', 'C'].includes(itemType) ||
+    cleanDigitsOnly.length === 1
+  ) {
+    let pos = '';
+    let val = cleanDigitsOnly;
     if (numStr.includes(':')) {
       const parts = numStr.split(':');
       pos = parts[0].trim().toUpperCase();
-      val = parts[1] ? parts[1].trim() : '';
+      val = parts[1] ? parts[1].trim() : val;
     } else if (['A', 'B', 'C'].includes(itemType)) {
       pos = itemType;
     }
@@ -95,37 +101,49 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
     const p1C = p1[2];
 
     let match = false;
+    let matchedPos = pos || 'A';
     if (pos === 'A' && val === p1A) match = true;
-    if (pos === 'B' && val === p1B) match = true;
-    if (pos === 'C' && val === p1C) match = true;
+    else if (pos === 'B' && val === p1B) match = true;
+    else if (pos === 'C' && val === p1C) match = true;
+    else if (!['A', 'B', 'C'].includes(pos)) {
+      if (val === p1A) { match = true; matchedPos = 'A'; }
+      else if (val === p1B) { match = true; matchedPos = 'B'; }
+      else if (val === p1C) { match = true; matchedPos = 'C'; }
+    }
 
     if (match) {
-      // 1 Digit Rate Table: 5 count (₹60) -> ₹500 (₹100 per count)
       const winAmt = count * 100;
       return {
         isWinner: true,
-        prizeTitle: `1 DIGIT (${pos})`,
+        prizeTitle: `1 DIGIT (${matchedPos})`,
         prizeCategory: '1DIGIT',
         winAmount: winAmt,
         matchedNumber: numStr,
         rateMultiplier: 100 / 12,
-        matchedPrizePosition: `1st Prize Position ${pos}`,
+        matchedPrizePosition: `1st Prize Position ${matchedPos}`,
       };
     }
-    return notWon;
+    if (cleanDigitsOnly.length === 1) {
+      return notWon;
+    }
   }
 
   // ----------------------------------------------------
   // 2. 2-DIGIT (AB, BC, AC) — BASED ONLY ON 1ST PRIZE
   // ----------------------------------------------------
-  // Item format: 'AB:74', 'BC:42', 'AC:72' (or number='74', type='AB')
-  if (numStr.startsWith('AB:') || numStr.startsWith('BC:') || numStr.startsWith('AC:') || ['AB', 'BC', 'AC'].includes(itemType)) {
-    let pos = 'AB';
-    let val = numStr;
+  if (
+    numStr.startsWith('AB:') ||
+    numStr.startsWith('BC:') ||
+    numStr.startsWith('AC:') ||
+    ['AB', 'BC', 'AC'].includes(itemType) ||
+    cleanDigitsOnly.length === 2
+  ) {
+    let pos = '';
+    let val = cleanDigitsOnly;
     if (numStr.includes(':')) {
       const parts = numStr.split(':');
       pos = parts[0].trim().toUpperCase();
-      val = parts[1] ? parts[1].trim() : '';
+      val = parts[1] ? parts[1].trim() : val;
     } else if (['AB', 'BC', 'AC'].includes(itemType)) {
       pos = itemType;
     }
@@ -135,42 +153,47 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
     const p1AC = p1[0] + p1[2];
 
     let match = false;
+    let matchedPos = pos || 'AB';
     if (pos === 'AB' && val === p1AB) match = true;
-    if (pos === 'BC' && val === p1BC) match = true;
-    if (pos === 'AC' && val === p1AC) match = true;
+    else if (pos === 'BC' && val === p1BC) match = true;
+    else if (pos === 'AC' && val === p1AC) match = true;
+    else if (!['AB', 'BC', 'AC'].includes(pos)) {
+      if (val === p1AB) { match = true; matchedPos = 'AB'; }
+      else if (val === p1BC) { match = true; matchedPos = 'BC'; }
+      else if (val === p1AC) { match = true; matchedPos = 'AC'; }
+    }
 
     if (match) {
-      // 2 Digit Rate Table: ₹10 -> ₹700 (70x multiplier)
       const winAmt = count * 700;
       return {
         isWinner: true,
-        prizeTitle: `2 DIGIT (${pos})`,
+        prizeTitle: `2 DIGIT (${matchedPos})`,
         prizeCategory: '2DIGIT',
         winAmount: winAmt,
         matchedNumber: numStr,
         rateMultiplier: 70,
-        matchedPrizePosition: `1st Prize Pair ${pos}`,
+        matchedPrizePosition: `1st Prize Pair ${matchedPos}`,
       };
     }
-    return notWon;
+    if (cleanDigitsOnly.length === 2) {
+      return notWon;
+    }
   }
 
   // ----------------------------------------------------
   // 3. BOX / SHUFFLE — BASED ONLY ON 1ST PRIZE
   // ----------------------------------------------------
   if (itemType === 'SHUFFLE' || itemType === 'BOX') {
-    if (numStr.length === 3 && p1.length === 3) {
-      const sortedBet = numStr.split('').sort().join('');
+    const targetDigits = cleanDigitsOnly || numStr;
+    if (targetDigits.length === 3 && p1.length === 3) {
+      const sortedBet = targetDigits.split('').sort().join('');
       const sortedP1 = p1.split('').sort().join('');
 
       if (sortedBet === sortedP1) {
-        // Count unique characters in 1st Prize
         const uniqueDigits = new Set(p1.split('')).size;
 
         if (uniqueDigits === 3) {
-          // 3 Distinct Digits: Straight vs Ulta-Turn
-          if (numStr === p1) {
-            // Straight: ₹3,000 per ₹10 count (300x)
+          if (targetDigits === p1) {
             return {
               isWinner: true,
               prizeTitle: 'BOX (STRAIGHT)',
@@ -181,7 +204,6 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
               matchedPrizePosition: '1st Prize Exact Permutation',
             };
           } else {
-            // Ulta-Turn: ₹800 per ₹10 count (80x)
             return {
               isWinner: true,
               prizeTitle: 'BOX (ULTA-TURN)',
@@ -193,9 +215,7 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
             };
           }
         } else if (uniqueDigits === 2) {
-          // 2 Duplicate Digits: Double Direct vs Double Turn
-          if (numStr === p1) {
-            // Double Direct: ₹3,800 per ₹10 count (380x)
+          if (targetDigits === p1) {
             return {
               isWinner: true,
               prizeTitle: 'BOX (DOUBLE DIRECT)',
@@ -206,7 +226,6 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
               matchedPrizePosition: '1st Prize Double Direct',
             };
           } else {
-            // Double Turn: ₹1,600 per ₹10 count (160x)
             return {
               isWinner: true,
               prizeTitle: 'BOX (DOUBLE TURN)',
@@ -218,7 +237,6 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
             };
           }
         } else {
-          // 3 Identical Digits (e.g. 777)
           return {
             isWinner: true,
             prizeTitle: 'BOX (STRAIGHT)',
@@ -237,80 +255,73 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
   // ----------------------------------------------------
   // 4. 3-DIGIT SUPER — BASED ON ALL 6 PRIZES
   // ----------------------------------------------------
-  if (itemType === 'DIRECT' || itemType === 'SUPER' || itemType === '3 DIGIT' || itemType === '3-DIGIT') {
-    if (numStr.length === 3) {
-      // 1st Prize: ₹5,000 per ₹10 count (500x)
-      if (numStr === p1) {
-        return {
-          isWinner: true,
-          prizeTitle: '1ST PRIZE',
-          prizeCategory: '1ST',
-          winAmount: count * 5000,
-          matchedNumber: numStr,
-          rateMultiplier: 500,
-          matchedPrizePosition: '1st Prize (Primary)',
-        };
-      }
-      // 2nd Prize: ₹500 per ₹10 count (50x)
-      if (p2 && numStr === p2) {
-        return {
-          isWinner: true,
-          prizeTitle: '2ND PRIZE',
-          prizeCategory: '2ND',
-          winAmount: count * 500,
-          matchedNumber: numStr,
-          rateMultiplier: 50,
-          matchedPrizePosition: '2nd Prize',
-        };
-      }
-      // 3rd Prize: ₹250 per ₹10 count (25x)
-      if (p3 && numStr === p3) {
-        return {
-          isWinner: true,
-          prizeTitle: '3RD PRIZE',
-          prizeCategory: '3RD',
-          winAmount: count * 250,
-          matchedNumber: numStr,
-          rateMultiplier: 25,
-          matchedPrizePosition: '3rd Prize',
-        };
-      }
-      // 4th Prize: ₹100 per ₹10 count (10x)
-      if (p4 && numStr === p4) {
-        return {
-          isWinner: true,
-          prizeTitle: '4TH PRIZE',
-          prizeCategory: '4TH',
-          winAmount: count * 100,
-          matchedNumber: numStr,
-          rateMultiplier: 10,
-          matchedPrizePosition: '4th Prize',
-        };
-      }
-      // 5th Prize: ₹50 per ₹10 count (5x)
-      if (p5 && numStr === p5) {
-        return {
-          isWinner: true,
-          prizeTitle: '5TH PRIZE',
-          prizeCategory: '5TH',
-          winAmount: count * 50,
-          matchedNumber: numStr,
-          rateMultiplier: 5,
-          matchedPrizePosition: '5th Prize',
-        };
-      }
-      // 6th Prize / Compliment: ₹20 per ₹10 count (2x)
-      if ((p6 && numStr === p6) || comps.includes(numStr)) {
-        return {
-          isWinner: true,
-          prizeTitle: '6TH PRIZE / COMPLIMENT',
-          prizeCategory: '6TH',
-          winAmount: count * 20,
-          matchedNumber: numStr,
-          rateMultiplier: 2,
-          matchedPrizePosition: '6th Prize / Compliment',
-        };
-      }
+  const target3Digit = cleanDigitsOnly || numStr;
+  if (target3Digit.length === 3) {
+    if (target3Digit === p1) {
+      return {
+        isWinner: true,
+        prizeTitle: '1ST PRIZE',
+        prizeCategory: '1ST',
+        winAmount: count * 5000,
+        matchedNumber: numStr,
+        rateMultiplier: 500,
+        matchedPrizePosition: '1st Prize (Primary)',
+      };
+    }
+    if (p2 && target3Digit === p2) {
+      return {
+        isWinner: true,
+        prizeTitle: '2ND PRIZE',
+        prizeCategory: '2ND',
+        winAmount: count * 500,
+        matchedNumber: numStr,
+        rateMultiplier: 50,
+        matchedPrizePosition: '2nd Prize',
+      };
+    }
+    if (p3 && target3Digit === p3) {
+      return {
+        isWinner: true,
+        prizeTitle: '3RD PRIZE',
+        prizeCategory: '3RD',
+        winAmount: count * 250,
+        matchedNumber: numStr,
+        rateMultiplier: 25,
+        matchedPrizePosition: '3rd Prize',
+      };
+    }
+    if (p4 && target3Digit === p4) {
+      return {
+        isWinner: true,
+        prizeTitle: '4TH PRIZE',
+        prizeCategory: '4TH',
+        winAmount: count * 100,
+        matchedNumber: numStr,
+        rateMultiplier: 10,
+        matchedPrizePosition: '4th Prize',
+      };
+    }
+    if (p5 && target3Digit === p5) {
+      return {
+        isWinner: true,
+        prizeTitle: '5TH PRIZE',
+        prizeCategory: '5TH',
+        winAmount: count * 50,
+        matchedNumber: numStr,
+        rateMultiplier: 5,
+        matchedPrizePosition: '5th Prize',
+      };
+    }
+    if ((p6 && target3Digit === p6) || comps.includes(target3Digit)) {
+      return {
+        isWinner: true,
+        prizeTitle: '6TH PRIZE / COMPLIMENT',
+        prizeCategory: '6TH',
+        winAmount: count * 20,
+        matchedNumber: numStr,
+        rateMultiplier: 2,
+        matchedPrizePosition: '6th Prize / Compliment',
+      };
     }
   }
 

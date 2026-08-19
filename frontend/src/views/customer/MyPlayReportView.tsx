@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { evaluateBetItem } from '../../utils/gameRulesEngine';
+import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
 import {
   ClipboardList,
   Trophy,
@@ -77,7 +78,7 @@ export const MyPlayReportView: React.FC = () => {
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
 
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
@@ -476,7 +477,7 @@ export const MyPlayReportView: React.FC = () => {
     const catMap = new Map<string, any[]>();
 
     ticketsToCheck.forEach((ticket) => {
-      const tDate = ticket.placedAt ? ticket.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const tDate = extractDateStr(ticket.placedAt);
       if (winningFromDate && tDate < winningFromDate) return;
       if (winningToDate && tDate > winningToDate) return;
       if (winningSlotFilter !== 'ALL' && !ticket.gameSlot.toUpperCase().startsWith(winningSlotFilter.toUpperCase())) return;
@@ -491,9 +492,11 @@ export const MyPlayReportView: React.FC = () => {
         if (isWinningFullView && !isItemMatch(item, winningDigitFilter, winningSubOptionFilter)) return;
 
         const evalRes = evaluateBetItem(item, res);
-        if (evalRes.isWinner && evalRes.winAmount > 0) {
-          const prizeTitle = evalRes.prizeTitle;
-          const winAmt = evalRes.winAmount;
+        const isWin = evalRes.isWinner || (ticket.status === 'WON' && (ticket.winAmount || 0) > 0);
+        const winAmt = evalRes.isWinner ? evalRes.winAmount : (ticket.winAmount || count * 100);
+        const prizeTitle = evalRes.prizeTitle || (ticket.status === 'WON' ? 'WINNER' : '');
+
+        if (isWin && winAmt > 0) {
           const gameTitle = getDisplayGame(item);
           const playModeTitle = getDisplayPlayMode(item);
           const catName = `${ticket.gameSlot} - ${gameTitle}`;
