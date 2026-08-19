@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
@@ -63,7 +63,7 @@ const slotThemes: Record<string, {
 };
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, gameResults, allPublishedResults } = useApp();
 
   const todayStr = getLocalDateStr();
 
@@ -90,6 +90,21 @@ export const AdminResultManagementView: React.FC = () => {
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
   const [is1stPrizeEditing, setIs1stPrizeEditing] = useState(false);
+
+  useEffect(() => {
+    const existing = getResultForSlotAndDate(selectedSlot, todayStr);
+    if (existing && existing.prize1) {
+      if (!is1stPrizeEditing) {
+        setPrize1(existing.prize1);
+      }
+      setPrize2(existing.prize2 || '');
+      setPrize3(existing.prize3 || '');
+      setPrize4(existing.prize4 || '');
+      setPrize5(existing.prize5 || '');
+      const comps = existing.compliments ? existing.compliments.flat() : [];
+      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+    }
+  }, [selectedSlot, todayStr, gameResults, allPublishedResults]);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);

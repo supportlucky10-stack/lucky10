@@ -384,6 +384,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             return updated;
           });
+          window.dispatchEvent(new Event('lucky10_results_updated'));
         }
       }).catch(() => {});
 
@@ -399,6 +400,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             });
             return updated;
           });
+          window.dispatchEvent(new Event('lucky10_results_updated'));
         }
       }).catch(() => {});
 
