@@ -59,6 +59,38 @@ const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: s
   return 'DIRECT';
 };
 
+const getWinningCardGameType = (card: any): string => {
+  const num = String(card.number || '').trim();
+  const rawType = String(card.gameMode || card.type || '').toUpperCase();
+
+  if (num.includes(':')) {
+    const parts = num.split(':');
+    const prefix = parts[0].toUpperCase();
+    if (['A', 'B', 'C', 'AB', 'BC', 'AC'].includes(prefix)) {
+      return prefix;
+    }
+  }
+
+  if (['A', 'B', 'C', 'AB', 'BC', 'AC'].includes(rawType)) {
+    return rawType;
+  }
+
+  if (rawType === 'SHUFFLE' || rawType === 'BOX' || rawType === 'SET') {
+    return 'BOX';
+  }
+
+  if (rawType === 'DIRECT' || rawType === 'SUPER') {
+    return 'SUPER';
+  }
+
+  const cleanDigits = num.replace(/\D/g, '');
+  if (cleanDigits.length === 1) return 'A';
+  if (cleanDigits.length === 2) return 'AB';
+  if (cleanDigits.length === 3) return 'SUPER';
+
+  return rawType || 'SUPER';
+};
+
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
   const num = item.number || '';
   if (num.includes(':')) {
@@ -1733,14 +1765,16 @@ export const MyPlayReportView: React.FC = () => {
                               : `${theme.cardBorder} hover:scale-[1.005]`
                           }`}
                         >
-                          {/* Card Prize Header Bar with distinct color header */}
-                          <div className={`${theme.headerBg} px-4 py-3 font-mono flex items-center justify-between`}>
-                            <span className={`px-2.5 py-1 rounded-lg font-black text-xs uppercase tracking-wider ${theme.badge}`}>
-                              {card.prize}
+                          {/* Card Prize Header Bar with vivid glowing colors */}
+                          <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 px-4 py-2.5 font-mono flex items-center justify-between border-b border-gold/30 shadow-inner">
+                            <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
+                              🏆 {card.prize || 'WINNER'}
                             </span>
-                            <div className="text-right">
-                              <span className="text-black/80 text-xs font-black uppercase">NUMBER:</span>
-                              <span className={`font-black text-base font-mono tracking-wider ml-1.5 ${theme.numberText}`}>{card.number}</span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-cyan-400 text-xs font-black uppercase tracking-wider">NUMBER:</span>
+                              <span className="text-amber-300 font-black text-base font-mono tracking-widest bg-black px-2.5 py-0.5 rounded-lg border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.35)]">
+                                {card.number}
+                              </span>
                             </div>
                           </div>
 
@@ -1756,10 +1790,10 @@ export const MyPlayReportView: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Bill ID, Play Mode & Slot Info Bar */}
+                          {/* Bill ID, Type & Slot Info Bar */}
                           <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
                             <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
-                            <span>Play: <strong className="text-amber-400 font-bold">{card.playMode || 'DIRECT'}</strong></span>
+                            <span>Type: <strong className="text-amber-400 font-extrabold">{getWinningCardGameType(card)}</strong></span>
                             <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
                           </div>
 
