@@ -12,6 +12,17 @@ export const TodaysResultView: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>(getLocalDateStr());
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
+  const [, setRefreshTick] = useState(0);
+
+  React.useEffect(() => {
+    const handleResultUpdate = () => {
+      setRefreshTick((prev) => prev + 1);
+    };
+    window.addEventListener('lucky10_results_updated', handleResultUpdate);
+    return () => {
+      window.removeEventListener('lucky10_results_updated', handleResultUpdate);
+    };
+  }, []);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 

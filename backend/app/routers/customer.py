@@ -134,11 +134,13 @@ def get_today_results(db: Session = Depends(get_db)):
     for r in results:
         out[r.game_slot] = format_result(r)
     
-    # If no results found for exact UTC today, pull most recent published results per slot
-    if not out:
+    # Fill in any missing game slots with the most recently published result
+    all_slots = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
+    missing_slots = [s for s in all_slots if s not in out]
+    if missing_slots:
         recent_results = db.query(GameResult).order_by(GameResult.published_at.desc()).all()
         for r in recent_results:
-            if r.game_slot not in out:
+            if r.game_slot in missing_slots and r.game_slot not in out:
                 out[r.game_slot] = format_result(r)
                 
     return out
