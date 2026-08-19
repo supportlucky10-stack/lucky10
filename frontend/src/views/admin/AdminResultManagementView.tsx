@@ -147,18 +147,14 @@ export const AdminResultManagementView: React.FC = () => {
     }
 
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    const p2 = prize2.trim() || existing?.prize2 || '';
-    const p3 = prize3.trim() || existing?.prize3 || '';
-    const p4 = prize4.trim() || existing?.prize4 || '';
-    const p5 = prize5.trim() || existing?.prize5 || '';
+    // Top button ONLY publishes 1st Prize. Preserves previously published 2nd-5th prizes if any exist on backend.
+    const p2 = existing?.prize2 || '';
+    const p3 = existing?.prize3 || '';
+    const p4 = existing?.prize4 || '';
+    const p5 = existing?.prize5 || '';
 
     let complimentSets: string[][] = [];
-    const validNums = complimentBoxes.filter((n) => n && n.trim().length > 0);
-    if (validNums.length === 30) {
-      for (let i = 0; i < complimentBoxes.length; i += 5) {
-        complimentSets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
-      }
-    } else if (existing && existing.compliments && existing.compliments.flat().length > 0) {
+    if (existing && existing.compliments && existing.compliments.flat().length > 0) {
       complimentSets = existing.compliments;
     }
 
