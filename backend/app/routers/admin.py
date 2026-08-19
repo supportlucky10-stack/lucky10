@@ -170,7 +170,6 @@ def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
         p3=result.prize3 or "",
         p4=result.prize4 or "",
         p5=result.prize5 or "",
-        p6=result.prize6 or "",
         compliments=flat_comps,
     )
     return res["total_win_amount"]
@@ -193,7 +192,6 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
         existing.prize3 = req.prize3
         existing.prize4 = req.prize4
         existing.prize5 = req.prize5 or ""
-        existing.prize6 = req.prize6 or ""
         existing.compliments_json = compliments_json
         existing.published_at = datetime.now(timezone.utc)
         target_res = existing
@@ -207,7 +205,6 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
             prize3=req.prize3,
             prize4=req.prize4,
             prize5=req.prize5 or "",
-            prize6=req.prize6 or "",
             compliments_json=compliments_json,
             published_at=datetime.now(timezone.utc),
         )
@@ -236,7 +233,6 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
         "prize3": target_res.prize3,
         "prize4": target_res.prize4,
         "prize5": target_res.prize5 or "",
-        "prize6": target_res.prize6 or "",
         "compliments": req.compliments,
         "publishedAt": target_res.published_at.isoformat(),
     }

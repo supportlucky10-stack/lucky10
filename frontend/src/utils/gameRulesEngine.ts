@@ -9,7 +9,6 @@ export interface GameResultData {
   prize3?: string;
   prize4?: string;
   prize5?: string;
-  prize6?: string;
   compliments?: string[][] | string[];
 }
 
@@ -68,7 +67,6 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
   const p3 = result.prize3 ? result.prize3.trim() : '';
   const p4 = result.prize4 ? result.prize4.trim() : '';
   const p5 = result.prize5 ? result.prize5.trim() : '';
-  const p6 = result.prize6 ? result.prize6.trim() : '';
   const comps = getFlatCompliments(result.compliments);
 
   const numStr = (item.number || '').trim();
@@ -312,15 +310,15 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
         matchedPrizePosition: '5th Prize',
       };
     }
-    if ((p6 && target3Digit === p6) || comps.includes(target3Digit)) {
+    if (comps.includes(target3Digit)) {
       return {
         isWinner: true,
-        prizeTitle: '6TH PRIZE / COMPLIMENT',
+        prizeTitle: 'COMPLIMENT PRIZE',
         prizeCategory: '6TH',
         winAmount: count * 20,
         matchedNumber: numStr,
         rateMultiplier: 2,
-        matchedPrizePosition: '6th Prize / Compliment',
+        matchedPrizePosition: 'Compliment Prize',
       };
     }
   }

@@ -108,7 +108,6 @@ export interface GameResult {
   prize3: string;
   prize4: string;
   prize5?: string;
-  prize6?: string;
   compliments: string[][];
   publishedAt: string;
 }

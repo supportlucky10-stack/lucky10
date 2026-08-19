@@ -272,14 +272,14 @@ def evaluate_bet_item(
                 "rate_multiplier": 5.0,
                 "matched_position": "5th Prize",
             }
-        if (p6 and target_3digit == p6) or (target_3digit in compliments):
+        if target_3digit in compliments:
             return {
                 "is_winner": True,
-                "prize_title": "6TH PRIZE / COMPLIMENT",
+                "prize_title": "COMPLIMENT PRIZE",
                 "win_amount": count * 20.0,
                 "matched_number": num_str,
                 "rate_multiplier": 2.0,
-                "matched_position": "6th Prize / Compliment",
+                "matched_position": "Compliment Prize",
             }
 
     return not_won
@@ -291,7 +291,6 @@ def evaluate_ticket_items(
     p3: str = "",
     p4: str = "",
     p5: str = "",
-    p6: str = "",
     compliments: List[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -314,7 +313,6 @@ def evaluate_ticket_items(
             p3=p3,
             p4=p4,
             p5=p5,
-            p6=p6,
             compliments=compliments,
         )
 

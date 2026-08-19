@@ -188,7 +188,7 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 6 Winning Number Cards (1st Prize slightly larger than other prizes) */}
+        {/* 5 Winning Number Cards (1st Prize slightly larger than other prizes) */}
         <div className="space-y-1.5 shrink-0">
           {[
             { id: 1, label: '1', val: currentResult.prize1 || '---' },
@@ -196,7 +196,6 @@ export const TodaysResultView: React.FC = () => {
             { id: 3, label: '3', val: currentResult.prize3 || '---' },
             { id: 4, label: '4', val: currentResult.prize4 || '---' },
             { id: 5, label: '5', val: currentResult.prize5 || '---' },
-            { id: 6, label: '6', val: currentResult.prize6 || '---' },
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}

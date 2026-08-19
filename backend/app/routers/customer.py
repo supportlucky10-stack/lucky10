@@ -66,7 +66,6 @@ def format_result(res: GameResult) -> dict:
         "prize3": res.prize3,
         "prize4": res.prize4,
         "prize5": res.prize5 or "",
-        "prize6": res.prize6 or "",
         "compliments": compliments,
         "publishedAt": res.published_at.isoformat() if res.published_at else "",
     }

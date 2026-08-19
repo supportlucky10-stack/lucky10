@@ -40,7 +40,7 @@ interface AppContextType {
   gameResults: Record<GameSlot, GameResult>;
   allPublishedResults: Record<string, GameResult>;
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
-  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string, prize6?: string) => Promise<void>;
+  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
   payoutLogs: PayoutLog[];
   processPayout: (userId: string, amount: number) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
@@ -315,7 +315,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prize3: '',
       prize4: '',
       prize5: '',
-      prize6: '',
       compliments: [],
       publishedAt: '',
     };
@@ -947,8 +946,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     prize4: string,
     compliments: string[][],
     prize5?: string,
-    date?: string,
-    prize6?: string
+    date?: string
   ) => {
     const todayStr = getLocalDateStr();
     const targetDate = date && date.trim() ? date.trim() : todayStr;
@@ -962,7 +960,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prize3,
       prize4,
       prize5: prize5 || '',
-      prize6: prize6 || '',
       compliments,
       publishedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
@@ -970,7 +967,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let resultToApply = fallbackResult;
 
     try {
-      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate, prize6);
+      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate);
       resultToApply = newRes || fallbackResult;
       const normDate = extractDateStr(targetDate);
       
