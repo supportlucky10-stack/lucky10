@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type {
   ViewType,
   GameSlot,
@@ -255,6 +255,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     return defaultGlobalLimitRule;
   });
+
+  const isSavingTicketRef = useRef(false);
+  const isPayingTicketRef = useRef(false);
+
+  const dedupeTickets = (list: PlacedTicket[]): PlacedTicket[] => {
+    const seen = new Set<string>();
+    return list.filter((t) => {
+      const idKey = t.ticketId || t.id;
+      if (!idKey || seen.has(idKey)) return false;
+      seen.add(idKey);
+      return true;
+    });
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -747,6 +760,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const saveTicket = async (customerName?: string): Promise<string | null> => {
+    if (isSavingTicketRef.current) {
+      return null;
+    }
+
     if (betSlip.length === 0) {
       addToast('Your bet slip is empty!', 'error');
       return null;
@@ -776,6 +793,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return null;
     }
 
+    isSavingTicketRef.current = true;
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
     const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
@@ -808,17 +826,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       newTicket.customerName = cleanCustName;
 
-      setPlacedTickets((prev) => [newTicket, ...prev]);
+      setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
       setBetSlip([]);
       addToast(`Ticket #${newTicket.id} saved successfully!`, 'success');
       return newTicket.id;
     } catch (err: any) {
       addToast(err.message || 'Failed to save ticket', 'error');
       return null;
+    } finally {
+      isSavingTicketRef.current = false;
     }
   };
 
   const payTicket = async (customerName?: string): Promise<boolean> => {
+    if (isPayingTicketRef.current) {
+      return false;
+    }
+
     if (betSlip.length === 0) {
       addToast('Your bet slip is empty!', 'error');
       return false;
@@ -834,6 +858,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
 
+    isPayingTicketRef.current = true;
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
     const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
@@ -866,7 +891,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       newTicket.customerName = cleanCustName;
 
-      setPlacedTickets((prev) => [newTicket, ...prev]);
+      setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
       if (currentUser) {
         setCurrentUser({ ...currentUser, balance: currentUser.balance - total });
       }
@@ -876,6 +901,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (err: any) {
       addToast(err.message || 'Payment failed', 'error');
       return false;
+    } finally {
+      isPayingTicketRef.current = false;
     }
   };
 

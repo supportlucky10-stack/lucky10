@@ -126,6 +126,7 @@ export const GameDashboardView: React.FC = () => {
   const [isSet, setIsSet] = useState(false);
   const [savedBillId, setSavedBillId] = useState<string | null>(null);
   const [copiedSavedBill, setCopiedSavedBill] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -370,16 +371,25 @@ export const GameDashboardView: React.FC = () => {
 
         {/* Right: SAVE Button */}
         <button
+          disabled={isSaving || betSlip.length === 0}
           onClick={async () => {
-            const billId = await saveTicket(customerName);
-            if (billId) {
-              setSavedBillId(billId);
-              setCustomerName('');
+            if (isSaving || betSlip.length === 0) return;
+            setIsSaving(true);
+            try {
+              const billId = await saveTicket(customerName);
+              if (billId) {
+                setSavedBillId(billId);
+                setCustomerName('');
+              }
+            } finally {
+              setIsSaving(false);
             }
           }}
-          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase hover:opacity-95 transition-transform active:scale-95 cursor-pointer`}
+          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-all tracking-wider ${
+            isSaving || betSlip.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
+          }`}
         >
-          SAVE
+          {isSaving ? 'SAVING...' : 'SAVE'}
         </button>
       </div>
 
