@@ -88,6 +88,9 @@ export const AdminResultManagementView: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
+  const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
+
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
     setIsSlotDropdownOpen(false);
@@ -286,23 +289,41 @@ export const AdminResultManagementView: React.FC = () => {
             {/* 1st Prize Number with Dedicated Publish Button */}
             <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
-                <span className="text-neutral-400 font-bold block mb-1.5">1st Prize Number</span>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-neutral-400 font-bold">1st Prize Number</span>
+                  {is1stPrizePublished && (
+                    <span className="text-[10px] font-black uppercase bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-0.5 rounded-full">
+                      ✓ Published & Locked
+                    </span>
+                  )}
+                </div>
                 <input
                   type="text"
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
+                  disabled={is1stPrizePublished}
+                  readOnly={is1stPrizePublished}
                   onChange={(e) => setPrize1(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white text-black font-mono font-black text-lg rounded-xl border-2 border-gold text-center shadow-inner focus:outline-none"
+                  className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
+                    is1stPrizePublished
+                      ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                      : 'bg-white text-black border-gold'
+                  }`}
                 />
               </div>
               <div className="flex justify-center pt-0.5">
                 <button
                   type="button"
+                  disabled={is1stPrizePublished}
                   onClick={handlePublish1stPrize}
-                  className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider border border-gold-dark"
+                  className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
+                    is1stPrizePublished
+                      ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                      : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                  }`}
                 >
-                  PUBLISH ({shortSlot})
+                  {is1stPrizePublished ? 'PUBLISHED' : `PUBLISH (${shortSlot})`}
                 </button>
               </div>
             </div>
@@ -400,7 +421,7 @@ export const AdminResultManagementView: React.FC = () => {
                     onClick={handlePublishOtherPrizesAndCompliments}
                     className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider border border-gold-dark"
                   >
-                    PUBLISH ({shortSlot})
+                    PUBLISH OTHER RESULTS ({shortSlot})
                   </button>
                 </div>
               </div>

@@ -737,7 +737,7 @@ export const GameDashboardView: React.FC = () => {
 
           <div className="divide-y divide-gray-200 flex-1 min-h-0 overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
-                betSlip.map((item) => {
+                betSlip.map((item, idx) => {
                   const displayType = item.number.includes(':')
                     ? item.number.split(':')[0]
                     : item.type === 'Direct'
@@ -750,7 +750,7 @@ export const GameDashboardView: React.FC = () => {
                     : item.number;
 
                   return (
-                    <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center">
+                    <div key={item.id} className={`grid grid-cols-5 py-2 px-1 items-center text-center ${idx % 2 === 1 ? 'bg-[#f5e6fa]' : 'bg-white'}`}>
                       <span className="font-extrabold text-xs sm:text-sm text-purple-700 uppercase border-r border-gray-200 truncate px-0.5">
                         {displayType}
                       </span>
