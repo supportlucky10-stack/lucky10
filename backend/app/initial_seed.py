@@ -28,21 +28,77 @@ def generate_30_compliments(base_num: str, offset: int = 1) -> list:
         res.append(f"{num:03d}")
     return [res[i:i+5] for i in range(0, 30, 5)]
 
+def validate_admin_password(password: str) -> None:
+    """Validate password strength for production admin credentials."""
+    if not password or len(password) < 8:
+        raise ValueError("ADMIN_PASSWORD must be at least 8 characters long.")
+    weak_passwords = {"123", "123456", "admin123", "demo123", "password", "admin", "lucky10"}
+    if password.lower() in weak_passwords:
+        raise ValueError("ADMIN_PASSWORD is too weak or is a generic demo password.")
+
 def provision_first_admin(db: Session):
     """
-    Provision the first ADMIN account using ADMIN_USERNAME and ADMIN_PASSWORD env vars.
-    If an ADMIN user already exists, this function DOES NOT overwrite or reset it.
+    Provision or safely reset the ADMIN account.
+    If ADMIN_RESET_PASSWORD is true (1/true), safely updates the existing ADMIN user's password.
+    Otherwise, if an ADMIN already exists, skips overwrite to protect production data.
     """
+    admin_username = os.getenv("ADMIN_USERNAME", "").strip()
+    admin_password = os.getenv("ADMIN_PASSWORD", "").strip()
+    reset_requested = os.getenv("ADMIN_RESET_PASSWORD", "").lower() in ("true", "1")
+    is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
+
     existing_admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
+
+    if reset_requested:
+        if not admin_username or not admin_password:
+            print("[Lucky10 Admin Init] ADMIN_RESET_PASSWORD is true, but ADMIN_USERNAME or ADMIN_PASSWORD is not set. Password reset skipped.")
+            return
+
+        try:
+            validate_admin_password(admin_password)
+        except ValueError as err:
+            print(f"[Lucky10 Admin Init] Password reset validation failed: {err}")
+            return
+
+        new_hash = get_password_hash(admin_password)
+
+        if existing_admin:
+            existing_admin.username = admin_username
+            existing_admin.email = f"{admin_username.lower()}@lucky10.com" if "@" not in admin_username else admin_username.lower()
+            existing_admin.password_hash = new_hash
+            existing_admin.is_active = True
+            existing_admin.role = UserRole.ADMIN
+            db.commit()
+            print(f"[Lucky10 Admin Init] SUCCESS: Admin password reset completed for '{admin_username}'.")
+        else:
+            new_admin = User(
+                id=f"user_admin_{int(datetime.now().timestamp() * 1000)}",
+                name="System Admin",
+                email=f"{admin_username.lower()}@lucky10.com" if "@" not in admin_username else admin_username.lower(),
+                username=admin_username,
+                password_hash=new_hash,
+                role=UserRole.ADMIN,
+                balance=0.0,
+                mode="With Commission",
+                is_active=True,
+                created_at=datetime.now(timezone.utc),
+            )
+            db.add(new_admin)
+            db.commit()
+            print(f"[Lucky10 Admin Init] SUCCESS: Admin user '{admin_username}' provisioned via reset flag.")
+        return
+
     if existing_admin:
         print("[Lucky10 Admin Init] Admin user already exists. Overwrite skipped.")
         return
 
-    admin_username = os.getenv("ADMIN_USERNAME", "").strip()
-    admin_password = os.getenv("ADMIN_PASSWORD", "").strip()
-    is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
-
     if admin_username and admin_password:
+        try:
+            validate_admin_password(admin_password)
+        except ValueError as err:
+            print(f"[Lucky10 Admin Init] Admin password validation failed: {err}")
+            return
+
         print(f"[Lucky10 Admin Init] Provisioning first admin user '{admin_username}' from environment variables...")
         new_admin = User(
             id=f"user_admin_{int(datetime.now().timestamp() * 1000)}",
@@ -58,7 +114,7 @@ def provision_first_admin(db: Session):
         )
         db.add(new_admin)
         db.commit()
-        print(f"[Lucky10 Admin Init] Admin user '{admin_username}' provisioned successfully.")
+        print(f"[Lucky10 Admin Init] SUCCESS: Admin user '{admin_username}' provisioned successfully.")
     elif not is_prod:
         print("[Lucky10 Admin Init] Provisioning default local dev admin 'admin'...")
         new_admin = User(
