@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { History, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
 import { evaluateBetItem } from '../../utils/gameRulesEngine';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 export const TodaysWinningNumbersView: React.FC = () => {
   const { goBack, placedTickets, userTickets, getResultForSlotAndDate } = useApp();
@@ -16,7 +17,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const slotOptions = ['ALL', ...games];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
   const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
 
   // Dynamic Today's Winners calculation based on gameRulesEngine

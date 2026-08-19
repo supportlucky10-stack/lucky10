@@ -3,13 +3,12 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 export const TodaysResultView: React.FC = () => {
   const { getResultForSlotAndDate } = useApp();
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateStr());
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
@@ -80,17 +79,9 @@ export const TodaysResultView: React.FC = () => {
     const formattedTime = slotTimeMap[activeGameSlot] || activeGameSlot.replace(' Game', '');
 
     const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
-    const fallbackList = [
-      '390', '388', '391', '387', '392',
-      '187', '192', '217', '237', '285',
-      '339', '349', '360', '390', '488',
-      '525', '534', '543', '597', '608',
-      '621', '624', '682', '723', '803',
-      '839', '862', '886', '915', '941'
-    ];
     const compliments30 = Array.from({ length: 30 }, (_, index) => {
-      const val = rawList[index] || fallbackList[index];
-      return String(val).padStart(3, '0');
+      const val = rawList[index];
+      return val ? String(val).padStart(3, '0') : '---';
     });
 
     const complimentRows: string[] = [];
@@ -100,7 +91,7 @@ export const TodaysResultView: React.FC = () => {
     }
     const formattedCompliments = complimentRows.join('\n');
 
-    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '389'}\n2 - ${currentResult.prize2 || '145'}\n3 - ${currentResult.prize3 || '720'}\n4 - ${currentResult.prize4 || '963'}\n5 - ${currentResult.prize5 || '521'}\n6 - ${currentResult.prize6 || '804'}\n\nOthers:-\n${formattedCompliments}`;
+    const text = `${formattedDate}\n${formattedTime}\n\n1 - ${currentResult.prize1 || '---'}\n2 - ${currentResult.prize2 || '---'}\n3 - ${currentResult.prize3 || '---'}\n4 - ${currentResult.prize4 || '---'}\n5 - ${currentResult.prize5 || '---'}\n6 - ${currentResult.prize6 || '---'}\n\nOthers:-\n${formattedCompliments}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
@@ -208,12 +199,12 @@ export const TodaysResultView: React.FC = () => {
         {/* 6 Winning Number Cards (1st Prize slightly larger than other prizes) */}
         <div className="space-y-1.5 shrink-0">
           {[
-            { id: 1, label: '1', val: currentResult.prize1 || '389' },
-            { id: 2, label: '2', val: currentResult.prize2 || '145' },
-            { id: 3, label: '3', val: currentResult.prize3 || '720' },
-            { id: 4, label: '4', val: currentResult.prize4 || '963' },
-            { id: 5, label: '5', val: currentResult.prize5 || '521' },
-            { id: 6, label: '6', val: currentResult.prize6 || '804' },
+            { id: 1, label: '1', val: currentResult.prize1 || '---' },
+            { id: 2, label: '2', val: currentResult.prize2 || '---' },
+            { id: 3, label: '3', val: currentResult.prize3 || '---' },
+            { id: 4, label: '4', val: currentResult.prize4 || '---' },
+            { id: 5, label: '5', val: currentResult.prize5 || '---' },
+            { id: 6, label: '6', val: currentResult.prize6 || '---' },
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
@@ -241,19 +232,11 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table (Expanded & Increased in Size) */}
+        {/* COMPLIMENTS Matrix Table */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
-          const fallbackList = [
-            '390', '388', '391', '387', '392',
-            '187', '192', '217', '237', '285',
-            '339', '349', '360', '390', '488',
-            '525', '534', '543', '597', '608',
-            '621', '624', '682', '723', '803',
-            '839', '862', '886', '915', '941'
-          ];
           const compliments30 = Array.from({ length: 30 }, (_, index) => {
-            return rawList[index] || fallbackList[index];
+            return rawList[index] ? String(rawList[index]).padStart(3, '0') : '---';
           });
 
           return (

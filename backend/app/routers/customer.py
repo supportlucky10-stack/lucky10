@@ -133,6 +133,14 @@ def get_today_results(db: Session = Depends(get_db)):
     out = {}
     for r in results:
         out[r.game_slot] = format_result(r)
+    
+    # If no results found for exact UTC today, pull most recent published results per slot
+    if not out:
+        recent_results = db.query(GameResult).order_by(GameResult.published_at.desc()).all()
+        for r in recent_results:
+            if r.game_slot not in out:
+                out[r.game_slot] = format_result(r)
+                
     return out
 
 @router.get("/results/by-date")

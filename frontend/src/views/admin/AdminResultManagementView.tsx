@@ -3,6 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
 import { CheckCircle2, ChevronDown, Calendar, AlertTriangle } from 'lucide-react';
+import { getLocalDateStr } from '../../utils/dateUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -64,7 +65,7 @@ const slotThemes: Record<string, {
 export const AdminResultManagementView: React.FC = () => {
   const { publishGameResult, getResultForSlotAndDate } = useApp();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
 
   const [selectedSlot, setSelectedSlot] = useState<GameSlot>('1 PM Game');
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);

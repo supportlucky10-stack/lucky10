@@ -17,6 +17,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
+import { getLocalDateStr } from '../utils/dateUtils';
 
 interface AppContextType {
   currentView: ViewType;
@@ -278,8 +279,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (allPublishedResults[key]) {
       return allPublishedResults[key];
     }
-    const todayStr = new Date().toISOString().split('T')[0];
-    if (dateStr === todayStr && gameResults[slot]) {
+    const todayStr = getLocalDateStr();
+    if ((dateStr === todayStr || !dateStr) && gameResults[slot]) {
       return gameResults[slot];
     }
 
@@ -342,11 +343,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadInitialData();
   }, []);
 
-  // Fetch tickets & admin data when user/admin changes (with live polling)
+  // Fetch tickets, results & admin data when user/admin changes (with live polling)
   useEffect(() => {
     let timer: any = null;
 
     const syncData = () => {
+      // Live sync today's results & all published results for ALL clients
+      customerService.getTodayResults().then((todayRes) => {
+        if (todayRes && Object.keys(todayRes).length > 0) {
+          setGameResults((prev) => ({ ...prev, ...todayRes }));
+          setAllPublishedResults((prev) => {
+            const updated = { ...prev };
+            Object.values(todayRes).forEach((r) => {
+              if (r && r.date && r.gameSlot) {
+                updated[`${r.date}_${r.gameSlot}`] = r;
+              }
+            });
+            return updated;
+          });
+        }
+      }).catch(() => {});
+
+      customerService.getAllResults().then((allRes) => {
+        if (allRes && Object.keys(allRes).length > 0) {
+          setAllPublishedResults((prev) => ({ ...prev, ...allRes }));
+        }
+      }).catch(() => {});
+
       if (currentUser && !isAdminLoggedIn) {
         customerService.getUserTickets().then((tkts) => {
           if (tkts && tkts.length > 0) setPlacedTickets(tkts);
@@ -880,8 +903,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     date?: string,
     prize6?: string
   ) => {
-    const targetDate = date && date.trim() ? date.trim() : new Date().toISOString().split('T')[0];
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateStr();
+    const targetDate = date && date.trim() ? date.trim() : todayStr;
 
     const fallbackResult: GameResult = {
       id: `res_${Date.now()}`,
