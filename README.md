@@ -48,6 +48,7 @@ npm install
 npm run dev
 ```
 
-## Default Credentials
-- **Admin**: `admin` / `admin123`
+## Administrator Provisioning & Credentials
+- **Production Admin**: Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables in Railway during initial provisioning.
+- **Local Dev Admin**: Default local dev admin is `admin` (or set via `ADMIN_USERNAME` / `ADMIN_PASSWORD`).
 - **Customer**: Click **Sign Up** on the customer sign in screen to register a fresh account.

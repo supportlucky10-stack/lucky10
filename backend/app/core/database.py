@@ -2,7 +2,7 @@ import os
 import tempfile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from app.core.config import settings
+from app.core.config import settings, sanitize_db_url
 
 db_url = settings.DATABASE_URL
 connect_args = {}
@@ -24,12 +24,13 @@ try:
     with engine.connect() as conn:
         pass
 except Exception as err:
-    print(f"[FATAL DB ERROR] Primary database connection to '{db_url}' failed: {err}")
+    safe_url = sanitize_db_url(db_url)
+    print(f"[FATAL DB ERROR] Primary database connection to '{safe_url}' failed: {err}")
     if db_url.startswith("sqlite"):
         # For local sqlite, create engine without strict initial connection check
         engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
     else:
-        raise RuntimeError(f"Database connection failed for '{db_url}': {err}")
+        raise RuntimeError(f"Database connection failed for '{safe_url}': {err}")
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

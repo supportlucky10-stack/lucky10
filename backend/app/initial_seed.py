@@ -28,15 +28,69 @@ def generate_30_compliments(base_num: str, offset: int = 1) -> list:
         res.append(f"{num:03d}")
     return [res[i:i+5] for i in range(0, 30, 5)]
 
+def provision_first_admin(db: Session):
+    """
+    Provision the first ADMIN account using ADMIN_USERNAME and ADMIN_PASSWORD env vars.
+    If an ADMIN user already exists, this function DOES NOT overwrite or reset it.
+    """
+    existing_admin = db.query(User).filter(User.role == UserRole.ADMIN).first()
+    if existing_admin:
+        print("[Lucky10 Admin Init] Admin user already exists. Overwrite skipped.")
+        return
+
+    admin_username = os.getenv("ADMIN_USERNAME", "").strip()
+    admin_password = os.getenv("ADMIN_PASSWORD", "").strip()
+    is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
+
+    if admin_username and admin_password:
+        print(f"[Lucky10 Admin Init] Provisioning first admin user '{admin_username}' from environment variables...")
+        new_admin = User(
+            id=f"user_admin_{int(datetime.now().timestamp() * 1000)}",
+            name="System Admin",
+            email=f"{admin_username.lower()}@lucky10.com" if "@" not in admin_username else admin_username.lower(),
+            username=admin_username,
+            password_hash=get_password_hash(admin_password),
+            role=UserRole.ADMIN,
+            balance=0.0,
+            mode="With Commission",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(new_admin)
+        db.commit()
+        print(f"[Lucky10 Admin Init] Admin user '{admin_username}' provisioned successfully.")
+    elif not is_prod:
+        print("[Lucky10 Admin Init] Provisioning default local dev admin 'admin'...")
+        new_admin = User(
+            id="user_admin_001",
+            name="System Admin",
+            email="admin@lucky10.com",
+            username="admin",
+            password_hash=get_password_hash("admin_dev_pass_2026"),
+            role=UserRole.ADMIN,
+            balance=0.0,
+            mode="With Commission",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(new_admin)
+        db.commit()
+        print("[Lucky10 Admin Init] Local dev admin created.")
+    else:
+        print("[Lucky10 Admin Init] No ADMIN_USERNAME / ADMIN_PASSWORD set in production. First admin provisioning skipped.")
+
 def seed_db(force: bool = False):
     Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
     try:
+        # First ensure admin user is provisioned
+        provision_first_admin(db)
+
         force_env = os.getenv("FORCE_SEED", "").lower() in ("true", "1")
         if not force and not force_env:
-            existing_count = db.query(User).count()
+            existing_count = db.query(User).filter(User.role == UserRole.CUSTOMER).count()
             if existing_count > 0:
-                print("[Lucky10 Seed] Database already contains user data. Automatic seed skipped.")
+                print("[Lucky10 Seed] Customer user data already exists. Demo seeding skipped.")
                 return
 
         now_utc = datetime.now(timezone.utc)
@@ -44,18 +98,8 @@ def seed_db(force: bool = False):
         yesterday_str = (now_utc - timedelta(days=1)).strftime("%Y-%m-%d")
         day_before_str = (now_utc - timedelta(days=2)).strftime("%Y-%m-%d")
 
-        # ── 1. Seed Admin & Agencies ──
+        # ── 1. Seed Demo Agencies ──
         agencies_data = [
-            {
-                "id": "user_admin_001",
-                "name": "System Admin",
-                "email": "admin@lucky10.com",
-                "username": "admin",
-                "password": "admin123",
-                "role": UserRole.ADMIN,
-                "balance": 0.0,
-                "mode": "With Commission",
-            },
             {
                 "id": "user_demo_001",
                 "name": "Demo Agency",

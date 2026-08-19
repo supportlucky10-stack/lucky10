@@ -1,30 +1,102 @@
 import hashlib
 import secrets
-import jwt
+import time
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from typing import Optional
-from fastapi import Depends, HTTPException, status
+from typing import Optional, Tuple
+import jwt
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from sqlalchemy.orm import Session
 from app.core.config import settings
+
+try:
+    import argon2
+    _ph = argon2.PasswordHasher()
+except Exception:
+    _ph = None
+
+try:
+    from passlib.context import CryptContext
+    _pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+except Exception:
+    _pwd_context = None
 
 security_bearer = HTTPBearer(auto_error=False)
 
-# ── Password Hashing (pure Python, no C extensions) ──────────────────────────
+# ── Simple In-Memory Rate Limiter for Auth Endpoints ─────────────────────────
+_login_attempts = defaultdict(list)
+
+def check_rate_limit(request: Request, max_requests: int = 15, window_seconds: int = 60):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time.time()
+    attempts = _login_attempts[client_ip]
+    _login_attempts[client_ip] = [t for t in attempts if now - t < window_seconds]
+    if len(_login_attempts[client_ip]) >= max_requests:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many login requests. Please wait a minute before trying again.",
+        )
+    _login_attempts[client_ip].append(now)
+
+# ── Secure Password Hashing (Argon2id / bcrypt + Legacy SHA-256 Migration) ────
 
 def get_password_hash(password: str) -> str:
-    """Hash password with a random salt using SHA-256."""
-    salt = secrets.token_hex(16)
-    hashed = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-    return f"{salt}:{hashed}"
+    """Hash password using Argon2id (or bcrypt fallback)."""
+    if _ph is not None:
+        return _ph.hash(password)
+    elif _pwd_context is not None:
+        return _pwd_context.hash(password)
+    else:
+        salt = secrets.token_hex(16)
+        hashed = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+        return f"{salt}:{hashed}"
+
+def verify_and_update_password(plain_password: str, hashed_password: str) -> Tuple[bool, Optional[str]]:
+    """
+    Verify password against stored hash.
+    If stored hash is in legacy SHA-256 format (salt:hash), verifies legacy format
+    and returns (True, new_argon2_hash) for transparent automatic migration.
+    """
+    if not hashed_password or not plain_password:
+        return False, None
+
+    # Argon2id hash format check
+    if hashed_password.startswith("$argon2"):
+        if _ph is not None:
+            try:
+                valid = _ph.verify(hashed_password, plain_password)
+                return valid, None
+            except Exception:
+                return False, None
+
+    # Bcrypt hash format check
+    if hashed_password.startswith("$2b$") or hashed_password.startswith("$2a$"):
+        if _pwd_context is not None:
+            try:
+                valid = _pwd_context.verify(plain_password, hashed_password)
+                # Rehash to Argon2id if available
+                new_hash = get_password_hash(plain_password) if (_ph is not None) else None
+                return valid, new_hash
+            except Exception:
+                return False, None
+
+    # Legacy SHA-256 format check (salt:hash)
+    if ":" in hashed_password and not hashed_password.startswith("$"):
+        try:
+            salt, stored_hash = hashed_password.split(":", 1)
+            candidate = hashlib.sha256((salt + plain_password).encode("utf-8")).hexdigest()
+            if secrets.compare_digest(candidate, stored_hash):
+                new_hash = get_password_hash(plain_password)
+                return True, new_hash
+        except Exception:
+            return False, None
+
+    return False, None
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plain password against a stored salt:hash pair."""
-    try:
-        salt, stored_hash = hashed_password.split(":", 1)
-        candidate = hashlib.sha256((salt + plain_password).encode("utf-8")).hexdigest()
-        return secrets.compare_digest(candidate, stored_hash)
-    except Exception:
-        return False
+    valid, _ = verify_and_update_password(plain_password, hashed_password)
+    return valid
 
 # ── JWT Tokens ────────────────────────────────────────────────────────────────
 
@@ -67,7 +139,25 @@ def get_current_customer(payload: dict = Depends(get_current_user_token)) -> dic
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
     return payload
 
-def get_current_admin(payload: dict = Depends(get_current_user_token)) -> dict:
+from app.core.database import get_db
+from app.models.user import User, UserRole
+
+def get_current_admin(
+    payload: dict = Depends(get_current_user_token),
+    db: Session = Depends(get_db),
+) -> dict:
     if payload.get("role") != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+        
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user or user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+        
+    if hasattr(user, "is_active") and user.is_active is False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your admin account is deactivated.")
+        
     return payload

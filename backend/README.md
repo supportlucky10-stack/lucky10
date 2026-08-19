@@ -23,6 +23,6 @@ Production-ready Python FastAPI backend powering the Lucky10 Customer & Admin do
    - Swagger UI: http://localhost:8000/docs
    - ReDoc: http://localhost:8000/redoc
 
-## Default Admin Credentials
-- **Username**: `admin`
-- **Password**: `admin123`
+## Admin Provisioning
+- **Production**: Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` environment variables in Railway for initial admin creation.
+- **Local Dev**: Configurable via `ADMIN_USERNAME` / `ADMIN_PASSWORD` environment variables.

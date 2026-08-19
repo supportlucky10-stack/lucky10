@@ -1,9 +1,17 @@
+import os
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from app.core.database import get_db
-from app.core.security import get_password_hash, verify_password, create_access_token, get_current_user_token
+from app.core.security import (
+    get_password_hash,
+    verify_password,
+    verify_and_update_password,
+    create_access_token,
+    get_current_user_token,
+    check_rate_limit,
+)
 from app.models.user import User, UserRole
 from app.models.bank_details import BankDetails
 from app.schemas.auth import LoginRequest, RegisterRequest, Token
@@ -47,7 +55,8 @@ def format_user_response(user: User) -> dict:
     }
 
 @router.post("/customer/register")
-def register_customer(req: RegisterRequest, db: Session = Depends(get_db)):
+def register_customer(req: RegisterRequest, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request)
     if not req.name.strip() or not req.email.strip() or not req.password.strip():
         raise HTTPException(status_code=400, detail="Please fill in all fields to sign up")
 
@@ -79,7 +88,8 @@ def register_customer(req: RegisterRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer", "user": user_dict}
 
 @router.post("/customer/login")
-def login_customer(req: LoginRequest, db: Session = Depends(get_db)):
+def login_customer(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request)
     u_input = req.username.strip().lower()
     p_input = req.password.strip()
 
@@ -87,11 +97,17 @@ def login_customer(req: LoginRequest, db: Session = Depends(get_db)):
         (User.username.ilike(req.username.strip()))
     ).first()
 
+    is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
     valid_password = False
+
     if user:
-        if verify_password(p_input, user.password_hash):
+        is_valid, new_hash = verify_and_update_password(p_input, user.password_hash)
+        if is_valid:
             valid_password = True
-        elif u_input == "demo" and p_input in ["123", "demo123", "demo"]:
+            if new_hash:
+                user.password_hash = new_hash
+                db.commit()
+        elif not is_prod and u_input == "demo" and p_input in ["123", "demo123", "demo"]:
             valid_password = True
 
     if not user or not valid_password:
@@ -105,7 +121,8 @@ def login_customer(req: LoginRequest, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer", "user": user_dict}
 
 @router.post("/admin/login")
-def login_admin(req: LoginRequest, db: Session = Depends(get_db)):
+def login_admin(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
+    check_rate_limit(request)
     u_input = req.username.strip().lower()
     p_input = req.password.strip()
 
@@ -113,8 +130,20 @@ def login_admin(req: LoginRequest, db: Session = Depends(get_db)):
         (User.username == u_input) | (User.email == u_input)
     ).first()
 
-    if not user or not verify_password(p_input, user.password_hash):
-        raise HTTPException(status_code=401, detail="Invalid admin credentials. Use admin / admin123")
+    valid_password = False
+    if user:
+        is_valid, new_hash = verify_and_update_password(p_input, user.password_hash)
+        if is_valid:
+            valid_password = True
+            if new_hash:
+                user.password_hash = new_hash
+                db.commit()
+
+    if not user or not valid_password:
+        raise HTTPException(status_code=401, detail="Invalid admin credentials")
+
+    if hasattr(user, 'is_active') and user.is_active is False:
+        raise HTTPException(status_code=403, detail="Your admin account is deactivated. Please contact administrator.")
 
     user_dict = format_user_response(user)
     access_token = create_access_token(data={"sub": user.id, "role": "ADMIN"})
