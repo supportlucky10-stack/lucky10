@@ -536,11 +536,12 @@ export const MyPlayReportView: React.FC = () => {
         if (isWinningFullView && !isItemMatch(item, winningDigitFilter, winningSubOptionFilter)) return;
 
         const evalRes = evaluateBetItem(item, res);
-        const isWin = evalRes.isWinner || (ticket.status === 'WON' && (ticket.winAmount || 0) > 0);
-        const winAmt = evalRes.isWinner ? evalRes.winAmount : (ticket.winAmount || count * 100);
-        const prizeTitle = evalRes.prizeTitle || (ticket.status === 'WON' ? 'WINNER' : '');
+        if (!evalRes.isWinner) return;
 
-        if (isWin && winAmt > 0) {
+        const winAmt = evalRes.winAmount;
+        const prizeTitle = evalRes.prizeTitle;
+
+        if (winAmt > 0) {
           const gameTitle = getDisplayGame(item);
           const playModeTitle = getDisplayPlayMode(item);
           const catName = `${ticket.gameSlot} - ${gameTitle}`;
