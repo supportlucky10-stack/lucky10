@@ -356,6 +356,18 @@ input, textarea, select, button, a {
   cursor: pointer;
 }
 
+/* Ensure input text boxes always allow text selection and show a visible typing caret cursor */
+input, textarea {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  cursor: text !important;
+  caret-color: #000000 !important;
+}
+
+input.text-white, textarea.text-white, input.text-gold, textarea.text-gold, input.text-neutral-200 {
+  caret-color: #ffffff !important;
+}
+
 /* Prevent Caret / Cursor blinking on static non-input text elements */
 *:not(input):not(textarea) {
   caret-color: transparent !important;

@@ -73,7 +73,7 @@ export const UserSignInView: React.FC = () => {
                 setUsername(e.target.value);
                 if (loginError) setLoginError('');
               }}
-              className="w-full bg-transparent text-black placeholder-neutral-500 font-medium text-xs sm:text-sm focus:outline-none"
+              className="w-full bg-transparent text-black placeholder-neutral-500 font-medium text-xs sm:text-sm focus:outline-none select-text cursor-text caret-black"
             />
           </div>
 
@@ -91,7 +91,7 @@ export const UserSignInView: React.FC = () => {
                   setPassword(e.target.value);
                   if (loginError) setLoginError('');
                 }}
-                className="w-full bg-transparent text-black placeholder-neutral-600/80 font-bold text-xs sm:text-sm focus:outline-none"
+                className="w-full bg-transparent text-black placeholder-neutral-600/80 font-bold text-xs sm:text-sm focus:outline-none select-text cursor-text caret-black"
               />
             </div>
 
@@ -106,12 +106,6 @@ export const UserSignInView: React.FC = () => {
             </button>
           </div>
         </form>
-
-        {loginError && (
-          <div className="bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm text-center animate-shake">
-            {loginError}
-          </div>
-        )}
       </div>
 
       {/* ================= 2. MAIN CONTENT AREA (Banner + Pink Offers Grid) ================= */}
