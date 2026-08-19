@@ -301,55 +301,6 @@ def seed_db(force: bool = False):
 
         # ── 3. Seed Game Results for Today, Yesterday & Day Before ──
         results_dataset = [
-            # TODAY
-            {
-                "id": f"res_{today_str}_1pm",
-                "date": today_str,
-                "game_slot": "1 PM Game",
-                "prize1": "742",
-                "prize2": "819",
-                "prize3": "350",
-                "prize4": "194",
-                "prize5": "408",
-                "prize6": "625",
-                "compliments_json": json.dumps(generate_30_compliments("742", 1)),
-            },
-            {
-                "id": f"res_{today_str}_3pm",
-                "date": today_str,
-                "game_slot": "3 PM Game",
-                "prize1": "512",
-                "prize2": "934",
-                "prize3": "601",
-                "prize4": "287",
-                "prize5": "739",
-                "prize6": "416",
-                "compliments_json": json.dumps(generate_30_compliments("512", 2)),
-            },
-            {
-                "id": f"res_{today_str}_6pm",
-                "date": today_str,
-                "game_slot": "6 PM Game",
-                "prize1": "389",
-                "prize2": "145",
-                "prize3": "720",
-                "prize4": "963",
-                "prize5": "521",
-                "prize6": "804",
-                "compliments_json": json.dumps(generate_30_compliments("389", 3)),
-            },
-            {
-                "id": f"res_{today_str}_8pm",
-                "date": today_str,
-                "game_slot": "8 PM Game",
-                "prize1": "624",
-                "prize2": "471",
-                "prize3": "809",
-                "prize4": "536",
-                "prize5": "315",
-                "prize6": "918",
-                "compliments_json": json.dumps(generate_30_compliments("624", 1)),
-            },
             # YESTERDAY
             {
                 "id": f"res_{yesterday_str}_1pm",

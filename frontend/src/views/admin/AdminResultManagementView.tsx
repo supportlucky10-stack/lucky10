@@ -63,7 +63,7 @@ const slotThemes: Record<string, {
 };
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, gameResults, allPublishedResults } = useApp();
+  const { publishGameResult, getResultForSlotAndDate } = useApp();
 
   const todayStr = getLocalDateStr();
 
@@ -103,8 +103,15 @@ export const AdminResultManagementView: React.FC = () => {
       setPrize5(existing.prize5 || '');
       const comps = existing.compliments ? existing.compliments.flat() : [];
       setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+    } else {
+      setPrize1('');
+      setPrize2('');
+      setPrize3('');
+      setPrize4('');
+      setPrize5('');
+      setComplimentBoxes(Array(30).fill(''));
     }
-  }, [selectedSlot, todayStr, gameResults, allPublishedResults]);
+  }, [selectedSlot, todayStr]);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
