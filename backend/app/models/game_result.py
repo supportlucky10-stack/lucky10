@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Text
+from sqlalchemy import Column, String, DateTime, Text, Index
 from datetime import datetime, timezone
 from app.core.database import Base
 
@@ -23,3 +23,7 @@ class GameResult(Base):
     prize6 = Column(String, nullable=True)   # 6th Prize / Compliment Prize (single 3-digit number)
     compliments_json = Column(Text, nullable=False, default="[]")
     published_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        Index("ix_game_results_date_slot", "date", "game_slot"),
+    )

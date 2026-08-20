@@ -135,15 +135,20 @@ def provision_first_admin(db: Session):
     else:
         print("[Lucky10 Admin Init] No ADMIN_USERNAME / ADMIN_PASSWORD set in production. First admin provisioning skipped.")
 
-def seed_db(force: bool = False):
-    Base.metadata.create_all(bind=engine)
+def seed_db(force: bool = False, dev: bool = False):
     db: Session = SessionLocal()
     try:
         # First ensure admin user is provisioned
         provision_first_admin(db)
 
+        is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
         force_env = os.getenv("FORCE_SEED", "").lower() in ("true", "1")
-        if not force and not force_env:
+
+        if is_prod and not force and not force_env and not dev:
+            print("[Lucky10 Seed] Production environment detected. Demo user seeding skipped.")
+            return
+
+        if not force and not force_env and not dev:
             existing_count = db.query(User).filter(User.role == UserRole.CUSTOMER).count()
             if existing_count > 0:
                 print("[Lucky10 Seed] Customer user data already exists. Demo seeding skipped.")
@@ -776,4 +781,18 @@ def seed_db(force: bool = False):
         db.close()
 
 if __name__ == "__main__":
-    seed_db()
+    import argparse
+    parser = argparse.ArgumentParser(description="Lucky10 Database Initialization & Seeding")
+    parser.add_argument("--dev", action="store_true", help="Seed development demo data")
+    parser.add_argument("--prod-init", action="store_true", help="Initialize production admin user only")
+    parser.add_argument("--force", action="store_true", help="Force re-seeding demo data")
+    args = parser.parse_args()
+
+    db_session = SessionLocal()
+    try:
+        if args.prod_init:
+            provision_first_admin(db_session)
+        else:
+            seed_db(force=args.force, dev=args.dev)
+    finally:
+        db_session.close()

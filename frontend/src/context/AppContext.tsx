@@ -364,11 +364,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadInitialData();
   }, []);
 
-  // Fetch tickets, results & admin data when user/admin changes (with live polling)
+  // Fetch tickets, results & admin data when user/admin changes (with adaptive visibility-aware polling)
   useEffect(() => {
     let timer: any = null;
 
     const syncData = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        return; // Skip polling when tab is not active
+      }
+
       // Live sync today's results & all published results for ALL clients
       customerService.getTodayResults().then((todayRes) => {
         if (todayRes && Object.keys(todayRes).length > 0) {
@@ -437,10 +441,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     syncData();
-    timer = setInterval(syncData, 1000);
+    timer = setInterval(syncData, 5000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        syncData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       if (timer) clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [currentUser, isAdminLoggedIn]);
 

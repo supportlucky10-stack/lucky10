@@ -1,10 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional
 
 class PayoutRequestCreate(BaseModel):
-    amount: float
+    model_config = ConfigDict(from_attributes=True)
+    amount: float = Field(..., gt=0)
 
 class PayoutLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     userId: str
     userName: str
@@ -12,6 +15,3 @@ class PayoutLogResponse(BaseModel):
     bankAccount: str
     status: str
     date: str
-
-    class Config:
-        from_attributes = True

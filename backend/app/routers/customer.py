@@ -1,9 +1,9 @@
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db
 from app.core.security import get_current_customer
 from app.models.user import User
@@ -170,10 +170,37 @@ def get_previous_results(db: Session = Depends(get_db)):
 
 @router.post("/tickets")
 def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
-
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
+
+    user_id = payload["sub"]
+
+    # ── SERVER-SIDE FINANCIAL VALIDATION ──
+    for item in req.items:
+        item.totalAmount = float(item.unitPrice) * float(item.count)
+    server_total = sum(item.totalAmount for item in req.items)
+    req.totalAmount = server_total
+
+    # Lock user row if paying to prevent concurrent balance race conditions
+    if req.actionType == "PAY":
+        user = db.query(User).filter(User.id == user_id).with_for_update().first()
+    else:
+        user = db.query(User).filter(User.id == user_id).first()
+
+    user = check_user_active(user)
+
+    # ── DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
+    recent_same_ticket = db.query(Ticket).options(selectinload(Ticket.items)).filter(
+        Ticket.user_id == user.id,
+        Ticket.game_slot == req.gameSlot,
+        Ticket.total_amount == req.totalAmount,
+        Ticket.placed_at >= datetime.now(timezone.utc) - timedelta(seconds=3)
+    ).first()
+    if recent_same_ticket and len(recent_same_ticket.items) == len(req.items):
+        req_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in req.items])
+        rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
+        if req_nums == rec_nums:
+            return format_ticket(recent_same_ticket)
 
     # ── SERVER-SIDE LIMIT & BLOCKED NUMBERS VALIDATION ──
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -245,15 +272,12 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             detail=f"Insufficient balance (Available: ₹{user.balance}). Total needed: ₹{req.totalAmount}",
         )
 
-    # Deduct balance if paying
-    if req.actionType == "PAY":
-        user.balance -= req.totalAmount
-
-    # Determine next sequential ticket ID starting from 2243297
-    all_tickets = db.query(Ticket).all()
+    # Determine next sequential ticket ID starting from 2243297 (query last 100 tickets)
+    recent_tickets = db.query(Ticket.id).order_by(Ticket.placed_at.desc()).limit(100).all()
     max_num = 2243296
-    for t in all_tickets:
-        digits = ''.join(filter(str.isdigit, t.id or ''))
+    for t_tuple in recent_tickets:
+        tid = t_tuple[0]
+        digits = ''.join(filter(str.isdigit, tid or ''))
         if digits:
             try:
                 val = int(digits)
@@ -292,52 +316,66 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         win_val = eval_res["total_win_amount"]
         status_val = "WON" if win_val > 0 else "LOST"
 
-    new_ticket = Ticket(
-        id=ticket_id,
-        user_id=user.id,
-        customer_name=c_name,
-        game_slot=req.gameSlot,
-        total_amount=req.totalAmount,
-        status=status_val,
-        win_amount=win_val,
-        placed_at=datetime.now(timezone.utc),
-    )
-    db.add(new_ticket)
+    try:
+        # Deduct balance if paying
+        if req.actionType == "PAY":
+            user.balance -= req.totalAmount
 
-    for item in req.items:
-        bet = BetItem(
-            id=f"bet_{uuid.uuid4().hex[:8]}",
-            ticket_id=ticket_id,
-            number=item.number,
-            count=item.count,
-            type=item.type,
-            unit_price=item.unitPrice,
-            total_amount=item.totalAmount,
-        )
-        db.add(bet)
-
-    # Add transaction log if paid
-    if req.actionType == "PAY":
-        txn = TransactionLog(
-            id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
+        new_ticket = Ticket(
+            id=ticket_id,
             user_id=user.id,
-            user_name=user.name,
-            type="Ticket Purchase",
-            amount=f"₹ {req.totalAmount:.0f}",
-            account="Wallet Deposit",
-            status="SUCCESS",
-            timestamp=datetime.now(timezone.utc),
+            customer_name=c_name,
+            game_slot=req.gameSlot,
+            total_amount=req.totalAmount,
+            status=status_val,
+            win_amount=win_val,
+            placed_at=datetime.now(timezone.utc),
         )
-        db.add(txn)
+        db.add(new_ticket)
 
-    db.commit()
-    db.refresh(new_ticket)
-    return format_ticket(new_ticket)
+        for item in req.items:
+            bet = BetItem(
+                id=f"bet_{uuid.uuid4().hex[:8]}",
+                ticket_id=ticket_id,
+                number=item.number,
+                count=item.count,
+                type=item.type,
+                unit_price=item.unitPrice,
+                total_amount=item.totalAmount,
+            )
+            db.add(bet)
+
+        # Add transaction log if paid
+        if req.actionType == "PAY":
+            txn = TransactionLog(
+                id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
+                user_id=user.id,
+                user_name=user.name,
+                type="Ticket Purchase",
+                amount=f"₹ {req.totalAmount:.0f}",
+                account="Wallet Deposit",
+                status="SUCCESS",
+                timestamp=datetime.now(timezone.utc),
+            )
+            db.add(txn)
+
+        db.commit()
+        db.refresh(new_ticket)
+        return format_ticket(new_ticket)
+    except Exception as exc:
+        db.rollback()
+        raise exc
 
 @router.get("/tickets")
 def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
     check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
-    tickets = db.query(Ticket).filter(Ticket.user_id == payload["sub"]).order_by(Ticket.placed_at.desc()).all()
+    tickets = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.user), selectinload(Ticket.items))
+        .filter(Ticket.user_id == payload["sub"])
+        .order_by(Ticket.placed_at.desc())
+        .all()
+    )
     return [format_ticket(t) for t in tickets]
 
 @router.get("/bank-details")

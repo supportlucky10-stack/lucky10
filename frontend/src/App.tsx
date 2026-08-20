@@ -16,16 +16,16 @@ import { MyPlayReportView } from './views/customer/MyPlayReportView';
 import { EditDeleteBillView } from './views/customer/EditDeleteBillView';
 import { TotalCountView } from './views/customer/TotalCountView';
 
-// Admin View Imports
-import { AdminSignInView } from './views/admin/AdminSignInView';
-import { AdminDrawerView } from './views/admin/AdminDrawerView';
-import { AdminUsersAndResultsView } from './views/admin/AdminUsersAndResultsView';
-import { AdminResultManagementView } from './views/admin/AdminResultManagementView';
-import { AdminReportsView } from './views/admin/AdminReportsView';
-import { AdminPayoutsView } from './views/admin/AdminPayoutsView';
-import { AdminTransactionLogsView } from './views/admin/AdminTransactionLogsView';
-import { AdminIssuesView } from './views/admin/AdminIssuesView';
-import { AdminLimitBlockView } from './views/admin/AdminLimitBlockView';
+// Admin View Imports (Lazy-Loaded to reduce initial player bundle)
+const AdminSignInView = React.lazy(() => import('./views/admin/AdminSignInView').then(m => ({ default: m.AdminSignInView })));
+const AdminDrawerView = React.lazy(() => import('./views/admin/AdminDrawerView').then(m => ({ default: m.AdminDrawerView })));
+const AdminUsersAndResultsView = React.lazy(() => import('./views/admin/AdminUsersAndResultsView').then(m => ({ default: m.AdminUsersAndResultsView })));
+const AdminResultManagementView = React.lazy(() => import('./views/admin/AdminResultManagementView').then(m => ({ default: m.AdminResultManagementView })));
+const AdminReportsView = React.lazy(() => import('./views/admin/AdminReportsView').then(m => ({ default: m.AdminReportsView })));
+const AdminPayoutsView = React.lazy(() => import('./views/admin/AdminPayoutsView').then(m => ({ default: m.AdminPayoutsView })));
+const AdminTransactionLogsView = React.lazy(() => import('./views/admin/AdminTransactionLogsView').then(m => ({ default: m.AdminTransactionLogsView })));
+const AdminIssuesView = React.lazy(() => import('./views/admin/AdminIssuesView').then(m => ({ default: m.AdminIssuesView })));
+const AdminLimitBlockView = React.lazy(() => import('./views/admin/AdminLimitBlockView').then(m => ({ default: m.AdminLimitBlockView })));
 
 import { CheckCircle, AlertCircle, Info, X, Clock } from 'lucide-react';
 
@@ -210,7 +210,9 @@ const ViewRouter: React.FC = () => {
         </div>
       )}
 
-      {renderView()}
+      <React.Suspense fallback={<div className="p-8 text-center text-gold/60 text-xs font-mono">Loading...</div>}>
+        {renderView()}
+      </React.Suspense>
     </MobileContainer>
   );
 };

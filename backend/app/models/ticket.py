@@ -9,10 +9,10 @@ class Ticket(Base):
     id = Column(String, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     customer_name = Column(String, default="Customer", nullable=True)
-    game_slot = Column(String, nullable=False)
+    game_slot = Column(String, nullable=False, index=True)
     total_amount = Column(Float, nullable=False)
     status = Column(String, default="PENDING", nullable=False)  # PENDING, WON, LOST
-    placed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    placed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
     win_amount = Column(Float, default=0.0)
 
     user = relationship("User", back_populates="tickets")

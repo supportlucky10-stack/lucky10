@@ -12,4 +12,4 @@ class TransactionLog(Base):
     amount = Column(String, nullable=False)
     account = Column(String, nullable=False)
     status = Column(String, default="SUCCESS", nullable=False)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)

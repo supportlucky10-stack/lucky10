@@ -1,4 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800;900&family=Roboto+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-gold: #D4AF37;
+  --color-gold-light: #FDF0A6;
+  --color-gold-dark: #AA771C;
+  --font-sans: 'Montserrat', 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-montserrat: 'Montserrat', sans-serif;
+}
 
 code, kbd, samp, pre, .font-mono {
   font-family: 'Inter', system-ui, -apple-system, sans-serif !important;

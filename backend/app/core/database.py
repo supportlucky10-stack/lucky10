@@ -19,8 +19,16 @@ elif db_url.startswith("sqlite"):
     except Exception as e:
         print(f"[DB Init] Directory check note: {e}")
 
+engine_kwargs = {"connect_args": connect_args, "pool_pre_ping": True}
+if db_url.startswith("postgresql"):
+    engine_kwargs.update({
+        "pool_size": 5,
+        "max_overflow": 5,
+        "pool_recycle": 180,
+    })
+
 try:
-    engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
+    engine = create_engine(db_url, **engine_kwargs)
     with engine.connect() as conn:
         pass
 except Exception as err:
@@ -28,7 +36,7 @@ except Exception as err:
     print(f"[FATAL DB ERROR] Primary database connection to '{safe_url}' failed: {err}")
     if db_url.startswith("sqlite"):
         # For local sqlite, create engine without strict initial connection check
-        engine = create_engine(db_url, connect_args=connect_args, pool_pre_ping=True)
+        engine = create_engine(db_url, **engine_kwargs)
     else:
         raise RuntimeError(f"Database connection failed for '{safe_url}': {err}")
 

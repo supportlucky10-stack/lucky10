@@ -12,7 +12,7 @@ class PayoutRequest(Base):
     amount = Column(Float, nullable=False)
     bank_account = Column(String, nullable=False)
     status = Column(String, default="SUCCESS", nullable=False)  # SUCCESS, PROCESSING, FAILED
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
     processed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="payout_requests")

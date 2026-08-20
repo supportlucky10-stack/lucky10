@@ -1,5 +1,3 @@
-import html2canvas from 'html2canvas';
-
 export interface ShareElementOptions {
   elementId?: string;
   element?: HTMLElement | null;
@@ -29,6 +27,7 @@ export const captureAndShareElement = async ({
   }
 
   try {
+    const html2canvas = (await import('html2canvas')).default;
     const canvas = await html2canvas(targetElem, {
       scale: 2,
       useCORS: true,

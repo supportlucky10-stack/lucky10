@@ -134,13 +134,28 @@ def get_current_user_token(
         )
     return payload
 
-def get_current_customer(payload: dict = Depends(get_current_user_token)) -> dict:
-    if payload.get("role") not in ("CUSTOMER", "ADMIN"):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
-    return payload
-
 from app.core.database import get_db
 from app.models.user import User, UserRole
+
+def get_current_customer(
+    payload: dict = Depends(get_current_user_token),
+    db: Session = Depends(get_db),
+) -> dict:
+    if payload.get("role") not in ("CUSTOMER", "ADMIN"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account not found")
+
+    if hasattr(user, "is_active") and user.is_active is False:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is deactivated.")
+
+    return payload
 
 def get_current_admin(
     payload: dict = Depends(get_current_user_token),
