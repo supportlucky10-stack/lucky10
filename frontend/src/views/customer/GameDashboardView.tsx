@@ -677,7 +677,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#dc2626] via-[#b91c1c] to-[#7f1d1d] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#f87171] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#ea580c] via-[#c2410c] to-[#7c2d12] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#fb923c] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pos}
                     </button>
@@ -699,7 +699,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#475569] via-[#334155] to-[#1e293b] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#94a3b8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#db2777] via-[#be185d] to-[#831843] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#f472b6] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
