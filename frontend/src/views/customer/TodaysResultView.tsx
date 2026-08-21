@@ -119,20 +119,20 @@ export const TodaysResultView: React.FC = () => {
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-2 sm:px-4 py-2 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark whitespace-nowrap overflow-hidden"
+              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark overflow-hidden select-none"
             >
-              <span className="text-black font-black text-xs sm:text-base md:text-lg tracking-wider font-mono whitespace-nowrap truncate">
-                {displayDateFormatted}
+              <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+                {displayDateFormatted.replace(/-/g, '\u2011')}
               </span>
             </div>
 
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-2 sm:px-3.5 py-2 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] whitespace-nowrap overflow-hidden"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] overflow-hidden select-none"
             >
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
-              <span className="font-bold text-xs sm:text-sm tracking-wide whitespace-nowrap shrink-0">
+              <span className="font-bold text-xs sm:text-sm tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 Change date
               </span>
               <input
