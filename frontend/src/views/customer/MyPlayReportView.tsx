@@ -1576,7 +1576,7 @@ export const MyPlayReportView: React.FC = () => {
               <div className="space-y-3">
                 {displayTickets.length === 0 ? (
                   <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
-                    No bills found for the selected filter.
+                    No bills found
                   </div>
                 ) : (
                   displayTickets.map((tkt) => {
@@ -1626,7 +1626,7 @@ export const MyPlayReportView: React.FC = () => {
 
                 {displayTickets.length === 0 ? (
                   <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
-                    No bills found matching selected digit/sub-option filter.
+                    No bills found
                   </div>
                 ) : (
                   displayTickets.map((tkt) => {
@@ -1740,7 +1740,7 @@ export const MyPlayReportView: React.FC = () => {
             {/* Grouped Category Winning Breakdown (matching Image 2 with Color Boxes) */}
             {displayWinningCategories.length === 0 ? (
               <div className="bg-neutral-950 p-6 rounded-2xl border-2 border-white/90 text-center font-mono text-xs font-bold text-neutral-400">
-                No winning tickets found for the selected filter.
+                No winnings found
               </div>
             ) : (
               displayWinningCategories.map((group) => (

@@ -883,7 +883,7 @@ export const GameDashboardView: React.FC = () => {
 
           <div className="divide-y divide-gray-200 flex-1 min-h-0 overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
-                betSlip.map((item, idx) => {
+                betSlip.map((item) => {
                   const displayType = (item.number.includes(':')
                     ? item.number.split(':')[0]
                     : item.type === 'Direct'
@@ -895,35 +895,30 @@ export const GameDashboardView: React.FC = () => {
                     ? item.number.split(':')[1]
                     : item.number;
 
-                  // Dynamic row and text color styling matching the game's original button colors
-                  let rowBg = idx % 2 === 1 ? 'bg-gray-50' : 'bg-white';
+                  // Dynamic text color styling matching the game's original button colors
                   let textColor = 'text-black';
                   let typeTextColor = 'text-black';
 
                   if (['A', 'B', 'C'].includes(displayType)) {
                     // Metallic Slate (1-Digit: A, B, C)
-                    rowBg = idx % 2 === 1 ? 'bg-slate-100' : 'bg-white';
                     textColor = 'text-slate-800';
                     typeTextColor = 'text-slate-900';
                   } else if (['AB', 'AC', 'BC'].includes(displayType)) {
                     // Deep Crimson Red (2-Digit: AB, AC, BC)
-                    rowBg = idx % 2 === 1 ? 'bg-red-50' : 'bg-white';
                     textColor = 'text-red-700';
                     typeTextColor = 'text-red-800';
                   } else if (displayType === 'SUPER') {
                     // Jet Black (3-Digit SUPER)
-                    rowBg = idx % 2 === 1 ? 'bg-neutral-100' : 'bg-white';
                     textColor = 'text-black';
                     typeTextColor = 'text-black';
                   } else if (displayType === 'BOX') {
                     // Deep Purple / Plum (3-Digit BOX)
-                    rowBg = idx % 2 === 1 ? 'bg-purple-50' : 'bg-white';
                     textColor = 'text-purple-800';
                     typeTextColor = 'text-purple-900';
                   }
 
                   return (
-                    <div key={item.id} className={`grid grid-cols-5 py-2 px-1 items-center text-center ${rowBg}`}>
+                    <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center bg-white">
                       <span className={`font-black text-xs sm:text-sm uppercase border-r border-gray-200 truncate px-0.5 ${typeTextColor}`}>
                         {displayType}
                       </span>
