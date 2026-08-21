@@ -466,7 +466,7 @@ export const GameDashboardView: React.FC = () => {
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
   return (
-    <div className="w-full h-screen min-h-[100dvh] max-h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
+    <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 antialiased select-none font-sans">
       {/* Top Header Bar */}
       <div
         className="w-full bg-neutral-950 px-3 sm:px-8 pb-2.5 border-b border-neutral-900 flex items-center justify-between shadow-md shrink-0"
@@ -549,7 +549,7 @@ export const GameDashboardView: React.FC = () => {
       </div>
 
       {/* Main Layout Flow */}
-      <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto flex-1 flex flex-col min-h-0 space-y-3 sm:space-y-4 overflow-hidden">
+      <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto flex-1 flex flex-col space-y-3 sm:space-y-4">
         
         {/* TABBED GAME ENTRY CARD */}
         <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all shrink-0`}>

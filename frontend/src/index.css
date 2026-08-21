@@ -184,7 +184,7 @@ code, kbd, samp, pre, .font-mono {
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    touch-action: manipulation;
+    touch-action: auto;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -340,16 +340,15 @@ body {
   flex-direction: column;
 }
 
-/* Prevent unwanted rubber-band bounce scrolling on iOS */
+/* Smooth touch scrolling */
 html, body {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
 }
 
-/* Prevent double-tap zoom delay and touch blockage on inputs and buttons */
+/* Prevent double-tap zoom delay on inputs and buttons without blocking page scrolls */
 input, textarea, select, button, a {
   -webkit-user-select: auto !important;
   user-select: auto !important;
-  touch-action: manipulation;
 }
 
 /* Full overlay date picker styling for seamless mobile and desktop clicking */

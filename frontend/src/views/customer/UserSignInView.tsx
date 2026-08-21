@@ -38,7 +38,7 @@ export const UserSignInView: React.FC = () => {
 
   return (
     <div
-      className="w-full min-h-screen min-h-[100dvh] bg-[#f8f9fa] text-black flex flex-col justify-between antialiased select-none font-sans"
+      className="w-full min-h-screen min-h-[100dvh] bg-[#f8f9fa] text-black flex flex-col justify-between antialiased select-none font-sans overflow-y-auto"
       style={{ paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       

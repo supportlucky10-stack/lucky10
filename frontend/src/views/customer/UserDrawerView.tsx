@@ -34,7 +34,7 @@ export const UserDrawerView: React.FC = () => {
   ];
 
   return (
-    <div className="w-full min-h-screen bg-black text-white flex flex-col justify-between pb-24 sm:pb-32 antialiased select-none font-sans">
+    <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col justify-between pb-24 sm:pb-32 antialiased select-none font-sans overflow-y-auto">
       <div>
         {/* Sidebar Menu Items in Dark Gold Aesthetic */}
         <div
