@@ -61,29 +61,13 @@ const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: s
 
 const getPrizePositionDisplay = (card: any): string => {
   const p = (card.prize || '').toUpperCase();
-  if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) {
-    if (p.includes('1 DIGIT')) {
-      const pos = p.match(/\(([A-C])\)/)?.[1] || card.type || '';
-      return pos ? `1ST PRIZE (${pos})` : '1ST PRIZE';
-    }
-    if (p.includes('2 DIGIT')) {
-      const pos = p.match(/\(([A-Z]{2})\)/)?.[1] || card.type || '';
-      return pos ? `1ST PRIZE (${pos})` : '1ST PRIZE';
-    }
-    if (p.includes('BOX')) {
-      if (p.includes('STRAIGHT')) return '1ST PRIZE (STRAIGHT)';
-      if (p.includes('ULTA') || p.includes('TURN')) return '1ST PRIZE (TURN)';
-      if (p.includes('DOUBLE')) return '1ST PRIZE (DOUBLE)';
-      return '1ST PRIZE (BOX)';
-    }
-    return '1ST PRIZE';
-  }
+  if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) return '1ST PRIZE';
   if (p.includes('2ND')) return '2ND PRIZE';
   if (p.includes('3RD')) return '3RD PRIZE';
   if (p.includes('4TH')) return '4TH PRIZE';
   if (p.includes('5TH')) return '5TH PRIZE';
   if (p.includes('COMPLIMENT')) return 'COMPLIMENT';
-  return card.prize || '1ST PRIZE';
+  return '1ST PRIZE';
 };
 
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
@@ -1766,12 +1750,9 @@ export const MyPlayReportView: React.FC = () => {
                             <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
                               🏆 {getPrizePositionDisplay(card)}
                             </span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-cyan-400 text-xs font-black uppercase tracking-wider">NUMBER:</span>
-                              <span className="text-amber-300 font-black text-base font-mono tracking-widest bg-black px-2.5 py-0.5 rounded-lg border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.35)]">
-                                {card.number}
-                              </span>
-                            </div>
+                            <span className="text-amber-300 font-black text-base font-mono tracking-widest bg-black px-2.5 py-0.5 rounded-lg border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.35)]">
+                              {card.number}
+                            </span>
                           </div>
 
                           {/* Agency & Customer Info Bar */}
