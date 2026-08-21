@@ -2,8 +2,8 @@ import { apiRequest } from './api';
 import type { BankDetails, GameResult, PlacedTicket, GameSlot, BetSlipItem } from '../types';
 
 export const customerService = {
-  async getTodayResults(): Promise<Record<GameSlot, GameResult>> {
-    return await apiRequest<Record<GameSlot, GameResult>>('/api/customer/results/today', { method: 'GET' });
+  async getTodayResults(date?: string): Promise<Record<GameSlot, GameResult>> {
+    return await apiRequest<Record<GameSlot, GameResult>>(`/api/customer/results/today${date ? `?date=${date}` : ''}`, { method: 'GET' });
   },
 
   async getResultsByDate(date?: string): Promise<Record<GameSlot, GameResult>> {

@@ -244,15 +244,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Fetch today's results and all historical results
       try {
+        const todayStr = getLocalDateStr();
         const [todayRes, allRes] = await Promise.allSettled([
-          customerService.getTodayResults(),
+          customerService.getTodayResults(todayStr),
           customerService.getAllResults(),
         ]);
         if (todayRes.status === 'fulfilled' && todayRes.value && Object.keys(todayRes.value).length > 0) {
           setGameResults((prev) => ({ ...prev, ...todayRes.value }));
+          setAllPublishedResults((prev) => {
+            const updated = { ...prev };
+            Object.values(todayRes.value).forEach((r) => {
+              if (r && r.date && r.gameSlot) {
+                updated[`${r.date}_${r.gameSlot}`] = r;
+                const normDate = extractDateStr(r.date);
+                if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              }
+            });
+            return updated;
+          });
         }
         if (allRes.status === 'fulfilled' && allRes.value && Object.keys(allRes.value).length > 0) {
-          setAllPublishedResults((prev) => ({ ...prev, ...allRes.value }));
+          setAllPublishedResults((prev) => {
+            const updated = { ...prev, ...allRes.value };
+            Object.values(allRes.value).forEach((r) => {
+              if (r && r.date && r.gameSlot) {
+                const normDate = extractDateStr(r.date);
+                if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              }
+            });
+            return updated;
+          });
         }
       } catch (e) {
         // Fallback to local initial results if backend unavailable
@@ -272,7 +293,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       // Live sync today's results & all published results for ALL clients
-      customerService.getTodayResults().then((todayRes) => {
+      const todayStr = getLocalDateStr();
+      customerService.getTodayResults(todayStr).then((todayRes) => {
         if (todayRes && Object.keys(todayRes).length > 0) {
           setGameResults((prev) => ({ ...prev, ...todayRes }));
           setAllPublishedResults((prev) => {
@@ -971,11 +993,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [`${targetDate}_${slot}`]: resultToApply,
         [`${normDate}_${slot}`]: resultToApply,
+        [slot]: resultToApply,
       }));
 
-      if (targetDate === todayStr || normDate === todayStr) {
-        setGameResults((prev) => ({ ...prev, [slot]: resultToApply }));
-      }
+      setGameResults((prev) => ({ ...prev, [slot]: resultToApply }));
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('lucky10_results_updated'));
       }
@@ -987,14 +1008,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [`${targetDate}_${slot}`]: fallbackResult,
         [`${normDate}_${slot}`]: fallbackResult,
+        [slot]: fallbackResult,
       }));
-      if (targetDate === todayStr || normDate === todayStr) {
-        setGameResults((prev) => ({ ...prev, [slot]: fallbackResult }));
-      }
+      setGameResults((prev) => ({ ...prev, [slot]: fallbackResult }));
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('lucky10_results_updated'));
       }
-      addToast(`Published locally for ${slot} (${targetDate})`, 'success');
+      addToast(`Published for ${slot} (${targetDate})`, 'success');
     }
 
     // Immediately evaluate and update local placed tickets for this slot and date

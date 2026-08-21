@@ -126,12 +126,13 @@ def get_customer_balance(payload: dict = Depends(get_current_customer), db: Sess
     return {"balance": user.balance}
 
 @router.get("/results/today")
-def get_today_results(db: Session = Depends(get_db)):
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+def get_today_results(date: Optional[str] = None, db: Session = Depends(get_db)):
+    today_str = date.strip() if date and date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
     results = db.query(GameResult).filter(GameResult.date == today_str).all()
     out = {}
     for r in results:
         out[r.game_slot] = format_result(r)
+        out[f"{r.date}_{r.game_slot}"] = format_result(r)
     
     # Fill in any missing game slots with the most recently published result
     all_slots = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
@@ -141,6 +142,7 @@ def get_today_results(db: Session = Depends(get_db)):
         for r in recent_results:
             if r.game_slot in missing_slots and r.game_slot not in out:
                 out[r.game_slot] = format_result(r)
+                out[f"{r.date}_{r.game_slot}"] = format_result(r)
                 
     return out
 
@@ -151,15 +153,20 @@ def get_results_by_date(date: Optional[str] = None, db: Session = Depends(get_db
     out = {}
     for r in results:
         out[r.game_slot] = format_result(r)
+        out[f"{r.date}_{r.game_slot}"] = format_result(r)
     return out
 
 @router.get("/results/all")
 def get_all_results(db: Session = Depends(get_db)):
-    results = db.query(GameResult).all()
+    results = db.query(GameResult).order_by(GameResult.published_at.desc()).all()
     out = {}
     for r in results:
         key = f"{r.date}_{r.game_slot}"
-        out[key] = format_result(r)
+        formatted = format_result(r)
+        if key not in out:
+            out[key] = formatted
+        if r.game_slot not in out:
+            out[r.game_slot] = formatted
     return out
 
 @router.get("/results/previous")

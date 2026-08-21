@@ -15,12 +15,12 @@ class GameResult(Base):
     id = Column(String, primary_key=True, index=True)
     date = Column(String, index=True, nullable=False)  # YYYY-MM-DD
     game_slot = Column(String, index=True, nullable=False)
-    prize1 = Column(String, nullable=False)
-    prize2 = Column(String, nullable=False)
-    prize3 = Column(String, nullable=False)
-    prize4 = Column(String, nullable=False)
-    prize5 = Column(String, nullable=True)
-    prize6 = Column(String, nullable=True)   # 6th Prize / Compliment Prize (single 3-digit number)
+    prize1 = Column(String, nullable=False, default="")
+    prize2 = Column(String, nullable=True, default="")
+    prize3 = Column(String, nullable=True, default="")
+    prize4 = Column(String, nullable=True, default="")
+    prize5 = Column(String, nullable=True, default="")
+    prize6 = Column(String, nullable=True, default="")   # 6th Prize / Compliment Prize (single 3-digit number)
     compliments_json = Column(Text, nullable=False, default="[]")
     published_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

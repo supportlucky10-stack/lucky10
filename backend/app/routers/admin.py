@@ -225,13 +225,20 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
             GameResult.game_slot == req.gameSlot
         ).first()
 
+        p1 = req.prize1.strip()
+        p2 = (req.prize2 or "").strip()
+        p3 = (req.prize3 or "").strip()
+        p4 = (req.prize4 or "").strip()
+        p5 = (req.prize5 or "").strip()
+        p6 = (req.prize6 or "").strip()
+
         if existing:
-            existing.prize1 = req.prize1
-            existing.prize2 = req.prize2
-            existing.prize3 = req.prize3
-            existing.prize4 = req.prize4
-            existing.prize5 = req.prize5 or ""
-            existing.prize6 = req.prize6 or ""
+            existing.prize1 = p1
+            existing.prize2 = p2
+            existing.prize3 = p3
+            existing.prize4 = p4
+            existing.prize5 = p5
+            existing.prize6 = p6
             existing.compliments_json = compliments_json
             existing.published_at = datetime.now(timezone.utc)
             target_res = existing
@@ -240,12 +247,12 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
                 id=f"res_{int(datetime.now().timestamp() * 1000)}",
                 date=target_date,
                 game_slot=req.gameSlot,
-                prize1=req.prize1,
-                prize2=req.prize2,
-                prize3=req.prize3,
-                prize4=req.prize4,
-                prize5=req.prize5 or "",
-                prize6=req.prize6 or "",
+                prize1=p1,
+                prize2=p2,
+                prize3=p3,
+                prize4=p4,
+                prize5=p5,
+                prize6=p6,
                 compliments_json=compliments_json,
                 published_at=datetime.now(timezone.utc),
             )
@@ -261,27 +268,41 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
             .all()
         )
         for tkt in slot_tickets:
-            t_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else target_date
+            if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
+                t_date = tkt.placed_at.strftime("%Y-%m-%d")
+            elif tkt.placed_at:
+                t_date = str(tkt.placed_at)[:10]
+            else:
+                t_date = target_date
+
             if t_date == target_date:
-                calculated_win = evaluate_ticket_win(tkt, target_res)
-                tkt.win_amount = calculated_win
-                tkt.status = "WON" if calculated_win > 0 else "LOST"
+                try:
+                    calculated_win = evaluate_ticket_win(tkt, target_res)
+                    tkt.win_amount = calculated_win
+                    tkt.status = "WON" if calculated_win > 0 else "LOST"
+                except Exception:
+                    pass
 
         db.commit()
         db.refresh(target_res)
+
+        try:
+            parsed_compliments = json.loads(target_res.compliments_json)
+        except Exception:
+            parsed_compliments = req.compliments or []
 
         return {
             "id": target_res.id,
             "date": target_res.date,
             "gameSlot": target_res.game_slot,
             "prize1": target_res.prize1,
-            "prize2": target_res.prize2,
-            "prize3": target_res.prize3,
-            "prize4": target_res.prize4,
+            "prize2": target_res.prize2 or "",
+            "prize3": target_res.prize3 or "",
+            "prize4": target_res.prize4 or "",
             "prize5": target_res.prize5 or "",
             "prize6": target_res.prize6 or "",
-            "compliments": req.compliments,
-            "publishedAt": target_res.published_at.isoformat(),
+            "compliments": parsed_compliments,
+            "publishedAt": target_res.published_at.isoformat() if target_res.published_at else datetime.now(timezone.utc).isoformat(),
         }
     except Exception as exc:
         db.rollback()
