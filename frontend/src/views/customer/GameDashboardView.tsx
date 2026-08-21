@@ -131,6 +131,7 @@ export const GameDashboardView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
+  const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -185,7 +186,7 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
-  // Helper to check and alert if input is overloaded
+  // Helper to check and alert if input is overloaded or blocked
   const checkInputOverload = () => {
     const rawNum = isReverse ? startRange.trim() : inputNum.trim();
     const cnt = parseInt(inputCount, 10);
@@ -193,7 +194,11 @@ export const GameDashboardView: React.FC = () => {
       const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
       const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, cnt);
       if (!validation.ok) {
-        setIsOverloadedModalOpen(true);
+        if (validation.type === 'BLOCKED') {
+          setIsBlockedModalOpen(true);
+        } else {
+          setIsOverloadedModalOpen(true);
+        }
       }
     }
   };
@@ -216,11 +221,19 @@ export const GameDashboardView: React.FC = () => {
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
-    let anyFailed = false;
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    let blockedFailed = false;
+    let overloadFailed = false;
     let addedCount = 0;
 
     targetNums.forEach((n) => {
       positions.forEach((p) => {
+        const val = checkBetEligibility(agencyId, activeGameSlot, n, cnt);
+        if (!val.ok) {
+          if (val.type === 'BLOCKED') blockedFailed = true;
+          else overloadFailed = true;
+          return;
+        }
         const ok = addToBetSlip({
           number: `${p}:${n}`,
           count: cnt,
@@ -229,15 +242,15 @@ export const GameDashboardView: React.FC = () => {
           unitPrice: unitPrice1Digit,
           totalAmount: cnt * unitPrice1Digit,
         });
-        if (!ok) {
-          anyFailed = true;
-        } else {
+        if (ok) {
           addedCount++;
         }
       });
     });
 
-    if (anyFailed) {
+    if (blockedFailed) {
+      setIsBlockedModalOpen(true);
+    } else if (overloadFailed) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -267,11 +280,19 @@ export const GameDashboardView: React.FC = () => {
 
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
-    let anyFailed = false;
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    let blockedFailed = false;
+    let overloadFailed = false;
     let addedCount = 0;
 
     targetNums.forEach((n) => {
       pairs.forEach((pr) => {
+        const val = checkBetEligibility(agencyId, activeGameSlot, n, cnt);
+        if (!val.ok) {
+          if (val.type === 'BLOCKED') blockedFailed = true;
+          else overloadFailed = true;
+          return;
+        }
         const ok = addToBetSlip({
           number: `${pr}:${n}`,
           count: cnt,
@@ -280,15 +301,15 @@ export const GameDashboardView: React.FC = () => {
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
-        if (!ok) {
-          anyFailed = true;
-        } else {
+        if (ok) {
           addedCount++;
         }
       });
     });
 
-    if (anyFailed) {
+    if (blockedFailed) {
+      setIsBlockedModalOpen(true);
+    } else if (overloadFailed) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -348,23 +369,53 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    let anyFailed = false;
+    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    let blockedFailed = false;
+    let overloadFailed = false;
     let addedCount = 0;
 
     targetNums.forEach((numStr) => {
       if (modeType === 'BOTH') {
         if (directCnt > 0) {
-          const ok = addToBetSlip({
-            number: numStr,
-            count: directCnt,
-            type: 'Direct',
-            playMode: currentPlayMode,
-            unitPrice,
-            totalAmount: directCnt * unitPrice,
-          });
-          if (!ok) anyFailed = true; else addedCount++;
+          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt);
+          if (!val.ok) {
+            if (val.type === 'BLOCKED') blockedFailed = true;
+            else overloadFailed = true;
+          } else {
+            const ok = addToBetSlip({
+              number: numStr,
+              count: directCnt,
+              type: 'Direct',
+              playMode: currentPlayMode,
+              unitPrice,
+              totalAmount: directCnt * unitPrice,
+            });
+            if (ok) addedCount++;
+          }
         }
         if (boxAmt > 0) {
+          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt);
+          if (!val.ok) {
+            if (val.type === 'BLOCKED') blockedFailed = true;
+            else overloadFailed = true;
+          } else {
+            const ok = addToBetSlip({
+              number: numStr,
+              count: boxAmt,
+              type: 'Shuffle',
+              playMode: currentPlayMode,
+              unitPrice,
+              totalAmount: boxAmt * unitPrice,
+            });
+            if (ok) addedCount++;
+          }
+        }
+      } else if (modeType === 'BOX') {
+        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt);
+        if (!val.ok) {
+          if (val.type === 'BLOCKED') blockedFailed = true;
+          else overloadFailed = true;
+        } else {
           const ok = addToBetSlip({
             number: numStr,
             count: boxAmt,
@@ -373,32 +424,30 @@ export const GameDashboardView: React.FC = () => {
             unitPrice,
             totalAmount: boxAmt * unitPrice,
           });
-          if (!ok) anyFailed = true; else addedCount++;
+          if (ok) addedCount++;
         }
-      } else if (modeType === 'BOX') {
-        const ok = addToBetSlip({
-          number: numStr,
-          count: boxAmt,
-          type: 'Shuffle',
-          playMode: currentPlayMode,
-          unitPrice,
-          totalAmount: boxAmt * unitPrice,
-        });
-        if (!ok) anyFailed = true; else addedCount++;
       } else if (modeType === 'SUPER') {
-        const ok = addToBetSlip({
-          number: numStr,
-          count: directCnt,
-          type: 'Direct',
-          playMode: currentPlayMode,
-          unitPrice,
-          totalAmount: directCnt * unitPrice,
-        });
-        if (!ok) anyFailed = true; else addedCount++;
+        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt);
+        if (!val.ok) {
+          if (val.type === 'BLOCKED') blockedFailed = true;
+          else overloadFailed = true;
+        } else {
+          const ok = addToBetSlip({
+            number: numStr,
+            count: directCnt,
+            type: 'Direct',
+            playMode: currentPlayMode,
+            unitPrice,
+            totalAmount: directCnt * unitPrice,
+          });
+          if (ok) addedCount++;
+        }
       }
     });
 
-    if (anyFailed) {
+    if (blockedFailed) {
+      setIsBlockedModalOpen(true);
+    } else if (overloadFailed) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -700,7 +749,10 @@ export const GameDashboardView: React.FC = () => {
                         if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
                           const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
                           const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
-                          if (!val.ok) setIsOverloadedModalOpen(true);
+                          if (!val.ok) {
+                            if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
+                            else setIsOverloadedModalOpen(true);
+                          }
                         }
                       }}
                       className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
@@ -780,7 +832,10 @@ export const GameDashboardView: React.FC = () => {
                         if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
                           const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
                           const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
-                          if (!val.ok) setIsOverloadedModalOpen(true);
+                          if (!val.ok) {
+                            if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
+                            else setIsOverloadedModalOpen(true);
+                          }
                         }
                       }}
                       className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
@@ -1034,6 +1089,29 @@ export const GameDashboardView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsOverloadedModalOpen(false)}
+              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NUMBER BLOCKED POP-UP MODAL */}
+      {isBlockedModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">
+                Number cant be played
+              </h4>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsBlockedModalOpen(false)}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK

@@ -46,4 +46,12 @@ export const customerService = {
       body: JSON.stringify({ category, description, attachment }),
     });
   },
+
+  async getLimits(): Promise<{
+    blockedNumbers: any[];
+    agencyLimits: any[];
+    globalLimit: any | null;
+  }> {
+    return await apiRequest('/api/customer/limits', { method: 'GET' });
+  },
 };

@@ -88,4 +88,45 @@ export const adminService = {
   async getAllTickets(): Promise<PlacedTicket[]> {
     return await apiRequest<PlacedTicket[]>('/api/admin/tickets', { method: 'GET' });
   },
+
+  async getAgencyLimits(): Promise<any[]> {
+    return await apiRequest<any[]>('/api/admin/limits/agency', { method: 'GET' });
+  },
+
+  async createAgencyLimit(data: any): Promise<any> {
+    return await apiRequest<any>('/api/admin/limits/agency', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteAgencyLimit(id: string): Promise<void> {
+    await apiRequest(`/api/admin/limits/agency/${id}`, { method: 'DELETE' });
+  },
+
+  async getBlockedNumbers(): Promise<any[]> {
+    return await apiRequest<any[]>('/api/admin/limits/blocked', { method: 'GET' });
+  },
+
+  async createBlockedNumber(data: any): Promise<any> {
+    return await apiRequest<any>('/api/admin/limits/blocked', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteBlockedNumber(id: string): Promise<void> {
+    await apiRequest(`/api/admin/limits/blocked/${id}`, { method: 'DELETE' });
+  },
+
+  async getGlobalLimit(): Promise<any> {
+    return await apiRequest<any>('/api/admin/limits/global', { method: 'GET' });
+  },
+
+  async updateGlobalLimit(data: any): Promise<any> {
+    return await apiRequest<any>('/api/admin/limits/global', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };

@@ -67,7 +67,7 @@ interface AppContextType {
   addBlockedNumber: (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => void;
   removeBlockedNumber: (id: string) => void;
   updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
-  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number) => { ok: boolean; reason?: string };
+  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
 }
 
 const defaultAgenciesList: UserAccount[] = [
@@ -416,6 +416,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         customerService.getBankDetails().then((b) => {
           if (b) setBankDetails(b);
         }).catch(() => {});
+
+        customerService.getLimits().then((lims) => {
+          if (lims) {
+            if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
+            if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
+            if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
+          }
+        }).catch(() => {});
       }
 
       if (isAdminLoggedIn) {
@@ -436,6 +444,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         adminService.getPayoutLogs().then((logs) => {
           if (logs) setPayoutLogs(logs);
+        }).catch(() => {});
+
+        adminService.getAgencyLimits().then((lims) => {
+          if (lims) setAgencyNumberLimits(lims);
+        }).catch(() => {});
+
+        adminService.getBlockedNumbers().then((blks) => {
+          if (blks) setBlockedNumbers(blks);
+        }).catch(() => {});
+
+        adminService.getGlobalLimit().then((g) => {
+          if (g) setGlobalLimitRule(g);
         }).catch(() => {});
       }
     };
@@ -659,7 +679,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     slot: GameSlot,
     number: string,
     newCount: number
-  ): { ok: boolean; reason?: string } => {
+  ): { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' } => {
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
     const cleanNum = rawNum.trim();
     const todayStr = new Date().toISOString().split('T')[0];
@@ -671,7 +691,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isBlocked) {
       return {
         ok: false,
-        reason: 'Number Overloaded! Not in Booked.',
+        reason: "Number cant be played",
+        type: 'BLOCKED',
       };
     }
 
@@ -699,6 +720,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     });
 
+    // ALSO count how much of this number is in the CURRENT unsubmitted staging betSlip
+    betSlip.forEach((it) => {
+      const itNum = it.number.includes(':') ? it.number.split(':')[1] : it.number;
+      if (itNum.trim() === cleanNum) {
+        currentAgencyPlacedCount += it.count || 1;
+      }
+    });
+
     // 2. Check Agency-Specific Limit (Option 1: Limit Count)
     const specificLimit = agencyNumberLimits.find((l) => {
       const matchesAgency =
@@ -715,6 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return {
           ok: false,
           reason: 'Number Overloaded! Not in Booked.',
+          type: 'OVERLOADED',
         };
       }
     }
@@ -727,6 +757,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ok: false,
             reason: 'Number Overloaded! Not in Booked.',
+            type: 'OVERLOADED',
           };
         }
       }
@@ -735,38 +766,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { ok: true };
   };
 
-  const addAgencyLimit = (limit: Omit<AgencyNumberLimit, 'id' | 'createdAt'>) => {
-    const newLimit: AgencyNumberLimit = {
-      ...limit,
-      id: `lim_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setAgencyNumberLimits((prev) => [newLimit, ...prev]);
+  const addAgencyLimit = async (limit: Omit<AgencyNumberLimit, 'id' | 'createdAt'>) => {
+    try {
+      const created = await adminService.createAgencyLimit(limit);
+      if (created) {
+        setAgencyNumberLimits((prev) => [created, ...prev.filter((l) => l.id !== created.id)]);
+      }
+    } catch (e) {
+      const newLimit: AgencyNumberLimit = {
+        ...limit,
+        id: `lim_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setAgencyNumberLimits((prev) => [newLimit, ...prev]);
+    }
     addToast(`Limit set for ${limit.agencyName}: #${limit.number} (Max: ${limit.maxCount})`, 'success');
   };
 
-  const removeAgencyLimit = (id: string) => {
+  const removeAgencyLimit = async (id: string) => {
     setAgencyNumberLimits((prev) => prev.filter((l) => l.id !== id));
+    try {
+      await adminService.deleteAgencyLimit(id);
+    } catch (e) {}
     addToast('Agency limit removed successfully', 'info');
   };
 
-  const addBlockedNumber = (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => {
-    const newRule: BlockedNumberRule = {
-      ...rule,
-      id: `blk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setBlockedNumbers((prev) => [newRule, ...prev]);
+  const addBlockedNumber = async (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => {
+    try {
+      const created = await adminService.createBlockedNumber(rule);
+      if (created) {
+        setBlockedNumbers((prev) => [created, ...prev.filter((b) => b.id !== created.id)]);
+      }
+    } catch (e) {
+      const newRule: BlockedNumberRule = {
+        ...rule,
+        id: `blk_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setBlockedNumbers((prev) => [newRule, ...prev]);
+    }
     addToast(`Number ${rule.number} is now BLOCKED for ${rule.gameSlot}`, 'success');
   };
 
-  const removeBlockedNumber = (id: string) => {
+  const removeBlockedNumber = async (id: string) => {
     setBlockedNumbers((prev) => prev.filter((b) => b.id !== id));
+    try {
+      await adminService.deleteBlockedNumber(id);
+    } catch (e) {}
     addToast('Number unblocked successfully', 'info');
   };
 
-  const updateGlobalLimit = (rule: Partial<GlobalLimitRule>) => {
+  const updateGlobalLimit = async (rule: Partial<GlobalLimitRule>) => {
     setGlobalLimitRule((prev) => ({ ...prev, ...rule }));
+    try {
+      const updated = await adminService.updateGlobalLimit(rule);
+      if (updated) {
+        setGlobalLimitRule((prev) => ({ ...prev, ...updated }));
+      }
+    } catch (e) {}
     addToast('Global limit rule updated', 'success');
   };
 

@@ -230,7 +230,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         if clean_num in blocked_set:
             raise HTTPException(
                 status_code=400,
-                detail="Number Overloaded! Not in Booked."
+                detail="Number cant be played"
             )
 
         # Calculate user's existing placed count today for clean_num in req.gameSlot
@@ -456,4 +456,37 @@ def submit_issue(req: IssueCreateSchema, payload: dict = Depends(get_current_cus
         "attachment": new_issue.attachment,
         "date": new_issue.created_at.strftime("%Y-%m-%d %I:%M %p"),
         "status": new_issue.status,
+    }
+
+@router.get("/limits")
+def get_customer_limits(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+    blocked_rules = db.query(BlockedNumberRule).all()
+    agency_limits = db.query(AgencyNumberLimit).all()
+    global_limit = db.query(GlobalLimitRule).first()
+    return {
+        "blockedNumbers": [
+            {
+                "id": b.id,
+                "number": b.number,
+                "gameSlot": b.game_slot,
+                "reason": b.reason or "",
+            }
+            for b in blocked_rules
+        ],
+        "agencyLimits": [
+            {
+                "id": l.id,
+                "agencyId": l.agency_id,
+                "agencyName": l.agency_name,
+                "number": l.number,
+                "gameSlot": l.game_slot,
+                "maxCount": l.max_count,
+            }
+            for l in agency_limits
+        ],
+        "globalLimit": {
+            "defaultMaxCount": global_limit.default_max_count if global_limit else 100.0,
+            "isEnabled": global_limit.is_enabled if global_limit else False,
+            "gameSlot": global_limit.game_slot if global_limit else "ALL",
+        } if global_limit else None,
     }
