@@ -1,3 +1,5 @@
+import html2canvas from 'html2canvas';
+
 export interface ShareElementOptions {
   elementId?: string;
   element?: HTMLElement | null;
@@ -7,13 +9,12 @@ export interface ShareElementOptions {
 }
 
 /**
- * Captures an HTML element as an image using html2canvas and shares it via Web Share API or WhatsApp.
+ * Captures an HTML element as an image using html2canvas and shares it via Web Share API or triggers download.
  */
 export const captureAndShareElement = async ({
   elementId,
   element,
   fileName = 'share_image.jpg',
-  title: _title = 'Share',
   textSummary = '',
 }: ShareElementOptions): Promise<void> => {
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
@@ -27,62 +28,72 @@ export const captureAndShareElement = async ({
   }
 
   try {
-    const html2canvas = (await import('html2canvas')).default;
+    if (document.fonts) {
+      try {
+        await document.fonts.ready;
+      } catch (e) {
+        // ignore font ready errors
+      }
+    }
+
     const canvas = await html2canvas(targetElem, {
-      scale: 3,
+      scale: 2,
       useCORS: true,
       backgroundColor: '#000000',
       logging: false,
       allowTaint: true,
-      scrollX: 0,
-      scrollY: 0,
-      windowWidth: targetElem.scrollWidth || targetElem.offsetWidth,
+      onclone: (clonedDoc) => {
+        const clonedTarget = elementId ? clonedDoc.getElementById(elementId) : null;
+        if (clonedTarget) {
+          clonedTarget.style.transform = 'none';
+          clonedTarget.style.margin = '0 auto';
+        }
+      },
     });
 
-    // Output snapshot image in JPG format (image/jpeg)
-    canvas.toBlob(async (blob) => {
-      if (!blob) {
-        if (textSummary) {
-          const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-          window.open(fallbackUrl, '_blank');
-        }
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.95);
+    });
+
+    if (!blob) {
+      if (textSummary) {
+        const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
+        window.open(fallbackUrl, '_blank');
+      }
+      return;
+    }
+
+    const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
+      ? fileName
+      : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
+
+    const file = new File([blob], jpgFileName, { type: 'image/jpeg' });
+
+    // Check if Web Share API supports file sharing (iOS Safari, Android Chrome/WebView)
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        // Strictly share only image file — do not pass title or text so WhatsApp has no text caption
+        await navigator.share({
+          files: [file],
+        });
         return;
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') return;
       }
+    }
 
-      const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
-        ? fileName
-        : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
+    // Fallback for desktop browsers / environments without direct image share support:
+    // Trigger download of JPG screenshot image
+    const link = document.createElement('a');
+    link.download = jpgFileName;
+    link.href = URL.createObjectURL(blob);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-      const file = new File([blob], jpgFileName, { type: 'image/jpeg' });
-
-      // Check if Web Share API supports file sharing (iOS Safari, Android Chrome/WebView)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          // Strictly share only image file — do not pass title or text so WhatsApp has no text caption
-          await navigator.share({
-            files: [file],
-          });
-          return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return;
-        }
-      }
-
-      // Fallback for desktop browsers / environments without direct image share support:
-      // Trigger download of JPG screenshot image and open WhatsApp
-      const link = document.createElement('a');
-      link.download = jpgFileName;
-      link.href = URL.createObjectURL(blob);
-      link.click();
-
-      setTimeout(() => {
-        URL.revokeObjectURL(link.href);
-      }, 5000);
-
-      // Open WhatsApp Web/Desktop without text caption
-      const whatsappUrl = `https://api.whatsapp.com/send`;
-      window.open(whatsappUrl, '_blank');
-    }, 'image/jpeg', 0.95);
+    setTimeout(() => {
+      URL.revokeObjectURL(link.href);
+    }, 5000);
   } catch (err) {
     console.error('Failed to capture screen element image:', err);
     if (textSummary) {
