@@ -28,7 +28,7 @@ interface AppContextType {
   activeGameSlot: GameSlot;
   setActiveGameSlot: (slot: GameSlot) => void;
   betSlip: BetSlipItem[];
-  addToBetSlip: (item: Omit<BetSlipItem, 'id'>) => void;
+  addToBetSlip: (item: Omit<BetSlipItem, 'id'>) => boolean;
   removeFromBetSlip: (id: string) => void;
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
@@ -770,18 +770,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast('Global limit rule updated', 'success');
   };
 
-  const addToBetSlip = (item: Omit<BetSlipItem, 'id'>) => {
+  const addToBetSlip = (item: Omit<BetSlipItem, 'id'>): boolean => {
     const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
     const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
     const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
     if (!validation.ok) {
       addToast(validation.reason || 'Number Overloaded! Not in Booked.', 'error');
-      return;
+      return false;
     }
 
     const id = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     setBetSlip((prev) => [...prev, { ...item, id }]);
     addToast(`Added ${item.type} bet: ${item.number} (Count: ${item.count})`, 'success');
+    return true;
   };
 
   const removeFromBetSlip = (id: string) => {

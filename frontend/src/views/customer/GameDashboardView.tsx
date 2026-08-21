@@ -104,6 +104,7 @@ const slotThemes: Record<string, SlotTheme> = {
 
 export const GameDashboardView: React.FC = () => {
   const {
+    currentUser,
     activeGameSlot,
     setActiveGameSlot,
     betSlip,
@@ -113,6 +114,7 @@ export const GameDashboardView: React.FC = () => {
     saveTicket,
     setCurrentView,
     addToast,
+    checkBetEligibility,
   } = useApp();
 
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
@@ -128,6 +130,7 @@ export const GameDashboardView: React.FC = () => {
   const [copiedSavedBill, setCopiedSavedBill] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
+  const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -182,6 +185,19 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
+  // Helper to check and alert if input is overloaded
+  const checkInputOverload = () => {
+    const rawNum = isReverse ? startRange.trim() : inputNum.trim();
+    const cnt = parseInt(inputCount, 10);
+    if (rawNum && rawNum.length === activeMode && !isNaN(cnt) && cnt > 0) {
+      const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, cnt);
+      if (!validation.ok) {
+        setIsOverloadedModalOpen(true);
+      }
+    }
+  };
+
   // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
@@ -200,9 +216,12 @@ export const GameDashboardView: React.FC = () => {
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
+    let anyFailed = false;
+    let addedCount = 0;
+
     targetNums.forEach((n) => {
       positions.forEach((p) => {
-        addToBetSlip({
+        const ok = addToBetSlip({
           number: `${p}:${n}`,
           count: cnt,
           type: 'Pair',
@@ -210,15 +229,26 @@ export const GameDashboardView: React.FC = () => {
           unitPrice: unitPrice1Digit,
           totalAmount: cnt * unitPrice1Digit,
         });
+        if (!ok) {
+          anyFailed = true;
+        } else {
+          addedCount++;
+        }
       });
     });
 
-    addToast(`Added Mode 1 (${pos}) bets for ${targetNums.length} item(s)`, 'success');
-    setInputNum('');
-    setStartRange('');
-    setEndRange('');
-    setStepVal('');
-    setInputCount('');
+    if (anyFailed) {
+      setIsOverloadedModalOpen(true);
+    }
+
+    if (addedCount > 0) {
+      addToast(`Added Mode 1 (${pos}) bets for ${addedCount} item(s)`, 'success');
+      setInputNum('');
+      setStartRange('');
+      setEndRange('');
+      setStepVal('');
+      setInputCount('');
+    }
   };
 
   // Mode 2 Handlers (AB, AC, BC, ALL)
@@ -237,9 +267,12 @@ export const GameDashboardView: React.FC = () => {
 
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
+    let anyFailed = false;
+    let addedCount = 0;
+
     targetNums.forEach((n) => {
       pairs.forEach((pr) => {
-        addToBetSlip({
+        const ok = addToBetSlip({
           number: `${pr}:${n}`,
           count: cnt,
           type: 'Pair',
@@ -247,15 +280,26 @@ export const GameDashboardView: React.FC = () => {
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
+        if (!ok) {
+          anyFailed = true;
+        } else {
+          addedCount++;
+        }
       });
     });
 
-    addToast(`Added Mode 2 (${pair}) bets for ${targetNums.length} item(s)`, 'success');
-    setInputNum('');
-    setStartRange('');
-    setEndRange('');
-    setStepVal('');
-    setInputCount('');
+    if (anyFailed) {
+      setIsOverloadedModalOpen(true);
+    }
+
+    if (addedCount > 0) {
+      addToast(`Added Mode 2 (${pair}) bets for ${addedCount} item(s)`, 'success');
+      setInputNum('');
+      setStartRange('');
+      setEndRange('');
+      setStepVal('');
+      setInputCount('');
+    }
   };
 
   // Mode 3 Handlers (BOTH, BOX, SUPER) with Set Rotational Permutations
@@ -304,10 +348,13 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
+    let anyFailed = false;
+    let addedCount = 0;
+
     targetNums.forEach((numStr) => {
       if (modeType === 'BOTH') {
         if (directCnt > 0) {
-          addToBetSlip({
+          const ok = addToBetSlip({
             number: numStr,
             count: directCnt,
             type: 'Direct',
@@ -315,9 +362,10 @@ export const GameDashboardView: React.FC = () => {
             unitPrice,
             totalAmount: directCnt * unitPrice,
           });
+          if (!ok) anyFailed = true; else addedCount++;
         }
         if (boxAmt > 0) {
-          addToBetSlip({
+          const ok = addToBetSlip({
             number: numStr,
             count: boxAmt,
             type: 'Shuffle',
@@ -325,9 +373,10 @@ export const GameDashboardView: React.FC = () => {
             unitPrice,
             totalAmount: boxAmt * unitPrice,
           });
+          if (!ok) anyFailed = true; else addedCount++;
         }
       } else if (modeType === 'BOX') {
-        addToBetSlip({
+        const ok = addToBetSlip({
           number: numStr,
           count: boxAmt,
           type: 'Shuffle',
@@ -335,8 +384,9 @@ export const GameDashboardView: React.FC = () => {
           unitPrice,
           totalAmount: boxAmt * unitPrice,
         });
+        if (!ok) anyFailed = true; else addedCount++;
       } else if (modeType === 'SUPER') {
-        addToBetSlip({
+        const ok = addToBetSlip({
           number: numStr,
           count: directCnt,
           type: 'Direct',
@@ -344,16 +394,23 @@ export const GameDashboardView: React.FC = () => {
           unitPrice,
           totalAmount: directCnt * unitPrice,
         });
+        if (!ok) anyFailed = true; else addedCount++;
       }
     });
 
-    addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
-    setInputNum('');
-    setStartRange('');
-    setEndRange('');
-    setStepVal('');
-    setInputCount('');
-    setBoxCount('');
+    if (anyFailed) {
+      setIsOverloadedModalOpen(true);
+    }
+
+    if (addedCount > 0) {
+      addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
+      setInputNum('');
+      setStartRange('');
+      setEndRange('');
+      setStepVal('');
+      setInputCount('');
+      setBoxCount('');
+    }
   };
 
   const totalCount = betSlip.reduce((sum, item) => sum + item.count, 0);
@@ -615,8 +672,10 @@ export const GameDashboardView: React.FC = () => {
                         const cnt = parseInt(inputCount);
                         if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
                           setMinCountModalOpen(true);
+                          return;
                         }
                       }
+                      checkInputOverload();
                     }}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
@@ -635,6 +694,15 @@ export const GameDashboardView: React.FC = () => {
                       placeholder="Box Count"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
+                      onBlur={() => {
+                        const num = isReverse ? startRange.trim() : inputNum.trim();
+                        const bCnt = parseInt(boxCount, 10);
+                        if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
+                          const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+                          const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
+                          if (!val.ok) setIsOverloadedModalOpen(true);
+                        }
+                      }}
                       className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                     />
                   </div>
@@ -684,12 +752,41 @@ export const GameDashboardView: React.FC = () => {
                         const cnt = parseInt(inputCount);
                         if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
                           setMinCountModalOpen(true);
+                          return;
                         }
                       }
+                      checkInputOverload();
                     }}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
+
+                {activeMode === 3 && (
+                  <div className="col-span-4">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck={false}
+                      placeholder="Box Count"
+                      value={boxCount}
+                      onChange={(e) => setBoxCount(e.target.value)}
+                      onBlur={() => {
+                        const num = inputNum.trim();
+                        const bCnt = parseInt(boxCount, 10);
+                        if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
+                          const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+                          const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
+                          if (!val.ok) setIsOverloadedModalOpen(true);
+                        }
+                      }}
+                      className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
+                    />
+                  </div>
+                )}
 
                 {activeMode === 3 && (
                   <div className="col-span-4">
@@ -910,6 +1007,29 @@ export const GameDashboardView: React.FC = () => {
                 setMinCountModalOpen(false);
                 countInputRef.current?.focus();
               }}
+              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NUMBER OVERLOADED POP-UP MODAL */}
+      {isOverloadedModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">
+                Number Overloaded! Not in Booked.
+              </h4>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsOverloadedModalOpen(false)}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK
