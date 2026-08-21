@@ -166,7 +166,11 @@ export const MyPlayReportView: React.FC = () => {
   const [overCountDate, setOverCountDate] = useState<string>(todayStr);
   const [overCountToDate, setOverCountToDate] = useState<string>(todayStr);
   const [overCountSlot, setOverCountSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
-  const [showCountReportTable, setShowCountReportTable] = useState<boolean>(false);
+  const [appliedCountFilter, setAppliedCountFilter] = useState<{
+    fromDate: string;
+    toDate: string;
+    slot: 'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM';
+  } | null>(null);
 
   const salesFromRef = React.useRef<HTMLInputElement>(null);
   const salesToRef = React.useRef<HTMLInputElement>(null);
@@ -201,18 +205,23 @@ export const MyPlayReportView: React.FC = () => {
     setDailyToDate(currentToday);
     setOverCountDate(currentToday);
     setOverCountToDate(currentToday);
-    setShowCountReportTable(false);
+    setOverCountSlot('ALL');
+    setAppliedCountFilter(null);
   };
 
   const { countReportRows, countReportTotalCount, countReportTotalCash } = React.useMemo(() => {
-    const targetFrom = overCountDate;
-    const targetTo = overCountToDate;
+    if (!appliedCountFilter) {
+      return { countReportRows: [], countReportTotalCount: 0, countReportTotalCash: 0 };
+    }
+    const targetFrom = appliedCountFilter.fromDate;
+    const targetTo = appliedCountFilter.toDate;
+    const targetSlot = appliedCountFilter.slot;
     const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
 
     const filtered = ticketSource.filter((tkt) => {
-      if (overCountSlot !== 'ALL') {
-        const slotPrefix = overCountSlot.split(' ')[0];
-        if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(overCountSlot)) {
+      if (targetSlot !== 'ALL') {
+        const slotPrefix = targetSlot.split(' ')[0];
+        if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(targetSlot)) {
           return false;
         }
       }
@@ -234,21 +243,31 @@ export const MyPlayReportView: React.FC = () => {
     filtered.forEach((tkt) => {
       tkt.items.forEach((item: any) => {
         const type = (item.type || '').toUpperCase();
+        const numStr = String(item.number || '').trim();
         const cnt = Number(item.count || 0);
         const amt = Number(item.totalAmount || 0);
 
-        if (type === 'SUPER' || type === 'DIRECT') {
-          superCount += cnt;
-          superCash += amt;
-        } else if (type === 'BOX' || type === 'SHUFFLE') {
-          boxCount += cnt;
-          boxCash += amt;
-        } else if (['AB', 'BC', 'AC', 'PAIR'].includes(type)) {
-          pairCount += cnt;
-          pairCash += amt;
-        } else if (['A', 'B', 'C', 'POSITION'].includes(type)) {
+        // Detect 1-digit (A, B, C) - ₹12 unit price
+        const is1Digit = numStr.startsWith('A:') || numStr.startsWith('B:') || numStr.startsWith('C:') || ['A', 'B', 'C', 'POSITION'].includes(type) || item.unitPrice === 12;
+        // Detect 2-digit (AB, BC, AC) - ₹10 unit price
+        const is2Digit = !is1Digit && (numStr.startsWith('AB:') || numStr.startsWith('AC:') || numStr.startsWith('BC:') || ['AB', 'AC', 'BC', 'PAIR'].includes(type));
+        // Detect 3-digit Box - ₹10 unit price
+        const isBox = !is1Digit && !is2Digit && (type === 'BOX' || type === 'SHUFFLE' || type === 'BOX COUNT');
+        // Remaining is 3-digit Super - ₹10 unit price
+        const isSuper = !is1Digit && !is2Digit && !isBox;
+
+        if (is1Digit) {
           singleCount += cnt;
-          singleCash += amt;
+          singleCash += amt || (cnt * 12);
+        } else if (is2Digit) {
+          pairCount += cnt;
+          pairCash += amt || (cnt * 10);
+        } else if (isBox) {
+          boxCount += cnt;
+          boxCash += amt || (cnt * 10);
+        } else if (isSuper) {
+          superCount += cnt;
+          superCash += amt || (cnt * 10);
         }
       });
     });
@@ -257,25 +276,25 @@ export const MyPlayReportView: React.FC = () => {
       {
         name: 'SUPER',
         count: superCount,
-        rate: superCount > 0 ? (superCash / superCount).toFixed(1) : '-',
+        rate: superCount > 0 ? (superCash / superCount).toFixed(1) : '10.0',
         cash: superCash,
       },
       {
         name: 'BOX',
         count: boxCount,
-        rate: boxCount > 0 ? (boxCash / boxCount).toFixed(1) : '-',
+        rate: boxCount > 0 ? (boxCash / boxCount).toFixed(1) : '10.0',
         cash: boxCash,
       },
       {
         name: 'AB/BC/AC',
         count: pairCount,
-        rate: pairCount > 0 ? (pairCash / pairCount).toFixed(1) : '-',
+        rate: pairCount > 0 ? (pairCash / pairCount).toFixed(1) : '10.0',
         cash: pairCash,
       },
       {
         name: 'A/B/C',
         count: singleCount,
-        rate: singleCount > 0 ? (singleCash / singleCount).toFixed(1) : '-',
+        rate: singleCount > 0 ? (singleCash / singleCount).toFixed(1) : '12.0',
         cash: singleCash,
       },
     ];
@@ -284,7 +303,7 @@ export const MyPlayReportView: React.FC = () => {
     const totalCash = superCash + boxCash + pairCash + singleCash;
 
     return { countReportRows: rows, countReportTotalCount: totalCount, countReportTotalCash: totalCash };
-  }, [userTickets, placedTickets, overCountDate, overCountToDate, overCountSlot, todayStr]);
+  }, [userTickets, placedTickets, appliedCountFilter, todayStr]);
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -2229,7 +2248,6 @@ export const MyPlayReportView: React.FC = () => {
                     onChange={(e) => {
                       if (e.target.value) {
                         setOverCountDate(e.target.value);
-                        setShowCountReportTable(false);
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
@@ -2254,7 +2272,6 @@ export const MyPlayReportView: React.FC = () => {
                     onChange={(e) => {
                       if (e.target.value) {
                         setOverCountToDate(e.target.value);
-                        setShowCountReportTable(false);
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
@@ -2287,7 +2304,7 @@ export const MyPlayReportView: React.FC = () => {
               <div className="w-full pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowCountReportTable(true)}
+                  onClick={() => setAppliedCountFilter({ fromDate: overCountDate, toDate: overCountToDate, slot: overCountSlot })}
                   className="w-full py-3 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all border border-gold-dark"
                 >
                   SHOW REPORT
@@ -2296,7 +2313,7 @@ export const MyPlayReportView: React.FC = () => {
             </div>
 
             {/* Summary Table (Rendered ONLY when SHOW REPORT is clicked) */}
-            {showCountReportTable && (
+            {appliedCountFilter && (
               <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
                 {/* Header Row */}
                 <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">

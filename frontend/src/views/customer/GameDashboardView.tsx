@@ -237,7 +237,7 @@ export const GameDashboardView: React.FC = () => {
         const ok = addToBetSlip({
           number: `${p}:${n}`,
           count: cnt,
-          type: 'Pair',
+          type: 'Position',
           playMode: currentPlayMode,
           unitPrice: unitPrice1Digit,
           totalAmount: cnt * unitPrice1Digit,
