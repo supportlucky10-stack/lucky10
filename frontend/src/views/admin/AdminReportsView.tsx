@@ -35,36 +35,31 @@ const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: s
   return 'DIRECT';
 };
 
-const getWinningCardGameType = (card: any): string => {
-  const num = String(card.number || '').trim();
-  const rawType = String(card.gameMode || card.type || '').toUpperCase();
-
-  if (num.includes(':')) {
-    const parts = num.split(':');
-    const prefix = parts[0].toUpperCase();
-    if (['A', 'B', 'C', 'AB', 'BC', 'AC'].includes(prefix)) {
-      return prefix;
+const getPrizePositionDisplay = (card: any): string => {
+  const p = (card.prize || '').toUpperCase();
+  if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) {
+    if (p.includes('1 DIGIT')) {
+      const pos = p.match(/\(([A-C])\)/)?.[1] || card.type || '';
+      return pos ? `1ST PRIZE (${pos})` : '1ST PRIZE';
     }
+    if (p.includes('2 DIGIT')) {
+      const pos = p.match(/\(([A-Z]{2})\)/)?.[1] || card.type || '';
+      return pos ? `1ST PRIZE (${pos})` : '1ST PRIZE';
+    }
+    if (p.includes('BOX')) {
+      if (p.includes('STRAIGHT')) return '1ST PRIZE (STRAIGHT)';
+      if (p.includes('ULTA') || p.includes('TURN')) return '1ST PRIZE (TURN)';
+      if (p.includes('DOUBLE')) return '1ST PRIZE (DOUBLE)';
+      return '1ST PRIZE (BOX)';
+    }
+    return '1ST PRIZE';
   }
-
-  if (['A', 'B', 'C', 'AB', 'BC', 'AC'].includes(rawType)) {
-    return rawType;
-  }
-
-  if (rawType === 'SHUFFLE' || rawType === 'BOX' || rawType === 'SET') {
-    return 'BOX';
-  }
-
-  if (rawType === 'DIRECT' || rawType === 'SUPER') {
-    return 'SUPER';
-  }
-
-  const cleanDigits = num.replace(/\D/g, '');
-  if (cleanDigits.length === 1) return 'A';
-  if (cleanDigits.length === 2) return 'AB';
-  if (cleanDigits.length === 3) return 'SUPER';
-
-  return rawType || 'SUPER';
+  if (p.includes('2ND')) return '2ND PRIZE';
+  if (p.includes('3RD')) return '3RD PRIZE';
+  if (p.includes('4TH')) return '4TH PRIZE';
+  if (p.includes('5TH')) return '5TH PRIZE';
+  if (p.includes('COMPLIMENT')) return 'COMPLIMENT';
+  return card.prize || '1ST PRIZE';
 };
 
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
@@ -416,7 +411,7 @@ export const AdminReportsView: React.FC = () => {
         if (winAmt > 0) {
           const gameTitle = getDisplayGame(item);
           const playModeTitle = getDisplayPlayMode(item);
-          const catName = `${ticket.gameSlot} - ${gameTitle}`;
+          const catName = gameTitle;
           const existing = catMap.get(catName) || [];
           existing.push({
             id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
@@ -1324,7 +1319,7 @@ export const AdminReportsView: React.FC = () => {
                           {/* Prize & Number Header Bar with vivid glowing colors */}
                           <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 px-4 py-2.5 font-mono flex items-center justify-between border-b border-gold/30 shadow-inner">
                             <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
-                              🏆 {card.prize || 'WINNER'}
+                              🏆 {getPrizePositionDisplay(card)}
                             </span>
                             <div className="flex items-center gap-1.5">
                               <span className="text-cyan-400 text-xs font-black uppercase tracking-wider">NUMBER:</span>
@@ -1346,11 +1341,10 @@ export const AdminReportsView: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Bill ID, Type & Slot Info Bar */}
+                          {/* Bill ID & Slot Info Bar */}
                           <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
                             <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
-                            <span>Type: <strong className="text-amber-400 font-extrabold">{getWinningCardGameType(card)}</strong></span>
-                            <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
+                            <span>Slot: <strong className="text-gold font-bold">{(card.slot || '').replace(/\s*Game$/i, '')}</strong></span>
                           </div>
 
                           {/* Count & Win Amount Footer */}
@@ -1533,7 +1527,7 @@ export const AdminReportsView: React.FC = () => {
                               {/* Prize & Number Header Bar with vivid glowing colors */}
                               <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 px-4 py-2.5 font-mono flex items-center justify-between border-b border-gold/30 shadow-inner">
                                 <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
-                                  🏆 {card.prize || 'WINNER'}
+                                  🏆 {getPrizePositionDisplay(card)}
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-cyan-400 text-xs font-black uppercase tracking-wider">NUMBER:</span>
@@ -1555,11 +1549,10 @@ export const AdminReportsView: React.FC = () => {
                                 </div>
                               </div>
 
-                              {/* Bill ID, Type & Slot Info Bar */}
+                              {/* Bill ID & Slot Info Bar */}
                               <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
                                 <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
-                                <span>Type: <strong className="text-amber-400 font-extrabold">{getWinningCardGameType(card)}</strong></span>
-                                <span>Slot: <strong className="text-gold font-bold">{card.slot}</strong></span>
+                                <span>Slot: <strong className="text-gold font-bold">{(card.slot || '').replace(/\s*Game$/i, '')}</strong></span>
                               </div>
 
                               {/* Count & Win Amount Footer */}
