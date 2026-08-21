@@ -1831,8 +1831,8 @@ export const MyPlayReportView: React.FC = () => {
             >
               
               {/* Bill ID Header Bar */}
-              <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
-                <div>
+              <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">
+                <div className="shrink-0 min-w-0">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
                     <span className="text-gold font-black text-base">{selectedSingleTicket.id}</span>
@@ -1851,9 +1851,9 @@ export const MyPlayReportView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right shrink-0 whitespace-nowrap">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
-                  <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(selectedSingleTicket.placedAt)}</span>
+                  <span className="text-white font-extrabold text-xs whitespace-nowrap font-mono">{formatPlacedAtDate(selectedSingleTicket.placedAt)}</span>
                 </div>
               </div>
 
@@ -1888,9 +1888,9 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Bill Total Footer Bar (Clean Layout without DELETE button) */}
-              <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono">
-                <span className="text-xs text-white uppercase font-black tracking-wider">TOTAL AMOUNT</span>
-                <span className="text-white font-black text-lg">₹{selectedSingleTicket.totalAmount}</span>
+              <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono gap-2">
+                <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
+                <span className="text-white font-black text-lg whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
               </div>
 
             </div>
@@ -1940,9 +1940,9 @@ export const MyPlayReportView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="text-right">
+                <div className="text-right shrink-0 whitespace-nowrap">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
-                  <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(deleteSingleTicketTarget.placedAt)}</span>
+                  <span className="text-white font-extrabold text-xs whitespace-nowrap font-mono">{formatPlacedAtDate(deleteSingleTicketTarget.placedAt)}</span>
                 </div>
               </div>
 
@@ -1980,10 +1980,10 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Bill Total Footer Bar with DELETE Button */}
-              <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-white uppercase font-black">TOTAL AMOUNT</span>
-                  <span className="text-white font-black text-base">₹{deleteSingleTicketTarget.totalAmount}</span>
+              <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-xs text-white uppercase font-black whitespace-nowrap">TOTAL AMOUNT</span>
+                  <span className="text-white font-black text-base whitespace-nowrap">₹{deleteSingleTicketTarget.totalAmount}</span>
                 </div>
 
                 <button

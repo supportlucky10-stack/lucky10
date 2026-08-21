@@ -205,9 +205,9 @@ export const EditDeleteBillView: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right shrink-0 whitespace-nowrap">
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
-                    <span className="text-white font-extrabold text-xs">{formatPlacedAtDate(searchedBill.placedAt)}</span>
+                    <span className="text-white font-extrabold text-xs whitespace-nowrap font-mono">{formatPlacedAtDate(searchedBill.placedAt)}</span>
                   </div>
                 </div>
 
@@ -242,10 +242,10 @@ export const EditDeleteBillView: React.FC = () => {
                 </div>
 
                 {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
-                <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-white uppercase font-black tracking-wider">TOTAL AMOUNT</span>
-                    <span className="text-white font-black text-lg">₹{searchedBill.totalAmount}</span>
+                <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap">TOTAL AMOUNT</span>
+                    <span className="text-white font-black text-lg whitespace-nowrap">₹{searchedBill.totalAmount}</span>
                   </div>
 
                   <button
