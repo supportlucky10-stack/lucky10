@@ -230,9 +230,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     # 3. Fetch global limit rule
     global_limit = db.query(GlobalLimitRule).first()
 
-    clean_req_cust = (req.customerName or "").strip().lower()
-
-    # Calculate user's existing placed count today for this game slot across previous tickets for this customer
+    # Calculate user's existing placed count today for this game slot across all previous tickets in this agency
     existing_tickets = db.query(Ticket).filter(
         Ticket.user_id == user.id,
         Ticket.game_slot == req.gameSlot
@@ -249,22 +247,19 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         return u
 
     placed_count_by_key: dict[str, float] = {}
-    if clean_req_cust:
-        for tkt in existing_tickets:
-            tkt_cust = (tkt.customer_name or "").strip().lower()
-            if tkt_cust == clean_req_cust:
-                if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
-                    tkt_date = tkt.placed_at.strftime("%Y-%m-%d")
-                elif tkt.placed_at:
-                    tkt_date = str(tkt.placed_at)[:10]
-                else:
-                    tkt_date = today_str
+    for tkt in existing_tickets:
+        if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
+            tkt_date = tkt.placed_at.strftime("%Y-%m-%d")
+        elif tkt.placed_at:
+            tkt_date = str(tkt.placed_at)[:10]
+        else:
+            tkt_date = today_str
 
-                if tkt_date == today_str:
-                    for bi in tkt.items:
-                        bi_raw = bi.number.strip()
-                        bi_key = f"{bi_raw}_{norm_type(bi.type)}"
-                        placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
+        if tkt_date == today_str:
+            for bi in tkt.items:
+                bi_raw = bi.number.strip()
+                bi_key = f"{bi_raw}_{norm_type(bi.type)}"
+                placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
 
     # Track newly requested counts within this incoming batch
     batch_counts: dict[str, float] = {}

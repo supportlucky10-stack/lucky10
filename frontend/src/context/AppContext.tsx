@@ -555,7 +555,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     number: string,
     newCount: number,
     betType?: string,
-    customerName?: string,
+    _customerName?: string,
     skipBetSlip: boolean = false
   ): { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' } => {
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
@@ -588,31 +588,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    const cleanCust = (customerName || '').trim().toLowerCase();
+    // Calculate existing count already placed today for this number AND specific bet type in this slot across this agency
+    const agencyTickets = placedTickets.filter((t) => {
+      const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
+      const matchesDate = tDate === todayStr;
+      const matchesSlot = t.gameSlot === slot;
+      const matchesAgency =
+        !agencyIdOrName ||
+        agencyIdOrName === 'ALL' ||
+        t.userId === agencyIdOrName ||
+        ((t as any).agencyName && (t as any).agencyName.toLowerCase() === agencyIdOrName.toLowerCase()) ||
+        ((t as any).userName && (t as any).userName.toLowerCase() === agencyIdOrName.toLowerCase());
+      return matchesDate && matchesSlot && matchesAgency;
+    });
 
-    // Calculate existing count already placed today for this number AND specific bet type in this slot for this customer
     let currentAgencyPlacedCount = 0;
-    if (cleanCust) {
-      const agencyTickets = placedTickets.filter((t) => {
-        const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
-        const matchesDate = tDate === todayStr;
-        const matchesSlot = t.gameSlot === slot;
-        const matchesCust = (t.customerName || '').trim().toLowerCase() === cleanCust;
-        return matchesDate && matchesSlot && matchesCust;
+    agencyTickets.forEach((t) => {
+      t.items.forEach((it) => {
+        const itRaw = (it.number || '').trim();
+        const itType = normType(it.type);
+        const matchesNum = itRaw === fullNum || itRaw === rawNum;
+        const matchesType = !targetType || !itType || itType === targetType;
+        if (matchesNum && matchesType) {
+          currentAgencyPlacedCount += it.count || 1;
+        }
       });
-
-      agencyTickets.forEach((t) => {
-        t.items.forEach((it) => {
-          const itRaw = (it.number || '').trim();
-          const itType = normType(it.type);
-          const matchesNum = itRaw === fullNum || itRaw === rawNum;
-          const matchesType = !targetType || !itType || itType === targetType;
-          if (matchesNum && matchesType) {
-            currentAgencyPlacedCount += it.count || 1;
-          }
-        });
-      });
-    }
+    });
 
     // ALSO count how much of this number is in the CURRENT unsubmitted staging betSlip (if not skipped)
     if (!skipBetSlip) {
