@@ -186,23 +186,6 @@ export const GameDashboardView: React.FC = () => {
     return Array.from(results);
   };
 
-  // Helper to check and alert if input is overloaded or blocked
-  const checkInputOverload = () => {
-    const rawNum = isReverse ? startRange.trim() : inputNum.trim();
-    const cnt = parseInt(inputCount, 10);
-    if (rawNum && rawNum.length === activeMode && !isNaN(cnt) && cnt > 0) {
-      const agencyId = currentUser?.id || currentUser?.username || '';
-      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, cnt);
-      if (!validation.ok) {
-        if (validation.type === 'BLOCKED') {
-          setIsBlockedModalOpen(true);
-        } else {
-          setIsOverloadedModalOpen(true);
-        }
-      }
-    }
-  };
-
   // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
@@ -725,16 +708,6 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
-                    onBlur={() => {
-                      if (activeMode === 1 && inputCount.trim() !== '') {
-                        const cnt = parseInt(inputCount);
-                        if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
-                          setMinCountModalOpen(true);
-                          return;
-                        }
-                      }
-                      checkInputOverload();
-                    }}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -752,18 +725,6 @@ export const GameDashboardView: React.FC = () => {
                       placeholder="Box Count"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
-                      onBlur={() => {
-                        const num = isReverse ? startRange.trim() : inputNum.trim();
-                        const bCnt = parseInt(boxCount, 10);
-                        if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
-                          const agencyId = currentUser?.id || currentUser?.username || '';
-                          const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
-                          if (!val.ok) {
-                            if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
-                            else setIsOverloadedModalOpen(true);
-                          }
-                        }
-                      }}
                       className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                     />
                   </div>
@@ -808,16 +769,6 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
-                    onBlur={() => {
-                      if (activeMode === 1 && inputCount.trim() !== '') {
-                        const cnt = parseInt(inputCount);
-                        if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
-                          setMinCountModalOpen(true);
-                          return;
-                        }
-                      }
-                      checkInputOverload();
-                    }}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -835,18 +786,6 @@ export const GameDashboardView: React.FC = () => {
                       placeholder="Box Count"
                       value={boxCount}
                       onChange={(e) => setBoxCount(e.target.value)}
-                      onBlur={() => {
-                        const num = inputNum.trim();
-                        const bCnt = parseInt(boxCount, 10);
-                        if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
-                          const agencyId = currentUser?.id || currentUser?.username || '';
-                          const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
-                          if (!val.ok) {
-                            if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
-                            else setIsOverloadedModalOpen(true);
-                          }
-                        }
-                      }}
                       className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                     />
                   </div>
