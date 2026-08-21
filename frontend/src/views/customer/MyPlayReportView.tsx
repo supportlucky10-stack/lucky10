@@ -473,10 +473,7 @@ export const MyPlayReportView: React.FC = () => {
     if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
       return 'bg-gradient-to-r from-[#9a3412] via-[#7c2d12] to-[#5a1e06] text-white border-2 border-orange-400/60 shadow-[0_0_12px_rgba(154,52,18,0.3)]';
     }
-    if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
-      return 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]';
-    }
-    return 'bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 text-white border-2 border-neutral-700/80 shadow-[0_0_15px_rgba(255,255,255,0.08)]';
+    return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-white border-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.2)] font-black';
   };
 
   // Filter winning categories strictly from placed tickets matching winning numbers / status

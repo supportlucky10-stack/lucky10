@@ -526,7 +526,7 @@ export const GameDashboardView: React.FC = () => {
                     setInputCount('');
                     setBoxCount('');
                   }}
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center transition-all cursor-pointer ${
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center cursor-pointer ${
                     activeMode === m
                       ? `${theme.activeTabBg} ${theme.activeTabText} border ${theme.activeTabBorder} shadow-md font-black`
                       : `bg-black ${theme.inactiveTabText} border ${theme.inactiveTabBorder} font-bold`
@@ -799,7 +799,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#d97706] text-black font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#fef08a] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#fcd34d] via-[#f59e0b] to-[#d97706] text-black font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 uppercase tracking-wide border-2 border-[#fef08a] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pos}
                     </button>
@@ -807,7 +807,7 @@ export const GameDashboardView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleMode1Add('ALL')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     ALL
                   </button>
@@ -821,7 +821,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#0B1849] via-[#081033] to-[#04081c] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-125 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#2b3b75] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#0B1849] via-[#081033] to-[#04081c] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-125 active:scale-95 uppercase tracking-wide border-2 border-[#2b3b75] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
@@ -829,7 +829,7 @@ export const GameDashboardView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleMode2Add('ALL')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     ALL
                   </button>
@@ -841,21 +841,21 @@ export const GameDashboardView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOTH')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     BOTH
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('BOX')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     BOX
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMode3Add('SUPER')}
-                    className="w-full h-10 sm:h-11 bg-black text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-white/90 cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                    className="w-full h-10 sm:h-11 bg-black text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-white/90 cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     SUPER
                   </button>

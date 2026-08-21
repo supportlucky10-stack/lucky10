@@ -115,13 +115,13 @@ export const TodaysResultView: React.FC = () => {
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
         <div className="space-y-2.5 shrink-0">
           {/* Row 1: Date Pill (Increased Size & Prominence) & Change Date Button */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 items-center">
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-4 py-2 cursor-pointer transition-all flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark"
+              className="bg-gold-metallic text-black rounded-xl px-2 sm:px-4 py-2 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark whitespace-nowrap overflow-hidden"
             >
-              <span className="text-black font-black text-sm sm:text-base md:text-lg tracking-wider font-mono">
+              <span className="text-black font-black text-xs sm:text-base md:text-lg tracking-wider font-mono whitespace-nowrap truncate">
                 {displayDateFormatted}
               </span>
             </div>
@@ -129,10 +129,10 @@ export const TodaysResultView: React.FC = () => {
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-4 py-2 cursor-pointer transition-all flex items-center justify-center gap-2 shadow-md h-[46px] sm:h-[50px]"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-2 sm:px-3.5 py-2 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] whitespace-nowrap overflow-hidden"
             >
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
-              <span className="font-bold text-xs sm:text-sm tracking-wide">
+              <span className="font-bold text-xs sm:text-sm tracking-wide whitespace-nowrap shrink-0">
                 Change date
               </span>
               <input

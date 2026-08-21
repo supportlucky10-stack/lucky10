@@ -340,9 +340,9 @@ body {
   flex-direction: column;
 }
 
-/* Ensure smooth inertial touch scrolling across touch browsers */
-* {
-  -webkit-overflow-scrolling: touch;
+/* Prevent unwanted rubber-band bounce scrolling on iOS */
+html, body {
+  overscroll-behavior-y: none;
 }
 
 /* Prevent double-tap zoom delay and touch blockage on inputs and buttons */
