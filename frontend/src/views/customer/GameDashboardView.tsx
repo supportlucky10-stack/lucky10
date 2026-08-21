@@ -876,7 +876,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#0B1849] via-[#081033] to-[#04081c] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-125 active:scale-95 uppercase tracking-wide border-2 border-[#2b3b75] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#8B0000] via-[#660000] to-[#3a0000] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-125 active:scale-95 uppercase tracking-wide border-2 border-[#b91c1c] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
@@ -959,9 +959,9 @@ export const GameDashboardView: React.FC = () => {
                     textColor = 'text-amber-600';
                     typeTextColor = 'text-amber-700';
                   } else if (['AB', 'AC', 'BC'].includes(displayType)) {
-                    // #0B1849 Dark Navy Blue (2-Digit: AB, AC, BC)
-                    textColor = 'text-[#0B1849]';
-                    typeTextColor = 'text-[#081033]';
+                    // #8B0000 Dark Red (2-Digit: AB, AC, BC)
+                    textColor = 'text-red-700';
+                    typeTextColor = 'text-[#8B0000]';
                   } else if (displayType === 'SUPER') {
                     // Jet Black (3-Digit SUPER)
                     textColor = 'text-black';
