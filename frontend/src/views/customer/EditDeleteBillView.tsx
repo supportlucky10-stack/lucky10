@@ -244,8 +244,8 @@ export const EditDeleteBillView: React.FC = () => {
                 {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
                 <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400 uppercase font-black tracking-wider">TOTAL AMOUNT</span>
-                    <span className="text-gold font-black text-lg">₹{searchedBill.totalAmount}</span>
+                    <span className="text-xs text-white uppercase font-black tracking-wider">TOTAL AMOUNT</span>
+                    <span className="text-white font-black text-lg">₹{searchedBill.totalAmount}</span>
                   </div>
 
                   <button

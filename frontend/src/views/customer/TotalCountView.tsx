@@ -590,7 +590,7 @@ export const TotalCountView: React.FC = () => {
                   ))
                 ) : (
                   <div className="py-8 text-center text-neutral-400 font-sans text-xs">
-                    No count records match the selected filters.
+                    No count records found
                   </div>
                 )}
               </div>

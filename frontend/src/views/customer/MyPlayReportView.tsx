@@ -1895,8 +1895,8 @@ export const MyPlayReportView: React.FC = () => {
 
               {/* Bill Total Footer Bar (Clean Layout without DELETE button) */}
               <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono">
-                <span className="text-xs text-neutral-400 uppercase font-black tracking-wider">TOTAL AMOUNT</span>
-                <span className="text-gold font-black text-lg">₹{selectedSingleTicket.totalAmount}</span>
+                <span className="text-xs text-white uppercase font-black tracking-wider">TOTAL AMOUNT</span>
+                <span className="text-white font-black text-lg">₹{selectedSingleTicket.totalAmount}</span>
               </div>
 
             </div>
@@ -1988,8 +1988,8 @@ export const MyPlayReportView: React.FC = () => {
               {/* Bill Total Footer Bar with DELETE Button */}
               <div className="bg-neutral-900 border-t border-neutral-800 p-3.5 flex items-center justify-between font-mono">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-neutral-400 uppercase font-black">TOTAL AMOUNT</span>
-                  <span className="text-gold font-black text-base">₹{deleteSingleTicketTarget.totalAmount}</span>
+                  <span className="text-xs text-white uppercase font-black">TOTAL AMOUNT</span>
+                  <span className="text-white font-black text-base">₹{deleteSingleTicketTarget.totalAmount}</span>
                 </div>
 
                 <button
@@ -2121,10 +2121,9 @@ export const MyPlayReportView: React.FC = () => {
                         key={idx}
                         className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
                       >
-                        {/* NAME Column: Date on top, Customer name below */}
-                        <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
-                          <span className="text-white font-bold">{row.date}</span>
-                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">
+                        {/* NAME Column: Customer / Agency name only */}
+                        <div className="flex items-center justify-center text-[10px] sm:text-xs">
+                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] truncate max-w-[80px]">
                             {customerDisplayName}
                           </span>
                         </div>

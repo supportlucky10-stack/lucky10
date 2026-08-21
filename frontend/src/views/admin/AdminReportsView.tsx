@@ -1598,9 +1598,8 @@ export const AdminReportsView: React.FC = () => {
                     const isNegative = rowTotal < 0;
                     return (
                       <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                        <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
-                          <span className="text-white font-bold">{row.date}</span>
-                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">{row.userDisplayName}</span>
+                        <div className="flex items-center justify-center text-[10px] sm:text-xs">
+                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] truncate max-w-[80px]">{row.userDisplayName}</span>
                         </div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
@@ -1766,9 +1765,8 @@ export const AdminReportsView: React.FC = () => {
                       const isNegative = rowTotal < 0;
                       return (
                         <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                          <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
-                            <span className="text-white font-bold">{row.date}</span>
-                            <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] mt-0.5 truncate max-w-[70px]">{selectedDailyUser.name}</span>
+                          <div className="flex items-center justify-center text-[10px] sm:text-xs">
+                            <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] truncate max-w-[80px]">{selectedDailyUser.name}</span>
                           </div>
                           <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                           <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
