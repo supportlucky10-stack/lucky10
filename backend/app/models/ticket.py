@@ -8,7 +8,7 @@ class Ticket(Base):
 
     id = Column(String, primary_key=True, index=True)
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
-    customer_name = Column(String, default="Customer", nullable=True)
+    customer_name = Column(String, default="", nullable=True)
     game_slot = Column(String, nullable=False, index=True)
     total_amount = Column(Float, nullable=False)
     status = Column(String, default="PENDING", nullable=False)  # PENDING, WON, LOST

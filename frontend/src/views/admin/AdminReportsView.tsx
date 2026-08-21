@@ -402,7 +402,7 @@ export const AdminReportsView: React.FC = () => {
             ticketId: ticket.ticketId || ticket.id,
             userName: (ticket as any).userName || (ticket as any).agencyName || ticket.userId,
             agencyName: (ticket as any).agencyName || (ticket as any).userName || 'Agency',
-            customerName: (ticket as any).customerName || 'Customer',
+            customerName: formatCustomerName((ticket as any).customerName),
             prize: prizeTitle,
             number: num,
             count: count,
@@ -1318,7 +1318,7 @@ export const AdminReportsView: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
-                              <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                              <span className="text-white font-extrabold text-xs">{formatCustomerName(card.customerName)}</span>
                             </div>
                           </div>
 
@@ -1523,7 +1523,7 @@ export const AdminReportsView: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
-                                  <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                                  <span className="text-white font-extrabold text-xs">{formatCustomerName(card.customerName)}</span>
                                 </div>
                               </div>
 

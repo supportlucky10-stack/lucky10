@@ -214,7 +214,7 @@ export const EditDeleteBillView: React.FC = () => {
                 {/* Agency, Customer & Slot Info Bar */}
                 <div className="bg-white px-4 py-2.5 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-800">
                   <span>Agency <strong className="text-black font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
-                  <span>Customer <strong className="text-black font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
+                  <span>Customer <strong className="text-black font-bold">{formatCustomerName((searchedBill as any).customerName)}</strong></span>
                   <span>Slot <strong className="text-black font-bold">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></span>
                 </div>
 

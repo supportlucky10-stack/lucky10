@@ -530,7 +530,7 @@ export const MyPlayReportView: React.FC = () => {
             ticketId: ticket.ticketId || ticket.id,
             userName: (ticket as any).userName || (ticket as any).agencyName || currentUser?.name || 'Agency',
             agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || 'Agency',
-            customerName: (ticket as any).customerName || 'Customer',
+            customerName: formatCustomerName((ticket as any).customerName),
             prize: prizeTitle,
             number: num,
             count: count,
@@ -1763,7 +1763,7 @@ export const MyPlayReportView: React.FC = () => {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
-                              <span className="text-white font-extrabold text-xs">{card.customerName || 'Customer'}</span>
+                              <span className="text-white font-extrabold text-xs">{formatCustomerName(card.customerName)}</span>
                             </div>
                           </div>
 
@@ -1866,7 +1866,7 @@ export const MyPlayReportView: React.FC = () => {
               {/* Agency, Customer & Slot Info Bar */}
               <div className="bg-white px-4 py-2.5 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-800">
                 <span>Agency <strong className="text-black font-bold">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || 'Agency'}</strong></span>
-                <span>Customer <strong className="text-black font-bold">{formatCustomerName((selectedSingleTicket as any).customerName) || 'Customer'}</strong></span>
+                <span>Customer <strong className="text-black font-bold">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></span>
                 <span>Slot <strong className="text-black font-bold">{(selectedSingleTicket.gameSlot || '').replace(/\s*Game$/i, '')}</strong></span>
               </div>
 
