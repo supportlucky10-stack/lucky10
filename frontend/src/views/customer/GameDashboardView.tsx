@@ -799,7 +799,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#475569] via-[#334155] to-[#1e293b] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#94a3b8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#0284c7] via-[#0369a1] to-[#075985] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#38bdf8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pos}
                     </button>
@@ -821,7 +821,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#991b1b] via-[#7f1d1d] to-[#450a0a] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#ef4444] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#059669] via-[#047857] to-[#064e3b] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#34d399] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
@@ -900,13 +900,13 @@ export const GameDashboardView: React.FC = () => {
                   let typeTextColor = 'text-black';
 
                   if (['A', 'B', 'C'].includes(displayType)) {
-                    // Metallic Slate (1-Digit: A, B, C)
-                    textColor = 'text-slate-800';
-                    typeTextColor = 'text-slate-900';
+                    // Vivid Sapphire/Sky Blue (1-Digit: A, B, C)
+                    textColor = 'text-sky-700';
+                    typeTextColor = 'text-sky-900';
                   } else if (['AB', 'AC', 'BC'].includes(displayType)) {
-                    // Deep Crimson Red (2-Digit: AB, AC, BC)
-                    textColor = 'text-red-700';
-                    typeTextColor = 'text-red-800';
+                    // Vibrant Emerald Green (2-Digit: AB, AC, BC)
+                    textColor = 'text-emerald-700';
+                    typeTextColor = 'text-emerald-900';
                   } else if (displayType === 'SUPER') {
                     // Jet Black (3-Digit SUPER)
                     textColor = 'text-black';
