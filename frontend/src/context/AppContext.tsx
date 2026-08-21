@@ -409,6 +409,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }).catch(() => {});
 
+      // Always sync active game limits and blocked numbers across all players
+      customerService.getLimits().then((lims) => {
+        if (lims) {
+          if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
+          if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
+          if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
+        }
+      }).catch(() => {});
+
       if (currentUser && !isAdminLoggedIn) {
         customerService.getUserTickets().then((tkts) => {
           if (tkts) {
@@ -418,14 +427,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         customerService.getBankDetails().then((b) => {
           if (b) setBankDetails(b);
-        }).catch(() => {});
-
-        customerService.getLimits().then((lims) => {
-          if (lims) {
-            if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
-            if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
-            if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
-          }
         }).catch(() => {});
       }
 
@@ -697,12 +698,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ): { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' } => {
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
     const cleanNum = rawNum.trim();
+    const fullNum = number.trim();
     const todayStr = new Date().toISOString().split('T')[0];
 
     // 1. Check if number is blocked globally or for this slot
-    const isBlocked = blockedNumbers.some(
-      (b) => b.number === cleanNum && (b.gameSlot === 'ALL' || b.gameSlot === slot)
-    );
+    const isBlocked = blockedNumbers.some((b) => {
+      const bNum = b.number.trim();
+      const numMatches = bNum === cleanNum || bNum === fullNum || bNum === rawNum.trim();
+      const slotMatches = b.gameSlot === 'ALL' || b.gameSlot === slot;
+      return numMatches && slotMatches;
+    });
+
     if (isBlocked) {
       return {
         ok: false,
@@ -720,8 +726,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         !agencyIdOrName ||
         agencyIdOrName === 'ALL' ||
         t.userId === agencyIdOrName ||
-        (t as any).agencyName === agencyIdOrName ||
-        (t as any).userName === agencyIdOrName;
+        ((t as any).agencyName && (t as any).agencyName.toLowerCase() === agencyIdOrName.toLowerCase()) ||
+        ((t as any).userName && (t as any).userName.toLowerCase() === agencyIdOrName.toLowerCase());
       return matchesDate && matchesSlot && matchesAgency;
     });
 
@@ -746,10 +752,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Check Agency-Specific Limit (Option 1: Limit Count)
     const specificLimit = agencyNumberLimits.find((l) => {
       const matchesAgency =
+        !agencyIdOrName ||
+        agencyIdOrName === 'ALL' ||
+        l.agencyId === 'ALL' ||
         l.agencyId === agencyIdOrName ||
-        l.agencyName.toLowerCase() === agencyIdOrName.toLowerCase() ||
-        l.agencyId === 'ALL';
-      const matchesNum = l.number === cleanNum;
+        (l.agencyName && l.agencyName.toLowerCase() === agencyIdOrName.toLowerCase());
+      const lNum = l.number.trim();
+      const matchesNum = lNum === cleanNum || lNum === fullNum || lNum === rawNum.trim();
       const matchesSlot = l.gameSlot === 'ALL' || l.gameSlot === slot;
       return matchesAgency && matchesNum && matchesSlot;
     });
@@ -765,7 +774,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // 3. Check Global Limit ("Limit All")
-    if (globalLimitRule.isEnabled) {
+    if (globalLimitRule && globalLimitRule.isEnabled) {
       const appliesToSlot = globalLimitRule.gameSlot === 'ALL' || globalLimitRule.gameSlot === slot;
       if (appliesToSlot) {
         if (currentAgencyPlacedCount + newCount > globalLimitRule.defaultMaxCount) {

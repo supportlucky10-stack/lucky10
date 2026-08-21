@@ -506,12 +506,35 @@ def get_agency_limits(admin_payload: dict = Depends(get_current_admin), db: Sess
 
 @router.post("/limits/agency")
 def create_agency_limit(req: AgencyLimitCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    clean_num = req.number.strip()
+    slot_val = req.gameSlot or "ALL"
+    existing = db.query(AgencyNumberLimit).filter(
+        AgencyNumberLimit.agency_id == req.agencyId,
+        AgencyNumberLimit.number == clean_num,
+        AgencyNumberLimit.game_slot == slot_val
+    ).first()
+
+    if existing:
+        existing.max_count = req.maxCount
+        existing.agency_name = req.agencyName
+        db.commit()
+        db.refresh(existing)
+        return {
+            "id": existing.id,
+            "agencyId": existing.agency_id,
+            "agencyName": existing.agency_name,
+            "number": existing.number,
+            "gameSlot": existing.game_slot,
+            "maxCount": existing.max_count,
+            "createdAt": existing.created_at.strftime("%Y-%m-%d") if existing.created_at else "",
+        }
+
     new_limit = AgencyNumberLimit(
         id=f"lim_{int(datetime.now().timestamp() * 1000)}",
         agency_id=req.agencyId,
         agency_name=req.agencyName,
-        number=req.number.strip(),
-        game_slot=req.gameSlot or "ALL",
+        number=clean_num,
+        game_slot=slot_val,
         max_count=req.maxCount,
         created_at=datetime.now(timezone.utc),
     )
@@ -553,10 +576,29 @@ def get_blocked_numbers(admin_payload: dict = Depends(get_current_admin), db: Se
 
 @router.post("/limits/blocked")
 def create_blocked_number(req: BlockedNumberCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    clean_num = req.number.strip()
+    slot_val = req.gameSlot or "ALL"
+    existing = db.query(BlockedNumberRule).filter(
+        BlockedNumberRule.number == clean_num,
+        BlockedNumberRule.game_slot == slot_val
+    ).first()
+
+    if existing:
+        existing.reason = req.reason or ""
+        db.commit()
+        db.refresh(existing)
+        return {
+            "id": existing.id,
+            "number": existing.number,
+            "gameSlot": existing.game_slot,
+            "reason": existing.reason,
+            "createdAt": existing.created_at.strftime("%Y-%m-%d") if existing.created_at else "",
+        }
+
     new_rule = BlockedNumberRule(
         id=f"blk_{int(datetime.now().timestamp() * 1000)}",
-        number=req.number.strip(),
-        game_slot=req.gameSlot or "ALL",
+        number=clean_num,
+        game_slot=slot_val,
         reason=req.reason or "",
         created_at=datetime.now(timezone.utc),
     )

@@ -209,13 +209,13 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     blocked_rules = db.query(BlockedNumberRule).filter(
         (BlockedNumberRule.game_slot == "ALL") | (BlockedNumberRule.game_slot == req.gameSlot)
     ).all()
-    blocked_set = {b.number for b in blocked_rules}
+    blocked_set = {b.number.strip() for b in blocked_rules}
 
     # 2. Fetch agency limits for this user/username or ALL
     agency_limits = db.query(AgencyNumberLimit).filter(
         (AgencyNumberLimit.agency_id == user.id) |
-        (AgencyNumberLimit.agency_name == user.username) |
-        (AgencyNumberLimit.agency_name == user.name) |
+        (AgencyNumberLimit.agency_name.ilike(user.username)) |
+        (AgencyNumberLimit.agency_name.ilike(user.name)) |
         (AgencyNumberLimit.agency_id == "ALL"),
         (AgencyNumberLimit.game_slot == "ALL") | (AgencyNumberLimit.game_slot == req.gameSlot)
     ).all()
@@ -223,48 +223,57 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     # 3. Fetch global limit rule
     global_limit = db.query(GlobalLimitRule).first()
 
+    # Calculate user's existing placed count today for this game slot across all previous tickets
+    existing_tickets = db.query(Ticket).filter(
+        Ticket.user_id == user.id,
+        Ticket.game_slot == req.gameSlot
+    ).all()
+
+    placed_count_by_number: dict[str, float] = {}
+    for tkt in existing_tickets:
+        tkt_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else today_str
+        if tkt_date == today_str:
+            for bi in tkt.items:
+                bi_num = bi.number.split(":")[1].strip() if ":" in bi.number else bi.number.strip()
+                placed_count_by_number[bi_num] = placed_count_by_number.get(bi_num, 0.0) + float(bi.count)
+
+    # Track newly requested counts within this incoming batch
+    batch_counts: dict[str, float] = {}
+
     for item in req.items:
         clean_num = item.number.split(":")[1].strip() if ":" in item.number else item.number.strip()
+        raw_num = item.number.strip()
         
-        # Check if number is blocked
-        if clean_num in blocked_set:
+        # Check if number or clean_num is blocked
+        if clean_num in blocked_set or raw_num in blocked_set:
             raise HTTPException(
                 status_code=400,
                 detail="Number cant be played"
             )
 
-        # Calculate user's existing placed count today for clean_num in req.gameSlot
-        existing_tickets = db.query(Ticket).filter(
-            Ticket.user_id == user.id,
-            Ticket.game_slot == req.gameSlot
-        ).all()
-
-        current_placed_count = 0.0
-        for tkt in existing_tickets:
-            tkt_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else today_str
-            if tkt_date == today_str:
-                for bi in tkt.items:
-                    bi_num = bi.number.split(":")[1].strip() if ":" in bi.number else bi.number.strip()
-                    if bi_num == clean_num:
-                        current_placed_count += bi.count
+        current_placed = placed_count_by_number.get(clean_num, 0.0)
+        current_batch = batch_counts.get(clean_num, 0.0)
+        total_requested = current_placed + current_batch + float(item.count)
 
         # Check agency limit rule
-        spec_lim = next((l for l in agency_limits if l.number == clean_num), None)
+        spec_lim = next((l for l in agency_limits if l.number.strip() == clean_num or l.number.strip() == raw_num), None)
         if spec_lim:
-            if current_placed_count + item.count > spec_lim.max_count:
+            if total_requested > spec_lim.max_count:
                 raise HTTPException(
                     status_code=400,
                     detail="Number Overloaded! Not in Booked."
                 )
 
-        # Check global limit rule
+        # Check global limit rule ("Limit All")
         if global_limit and global_limit.is_enabled:
             if global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot:
-                if current_placed_count + item.count > global_limit.default_max_count:
+                if total_requested > global_limit.default_max_count:
                     raise HTTPException(
                         status_code=400,
                         detail="Number Overloaded! Not in Booked."
                     )
+
+        batch_counts[clean_num] = current_batch + float(item.count)
 
     if req.actionType == "PAY" and user.balance < req.totalAmount:
         raise HTTPException(
@@ -459,7 +468,7 @@ def submit_issue(req: IssueCreateSchema, payload: dict = Depends(get_current_cus
     }
 
 @router.get("/limits")
-def get_customer_limits(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+def get_customer_limits(db: Session = Depends(get_db)):
     blocked_rules = db.query(BlockedNumberRule).all()
     agency_limits = db.query(AgencyNumberLimit).all()
     global_limit = db.query(GlobalLimitRule).first()
