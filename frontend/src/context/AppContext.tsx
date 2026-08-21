@@ -601,10 +601,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
       }
       
-      // Offline / Local fallback: check registeredUsers by username
+      // Offline / Local fallback: check registeredUsers by username, agency name, or email
       const matchedAgency = registeredUsers.find(
         (u) =>
-          u.username.toLowerCase() === inputClean.toLowerCase()
+          u.username.toLowerCase() === inputClean.toLowerCase() ||
+          u.name.toLowerCase() === inputClean.toLowerCase() ||
+          (u.email && u.email.toLowerCase() === inputClean.toLowerCase())
       );
       if (matchedAgency) {
         if (matchedAgency.isActive === false) {
@@ -615,6 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         setCurrentUser(matchedAgency);
         setIsAdminLoggedIn(false);
+        setPlacedTickets([]);
         setActiveGameSlot('3 PM Game');
         addToast(`Welcome back, ${matchedAgency.name}!`, 'success');
         setCurrentView('GAME_DASHBOARD');

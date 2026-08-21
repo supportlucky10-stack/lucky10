@@ -90,11 +90,13 @@ def register_customer(req: RegisterRequest, request: Request, db: Session = Depe
 @router.post("/customer/login")
 def login_customer(req: LoginRequest, request: Request, db: Session = Depends(get_db)):
     check_rate_limit(request)
-    u_input = req.username.strip().lower()
+    input_str = req.username.strip()
     p_input = req.password.strip()
 
     user = db.query(User).filter(
-        (User.username.ilike(req.username.strip()))
+        (User.username.ilike(input_str)) |
+        (User.name.ilike(input_str)) |
+        (User.email.ilike(input_str))
     ).first()
 
     is_prod = os.getenv("ENVIRONMENT", "").lower() in ("production", "prod") or os.getenv("RAILWAY_ENVIRONMENT") is not None
@@ -107,7 +109,7 @@ def login_customer(req: LoginRequest, request: Request, db: Session = Depends(ge
             if new_hash:
                 user.password_hash = new_hash
                 db.commit()
-        elif not is_prod and u_input == "demo" and p_input in ["123", "demo123", "demo"]:
+        elif not is_prod and input_str.lower() in ["demo", "demouser", "demo player"] and p_input in ["123", "demo123", "demo"]:
             valid_password = True
 
     if not user or not valid_password:

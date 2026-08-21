@@ -63,9 +63,28 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
     slug = "".join(c for c in username.lower() if c.isalnum() or c == "_") or "agency"
     email = f"{slug}@lucky10.com"
 
-    existing = db.query(User).filter(User.username == username).first()
+    existing = db.query(User).filter(
+        (User.username.ilike(username)) | (User.name.ilike(agency_name))
+    ).first()
     if existing:
-        raise HTTPException(status_code=400, detail=f"Username '{username}' already exists. Please choose a different username.")
+        existing.name = agency_name
+        existing.username = username
+        existing.password_hash = get_password_hash(req.password.strip())
+        existing.mode = req.mode or "With Commission"
+        existing.is_active = True
+        db.commit()
+        db.refresh(existing)
+        return {
+            "id": existing.id,
+            "name": existing.name,
+            "email": existing.email,
+            "username": existing.username,
+            "mode": existing.mode,
+            "balance": existing.balance,
+            "isActive": existing.is_active,
+            "bankDetails": None,
+            "createdAt": existing.created_at.strftime("%Y-%m-%d") if existing.created_at else "",
+        }
 
     new_user = User(
         id=f"user_{uuid.uuid4().hex[:12]}",
