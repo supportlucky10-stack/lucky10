@@ -259,7 +259,22 @@ export const AdminReportsView: React.FC = () => {
       const totalBills = userTkts.length;
       const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
 
-      const userPayouts = payoutLogs
+      // Automatically compute winning prizes won by this user's tickets against published results
+      let userWinningPrizes = 0;
+      userTkts.forEach((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const res = getResultForSlotAndDate(t.gameSlot, tDate);
+        if (res) {
+          t.items.forEach((item: any) => {
+            const evalRes = evaluateBetItem(item, res);
+            if (evalRes.isWinner) {
+              userWinningPrizes += evalRes.winAmount;
+            }
+          });
+        }
+      });
+
+      const manualPayouts = payoutLogs
         .filter((p) => {
           const matchesUser = p.userId === user.id || p.userName === user.name;
           if (!matchesUser) return false;
@@ -269,6 +284,8 @@ export const AdminReportsView: React.FC = () => {
           return true;
         })
         .reduce((sum, p) => sum + (p.amount || 0), 0);
+
+      const userPayouts = userWinningPrizes + manualPayouts;
 
       let commissionPercent = 0.20;
       const userMode = user.mode || '';
@@ -280,7 +297,7 @@ export const AdminReportsView: React.FC = () => {
 
       return { user, totalBills, totalGross, totalPayouts: userPayouts, totalCommission, net };
     });
-  }, [registeredUsers, userSearchQuery, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
+  }, [registeredUsers, userSearchQuery, placedTickets, payoutLogs, fromDate, toDate, todayStr, getResultForSlotAndDate]);
 
   const selectedUserTickets = useMemo(() => {
     if (!selectedReportUser) return [];
@@ -326,8 +343,23 @@ export const AdminReportsView: React.FC = () => {
       return true;
     });
 
+    let userWinningPrizes = 0;
+    userTkts.forEach((t) => {
+      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const res = getResultForSlotAndDate(t.gameSlot, tDate);
+      if (res) {
+        t.items.forEach((item: any) => {
+          const evalRes = evaluateBetItem(item, res);
+          if (evalRes.isWinner) {
+            userWinningPrizes += evalRes.winAmount;
+          }
+        });
+      }
+    });
+
+    const manualPayouts = userPays.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const totalPayouts = userWinningPrizes + manualPayouts;
     const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
-    const totalPayouts = userPays.reduce((sum, p) => sum + (p.amount || 0), 0);
     const totalBills = userTkts.length;
 
     let commissionPercent = 0.20;
@@ -343,13 +375,29 @@ export const AdminReportsView: React.FC = () => {
       const slotGross = slotTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
       const slotBills = slotTkts.length;
       const slotComm = Math.round(slotGross * commissionPercent);
-      const slotPayouts = userPays.filter((p) => (p as any).gameSlot === slot).reduce((sum, p) => sum + (p.amount || 0), 0);
+      
+      let slotWinningPrizes = 0;
+      slotTkts.forEach((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const res = getResultForSlotAndDate(t.gameSlot, tDate);
+        if (res) {
+          t.items.forEach((item: any) => {
+            const evalRes = evaluateBetItem(item, res);
+            if (evalRes.isWinner) {
+              slotWinningPrizes += evalRes.winAmount;
+            }
+          });
+        }
+      });
+
+      const slotManualPays = userPays.filter((p) => (p as any).gameSlot === slot).reduce((sum, p) => sum + (p.amount || 0), 0);
+      const slotPayouts = slotWinningPrizes + slotManualPays;
       const slotNet = slotGross - slotPayouts - slotComm;
       return { slot, bills: slotBills, gross: slotGross, payouts: slotPayouts, commission: slotComm, net: slotNet };
     });
 
     return { user: selectedPerformanceUser, totalBills, totalGross, totalPayouts, totalCommission, net, slotBreakdown };
-  }, [selectedPerformanceUser, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
+  }, [selectedPerformanceUser, placedTickets, payoutLogs, fromDate, toDate, todayStr, getResultForSlotAndDate]);
 
   const globalTotalGross = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalGross, 0), [userPerformanceList]);
   const globalTotalCommission = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalCommission, 0), [userPerformanceList]);
