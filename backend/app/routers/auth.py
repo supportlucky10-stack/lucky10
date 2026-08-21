@@ -110,8 +110,6 @@ def login_customer(req: LoginRequest, request: Request, db: Session = Depends(ge
             if new_hash:
                 user.password_hash = new_hash
                 db.commit()
-        elif not is_prod and input_str.lower() in ["demo", "demouser", "demo player"] and p_input in ["123", "demo123", "demo"]:
-            valid_password = True
 
     if not user or not valid_password:
         raise HTTPException(status_code=401, detail="Invalid username or password")

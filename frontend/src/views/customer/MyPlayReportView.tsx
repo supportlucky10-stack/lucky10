@@ -2147,7 +2147,7 @@ export const MyPlayReportView: React.FC = () => {
                   {filteredDailyRows.map((row, idx) => {
                     const comm = Math.round(row.sale * userCommissionPercent);
                     const rowTotal = row.sale - row.prize - comm;
-                    const customerDisplayName = currentUser?.name || currentUser?.username || 'DEMO PLAYER';
+                    const customerDisplayName = currentUser?.name || currentUser?.username || 'PLAYER';
                     const isNegative = rowTotal < 0;
                     return (
                       <div

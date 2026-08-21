@@ -159,25 +159,8 @@ def seed_db(force: bool = False, dev: bool = False):
         yesterday_str = (now_utc - timedelta(days=1)).strftime("%Y-%m-%d")
         day_before_str = (now_utc - timedelta(days=2)).strftime("%Y-%m-%d")
 
-        # ── 1. Seed Demo Agencies ──
+        # ── 1. Seed Initial Agencies ──
         agencies_data = [
-            {
-                "id": "user_demo_001",
-                "name": "Demo Agency",
-                "email": "demo@lucky10.com",
-                "username": "demo",
-                "password": "123",
-                "role": UserRole.CUSTOMER,
-                "balance": 8500.0,
-                "mode": "With Commission (20%)",
-                "bank": {
-                    "account_holder_name": "Demo Agency Pvt Ltd",
-                    "account_number": "50100438291032",
-                    "bank_name": "HDFC Bank",
-                    "ifsc": "HDFC0001234",
-                    "branch_name": "MG Road, Bengaluru",
-                },
-            },
             {
                 "id": "user_sriganesh_002",
                 "name": "Sri Ganesh Agency",
@@ -527,38 +510,7 @@ def seed_db(force: bool = False, dev: bool = False):
                     {"id": "bet_024", "number": "B:7", "count": 15, "type": "B", "unit_price": 10, "total_amount": 150},
                 ]
             },
-            # 9. Demo Agency -> Customer: Mahesh Babu (Winner: 1 PM 4th Prize 194)
-            {
-                "id": "PAY-108299",
-                "user_id": "user_demo_001",
-                "customer_name": "Mahesh Babu",
-                "game_slot": "1 PM Game",
-                "total_amount": 300.0,
-                "status": "WON",
-                "win_amount": 1000.0,
-                "placed_at": now_utc - timedelta(hours=3, minutes=15),
-                "items": [
-                    {"id": "bet_025", "number": "194", "count": 20, "type": "SUPER", "unit_price": 10, "total_amount": 200},
-                    {"id": "bet_026", "number": "408", "count": 10, "type": "SUPER", "unit_price": 10, "total_amount": 100},
-                ]
-            },
-            # 10. Demo Agency -> Customer: Rajesh Sharma (Winner: 3 PM 1st Prize 512)
-            {
-                "id": "PAY-108300",
-                "user_id": "user_demo_001",
-                "customer_name": "Rajesh Sharma",
-                "game_slot": "3 PM Game",
-                "total_amount": 550.0,
-                "status": "WON",
-                "win_amount": 7500.0,
-                "placed_at": now_utc - timedelta(hours=2, minutes=10),
-                "items": [
-                    {"id": "bet_027", "number": "512", "count": 15, "type": "SUPER", "unit_price": 10, "total_amount": 150},
-                    {"id": "bet_028", "number": "934", "count": 20, "type": "BOX", "unit_price": 10, "total_amount": 200},
-                    {"id": "bet_029", "number": "C:2", "count": 20, "type": "C", "unit_price": 10, "total_amount": 200},
-                ]
-            },
-            # 11. Sri Ganesh Agency -> Customer: Sunil Shetty (Yesterday 1 PM Winner 418)
+            # 9. Sri Ganesh Agency -> Customer: Sunil Shetty (Yesterday 1 PM Winner 418)
             {
                 "id": "PAY-107101",
                 "user_id": "user_sriganesh_002",

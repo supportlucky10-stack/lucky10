@@ -146,7 +146,7 @@ export const UpdateBankDetailsView: React.FC = () => {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Demo User"
+                  placeholder="e.g. Agency Name"
                   value={accountHolderName}
                   onChange={(e) => setAccountHolderName(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white text-black placeholder-neutral-500 font-semibold focus:outline-none focus:ring-2 focus:ring-gold text-xs sm:text-sm shadow"

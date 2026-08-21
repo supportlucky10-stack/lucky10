@@ -73,26 +73,6 @@ interface AppContextType {
 
 const defaultAgenciesList: UserAccount[] = [
   {
-    id: 'user_demo_001',
-    name: 'Demo Agency',
-    username: 'demo',
-    email: 'demo@lucky10.com',
-    password: '123',
-    role: 'CUSTOMER',
-    balance: 8500,
-    mode: 'With Commission (20%)',
-    isActive: true,
-    createdAt: new Date().toISOString().split('T')[0],
-    bankDetails: {
-      accountHolderName: 'Demo Agency Pvt Ltd',
-      accountNo: '50100438291032',
-      bankName: 'HDFC Bank',
-      ifsc: 'HDFC0001234',
-      branchName: 'MG Road, Bengaluru',
-      updatedAt: new Date().toISOString().split('T')[0],
-    },
-  },
-  {
     id: 'user_sriganesh_002',
     name: 'Sri Ganesh Agency',
     username: 'sriganesh',
@@ -173,8 +153,6 @@ const defaultAgenciesList: UserAccount[] = [
     },
   },
 ];
-
-const defaultDemoUser: UserAccount = defaultAgenciesList[0];
 
 const START_BILL_ID = 2243297;
 
@@ -439,12 +417,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (isAdminLoggedIn) {
         adminService.getAllUsers().then((users) => {
           if (users && users.length > 0) {
-            const hasDemo = users.some(
-              (u) => u.username?.toLowerCase() === 'demo' || u.name?.toLowerCase() === 'demo player'
-            );
-            setRegisteredUsers(hasDemo ? users : [defaultDemoUser, ...users]);
+            setRegisteredUsers(users);
           } else {
-            setRegisteredUsers([defaultDemoUser]);
+            setRegisteredUsers(defaultAgenciesList);
           }
         }).catch(() => {});
 
@@ -575,9 +550,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: ok, error: ok ? undefined : 'Invalid admin password' };
     }
 
-    const isDemo = inputClean.toLowerCase() === 'demo' || inputClean.toLowerCase() === 'demouser' || inputClean.toLowerCase() === 'demo player';
-    const isDemoPassValid = !passClean || ['123', 'demo123', 'demo'].includes(passClean.toLowerCase());
-
     // 1. Perform Live Backend Authentication
     try {
       const res = await authService.loginCustomer(inputClean, passClean);
@@ -601,15 +573,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return { success: true };
       }
     } catch (err: any) {
-      // If Demo credentials, grant access immediately even if backend is offline on Vercel
-      if (isDemo && isDemoPassValid) {
-        setCurrentUser(defaultDemoUser);
-        setIsAdminLoggedIn(false);
-        addToast('Welcome back, Demo Player!', 'success');
-        setCurrentView('GAME_DASHBOARD');
-        return { success: true };
-      }
-
       const errMsg = err?.message || 'Login failed';
       const lower = errMsg.toLowerCase();
       if (lower.includes('deactivated') || lower.includes('disabled') || lower.includes('inactive')) {
@@ -627,7 +590,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (matchedAgency.isActive === false) {
           return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
         }
-        if (matchedAgency.password && passClean && passClean !== matchedAgency.password && passClean !== '123' && passClean !== 'demo123') {
+        if (matchedAgency.password && passClean && passClean !== matchedAgency.password && passClean !== '123') {
           return { success: false, error: 'Invalid password for Agency / User.' };
         }
         setCurrentUser(matchedAgency);
@@ -644,16 +607,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
 
       return { success: false, error: errMsg };
-    }
-
-    if (isDemo && isDemoPassValid) {
-      setCurrentUser(defaultDemoUser);
-      setIsAdminLoggedIn(false);
-      setPlacedTickets([]);
-      setActiveGameSlot('3 PM Game');
-      addToast('Welcome back, Demo Player!', 'success');
-      setCurrentView('GAME_DASHBOARD');
-      return { success: true };
     }
 
     return { success: false, error: 'Invalid Agency Name / Username or Password.' };
@@ -858,7 +811,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addToBetSlip = (item: Omit<BetSlipItem, 'id'>): boolean => {
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
     const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
     if (!validation.ok) {
@@ -890,7 +843,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return null;
     }
 
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     for (const item of betSlip) {
       const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
       const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
@@ -936,12 +889,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           addToast(errMsg, 'error');
           return null;
         }
-        // Fallback for offline demo mode only
         const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
           id: nextId,
           ticketId: nextId,
-          userId: currentUser?.id || 'user_demo_001',
+          userId: currentUser?.id || '',
           customerName: cleanCustName,
           gameSlot: activeGameSlot,
           items: [...betSlip],
@@ -983,7 +935,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return false;
     }
 
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     for (const item of betSlip) {
       const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
       const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
@@ -1015,12 +967,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           addToast(errMsg, 'error');
           return false;
         }
-        // Fallback for offline demo mode only
         const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
           id: nextId,
           ticketId: nextId,
-          userId: currentUser?.id || 'user_demo_001',
+          userId: currentUser?.id || '',
           customerName: cleanCustName,
           gameSlot: activeGameSlot,
           items: [...betSlip],

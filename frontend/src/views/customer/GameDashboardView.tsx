@@ -191,7 +191,7 @@ export const GameDashboardView: React.FC = () => {
     const rawNum = isReverse ? startRange.trim() : inputNum.trim();
     const cnt = parseInt(inputCount, 10);
     if (rawNum && rawNum.length === activeMode && !isNaN(cnt) && cnt > 0) {
-      const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+      const agencyId = currentUser?.id || currentUser?.username || '';
       const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, cnt);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') {
@@ -221,7 +221,7 @@ export const GameDashboardView: React.FC = () => {
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
 
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     let blockedFailed = false;
     let overloadFailed = false;
     let addedCount = 0;
@@ -280,7 +280,7 @@ export const GameDashboardView: React.FC = () => {
 
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     let blockedFailed = false;
     let overloadFailed = false;
     let addedCount = 0;
@@ -369,7 +369,7 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+    const agencyId = currentUser?.id || currentUser?.username || '';
     let blockedFailed = false;
     let overloadFailed = false;
     let addedCount = 0;
@@ -747,7 +747,7 @@ export const GameDashboardView: React.FC = () => {
                         const num = isReverse ? startRange.trim() : inputNum.trim();
                         const bCnt = parseInt(boxCount, 10);
                         if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
-                          const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+                          const agencyId = currentUser?.id || currentUser?.username || '';
                           const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
                           if (!val.ok) {
                             if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
@@ -830,7 +830,7 @@ export const GameDashboardView: React.FC = () => {
                         const num = inputNum.trim();
                         const bCnt = parseInt(boxCount, 10);
                         if (num.length === 3 && !isNaN(bCnt) && bCnt > 0) {
-                          const agencyId = currentUser?.id || currentUser?.username || 'user_demo_001';
+                          const agencyId = currentUser?.id || currentUser?.username || '';
                           const val = checkBetEligibility(agencyId, activeGameSlot, num, bCnt);
                           if (!val.ok) {
                             if (val.type === 'BLOCKED') setIsBlockedModalOpen(true);
