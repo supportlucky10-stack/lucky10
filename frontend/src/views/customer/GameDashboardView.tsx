@@ -672,31 +672,45 @@ export const GameDashboardView: React.FC = () => {
             <div>
               {activeMode === 1 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(['A', 'B', 'C', 'ALL'] as const).map((pos) => (
+                  {(['A', 'B', 'C'] as const).map((pos) => (
                     <button
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]`}
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#1e40af] via-[#1e3a8a] to-[#172554] text-[#dbeafe] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#3b82f6] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pos}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => handleMode1Add('ALL')}
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                  >
+                    ALL
+                  </button>
                 </div>
               )}
 
               {activeMode === 2 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(['AB', 'AC', 'BC', 'ALL'] as const).map((pair) => (
+                  {(['AB', 'AC', 'BC'] as const).map((pair) => (
                     <button
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className={`w-full h-10 sm:h-11 ${theme.buttonGradient} ${theme.buttonText} font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border ${theme.buttonBorder} cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]`}
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#065f46] via-[#064e3b] to-[#022c22] text-[#d1fae5] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#10b981] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => handleMode2Add('ALL')}
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#7e6914] via-[#5e4e0e] to-[#3b3108] text-[#fce888] font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a68c22] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                  >
+                    ALL
+                  </button>
                 </div>
               )}
 
