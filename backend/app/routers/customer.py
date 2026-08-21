@@ -404,6 +404,25 @@ def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session 
     )
     return [format_ticket(t) for t in tickets]
 
+@router.delete("/tickets/{ticket_id}")
+def delete_user_ticket(ticket_id: str, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
+    ticket = db.query(Ticket).filter(
+        Ticket.id == ticket_id,
+        (Ticket.user_id == user.id) | (Ticket.user_id == user.username) | (Ticket.user_id == user.name)
+    ).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    try:
+        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete()
+        db.delete(ticket)
+        db.commit()
+        return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
+
 @router.get("/bank-details")
 def get_bank_details(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
     check_user_active(db.query(User).filter(User.id == payload["sub"]).first())

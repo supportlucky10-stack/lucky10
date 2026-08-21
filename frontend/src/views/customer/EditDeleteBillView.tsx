@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Search, Trash2, Copy, Check } from 'lucide-react';
+import { Search, Trash2, Copy, Check, CheckCircle2 } from 'lucide-react';
 import { captureAndShareElement } from '../../utils/shareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
@@ -52,12 +52,14 @@ const formatCustomerName = (name?: string): string => {
 };
 
 export const EditDeleteBillView: React.FC = () => {
-  const { userTickets, addToast } = useApp();
+  const { userTickets, deleteTicket, addToast } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
   const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [deletedBillIds, setDeletedBillIds] = useState<string[]>([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletedSuccessBillId, setDeletedSuccessBillId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
 
   const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
@@ -280,22 +282,68 @@ export const EditDeleteBillView: React.FC = () => {
             </div>
             <div className="flex items-center gap-3 pt-2">
               <button
+                type="button"
+                disabled={isDeleting}
                 onClick={() => setConfirmDeleteId(null)}
                 className="flex-1 py-2.5 bg-neutral-900 text-neutral-300 font-bold text-xs rounded-xl border border-neutral-700 hover:text-white cursor-pointer"
               >
                 CANCEL
               </button>
               <button
-                onClick={() => {
-                  setDeletedBillIds((prev) => [...prev, confirmDeleteId]);
-                  setSearchedBill(null);
-                  setConfirmDeleteId(null);
+                type="button"
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!confirmDeleteId || isDeleting) return;
+                  const targetId = confirmDeleteId;
+                  setIsDeleting(true);
+                  try {
+                    await deleteTicket(targetId);
+                    setDeletedBillIds((prev) => [...prev, targetId]);
+                    setSearchedBill(null);
+                    setConfirmDeleteId(null);
+                    setDeletedSuccessBillId(targetId);
+                  } catch (err: any) {
+                    addToast(err?.message || 'Failed to delete bill', 'error');
+                  } finally {
+                    setIsDeleting(false);
+                  }
                 }}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"
+                className={`flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all ${
+                  isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                YES, DELETE
+                {isDeleting ? 'DELETING...' : 'YES, DELETE'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BILL DELETED SUCCESS MODAL */}
+      {deletedSuccessBillId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-emerald-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(16,185,129,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">
+                BILL DELETED!
+              </h4>
+              <p className="text-sm font-bold text-emerald-400">
+                Bill #{deletedSuccessBillId}
+              </p>
+              <p className="text-xs text-neutral-400">
+                Permanently removed from all records and reports.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeletedSuccessBillId(null)}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}

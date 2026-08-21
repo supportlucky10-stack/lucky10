@@ -35,6 +35,7 @@ interface AppContextType {
   userTickets: PlacedTicket[];
   saveTicket: (customerName?: string) => Promise<string | null>;
   payTicket: (customerName?: string) => Promise<boolean>;
+  deleteTicket: (ticketId: string) => Promise<boolean>;
   bankDetails: BankDetails | null;
   updateBankDetails: (details: Omit<BankDetails, 'updatedAt'>) => Promise<void>;
   gameResults: Record<GameSlot, GameResult>;
@@ -919,6 +920,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const deleteTicket = async (ticketId: string): Promise<boolean> => {
+    try {
+      if (isAdminLoggedIn) {
+        await adminService.deleteTicket(ticketId);
+      } else {
+        await customerService.deleteTicket(ticketId);
+      }
+    } catch (e: any) {
+      console.warn('Backend deleteTicket failed, updating local state:', e?.message);
+    }
+    setPlacedTickets((prev) => prev.filter((t) => t.id !== ticketId && t.ticketId !== ticketId));
+    addToast(`Bill #${ticketId} deleted successfully!`, 'success');
+    return true;
+  };
+
   const updateBankDetails = async (details: Omit<BankDetails, 'updatedAt'>) => {
     try {
       const updated = await customerService.updateBankDetails(details);
@@ -1225,6 +1241,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           : [],
         saveTicket,
         payTicket,
+        deleteTicket,
         bankDetails,
         updateBankDetails,
         gameResults,

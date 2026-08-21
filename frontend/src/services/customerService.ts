@@ -29,6 +29,12 @@ export const customerService = {
     return await apiRequest<PlacedTicket[]>('/api/customer/tickets', { method: 'GET' });
   },
 
+  async deleteTicket(ticketId: string): Promise<{ success: boolean; message: string }> {
+    return await apiRequest<{ success: boolean; message: string }>(`/api/customer/tickets/${ticketId}`, {
+      method: 'DELETE',
+    });
+  },
+
   async getBankDetails(): Promise<BankDetails | null> {
     return await apiRequest<BankDetails | null>('/api/customer/bank-details', { method: 'GET' });
   },

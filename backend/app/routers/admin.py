@@ -483,6 +483,21 @@ def get_all_admin_tickets(admin_payload: dict = Depends(get_current_admin), db: 
         })
     return out
 
+@router.delete("/tickets/{ticket_id}")
+def delete_admin_ticket(ticket_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+
+    try:
+        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete()
+        db.delete(ticket)
+        db.commit()
+        return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
+
 @router.get("/reports")
 def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
