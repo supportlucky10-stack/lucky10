@@ -90,7 +90,7 @@ export const TotalCountView: React.FC = () => {
   // Dataset generator: parses real added bills into game count entries
   const countDataset: CountRowItem[] = useMemo(() => {
     const map = new Map<string, CountRowItem>();
-    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+    const ticketSource = userTickets;
 
     const matchedTickets = ticketSource.filter((t) => {
       let tDate = todayStr;

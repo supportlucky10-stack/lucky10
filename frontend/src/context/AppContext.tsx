@@ -410,7 +410,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (currentUser && !isAdminLoggedIn) {
         customerService.getUserTickets().then((tkts) => {
-          if (tkts && tkts.length > 0) setPlacedTickets(tkts);
+          if (tkts) {
+            setPlacedTickets(tkts);
+          }
         }).catch(() => {});
 
         customerService.getBankDetails().then((b) => {
@@ -629,6 +631,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isDemo && isDemoPassValid) {
       setCurrentUser(defaultDemoUser);
       setIsAdminLoggedIn(false);
+      setPlacedTickets([]);
       setActiveGameSlot('3 PM Game');
       addToast('Welcome back, Demo Player!', 'success');
       setCurrentView('GAME_DASHBOARD');
@@ -664,6 +667,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(null);
     setIsAdminLoggedIn(false);
     setBetSlip([]);
+    setPlacedTickets([]);
     setActiveGameSlot('3 PM Game');
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
@@ -1246,7 +1250,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeFromBetSlip,
         clearBetSlip,
         placedTickets,
-        userTickets: currentUser ? placedTickets.filter((t) => !t.userId || t.userId === currentUser.id || t.userId === 'user_demo_001') : placedTickets,
+        userTickets: currentUser
+          ? placedTickets.filter((t) => {
+              if (currentUser.role === 'ADMIN') return true;
+              const matchId = t.userId === currentUser.id;
+              const agencyName = ((t as any).agencyName || '').toLowerCase();
+              const userName = ((t as any).userName || '').toLowerCase();
+              const cUsername = (currentUser.username || '').toLowerCase();
+              const cName = (currentUser.name || '').toLowerCase();
+              const matchAgency = agencyName && (agencyName === cUsername || agencyName === cName);
+              const matchUser = userName && (userName === cUsername || userName === cName);
+              return matchId || matchAgency || matchUser;
+            })
+          : [],
         saveTicket,
         payTicket,
         bankDetails,

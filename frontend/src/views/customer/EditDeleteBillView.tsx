@@ -52,7 +52,7 @@ const formatCustomerName = (name?: string): string => {
 };
 
 export const EditDeleteBillView: React.FC = () => {
-  const { userTickets, placedTickets, addToast } = useApp();
+  const { userTickets, addToast } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
   const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -83,7 +83,7 @@ export const EditDeleteBillView: React.FC = () => {
       return;
     }
 
-    const allBillsPool = placedTickets.length > 0 ? placedTickets : userTickets;
+    const allBillsPool = userTickets;
     const found = allBillsPool.find(
       (b: any) => b.id.toLowerCase() === query.toLowerCase()
     );

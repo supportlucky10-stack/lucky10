@@ -7,7 +7,7 @@ import { evaluateBetItem } from '../../utils/gameRulesEngine';
 import { getLocalDateStr } from '../../utils/dateUtils';
 
 export const TodaysWinningNumbersView: React.FC = () => {
-  const { goBack, placedTickets, userTickets, getResultForSlotAndDate } = useApp();
+  const { goBack, userTickets, getResultForSlotAndDate } = useApp();
   const [activeTab, setActiveTab] = useState<'TODAYS_WINNERS' | 'PREVIOUS_HISTORY'>('TODAYS_WINNERS');
   const [selectedSlot, setSelectedSlot] = useState<string>('ALL');
   const [selectedDate, setSelectedDate] = useState<string>(
@@ -18,7 +18,7 @@ export const TodaysWinningNumbersView: React.FC = () => {
   const slotOptions = ['ALL', ...games];
 
   const todayStr = getLocalDateStr();
-  const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+  const ticketSource = userTickets;
 
   // Dynamic Today's Winners calculation based on gameRulesEngine
   const todayWinners = useMemo(() => {

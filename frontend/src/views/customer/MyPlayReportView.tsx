@@ -111,6 +111,25 @@ export const MyPlayReportView: React.FC = () => {
   const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
   const detailLongPressTimerRef = React.useRef<any>(null);
 
+  // Strictly isolate tickets for the logged-in user / agency
+  const currentUserTickets = React.useMemo(() => {
+    const pool = userTickets.length > 0 ? userTickets : placedTickets;
+    if (!currentUser) return [];
+    if (currentUser.role === 'ADMIN') return pool;
+    const cId = currentUser.id;
+    const cUsername = (currentUser.username || '').toLowerCase();
+    const cName = (currentUser.name || '').toLowerCase();
+
+    return pool.filter((t) => {
+      const matchId = t.userId === cId;
+      const agencyName = ((t as any).agencyName || '').toLowerCase();
+      const userName = ((t as any).userName || '').toLowerCase();
+      const matchAgency = agencyName && (agencyName === cUsername || agencyName === cName);
+      const matchUser = userName && (userName === cUsername || userName === cName);
+      return matchId || matchAgency || matchUser;
+    });
+  }, [currentUser, placedTickets, userTickets]);
+
   const handleShareBillToWhatsApp = () => {
     if (!selectedSingleTicket) return;
     const ticketId = selectedSingleTicket.id;
@@ -216,7 +235,7 @@ export const MyPlayReportView: React.FC = () => {
     const targetFrom = appliedCountFilter.fromDate;
     const targetTo = appliedCountFilter.toDate;
     const targetSlot = appliedCountFilter.slot;
-    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+    const ticketSource = currentUserTickets;
 
     const filtered = ticketSource.filter((tkt) => {
       if (targetSlot !== 'ALL') {
@@ -322,7 +341,7 @@ export const MyPlayReportView: React.FC = () => {
   // Dynamically filter daily rows between dailyFromDate and dailyToDate (inclusive) strictly from placed tickets
   const filteredDailyRows = React.useMemo(() => {
     const dateMap = new Map<string, { date: string; sale: number; prize: number }>();
-    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+    const ticketSource = currentUserTickets;
 
     ticketSource.forEach((t) => {
       const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
@@ -358,7 +377,7 @@ export const MyPlayReportView: React.FC = () => {
     return Array.from(dateMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([_, val]) => val);
-  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets, placedTickets, todayStr, getResultForSlotAndDate]);
+  }, [dailyFromDate, dailyToDate, dailySlotFilter, currentUserTickets, todayStr, getResultForSlotAndDate]);
 
   const userCommissionPercent = React.useMemo(() => {
     const userMode = currentUser?.mode || '';
@@ -383,7 +402,7 @@ export const MyPlayReportView: React.FC = () => {
       { slotName: '8 PM', slotKey: '8 PM Game' },
     ];
 
-    const ticketSource = placedTickets.length > 0 ? placedTickets : userTickets;
+    const ticketSource = currentUserTickets;
 
     return baseSlots.map((slot) => {
       const slotTickets = ticketSource.filter((t) => {
@@ -417,13 +436,13 @@ export const MyPlayReportView: React.FC = () => {
         comm: userComm,
       };
     });
-  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr, userCommissionPercent, getResultForSlotAndDate]);
+  }, [dailyFromDate, dailyToDate, currentUserTickets, todayStr, userCommissionPercent, getResultForSlotAndDate]);
 
   const filteredGameRows = dailySlotFilter === 'ALL'
     ? dynamicGameRows
     : dynamicGameRows.filter((r) => r.slotName === dailySlotFilter);
 
-  const allTickets = placedTickets.length > 0 ? placedTickets : userTickets;
+  const allTickets = currentUserTickets;
 
   // Filter items matching digitFilter & subOptionFilter
   const isItemMatch = (item: any, digitF: string, subF: string) => {
@@ -514,19 +533,7 @@ export const MyPlayReportView: React.FC = () => {
 
   // Filter winning categories strictly from placed tickets matching winning numbers / status
   const displayWinningCategories = React.useMemo(() => {
-    const allPool = placedTickets.length > 0 ? placedTickets : userTickets;
-    const myTickets = currentUser
-      ? allPool.filter(
-          (t) =>
-            t.userId === currentUser.id ||
-            (t as any).agencyName === currentUser.username ||
-            (t as any).agencyName === currentUser.name ||
-            (t as any).userName === currentUser.name ||
-            (currentUser.role === 'ADMIN')
-        )
-      : allPool;
-
-    const ticketsToCheck = myTickets.length > 0 ? myTickets : allPool;
+    const ticketsToCheck = currentUserTickets;
     const catMap = new Map<string, any[]>();
 
     ticketsToCheck.forEach((ticket) => {
@@ -577,7 +584,7 @@ export const MyPlayReportView: React.FC = () => {
     });
 
     return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
-  }, [placedTickets, userTickets, currentUser, winningSlotFilter, winningFromDate, winningToDate, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter, getResultForSlotAndDate, todayStr]);
+  }, [currentUserTickets, winningSlotFilter, winningFromDate, winningToDate, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter, getResultForSlotAndDate, todayStr]);
 
   const winningTotalCount = displayWinningCategories.reduce(
     (acc, cat) => acc + cat.cards.reduce((cAcc: number, c: any) => cAcc + c.count, 0),
