@@ -276,12 +276,16 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
                 t_date = target_date
 
             if t_date == target_date:
-                try:
-                    calculated_win = evaluate_ticket_win(tkt, target_res)
-                    tkt.win_amount = calculated_win
-                    tkt.status = "WON" if calculated_win > 0 else "LOST"
-                except Exception:
-                    pass
+                if not p1:
+                    tkt.win_amount = 0.0
+                    tkt.status = "PENDING"
+                else:
+                    try:
+                        calculated_win = evaluate_ticket_win(tkt, target_res)
+                        tkt.win_amount = calculated_win
+                        tkt.status = "WON" if calculated_win > 0 else "LOST"
+                    except Exception:
+                        pass
 
         db.commit()
         db.refresh(target_res)

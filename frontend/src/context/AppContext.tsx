@@ -1022,6 +1022,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map((t) => {
         const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
         if (t.gameSlot === slot && tDate === targetDate) {
+          if (!resultToApply.prize1 || !resultToApply.prize1.trim()) {
+            return {
+              ...t,
+              winAmount: 0.0,
+              status: 'PENDING',
+            };
+          }
           const evalRes = evaluateTicket(t, resultToApply);
           return {
             ...t,

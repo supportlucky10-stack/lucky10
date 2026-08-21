@@ -140,14 +140,8 @@ export const AdminResultManagementView: React.FC = () => {
 
   const handlePublish1stPrize = async () => {
     const p1 = prize1.trim();
-    if (!p1) {
-      setErrorMessage('Please enter 1st Prize Number before publishing.');
-      setShowErrorModal(true);
-      return;
-    }
-
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    // Top button ONLY publishes 1st Prize. Preserves previously published 2nd-5th prizes if any exist on backend.
+    // Top button publishes or clears 1st Prize.
     const p2 = existing?.prize2 || '';
     const p3 = existing?.prize3 || '';
     const p4 = existing?.prize4 || '';
@@ -162,7 +156,11 @@ export const AdminResultManagementView: React.FC = () => {
     setIs1stPrizeEditing(false);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
-    setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
+    if (!p1) {
+      setSuccessMessage(`1st Prize Number for ${selectedSlot} has been cleared and reset successfully!`);
+    } else {
+      setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
+    }
     setShowSuccessModal(true);
   };
 
@@ -332,10 +330,16 @@ export const AdminResultManagementView: React.FC = () => {
                   className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
                     is1stPrizePublished && !is1stPrizeEditing
                       ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                      : is1stPrizeEditing && !prize1.trim()
+                      ? 'bg-rose-700 hover:bg-rose-600 text-white border-rose-500 cursor-pointer active:scale-95'
                       : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                   }`}
                 >
-                  {is1stPrizePublished && !is1stPrizeEditing ? 'PUBLISHED' : `PUBLISH (${shortSlot})`}
+                  {is1stPrizePublished && !is1stPrizeEditing
+                    ? 'PUBLISHED'
+                    : is1stPrizeEditing && !prize1.trim()
+                    ? `CLEAR (${shortSlot})`
+                    : `PUBLISH (${shortSlot})`}
                 </button>
 
                 {is1stPrizePublished && (

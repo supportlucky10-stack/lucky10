@@ -5,7 +5,7 @@ class GameResultPublishSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     gameSlot: str = Field(..., min_length=1, max_length=50)
-    prize1: str = Field(..., min_length=1, max_length=10)
+    prize1: Optional[str] = Field(default="", max_length=10)
     prize2: Optional[str] = Field(default="", max_length=10)
     prize3: Optional[str] = Field(default="", max_length=10)
     prize4: Optional[str] = Field(default="", max_length=10)
