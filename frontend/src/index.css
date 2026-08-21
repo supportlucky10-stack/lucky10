@@ -160,43 +160,43 @@ code, kbd, samp, pre, .font-mono {
   font-display: swap;
 }
 
-:root {
-  font-family: 'Montserrat', 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
-  color-scheme: dark;
-}
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    box-sizing: border-box;
+  }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+  :root {
+    font-family: 'Montserrat', 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+    color-scheme: dark;
+  }
 
-html, body {
-  font-family: 'Montserrat', 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
-  background-color: #000000;
-  color: #ffffff;
-  width: 100%;
-  min-height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-}
+  html, body {
+    font-family: 'Montserrat', 'Inter', 'Outfit', system-ui, -apple-system, sans-serif;
+    background-color: #000000;
+    color: #ffffff;
+    width: 100%;
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
 
-#root {
-  width: 100%;
-  min-height: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  display: flex;
-  flex-direction: column;
+  #root {
+    width: 100%;
+    min-height: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+  }
 }
 
 /* Metallic Gold Gradients matching PDF screenshots */
