@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle } from 'lucide-react';
 import type { GameSlot } from '../../types';
 
 interface SlotTheme {
@@ -127,6 +127,7 @@ export const GameDashboardView: React.FC = () => {
   const [savedBillId, setSavedBillId] = useState<string | null>(null);
   const [copiedSavedBill, setCopiedSavedBill] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [minCountModalOpen, setMinCountModalOpen] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -185,7 +186,7 @@ export const GameDashboardView: React.FC = () => {
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 5) {
-      addToast('Minimum 5 Count Required!', 'error');
+      setMinCountModalOpen(true);
       return;
     }
 
@@ -609,6 +610,14 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
+                    onBlur={() => {
+                      if (activeMode === 1 && inputCount.trim() !== '') {
+                        const cnt = parseInt(inputCount);
+                        if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
+                          setMinCountModalOpen(true);
+                        }
+                      }
+                    }}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -670,6 +679,14 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Count"
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value)}
+                    onBlur={() => {
+                      if (activeMode === 1 && inputCount.trim() !== '') {
+                        const cnt = parseInt(inputCount);
+                        if (!isNaN(cnt) && cnt > 0 && cnt < 5) {
+                          setMinCountModalOpen(true);
+                        }
+                      }
+                    }}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -865,6 +882,35 @@ export const GameDashboardView: React.FC = () => {
                 clearBetSlip();
               }}
               className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MINIMUM 5 COUNT REQUIRED POP-UP MODAL (1-Digit Game Only) */}
+      {minCountModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">
+                Minimum 5 Count Required!
+              </h4>
+              <p className="text-xs text-neutral-400 font-bold">
+                1-Digit game requires a minimum of 5 count.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setMinCountModalOpen(false);
+                countInputRef.current?.focus();
+              }}
+              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK
             </button>
