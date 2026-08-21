@@ -28,8 +28,8 @@ interface AppContextType {
   activeGameSlot: GameSlot;
   setActiveGameSlot: (slot: GameSlot) => void;
   betSlip: BetSlipItem[];
-  addToBetSlip: (item: Omit<BetSlipItem, 'id'>) => boolean;
-  addBatchToBetSlip: (items: Omit<BetSlipItem, 'id'>[]) => { addedCount: number; blockedCount: number; overloadedCount: number };
+  addToBetSlip: (item: Omit<BetSlipItem, 'id'>, customerName?: string) => boolean;
+  addBatchToBetSlip: (items: Omit<BetSlipItem, 'id'>[], customerName?: string) => { addedCount: number; blockedCount: number; overloadedCount: number };
   removeFromBetSlip: (id: string) => void;
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
@@ -70,7 +70,7 @@ interface AppContextType {
   addBlockedNumber: (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => void;
   removeBlockedNumber: (id: string) => void;
   updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
-  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number, betType?: string, skipBetSlip?: boolean) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
+  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number, betType?: string, customerName?: string, skipBetSlip?: boolean) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
 }
 
 
@@ -555,6 +555,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     number: string,
     newCount: number,
     betType?: string,
+    customerName?: string,
     skipBetSlip: boolean = false
   ): { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' } => {
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
@@ -587,32 +588,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    // Calculate existing count already placed today for this number AND specific bet type in this slot across this agency
-    const agencyTickets = placedTickets.filter((t) => {
-      const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
-      const matchesDate = tDate === todayStr;
-      const matchesSlot = t.gameSlot === slot;
-      const matchesAgency =
-        !agencyIdOrName ||
-        agencyIdOrName === 'ALL' ||
-        t.userId === agencyIdOrName ||
-        ((t as any).agencyName && (t as any).agencyName.toLowerCase() === agencyIdOrName.toLowerCase()) ||
-        ((t as any).userName && (t as any).userName.toLowerCase() === agencyIdOrName.toLowerCase());
-      return matchesDate && matchesSlot && matchesAgency;
-    });
+    const cleanCust = (customerName || '').trim().toLowerCase();
 
+    // Calculate existing count already placed today for this number AND specific bet type in this slot for this customer
     let currentAgencyPlacedCount = 0;
-    agencyTickets.forEach((t) => {
-      t.items.forEach((it) => {
-        const itRaw = (it.number || '').trim();
-        const itType = normType(it.type);
-        const matchesNum = itRaw === fullNum || itRaw === rawNum;
-        const matchesType = !targetType || !itType || itType === targetType;
-        if (matchesNum && matchesType) {
-          currentAgencyPlacedCount += it.count || 1;
-        }
+    if (cleanCust) {
+      const agencyTickets = placedTickets.filter((t) => {
+        const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
+        const matchesDate = tDate === todayStr;
+        const matchesSlot = t.gameSlot === slot;
+        const matchesCust = (t.customerName || '').trim().toLowerCase() === cleanCust;
+        return matchesDate && matchesSlot && matchesCust;
       });
-    });
+
+      agencyTickets.forEach((t) => {
+        t.items.forEach((it) => {
+          const itRaw = (it.number || '').trim();
+          const itType = normType(it.type);
+          const matchesNum = itRaw === fullNum || itRaw === rawNum;
+          const matchesType = !targetType || !itType || itType === targetType;
+          if (matchesNum && matchesType) {
+            currentAgencyPlacedCount += it.count || 1;
+          }
+        });
+      });
+    }
 
     // ALSO count how much of this number is in the CURRENT unsubmitted staging betSlip (if not skipped)
     if (!skipBetSlip) {
@@ -738,7 +738,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const addBatchToBetSlip = (items: Omit<BetSlipItem, 'id'>[]): { addedCount: number; blockedCount: number; overloadedCount: number } => {
+  const addBatchToBetSlip = (items: Omit<BetSlipItem, 'id'>[], customerName?: string): { addedCount: number; blockedCount: number; overloadedCount: number } => {
     const agencyId = currentUser?.id || currentUser?.username || '';
     const validItems: BetSlipItem[] = [];
     let blockedCount = 0;
@@ -752,7 +752,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const normType = (item.type || '').toUpperCase() === 'SUPER' || (item.type || '').toUpperCase() === 'DIRECT' ? 'DIRECT' : ((item.type || '').toUpperCase() === 'BOX' || (item.type || '').toUpperCase() === 'SHUFFLE' ? 'BOX' : item.type);
       const key = `${numToTest}_${normType}`;
       const currentBatchCount = batchCounts[key] || 0;
-      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count + currentBatchCount, item.type);
+      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count + currentBatchCount, item.type, customerName);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') blockedCount++;
         else overloadedCount++;
@@ -790,6 +790,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const agencyId = currentUser?.id || currentUser?.username || '';
+    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
+
     const betSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
@@ -802,7 +804,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     for (const { num, type, count } of Object.values(betSlipCountByKey)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, true);
+      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, cleanCustName, true);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') {
           throw new Error('Number cant be played');
@@ -827,7 +829,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     isSavingTicketRef.current = true;
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
-    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
     try {
       let newTicket: PlacedTicket;
@@ -891,6 +892,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const agencyId = currentUser?.id || currentUser?.username || '';
+    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
+
     const payBetSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
@@ -903,7 +906,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     for (const { num, type, count } of Object.values(payBetSlipCountByKey)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, true);
+      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, cleanCustName, true);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') {
           throw new Error('Number cant be played');
@@ -915,7 +918,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     isPayingTicketRef.current = true;
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
-    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
 
     try {
       let newTicket: PlacedTicket;

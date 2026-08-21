@@ -216,7 +216,7 @@ export const GameDashboardView: React.FC = () => {
       });
     });
 
-    const res = addBatchToBetSlip(itemsToAdd);
+    const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
@@ -265,7 +265,7 @@ export const GameDashboardView: React.FC = () => {
       });
     });
 
-    const res = addBatchToBetSlip(itemsToAdd);
+    const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
@@ -374,7 +374,7 @@ export const GameDashboardView: React.FC = () => {
       }
     });
 
-    const res = addBatchToBetSlip(itemsToAdd);
+    const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
