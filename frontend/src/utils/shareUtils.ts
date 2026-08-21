@@ -1,4 +1,4 @@
-import html2canvas from 'html2canvas';
+import { toBlob } from 'html-to-image';
 
 export interface ShareElementOptions {
   elementId?: string;
@@ -9,7 +9,7 @@ export interface ShareElementOptions {
 }
 
 /**
- * Captures an HTML element as an image using html2canvas and shares it via Web Share API or triggers download + WhatsApp.
+ * Captures an HTML element as a crisp image and shares it via Web Share API or triggers download + WhatsApp.
  */
 export const captureAndShareElement = async ({
   elementId,
@@ -36,23 +36,11 @@ export const captureAndShareElement = async ({
       }
     }
 
-    const canvas = await html2canvas(targetElem, {
-      scale: 2,
-      useCORS: true,
+    const blob = await toBlob(targetElem, {
+      quality: 0.95,
       backgroundColor: '#000000',
-      logging: false,
-      allowTaint: true,
-      onclone: (clonedDoc) => {
-        const clonedTarget = elementId ? clonedDoc.getElementById(elementId) : null;
-        if (clonedTarget) {
-          clonedTarget.style.transform = 'none';
-          clonedTarget.style.boxShadow = 'none';
-        }
-      },
-    });
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.95);
+      pixelRatio: 2,
+      cacheBust: true,
     });
 
     if (!blob) {
@@ -105,7 +93,7 @@ export const captureAndShareElement = async ({
       }
     }
 
-    // 2. Fallback for desktop browsers / environments without file share support:
+    // 2. Fallback for desktop browsers / environments without direct file share support:
     // Trigger download of JPG screenshot image & open WhatsApp
     const link = document.createElement('a');
     link.download = jpgFileName;
