@@ -157,6 +157,24 @@ def change_user_password(user_id: str, payload: dict, admin_payload: dict = Depe
     db.commit()
     return {"message": "Password updated successfully", "id": user.id}
 
+@router.put("/users/{user_id}/mode")
+@router.patch("/users/{user_id}/mode")
+def update_user_mode(user_id: str, payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+    mode = payload.get("mode")
+    if not mode:
+        raise HTTPException(status_code=400, detail="Mode / Commission rate is required")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.mode = str(mode).strip()
+    db.commit()
+    db.refresh(user)
+    return {"message": "Commission mode updated successfully", "id": user.id, "mode": user.mode}
+
 @router.delete("/users/{user_id}")
 def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()

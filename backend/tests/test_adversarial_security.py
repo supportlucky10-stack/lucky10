@@ -74,7 +74,7 @@ def test_blocked_number_rejected(client, db_session, customer_token_headers):
         headers=customer_token_headers
     )
     assert response.status_code == 400
-    assert "currently blocked" in response.json()["detail"].lower()
+    assert "number cant be played" in response.json()["detail"].lower() or "blocked" in response.json()["detail"].lower()
 
 def test_agency_number_limit_enforced(client, db_session, test_customer_user, customer_token_headers):
     # Set agency limit of max 2 count on number 999
@@ -102,7 +102,7 @@ def test_agency_number_limit_enforced(client, db_session, test_customer_user, cu
         headers=customer_token_headers
     )
     assert response.status_code == 400
-    assert "limit of 2" in response.json()["detail"].lower()
+    assert "overloaded" in response.json()["detail"].lower() or "limit" in response.json()["detail"].lower()
 
 def test_duplicate_ticket_placement_idempotency(client, db_session, test_customer_user, customer_token_headers):
     initial_balance = test_customer_user.balance

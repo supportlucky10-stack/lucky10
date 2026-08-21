@@ -49,6 +49,7 @@ def format_user_response(user: User) -> dict:
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
         "balance": float(user.balance) if user.balance is not None else 0.0,
+        "mode": user.mode or "Commission (20%)",
         "isActive": user.is_active if hasattr(user, 'is_active') and user.is_active is not None else True,
         "bankDetails": bank,
         "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),

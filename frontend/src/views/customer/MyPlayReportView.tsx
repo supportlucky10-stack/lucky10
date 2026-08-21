@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { evaluateBetItem } from '../../utils/gameRulesEngine';
+import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
 import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import {
@@ -380,11 +380,7 @@ export const MyPlayReportView: React.FC = () => {
   }, [dailyFromDate, dailyToDate, dailySlotFilter, currentUserTickets, todayStr, getResultForSlotAndDate]);
 
   const userCommissionPercent = React.useMemo(() => {
-    const userMode = currentUser?.mode || '';
-    if (userMode.includes('30%') || userMode.includes('30')) return 0.30;
-    if (userMode.includes('20%') || userMode.includes('20')) return 0.20;
-    if (userMode === 'Without Commission') return 0;
-    return 0.20; // Default 20%
+    return getCommissionPercent(currentUser?.mode);
   }, [currentUser]);
 
   // Aggregate dynamically calculated daily totals based on selected dates and filter

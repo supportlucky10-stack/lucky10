@@ -360,3 +360,22 @@ export function evaluateTicket(ticket: PlacedTicket, result?: GameResultData | n
     winningItems,
   };
 }
+
+/**
+ * Parses user mode and extracts accurate commission rate (e.g. "30%" -> 0.30, "20%" -> 0.20, "Without Commission" -> 0)
+ */
+export function getCommissionPercent(mode?: string): number {
+  if (!mode) return 0.20;
+  const clean = mode.toLowerCase().trim();
+  if (clean.includes('without') || clean.includes('no commission') || clean === '0%' || clean === '0') {
+    return 0;
+  }
+  const match = clean.match(/(\d+(\.\d+)?)\s*%/);
+  if (match) {
+    return parseFloat(match[1]) / 100;
+  }
+  if (clean.includes('30')) return 0.30;
+  if (clean.includes('20')) return 0.20;
+  return 0.20;
+}
+

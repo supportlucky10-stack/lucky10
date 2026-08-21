@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
-import { evaluateBetItem } from '../../utils/gameRulesEngine';
+import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
 import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
 import {
   Users,
@@ -286,12 +286,7 @@ export const AdminReportsView: React.FC = () => {
         .reduce((sum, p) => sum + (p.amount || 0), 0);
 
       const userPayouts = userWinningPrizes + manualPayouts;
-
-      let commissionPercent = 0.20;
-      const userMode = user.mode || '';
-      if (userMode.includes('30%')) commissionPercent = 0.30;
-      else if (userMode === 'Without Commission') commissionPercent = 0;
-
+      const commissionPercent = getCommissionPercent(user.mode);
       const totalCommission = Math.round(totalGross * commissionPercent);
       const net = totalGross - userPayouts - totalCommission;
 
@@ -361,12 +356,7 @@ export const AdminReportsView: React.FC = () => {
     const totalPayouts = userWinningPrizes + manualPayouts;
     const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
     const totalBills = userTkts.length;
-
-    let commissionPercent = 0.20;
-    const userMode = selectedPerformanceUser.mode || '';
-    if (userMode.includes('30%')) commissionPercent = 0.30;
-    else if (userMode === 'Without Commission') commissionPercent = 0;
-
+    const commissionPercent = getCommissionPercent(selectedPerformanceUser.mode);
     const totalCommission = Math.round(totalGross * commissionPercent);
     const net = totalGross - totalPayouts - totalCommission;
 
@@ -516,7 +506,7 @@ export const AdminReportsView: React.FC = () => {
 
   // ── DAILY REPORT COMPUTATIONS ──────────────────────────────────────────────
   const computeDailyReportData = (tickets: PlacedTicket[], fromDateStr: string, toDateStr: string, slotF: string, userDisplayName?: string) => {
-    const dateMap = new Map<string, { date: string; sale: number; prize: number; userDisplayName: string }>();
+    const dateMap = new Map<string, { date: string; sale: number; prize: number; comm: number; userDisplayName: string }>();
 
     tickets.forEach((t) => {
       const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
@@ -525,9 +515,20 @@ export const AdminReportsView: React.FC = () => {
 
       if (slotF === 'ALL' || t.gameSlot.toUpperCase().startsWith(slotF.toUpperCase())) {
         const displayD = formatDateDisplay(tDate);
-        const uName = userDisplayName || (t as any).userName || (t as any).agencyName || 'ALL USERS';
-        const existing = dateMap.get(tDate) || { date: displayD, sale: 0, prize: 0, userDisplayName: uName };
-        existing.sale += t.totalAmount || 0;
+        const uName = (userDisplayName && userDisplayName !== 'ALL USERS') ? userDisplayName : ((t as any).userName || (t as any).agencyName || userDisplayName || 'ALL USERS');
+        const existing = dateMap.get(tDate) || { date: displayD, sale: 0, prize: 0, comm: 0, userDisplayName: uName };
+        const tAmt = t.totalAmount || 0;
+        existing.sale += tAmt;
+
+        const matchedUser = registeredUsers.find(
+          (u) =>
+            u.id === t.userId ||
+            u.username.toLowerCase() === ((t as any).agencyName || '').toLowerCase() ||
+            u.name.toLowerCase() === ((t as any).userName || '').toLowerCase() ||
+            (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()))
+        );
+        const commRate = getCommissionPercent(matchedUser?.mode);
+        existing.comm += Math.round(tAmt * commRate);
 
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
@@ -547,22 +548,12 @@ export const AdminReportsView: React.FC = () => {
         date: formatDateDisplay(fromDateStr),
         sale: 0,
         prize: 0,
+        comm: 0,
         userDisplayName: userDisplayName || 'ALL USERS',
       });
     }
 
-    const rows = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([_, val]) => {
-      let commPct = 0.20;
-      if (val.userDisplayName) {
-        const matched = registeredUsers.find(
-          (u) => u.name.toLowerCase() === val.userDisplayName.toLowerCase() || u.username.toLowerCase() === val.userDisplayName.toLowerCase()
-        );
-        if (matched?.mode?.includes('30%')) commPct = 0.30;
-        else if (matched?.mode === 'Without Commission') commPct = 0;
-      }
-      const comm = Math.round(val.sale * commPct);
-      return { ...val, comm };
-    });
+    const rows = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([_, val]) => val);
     const totalSale = rows.reduce((acc, r) => acc + r.sale, 0);
     const totalPrize = rows.reduce((acc, r) => acc + r.prize, 0);
     const totalComm = rows.reduce((acc, r) => acc + (r.comm || 0), 0);
@@ -583,8 +574,20 @@ export const AdminReportsView: React.FC = () => {
 
       const userSale = slotTickets.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
       let userPrize = 0;
+      let userComm = 0;
 
       slotTickets.forEach((t) => {
+        const tAmt = t.totalAmount || 0;
+        const matchedUser = registeredUsers.find(
+          (u) =>
+            u.id === t.userId ||
+            u.username.toLowerCase() === ((t as any).agencyName || '').toLowerCase() ||
+            u.name.toLowerCase() === ((t as any).userName || '').toLowerCase() ||
+            (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()))
+        );
+        const commRate = getCommissionPercent(matchedUser?.mode);
+        userComm += Math.round(tAmt * commRate);
+
         const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
@@ -597,16 +600,6 @@ export const AdminReportsView: React.FC = () => {
         }
       });
 
-      let commPct = 0.20;
-      if (userDisplayName) {
-        const matched = registeredUsers.find(
-          (u) => u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()
-        );
-        if (matched?.mode?.includes('30%')) commPct = 0.30;
-        else if (matched?.mode === 'Without Commission') commPct = 0;
-      }
-      const userComm = Math.round(userSale * commPct);
-
       return { slotName: slot.slotName, sale: userSale, prize: userPrize, comm: userComm };
     });
 
@@ -617,7 +610,7 @@ export const AdminReportsView: React.FC = () => {
 
   const allUsersDailyData = useMemo(() => {
     return computeDailyReportData(placedTickets, dailyFromDate, dailyToDate, dailySlotFilter, 'ALL USERS');
-  }, [placedTickets, dailyFromDate, dailyToDate, dailySlotFilter, getResultForSlotAndDate, todayStr]);
+  }, [placedTickets, registeredUsers, dailyFromDate, dailyToDate, dailySlotFilter, getResultForSlotAndDate, todayStr]);
 
   const userWiseDailyUsers = useMemo(() => {
     let users = registeredUsers;
@@ -635,7 +628,7 @@ export const AdminReportsView: React.FC = () => {
     );
 
     return computeDailyReportData(userTkts, userDailyFromDate, userDailyToDate, userDailySlotFilter, selectedDailyUser.name);
-  }, [selectedDailyUser, placedTickets, userDailyFromDate, userDailyToDate, userDailySlotFilter, getResultForSlotAndDate, todayStr]);
+  }, [selectedDailyUser, placedTickets, registeredUsers, userDailyFromDate, userDailyToDate, userDailySlotFilter, getResultForSlotAndDate, todayStr]);
 
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none font-sans">

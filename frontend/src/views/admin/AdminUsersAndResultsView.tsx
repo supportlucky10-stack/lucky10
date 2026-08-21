@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Calendar, Users, UserPlus, X, Check, Eye, EyeOff, AlertTriangle, Power, Trash2, KeyRound } from 'lucide-react';
+import type { UserAccount } from '../../types';
+import { Calendar, Users, UserPlus, X, Check, Eye, EyeOff, AlertTriangle, Power, Trash2, KeyRound, Percent } from 'lucide-react';
 
 const formatDateDDMMYY = (dateStr?: string): string => {
   if (!dateStr) return '';
@@ -16,9 +17,14 @@ const formatDateDDMMYY = (dateStr?: string): string => {
 };
 
 export const AdminUsersAndResultsView: React.FC = () => {
-  const { registeredUsers, createUser, deleteUser, changeUserPassword, toggleUserStatus, toggleAllUsersStatus } = useApp();
+  const { registeredUsers, createUser, deleteUser, changeUserPassword, updateUserMode, toggleUserStatus, toggleAllUsersStatus } = useApp();
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Edit Commission State
+  const [userToEditMode, setUserToEditMode] = useState<UserAccount | null>(null);
+  const [selectedEditCommissionRate, setSelectedEditCommissionRate] = useState<'20%' | '30%' | 'Without Commission'>('20%');
+  const [isUpdatingMode, setIsUpdatingMode] = useState<boolean>(false);
 
   // Change Password State
   const [userToChangePassword, setUserToChangePassword] = useState<{ id: string; name: string; username?: string } | null>(null);
@@ -64,7 +70,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
       return;
     }
 
-    const finalMode = `Commission (${commissionRate})`;
+    const finalMode = commissionRate === '30%' ? 'With Commission (30%)' : 'With Commission (20%)';
 
     setIsSubmitting(true);
     try {
@@ -79,6 +85,26 @@ export const AdminUsersAndResultsView: React.FC = () => {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveCommissionRate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userToEditMode) return;
+    const finalMode = selectedEditCommissionRate === '30%'
+      ? 'With Commission (30%)'
+      : selectedEditCommissionRate === 'Without Commission'
+      ? 'Without Commission'
+      : 'With Commission (20%)';
+
+    setIsUpdatingMode(true);
+    try {
+      const ok = await updateUserMode(userToEditMode.id, finalMode);
+      if (ok) {
+        setUserToEditMode(null);
+      }
+    } finally {
+      setIsUpdatingMode(false);
     }
   };
 
@@ -203,6 +229,21 @@ export const AdminUsersAndResultsView: React.FC = () => {
 
                     <div className="flex items-center gap-2 flex-wrap">
                       <button
+                        onClick={() => {
+                          setUserToEditMode(u);
+                          const m = u.mode || '';
+                          if (m.includes('30')) setSelectedEditCommissionRate('30%');
+                          else if (m.includes('Without') || m === '0%') setSelectedEditCommissionRate('Without Commission');
+                          else setSelectedEditCommissionRate('20%');
+                        }}
+                        className="px-2.5 py-1.5 bg-yellow-950/60 hover:bg-yellow-900/80 border border-gold/60 text-gold rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm"
+                        title={`Change commission rate for ${u.name}`}
+                      >
+                        <Percent className="w-3.5 h-3.5 text-gold shrink-0" />
+                        <span>Commission</span>
+                      </button>
+
+                      <button
                         onClick={() => toggleUserStatus(u.id)}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm border ${
                           isUserActive
@@ -247,6 +288,92 @@ export const AdminUsersAndResultsView: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* EDIT COMMISSION MODAL */}
+      {userToEditMode && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border-2 border-gold rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 animate-drop-in text-white font-sans">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-gold/20 border border-gold flex items-center justify-center text-gold">
+                  <Percent className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm text-white">Set Commission Rate</h3>
+                  <p className="text-[10px] text-neutral-400 font-mono">{userToEditMode.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setUserToEditMode(null)}
+                className="text-neutral-400 hover:text-white p-1 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCommissionRate} className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-neutral-400 font-bold uppercase text-[10px]">
+                  Select Commission Percentage :
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEditCommissionRate('20%')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      selectedEditCommissionRate === '20%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    20%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEditCommissionRate('30%')}
+                    className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      selectedEditCommissionRate === '30%'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    30%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEditCommissionRate('Without Commission')}
+                    className={`py-2 px-2 text-[11px] font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                      selectedEditCommissionRate === 'Without Commission'
+                        ? 'bg-gold-metallic text-black border-gold font-extrabold shadow-md'
+                        : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
+                    }`}
+                  >
+                    0% (None)
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-neutral-800">
+                <button
+                  type="button"
+                  onClick={() => setUserToEditMode(null)}
+                  className="w-1/2 py-2 bg-neutral-900 border border-neutral-700 text-neutral-300 rounded-xl text-xs font-bold hover:bg-neutral-800 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingMode}
+                  className="w-1/2 py-2 bg-gold-metallic text-black font-black text-xs rounded-xl shadow hover:opacity-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isUpdatingMode ? 'Saving...' : 'Save Rate'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {userToChangePassword && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">

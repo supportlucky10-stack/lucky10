@@ -38,6 +38,13 @@ export const adminService = {
     });
   },
 
+  async updateUserMode(userId: string, mode: string): Promise<void> {
+    await apiRequest(`/api/admin/users/${userId}/mode`, {
+      method: 'PUT',
+      body: JSON.stringify({ mode }),
+    });
+  },
+
   async clearAllUsers(): Promise<void> {
     await apiRequest('/api/admin/users', { method: 'DELETE' });
   },

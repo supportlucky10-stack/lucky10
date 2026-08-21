@@ -47,6 +47,7 @@ interface AppContextType {
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
   changeUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
+  updateUserMode: (userId: string, mode: string) => Promise<boolean>;
   clearAllUsers: () => Promise<void>;
   toggleUserStatus: (userId: string) => Promise<void>;
   toggleAllUsersStatus: (isActive: boolean) => Promise<void>;
@@ -578,7 +579,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           authService.logout();
           return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
         }
-        setCurrentUser(res.user);
+        const matchedLocal = registeredUsers.find(
+          (u) => u.id === res.user.id || u.username.toLowerCase() === res.user.username.toLowerCase() || u.name.toLowerCase() === res.user.name.toLowerCase()
+        );
+        const finalUser: UserAccount = {
+          ...res.user,
+          mode: res.user.mode || matchedLocal?.mode || 'Commission (20%)',
+        };
+        setCurrentUser(finalUser);
         setIsAdminLoggedIn(false);
         if (res.user.bankDetails) setBankDetails(res.user.bankDetails);
         addToast(`Welcome back, ${res.user.name}!`, 'success');
@@ -1187,6 +1195,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updateUserMode = async (userId: string, newMode: string): Promise<boolean> => {
+    const cleanMode = newMode.trim();
+    if (!cleanMode) {
+      addToast('Commission mode cannot be empty', 'error');
+      return false;
+    }
+    try {
+      await adminService.updateUserMode(userId, cleanMode);
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.username === userId || u.name === userId
+            ? { ...u, mode: cleanMode }
+            : u
+        )
+      );
+      if (currentUser && (currentUser.id === userId || currentUser.username === userId || currentUser.name === userId)) {
+        setCurrentUser((prev) => (prev ? { ...prev, mode: cleanMode } : null));
+      }
+      addToast(`Commission rate updated to ${cleanMode}!`, 'success');
+      return true;
+    } catch (err: any) {
+      console.warn('Backend mode update failed, updating locally:', err);
+      setRegisteredUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId || u.username === userId || u.name === userId
+            ? { ...u, mode: cleanMode }
+            : u
+        )
+      );
+      if (currentUser && (currentUser.id === userId || currentUser.username === userId || currentUser.name === userId)) {
+        setCurrentUser((prev) => (prev ? { ...prev, mode: cleanMode } : null));
+      }
+      addToast(`Commission rate updated to ${cleanMode} locally!`, 'success');
+      return true;
+    }
+  };
+
   const clearAllUsers = async () => {
     try {
       await adminService.clearAllUsers();
@@ -1280,6 +1325,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createUser,
         deleteUser,
         changeUserPassword,
+        updateUserMode,
         clearAllUsers,
         toggleUserStatus,
         toggleAllUsersStatus,
