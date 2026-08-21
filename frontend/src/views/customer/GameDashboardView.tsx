@@ -821,7 +821,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pair}
                       type="button"
                       onClick={() => handleMode2Add(pair)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#525EA7] via-[#434e91] to-[#343d78] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#7985cc] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#581c87] via-[#4c1d95] to-[#2e1065] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-110 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#a855f7] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pair}
                     </button>
@@ -904,9 +904,9 @@ export const GameDashboardView: React.FC = () => {
                     textColor = 'text-amber-600';
                     typeTextColor = 'text-amber-700';
                   } else if (['AB', 'AC', 'BC'].includes(displayType)) {
-                    // #525EA7 Indigo Blue (2-Digit: AB, AC, BC)
-                    textColor = 'text-[#525EA7]';
-                    typeTextColor = 'text-[#3e4887]';
+                    // Deep Royal Violet Purple (2-Digit: AB, AC, BC)
+                    textColor = 'text-[#581c87]';
+                    typeTextColor = 'text-[#3b0764]';
                   } else if (displayType === 'SUPER') {
                     // Jet Black (3-Digit SUPER)
                     textColor = 'text-black';
