@@ -89,16 +89,6 @@ const getNextSequentialBillId = (tickets: PlacedTicket[]): string => {
   return String(maxId + 1);
 };
 
-const defaultAgencyLimits: AgencyNumberLimit[] = [];
-
-const defaultBlockedNumbers: BlockedNumberRule[] = [];
-
-const defaultGlobalLimitRule: GlobalLimitRule = {
-  defaultMaxCount: 100,
-  isEnabled: false,
-  gameSlot: 'ALL',
-};
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -123,35 +113,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  // Limit / Block States
-  const [agencyNumberLimits, setAgencyNumberLimits] = useState<AgencyNumberLimit[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('lucky10_agency_limits');
-      if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
-      }
-    }
-    return defaultAgencyLimits;
-  });
-
-  const [blockedNumbers, setBlockedNumbers] = useState<BlockedNumberRule[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('lucky10_blocked_numbers');
-      if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
-      }
-    }
-    return defaultBlockedNumbers;
-  });
-
-  const [globalLimitRule, setGlobalLimitRule] = useState<GlobalLimitRule>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('lucky10_global_limit');
-      if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
-      }
-    }
-    return defaultGlobalLimitRule;
+  // Limit / Block States (Synced live from backend database)
+  const [agencyNumberLimits, setAgencyNumberLimits] = useState<AgencyNumberLimit[]>([]);
+  const [blockedNumbers, setBlockedNumbers] = useState<BlockedNumberRule[]>([]);
+  const [globalLimitRule, setGlobalLimitRule] = useState<GlobalLimitRule>({
+    defaultMaxCount: 100,
+    isEnabled: false,
+    gameSlot: 'ALL',
   });
 
   const isSavingTicketRef = useRef(false);
@@ -331,9 +299,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       // Always sync active game limits and blocked numbers across all players
       customerService.getLimits().then((lims) => {
         if (lims) {
-          if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
-          if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
-          if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
+          setBlockedNumbers(lims.blockedNumbers || []);
+          setAgencyNumberLimits(lims.agencyLimits || []);
+          setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
         }
       }).catch(() => {});
 
@@ -369,15 +337,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }).catch(() => {});
 
         adminService.getAgencyLimits().then((lims) => {
-          if (lims) setAgencyNumberLimits(lims);
+          setAgencyNumberLimits(lims || []);
         }).catch(() => {});
 
         adminService.getBlockedNumbers().then((blks) => {
-          if (blks) setBlockedNumbers(blks);
+          setBlockedNumbers(blks || []);
         }).catch(() => {});
 
         adminService.getGlobalLimit().then((g) => {
-          if (g) setGlobalLimitRule(g);
+          setGlobalLimitRule(g || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
         }).catch(() => {});
       }
     };
