@@ -493,6 +493,15 @@ export const GameDashboardView: React.FC = () => {
                 setSavedBillId(billId);
                 setCustomerName('');
               }
+            } catch (err: any) {
+              const msg = err?.message || '';
+              if (msg.includes('cant be played')) {
+                setIsBlockedModalOpen(true);
+              } else if (msg.includes('Overloaded')) {
+                setIsOverloadedModalOpen(true);
+              } else if (msg.includes('Minimum 5')) {
+                setMinCountModalOpen(true);
+              }
             } finally {
               setIsSaving(false);
             }

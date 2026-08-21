@@ -599,8 +599,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let currentAgencyPlacedCount = 0;
     agencyTickets.forEach((t) => {
       t.items.forEach((it) => {
-        const itNum = it.number.includes(':') ? it.number.split(':')[1] : it.number;
-        if (itNum.trim() === cleanNum) {
+        const itRaw = (it.number || '').trim();
+        if (itRaw === fullNum || itRaw === rawNum) {
           currentAgencyPlacedCount += it.count || 1;
         }
       });
@@ -609,8 +609,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // ALSO count how much of this number is in the CURRENT unsubmitted staging betSlip (if not skipped)
     if (!skipBetSlip) {
       betSlip.forEach((it) => {
-        const itNum = it.number.includes(':') ? it.number.split(':')[1] : it.number;
-        if (itNum.trim() === cleanNum) {
+        const itRaw = (it.number || '').trim();
+        if (itRaw === fullNum || itRaw === rawNum) {
           currentAgencyPlacedCount += it.count || 1;
         }
       });
@@ -754,15 +754,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const agencyId = currentUser?.id || currentUser?.username || '';
     const betSlipCountByNum: Record<string, number> = {};
     for (const item of betSlip) {
-      const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
-      betSlipCountByNum[numToTest] = (betSlipCountByNum[numToTest] || 0) + item.count;
+      const rawNum = item.number.trim();
+      betSlipCountByNum[rawNum] = (betSlipCountByNum[rawNum] || 0) + item.count;
     }
 
-    for (const [numToTest, totalBatchCount] of Object.entries(betSlipCountByNum)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, totalBatchCount, true);
+    for (const [rawNum, totalBatchCount] of Object.entries(betSlipCountByNum)) {
+      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, totalBatchCount, true);
       if (!validation.ok) {
-        addToast(validation.reason || 'Number Overloaded! Not in Booked.', 'error');
-        return null;
+        if (validation.type === 'BLOCKED') {
+          throw new Error('Number cant be played');
+        } else {
+          throw new Error(validation.reason || 'Number Overloaded! Not in Booked.');
+        }
       }
     }
 
@@ -776,8 +779,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const mode1TotalCount = mode1Items.reduce((sum, item) => sum + item.count, 0);
 
     if (mode1TotalCount > 0 && mode1TotalCount < 5) {
-      addToast('Minimum 5 Count Required!', 'error');
-      return null;
+      throw new Error('Minimum 5 Count Required!');
     }
 
     isSavingTicketRef.current = true;
@@ -791,7 +793,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (e: any) {
         const errMsg = e?.message || '';
         const lower = errMsg.toLowerCase();
-        // If backend returned a specific rejection, show the error and stop
+        // If backend returned a specific rejection, throw the error
         if (
           lower.includes('number cant be played') ||
           lower.includes('overloaded') ||
@@ -799,8 +801,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lower.includes('deactivated') ||
           lower.includes('empty')
         ) {
-          addToast(errMsg, 'error');
-          return null;
+          throw e;
         }
         const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
@@ -831,8 +832,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast(`Ticket #${newTicket.id} saved successfully!`, 'success');
       return newTicket.id;
     } catch (err: any) {
-      addToast(err.message || 'Failed to save ticket', 'error');
-      return null;
+      throw err;
     } finally {
       isSavingTicketRef.current = false;
     }
@@ -844,22 +844,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (betSlip.length === 0) {
-      addToast('Your bet slip is empty!', 'error');
-      return false;
+      throw new Error('Your bet slip is empty!');
     }
 
     const agencyId = currentUser?.id || currentUser?.username || '';
     const payBetSlipCountByNum: Record<string, number> = {};
     for (const item of betSlip) {
-      const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
-      payBetSlipCountByNum[numToTest] = (payBetSlipCountByNum[numToTest] || 0) + item.count;
+      const rawNum = item.number.trim();
+      payBetSlipCountByNum[rawNum] = (payBetSlipCountByNum[rawNum] || 0) + item.count;
     }
 
-    for (const [numToTest, totalBatchCount] of Object.entries(payBetSlipCountByNum)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, totalBatchCount, true);
+    for (const [rawNum, totalBatchCount] of Object.entries(payBetSlipCountByNum)) {
+      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, totalBatchCount, true);
       if (!validation.ok) {
-        addToast(validation.reason || 'Payment blocked by admin limits', 'error');
-        return false;
+        if (validation.type === 'BLOCKED') {
+          throw new Error('Number cant be played');
+        } else {
+          throw new Error(validation.reason || 'Payment blocked by admin limits');
+        }
       }
     }
 

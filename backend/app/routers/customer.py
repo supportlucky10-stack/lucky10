@@ -238,18 +238,24 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
     placed_count_by_number: dict[str, float] = {}
     for tkt in existing_tickets:
-        tkt_date = tkt.placed_at.strftime("%Y-%m-%d") if tkt.placed_at else today_str
+        if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
+            tkt_date = tkt.placed_at.strftime("%Y-%m-%d")
+        elif tkt.placed_at:
+            tkt_date = str(tkt.placed_at)[:10]
+        else:
+            tkt_date = today_str
+
         if tkt_date == today_str:
             for bi in tkt.items:
-                bi_num = bi.number.split(":")[1].strip() if ":" in bi.number else bi.number.strip()
-                placed_count_by_number[bi_num] = placed_count_by_number.get(bi_num, 0.0) + float(bi.count)
+                bi_raw = bi.number.strip()
+                placed_count_by_number[bi_raw] = placed_count_by_number.get(bi_raw, 0.0) + float(bi.count)
 
     # Track newly requested counts within this incoming batch
     batch_counts: dict[str, float] = {}
 
     for item in req.items:
-        clean_num = item.number.split(":")[1].strip() if ":" in item.number else item.number.strip()
         raw_num = item.number.strip()
+        clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
         
         # Check if number or clean_num is blocked
         if clean_num in blocked_set or raw_num in blocked_set:
@@ -258,12 +264,12 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                 detail="Number cant be played"
             )
 
-        current_placed = placed_count_by_number.get(clean_num, 0.0)
-        current_batch = batch_counts.get(clean_num, 0.0)
+        current_placed = placed_count_by_number.get(raw_num, 0.0)
+        current_batch = batch_counts.get(raw_num, 0.0)
         total_requested = current_placed + current_batch + float(item.count)
 
         # Check agency limit rule
-        spec_lim = next((l for l in agency_limits if l.number.strip() == clean_num or l.number.strip() == raw_num), None)
+        spec_lim = next((l for l in agency_limits if l.number.strip() == raw_num or l.number.strip() == clean_num), None)
         if spec_lim:
             if total_requested > spec_lim.max_count:
                 raise HTTPException(
@@ -280,7 +286,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                         detail="Number Overloaded! Not in Booked."
                     )
 
-        batch_counts[clean_num] = current_batch + float(item.count)
+        batch_counts[raw_num] = current_batch + float(item.count)
 
     if req.actionType == "PAY" and user.balance < req.totalAmount:
         raise HTTPException(
