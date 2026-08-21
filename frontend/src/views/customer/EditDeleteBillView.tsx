@@ -212,14 +212,14 @@ export const EditDeleteBillView: React.FC = () => {
                 </div>
 
                 {/* Agency, Customer & Slot Info Bar */}
-                <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                  <span className="text-white">Agency <strong className="text-white font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
-                  <span className="text-white">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
-                  <span className="text-white">Slot <strong className="text-white font-bold">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></span>
+                <div className="bg-white px-4 py-2.5 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-neutral-800">
+                  <span>Agency <strong className="text-black font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
+                  <span>Customer <strong className="text-black font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
+                  <span>Slot <strong className="text-black font-bold">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></span>
                 </div>
 
                 {/* Table Column Headers Bar */}
-                <div className="bg-neutral-900/90 text-white font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-800 uppercase">
+                <div className="bg-white text-neutral-900 font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 uppercase">
                   <div className="flex items-center gap-10">
                     <span className="w-16">GAME</span>
                     <span className="w-16">NUM</span>
@@ -228,21 +228,19 @@ export const EditDeleteBillView: React.FC = () => {
                   <span>AMOUNT</span>
                 </div>
 
-                {/* Table Rows in Dark Theme */}
-                <div className="divide-y divide-neutral-850 font-mono text-xs font-bold">
+                {/* Table Rows in White Theme */}
+                <div className="divide-y divide-neutral-200 font-mono text-xs font-bold bg-white text-black">
                   {searchedBill.items.map((item: any, idx: number) => (
                     <div
                       key={idx}
-                      className={`flex items-center justify-between px-4 py-3.5 ${
-                        idx % 2 === 1 ? 'bg-neutral-900/40' : 'bg-black'
-                      }`}
+                      className="flex items-center justify-between px-4 py-3.5 bg-white"
                     >
                       <div className="flex items-center gap-10">
-                        <span className="w-16 uppercase text-white font-black">{getDisplayGame(item)}</span>
-                        <span className="w-16 text-white font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
-                        <span className="text-white font-black text-sm">{item.count}</span>
+                        <span className="w-16 uppercase text-black font-black">{getDisplayGame(item)}</span>
+                        <span className="w-16 text-black font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
+                        <span className="text-black font-black text-sm">{item.count}</span>
                       </div>
-                      <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
+                      <span className="text-black font-mono font-bold">₹{item.totalAmount}</span>
                     </div>
                   ))}
                 </div>
