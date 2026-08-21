@@ -793,7 +793,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const betSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
-      const key = `${rawNum}_${item.type || ''}`;
+      const normType = (item.type || '').toUpperCase() === 'SUPER' || (item.type || '').toUpperCase() === 'DIRECT' ? 'DIRECT' : ((item.type || '').toUpperCase() === 'BOX' || (item.type || '').toUpperCase() === 'SHUFFLE' ? 'BOX' : item.type);
+      const key = `${rawNum}_${normType}`;
       if (!betSlipCountByKey[key]) {
         betSlipCountByKey[key] = { num: rawNum, type: item.type || '', count: 0 };
       }
@@ -893,7 +894,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const payBetSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
-      const key = `${rawNum}_${item.type || ''}`;
+      const normType = (item.type || '').toUpperCase() === 'SUPER' || (item.type || '').toUpperCase() === 'DIRECT' ? 'DIRECT' : ((item.type || '').toUpperCase() === 'BOX' || (item.type || '').toUpperCase() === 'SHUFFLE' ? 'BOX' : item.type);
+      const key = `${rawNum}_${normType}`;
       if (!payBetSlipCountByKey[key]) {
         payBetSlipCountByKey[key] = { num: rawNum, type: item.type || '', count: 0 };
       }
