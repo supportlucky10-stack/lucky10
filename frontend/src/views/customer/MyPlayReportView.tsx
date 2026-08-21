@@ -1904,7 +1904,7 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Table Column Headers Bar */}
-              <div className="bg-white text-neutral-900 font-mono text-xs font-black px-4 py-2.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+              <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-4 py-2.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
                 <span className="text-left">GAME</span>
                 <span>NUM</span>
                 <span>COUNT</span>
@@ -1992,7 +1992,7 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Table Column Headers Bar */}
-              <div className="bg-white text-neutral-900 font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 uppercase">
+              <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-200 uppercase">
                 <div className="flex items-center gap-10">
                   <span className="w-16">GAME</span>
                   <span className="w-16">NUM</span>
