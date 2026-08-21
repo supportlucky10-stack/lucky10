@@ -13,7 +13,7 @@ export const captureAndShareElement = async ({
   elementId,
   element,
   fileName = 'share_image.jpg',
-  title = 'Share',
+  title: _title = 'Share',
   textSummary = '',
 }: ShareElementOptions): Promise<void> => {
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
@@ -29,11 +29,14 @@ export const captureAndShareElement = async ({
   try {
     const html2canvas = (await import('html2canvas')).default;
     const canvas = await html2canvas(targetElem, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
       backgroundColor: '#000000',
       logging: false,
       allowTaint: true,
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: targetElem.scrollWidth || targetElem.offsetWidth,
     });
 
     // Output snapshot image in JPG format (image/jpeg)
@@ -55,9 +58,8 @@ export const captureAndShareElement = async ({
       // Check if Web Share API supports file sharing (iOS Safari, Android Chrome/WebView)
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
+          // Strictly share only image file — do not pass title or text so WhatsApp has no text caption
           await navigator.share({
-            title: title,
-            text: '', // Omit text caption as requested — image only!
             files: [file],
           });
           return;
