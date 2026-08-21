@@ -135,23 +135,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  // Clean up any old cached limit items from previous sessions
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('lucky10_agency_limits', JSON.stringify(agencyNumberLimits));
+      try {
+        localStorage.removeItem('lucky10_global_limit');
+        localStorage.removeItem('lucky10_agency_limits');
+        localStorage.removeItem('lucky10_blocked_numbers');
+      } catch (e) {}
     }
-  }, [agencyNumberLimits]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lucky10_blocked_numbers', JSON.stringify(blockedNumbers));
-    }
-  }, [blockedNumbers]);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('lucky10_global_limit', JSON.stringify(globalLimitRule));
-    }
-  }, [globalLimitRule]);
+  }, []);
 
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
     const rawKey = `${dateStr}_${slot}`;
