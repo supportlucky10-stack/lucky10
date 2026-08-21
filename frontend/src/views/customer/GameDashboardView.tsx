@@ -787,24 +787,6 @@ export const GameDashboardView: React.FC = () => {
                     />
                   </div>
                 )}
-
-                {activeMode === 3 && (
-                  <div className="col-span-4">
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="off"
-                      spellCheck={false}
-                      placeholder="Box Count"
-                      value={boxCount}
-                      onChange={(e) => setBoxCount(e.target.value)}
-                      className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
-                    />
-                  </div>
-                )}
               </div>
             )}
 
