@@ -145,7 +145,7 @@ const getCategoryHeaderTheme = (category: string) => {
   if (catUpper.includes('8 PM') || catUpper.includes('8PM')) {
     return 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-600 text-black border-2 border-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.4)]';
   }
-  return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-gold border-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.2)]';
+  return 'bg-gradient-to-r from-neutral-900 via-neutral-950 to-neutral-900 text-white border-2 border-neutral-700/80 shadow-[0_0_15px_rgba(255,255,255,0.08)]';
 };
 
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
@@ -355,7 +355,9 @@ export const AdminReportsView: React.FC = () => {
   }, [selectedPerformanceUser, placedTickets, payoutLogs, fromDate, toDate, todayStr]);
 
   const globalTotalGross = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalGross, 0), [userPerformanceList]);
-  const globalTotalPayouts = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalPayouts, 0), [userPerformanceList]);
+  const globalTotalCommission = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalCommission, 0), [userPerformanceList]);
+  const globalTotalPrizes = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalPayouts, 0), [userPerformanceList]);
+  const globalTotalPayouts = useMemo(() => globalTotalPrizes + globalTotalCommission, [globalTotalPrizes, globalTotalCommission]);
   const globalNet = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.net, 0), [userPerformanceList]);
 
   // ── WINNING REPORT COMPUTATIONS ─────────────────────────────────────────────
