@@ -69,7 +69,7 @@ interface AppContextType {
   addBlockedNumber: (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => void;
   removeBlockedNumber: (id: string) => void;
   updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
-  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
+  checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number, betType?: string, skipBetSlip?: boolean) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
 }
 
 
@@ -553,12 +553,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     slot: GameSlot,
     number: string,
     newCount: number,
+    betType?: string,
     skipBetSlip: boolean = false
   ): { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' } => {
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
     const cleanNum = rawNum.trim();
     const fullNum = number.trim();
     const todayStr = getLocalDateStr();
+
+    const normType = (t?: string) => {
+      if (!t) return '';
+      const upper = t.toUpperCase();
+      if (upper === 'SUPER' || upper === 'DIRECT') return 'DIRECT';
+      if (upper === 'BOX' || upper === 'SHUFFLE') return 'BOX';
+      return upper;
+    };
+    const targetType = normType(betType);
 
     // 1. Check if number is blocked globally or for this slot
     const isBlocked = blockedNumbers.some((b) => {
@@ -576,7 +586,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    // Calculate existing count already placed today for this number in this slot across this agency
+    // Calculate existing count already placed today for this number AND specific bet type in this slot across this agency
     const agencyTickets = placedTickets.filter((t) => {
       const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
       const matchesDate = tDate === todayStr;
@@ -594,7 +604,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     agencyTickets.forEach((t) => {
       t.items.forEach((it) => {
         const itRaw = (it.number || '').trim();
-        if (itRaw === fullNum || itRaw === rawNum) {
+        const itType = normType(it.type);
+        const matchesNum = itRaw === fullNum || itRaw === rawNum;
+        const matchesType = !targetType || !itType || itType === targetType;
+        if (matchesNum && matchesType) {
           currentAgencyPlacedCount += it.count || 1;
         }
       });
@@ -604,7 +617,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!skipBetSlip) {
       betSlip.forEach((it) => {
         const itRaw = (it.number || '').trim();
-        if (itRaw === fullNum || itRaw === rawNum) {
+        const itType = normType(it.type);
+        const matchesNum = itRaw === fullNum || itRaw === rawNum;
+        const matchesType = !targetType || !itType || itType === targetType;
+        if (matchesNum && matchesType) {
           currentAgencyPlacedCount += it.count || 1;
         }
       });
@@ -668,12 +684,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Limit set for ${limit.agencyName}: #${limit.number} (Max: ${limit.maxCount})`, 'success');
   };
 
-  const removeAgencyLimit = async (id: string) => {
+  const removeAgencyLimit = (id: string) => {
+    adminService.deleteAgencyLimit(id).catch(() => {});
     setAgencyNumberLimits((prev) => prev.filter((l) => l.id !== id));
-    try {
-      await adminService.deleteAgencyLimit(id);
-    } catch (e) {}
-    addToast('Agency limit removed successfully', 'info');
   };
 
   const addBlockedNumber = async (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => {
@@ -693,12 +706,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Number ${rule.number} is now BLOCKED for ${rule.gameSlot}`, 'success');
   };
 
-  const removeBlockedNumber = async (id: string) => {
+  const removeBlockedNumber = (id: string) => {
+    adminService.deleteBlockedNumber(id).catch(() => {});
     setBlockedNumbers((prev) => prev.filter((b) => b.id !== id));
-    try {
-      await adminService.deleteBlockedNumber(id);
-    } catch (e) {}
-    addToast('Number unblocked successfully', 'info');
   };
 
   const updateGlobalLimit = async (rule: Partial<GlobalLimitRule>) => {
@@ -714,8 +724,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addToBetSlip = (item: Omit<BetSlipItem, 'id'>): boolean => {
     const agencyId = currentUser?.id || currentUser?.username || '';
-    const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
-    const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
+    const numToTest = item.number.trim();
+    const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count, item.type);
     if (!validation.ok) {
       addToast(validation.reason || 'Number Overloaded! Not in Booked.', 'error');
       return false;
@@ -746,14 +756,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const agencyId = currentUser?.id || currentUser?.username || '';
-    const betSlipCountByNum: Record<string, number> = {};
+    const betSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
-      betSlipCountByNum[rawNum] = (betSlipCountByNum[rawNum] || 0) + item.count;
+      const key = `${rawNum}_${item.type || ''}`;
+      if (!betSlipCountByKey[key]) {
+        betSlipCountByKey[key] = { num: rawNum, type: item.type || '', count: 0 };
+      }
+      betSlipCountByKey[key].count += item.count;
     }
 
-    for (const [rawNum, totalBatchCount] of Object.entries(betSlipCountByNum)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, totalBatchCount, true);
+    for (const { num, type, count } of Object.values(betSlipCountByKey)) {
+      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, true);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') {
           throw new Error('Number cant be played');
@@ -842,14 +856,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const agencyId = currentUser?.id || currentUser?.username || '';
-    const payBetSlipCountByNum: Record<string, number> = {};
+    const payBetSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
     for (const item of betSlip) {
       const rawNum = item.number.trim();
-      payBetSlipCountByNum[rawNum] = (payBetSlipCountByNum[rawNum] || 0) + item.count;
+      const key = `${rawNum}_${item.type || ''}`;
+      if (!payBetSlipCountByKey[key]) {
+        payBetSlipCountByKey[key] = { num: rawNum, type: item.type || '', count: 0 };
+      }
+      payBetSlipCountByKey[key].count += item.count;
     }
 
-    for (const [rawNum, totalBatchCount] of Object.entries(payBetSlipCountByNum)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, rawNum, totalBatchCount, true);
+    for (const { num, type, count } of Object.values(payBetSlipCountByKey)) {
+      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, true);
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') {
           throw new Error('Number cant be played');

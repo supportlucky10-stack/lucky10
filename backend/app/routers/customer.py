@@ -236,7 +236,17 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         Ticket.game_slot == req.gameSlot
     ).all()
 
-    placed_count_by_number: dict[str, float] = {}
+    def norm_type(t: str) -> str:
+        if not t:
+            return ""
+        u = t.upper()
+        if u in ("SUPER", "DIRECT"):
+            return "DIRECT"
+        if u in ("BOX", "SHUFFLE"):
+            return "BOX"
+        return u
+
+    placed_count_by_key: dict[str, float] = {}
     for tkt in existing_tickets:
         if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
             tkt_date = tkt.placed_at.strftime("%Y-%m-%d")
@@ -248,7 +258,8 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         if tkt_date == today_str:
             for bi in tkt.items:
                 bi_raw = bi.number.strip()
-                placed_count_by_number[bi_raw] = placed_count_by_number.get(bi_raw, 0.0) + float(bi.count)
+                bi_key = f"{bi_raw}_{norm_type(bi.type)}"
+                placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
 
     # Track newly requested counts within this incoming batch
     batch_counts: dict[str, float] = {}
@@ -256,6 +267,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     for item in req.items:
         raw_num = item.number.strip()
         clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
+        item_key = f"{raw_num}_{norm_type(item.type)}"
         
         # Check if number or clean_num is blocked
         if clean_num in blocked_set or raw_num in blocked_set:
@@ -264,8 +276,8 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                 detail="Number cant be played"
             )
 
-        current_placed = placed_count_by_number.get(raw_num, 0.0)
-        current_batch = batch_counts.get(raw_num, 0.0)
+        current_placed = placed_count_by_key.get(item_key, 0.0)
+        current_batch = batch_counts.get(item_key, 0.0)
         total_requested = current_placed + current_batch + float(item.count)
 
         # Check agency limit rule
@@ -286,7 +298,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                         detail="Number Overloaded! Not in Booked."
                     )
 
-        batch_counts[raw_num] = current_batch + float(item.count)
+        batch_counts[item_key] = current_batch + float(item.count)
 
     if req.actionType == "PAY" and user.balance < req.totalAmount:
         raise HTTPException(

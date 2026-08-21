@@ -211,14 +211,15 @@ export const GameDashboardView: React.FC = () => {
 
     targetNums.forEach((n) => {
       positions.forEach((p) => {
-        const val = checkBetEligibility(agencyId, activeGameSlot, n, cnt);
+        const fullPosNum = `${p}:${n}`;
+        const val = checkBetEligibility(agencyId, activeGameSlot, fullPosNum, cnt);
         if (!val.ok) {
           if (val.type === 'BLOCKED') blockedFailed = true;
           else overloadFailed = true;
           return;
         }
         const ok = addToBetSlip({
-          number: `${p}:${n}`,
+          number: fullPosNum,
           count: cnt,
           type: 'Position',
           playMode: currentPlayMode,
@@ -270,14 +271,15 @@ export const GameDashboardView: React.FC = () => {
 
     targetNums.forEach((n) => {
       pairs.forEach((pr) => {
-        const val = checkBetEligibility(agencyId, activeGameSlot, n, cnt);
+        const fullPairNum = `${pr}:${n}`;
+        const val = checkBetEligibility(agencyId, activeGameSlot, fullPairNum, cnt);
         if (!val.ok) {
           if (val.type === 'BLOCKED') blockedFailed = true;
           else overloadFailed = true;
           return;
         }
         const ok = addToBetSlip({
-          number: `${pr}:${n}`,
+          number: fullPairNum,
           count: cnt,
           type: 'Pair',
           playMode: currentPlayMode,
@@ -360,7 +362,7 @@ export const GameDashboardView: React.FC = () => {
     targetNums.forEach((numStr) => {
       if (modeType === 'BOTH') {
         if (directCnt > 0) {
-          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt);
+          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt, 'Direct');
           if (!val.ok) {
             if (val.type === 'BLOCKED') blockedFailed = true;
             else overloadFailed = true;
@@ -377,7 +379,7 @@ export const GameDashboardView: React.FC = () => {
           }
         }
         if (boxAmt > 0) {
-          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt);
+          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt, 'Shuffle');
           if (!val.ok) {
             if (val.type === 'BLOCKED') blockedFailed = true;
             else overloadFailed = true;
@@ -394,7 +396,7 @@ export const GameDashboardView: React.FC = () => {
           }
         }
       } else if (modeType === 'BOX') {
-        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt);
+        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt, 'Shuffle');
         if (!val.ok) {
           if (val.type === 'BLOCKED') blockedFailed = true;
           else overloadFailed = true;
@@ -410,7 +412,7 @@ export const GameDashboardView: React.FC = () => {
           if (ok) addedCount++;
         }
       } else if (modeType === 'SUPER') {
-        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt);
+        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt, 'Direct');
         if (!val.ok) {
           if (val.type === 'BLOCKED') blockedFailed = true;
           else overloadFailed = true;
