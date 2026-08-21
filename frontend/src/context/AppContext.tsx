@@ -29,6 +29,7 @@ interface AppContextType {
   setActiveGameSlot: (slot: GameSlot) => void;
   betSlip: BetSlipItem[];
   addToBetSlip: (item: Omit<BetSlipItem, 'id'>) => boolean;
+  addBatchToBetSlip: (items: Omit<BetSlipItem, 'id'>[]) => { addedCount: number; blockedCount: number; overloadedCount: number };
   removeFromBetSlip: (id: string) => void;
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
@@ -737,6 +738,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
+  const addBatchToBetSlip = (items: Omit<BetSlipItem, 'id'>[]): { addedCount: number; blockedCount: number; overloadedCount: number } => {
+    const agencyId = currentUser?.id || currentUser?.username || '';
+    const validItems: BetSlipItem[] = [];
+    let blockedCount = 0;
+    let overloadedCount = 0;
+
+    // Track staged counts per distinct (number + type) key in this batch
+    const batchCounts: Record<string, number> = {};
+
+    for (const item of items) {
+      const numToTest = item.number.trim();
+      const normType = (item.type || '').toUpperCase() === 'SUPER' || (item.type || '').toUpperCase() === 'DIRECT' ? 'DIRECT' : ((item.type || '').toUpperCase() === 'BOX' || (item.type || '').toUpperCase() === 'SHUFFLE' ? 'BOX' : item.type);
+      const key = `${numToTest}_${normType}`;
+      const currentBatchCount = batchCounts[key] || 0;
+      const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count + currentBatchCount, item.type);
+      if (!validation.ok) {
+        if (validation.type === 'BLOCKED') blockedCount++;
+        else overloadedCount++;
+        continue;
+      }
+      batchCounts[key] = currentBatchCount + item.count;
+      const id = `bet_${Date.now()}_${Math.random().toString(36).substr(2, 4)}_${validItems.length}`;
+      validItems.push({ ...item, id });
+    }
+
+    if (validItems.length > 0) {
+      setBetSlip((prev) => [...prev, ...validItems]);
+      addToast(`Added ${validItems.length} bet(s) to slip`, 'success');
+    }
+
+    return { addedCount: validItems.length, blockedCount, overloadedCount };
+  };
+
   const removeFromBetSlip = (id: string) => {
     setBetSlip((prev) => prev.filter((item) => item.id !== id));
   };
@@ -1241,6 +1275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setActiveGameSlot,
         betSlip,
         addToBetSlip,
+        addBatchToBetSlip,
         removeFromBetSlip,
         clearBetSlip,
         placedTickets,

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle } from 'lucide-react';
-import type { GameSlot } from '../../types';
+import type { GameSlot, BetSlipItem } from '../../types';
 
 interface SlotTheme {
   name: string;
@@ -104,17 +104,15 @@ const slotThemes: Record<string, SlotTheme> = {
 
 export const GameDashboardView: React.FC = () => {
   const {
-    currentUser,
     activeGameSlot,
     setActiveGameSlot,
     betSlip,
-    addToBetSlip,
+    addBatchToBetSlip,
     removeFromBetSlip,
     clearBetSlip,
     saveTicket,
     setCurrentView,
     addToast,
-    checkBetEligibility,
   } = useApp();
 
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
@@ -202,44 +200,32 @@ export const GameDashboardView: React.FC = () => {
 
     const unitPrice1Digit = 12; // ₹12 per count for 1-digit game
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
-
     const positions = pos === 'ALL' ? ['A', 'B', 'C'] : [pos];
-    const agencyId = currentUser?.id || currentUser?.username || '';
-    let blockedFailed = false;
-    let overloadFailed = false;
-    let addedCount = 0;
+    const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
     targetNums.forEach((n) => {
       positions.forEach((p) => {
-        const fullPosNum = `${p}:${n}`;
-        const val = checkBetEligibility(agencyId, activeGameSlot, fullPosNum, cnt);
-        if (!val.ok) {
-          if (val.type === 'BLOCKED') blockedFailed = true;
-          else overloadFailed = true;
-          return;
-        }
-        const ok = addToBetSlip({
-          number: fullPosNum,
+        itemsToAdd.push({
+          number: `${p}:${n}`,
           count: cnt,
           type: 'Position',
           playMode: currentPlayMode,
           unitPrice: unitPrice1Digit,
           totalAmount: cnt * unitPrice1Digit,
         });
-        if (ok) {
-          addedCount++;
-        }
       });
     });
 
-    if (blockedFailed) {
+    const res = addBatchToBetSlip(itemsToAdd);
+
+    if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
-    } else if (overloadFailed) {
+    } else if (res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
-    if (addedCount > 0) {
-      addToast(`Added Mode 1 (${pos}) bets for ${addedCount} item(s)`, 'success');
+    if (res.addedCount > 0) {
+      addToast(`Added Mode 1 (${pos}) bets for ${res.addedCount} item(s)`, 'success');
       setInputNum('');
       setStartRange('');
       setEndRange('');
@@ -264,42 +250,31 @@ export const GameDashboardView: React.FC = () => {
 
     const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
-    const agencyId = currentUser?.id || currentUser?.username || '';
-    let blockedFailed = false;
-    let overloadFailed = false;
-    let addedCount = 0;
+    const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
     targetNums.forEach((n) => {
       pairs.forEach((pr) => {
-        const fullPairNum = `${pr}:${n}`;
-        const val = checkBetEligibility(agencyId, activeGameSlot, fullPairNum, cnt);
-        if (!val.ok) {
-          if (val.type === 'BLOCKED') blockedFailed = true;
-          else overloadFailed = true;
-          return;
-        }
-        const ok = addToBetSlip({
-          number: fullPairNum,
+        itemsToAdd.push({
+          number: `${pr}:${n}`,
           count: cnt,
           type: 'Pair',
           playMode: currentPlayMode,
           unitPrice,
           totalAmount: cnt * unitPrice,
         });
-        if (ok) {
-          addedCount++;
-        }
       });
     });
 
-    if (blockedFailed) {
+    const res = addBatchToBetSlip(itemsToAdd);
+
+    if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
-    } else if (overloadFailed) {
+    } else if (res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
-    if (addedCount > 0) {
-      addToast(`Added Mode 2 (${pair}) bets for ${addedCount} item(s)`, 'success');
+    if (res.addedCount > 0) {
+      addToast(`Added Mode 2 (${pair}) bets for ${res.addedCount} item(s)`, 'success');
       setInputNum('');
       setStartRange('');
       setEndRange('');
@@ -316,17 +291,17 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const cDirect = parseInt(inputCount) || 0;
-    const cBox = parseInt(boxCount) || 0;
+    const cDirect = parseInt(inputCount, 10) || 0;
+    const cBox = parseInt(boxCount, 10) || 0;
 
     let directCnt = 0;
     let boxAmt = 0;
 
     if (modeType === 'BOTH') {
-      directCnt = cDirect > 0 ? cDirect : (cBox > 0 ? cBox : 0);
-      boxAmt = cBox > 0 ? cBox : (cDirect > 0 ? cDirect : 0);
+      directCnt = cDirect;
+      boxAmt = cBox;
       if (directCnt < 1 && boxAmt < 1) {
-        addToast('Please enter a valid count or box count', 'error');
+        addToast('Please enter Count or Box Count', 'error');
         return;
       }
     } else if (modeType === 'BOX') {
@@ -354,70 +329,12 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    const agencyId = currentUser?.id || currentUser?.username || '';
-    let blockedFailed = false;
-    let overloadFailed = false;
-    let addedCount = 0;
+    const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
     targetNums.forEach((numStr) => {
       if (modeType === 'BOTH') {
         if (directCnt > 0) {
-          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt, 'Direct');
-          if (!val.ok) {
-            if (val.type === 'BLOCKED') blockedFailed = true;
-            else overloadFailed = true;
-          } else {
-            const ok = addToBetSlip({
-              number: numStr,
-              count: directCnt,
-              type: 'Direct',
-              playMode: currentPlayMode,
-              unitPrice,
-              totalAmount: directCnt * unitPrice,
-            });
-            if (ok) addedCount++;
-          }
-        }
-        if (boxAmt > 0) {
-          const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt, 'Shuffle');
-          if (!val.ok) {
-            if (val.type === 'BLOCKED') blockedFailed = true;
-            else overloadFailed = true;
-          } else {
-            const ok = addToBetSlip({
-              number: numStr,
-              count: boxAmt,
-              type: 'Shuffle',
-              playMode: currentPlayMode,
-              unitPrice,
-              totalAmount: boxAmt * unitPrice,
-            });
-            if (ok) addedCount++;
-          }
-        }
-      } else if (modeType === 'BOX') {
-        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, boxAmt, 'Shuffle');
-        if (!val.ok) {
-          if (val.type === 'BLOCKED') blockedFailed = true;
-          else overloadFailed = true;
-        } else {
-          const ok = addToBetSlip({
-            number: numStr,
-            count: boxAmt,
-            type: 'Shuffle',
-            playMode: currentPlayMode,
-            unitPrice,
-            totalAmount: boxAmt * unitPrice,
-          });
-          if (ok) addedCount++;
-        }
-      } else if (modeType === 'SUPER') {
-        const val = checkBetEligibility(agencyId, activeGameSlot, numStr, directCnt, 'Direct');
-        if (!val.ok) {
-          if (val.type === 'BLOCKED') blockedFailed = true;
-          else overloadFailed = true;
-        } else {
-          const ok = addToBetSlip({
+          itemsToAdd.push({
             number: numStr,
             count: directCnt,
             type: 'Direct',
@@ -425,19 +342,48 @@ export const GameDashboardView: React.FC = () => {
             unitPrice,
             totalAmount: directCnt * unitPrice,
           });
-          if (ok) addedCount++;
         }
+        if (boxAmt > 0) {
+          itemsToAdd.push({
+            number: numStr,
+            count: boxAmt,
+            type: 'Shuffle',
+            playMode: currentPlayMode,
+            unitPrice,
+            totalAmount: boxAmt * unitPrice,
+          });
+        }
+      } else if (modeType === 'BOX') {
+        itemsToAdd.push({
+          number: numStr,
+          count: boxAmt,
+          type: 'Shuffle',
+          playMode: currentPlayMode,
+          unitPrice,
+          totalAmount: boxAmt * unitPrice,
+        });
+      } else if (modeType === 'SUPER') {
+        itemsToAdd.push({
+          number: numStr,
+          count: directCnt,
+          type: 'Direct',
+          playMode: currentPlayMode,
+          unitPrice,
+          totalAmount: directCnt * unitPrice,
+        });
       }
     });
 
-    if (blockedFailed) {
+    const res = addBatchToBetSlip(itemsToAdd);
+
+    if (res.blockedCount > 0) {
       setIsBlockedModalOpen(true);
-    } else if (overloadFailed) {
+    } else if (res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
-    if (addedCount > 0) {
-      addToast(`Added Mode 3 (${modeType}) bets for ${targetNums.length} item(s)`, 'success');
+    if (res.addedCount > 0) {
+      addToast(`Added Mode 3 (${modeType}) bets for ${res.addedCount} item(s)`, 'success');
       setInputNum('');
       setStartRange('');
       setEndRange('');
