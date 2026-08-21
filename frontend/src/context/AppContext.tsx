@@ -71,88 +71,7 @@ interface AppContextType {
   checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
 }
 
-const defaultAgenciesList: UserAccount[] = [
-  {
-    id: 'user_sriganesh_002',
-    name: 'Sri Ganesh Agency',
-    username: 'sriganesh',
-    email: 'sriganesh@lucky10.com',
-    password: '123',
-    role: 'CUSTOMER',
-    balance: 18450,
-    mode: 'With Commission (20%)',
-    isActive: true,
-    createdAt: new Date().toISOString().split('T')[0],
-    bankDetails: {
-      accountHolderName: 'Sri Ganesh Enterprises',
-      accountNo: '30981029384756',
-      bankName: 'State Bank of India',
-      ifsc: 'SBIN0004521',
-      branchName: 'Gandhi Nagar, Chennai',
-      updatedAt: new Date().toISOString().split('T')[0],
-    },
-  },
-  {
-    id: 'user_luckystar_003',
-    name: 'Lucky Star Agency',
-    username: 'luckystar',
-    email: 'luckystar@lucky10.com',
-    password: '123',
-    role: 'CUSTOMER',
-    balance: 24800,
-    mode: 'With Commission (30%)',
-    isActive: true,
-    createdAt: new Date().toISOString().split('T')[0],
-    bankDetails: {
-      accountHolderName: 'Lucky Star Agency',
-      accountNo: '91202004819283',
-      bankName: 'ICICI Bank',
-      ifsc: 'ICIC0000982',
-      branchName: 'Koti, Hyderabad',
-      updatedAt: new Date().toISOString().split('T')[0],
-    },
-  },
-  {
-    id: 'user_balaji_004',
-    name: 'Balaji Lottery Agency',
-    username: 'balaji_agency',
-    email: 'balaji_agency@lucky10.com',
-    password: '123',
-    role: 'CUSTOMER',
-    balance: 12300,
-    mode: 'Without Commission',
-    isActive: true,
-    createdAt: new Date().toISOString().split('T')[0],
-    bankDetails: {
-      accountHolderName: 'Balaji Agencies',
-      accountNo: '18491020003948',
-      bankName: 'Axis Bank',
-      ifsc: 'UTIB0001093',
-      branchName: 'Camp, Pune',
-      updatedAt: new Date().toISOString().split('T')[0],
-    },
-  },
-  {
-    id: 'user_royal_005',
-    name: 'Royal Fortune Agency',
-    username: 'royal_fortune',
-    email: 'royal_fortune@lucky10.com',
-    password: '123',
-    role: 'CUSTOMER',
-    balance: 31500,
-    mode: 'With Commission (20%)',
-    isActive: true,
-    createdAt: new Date().toISOString().split('T')[0],
-    bankDetails: {
-      accountHolderName: 'Royal Fortune Ltd',
-      accountNo: '00281040001928',
-      bankName: 'Punjab National Bank',
-      ifsc: 'PUNB0123400',
-      branchName: 'Connaught Place, Delhi',
-      updatedAt: new Date().toISOString().split('T')[0],
-    },
-  },
-];
+
 
 const START_BILL_ID = 2243297;
 
@@ -194,7 +113,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [viewHistory, setViewHistory] = useState<ViewType[]>([initialRouteView()]);
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
-  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>(defaultAgenciesList);
+  const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>([]);
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
@@ -416,11 +335,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isAdminLoggedIn) {
         adminService.getAllUsers().then((users) => {
-          if (users && users.length > 0) {
-            setRegisteredUsers(users);
-          } else {
-            setRegisteredUsers(defaultAgenciesList);
-          }
+          setRegisteredUsers(users || []);
         }).catch(() => {});
 
         adminService.getAllTickets().then((tkts) => {
