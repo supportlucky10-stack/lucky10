@@ -185,7 +185,7 @@ export const GameDashboardView: React.FC = () => {
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 5) {
-      addToast('Minimum 5 count is required for 1-digit game', 'error');
+      addToast('Minimum 5 Count Required!', 'error');
       return;
     }
 

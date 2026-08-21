@@ -213,13 +213,13 @@ export const EditDeleteBillView: React.FC = () => {
 
                 {/* Agency, Customer & Slot Info Bar */}
                 <div className="bg-black/60 px-4 py-2.5 border-b border-neutral-850 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                  <span className="text-neutral-300">Agency <strong className="text-amber-400 font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
-                  <span className="text-neutral-300">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
-                  <span className="text-neutral-300">Slot <strong className="text-gold font-bold">{searchedBill.gameSlot}</strong></span>
+                  <span className="text-white">Agency <strong className="text-white font-bold">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></span>
+                  <span className="text-white">Customer <strong className="text-white font-bold">{formatCustomerName((searchedBill as any).customerName) || 'Customer'}</strong></span>
+                  <span className="text-white">Slot <strong className="text-white font-bold">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></span>
                 </div>
 
                 {/* Table Column Headers Bar */}
-                <div className="bg-neutral-900/90 text-gold font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-800 uppercase">
+                <div className="bg-neutral-900/90 text-white font-mono text-xs font-black px-4 py-2.5 flex items-center justify-between border-b border-neutral-800 uppercase">
                   <div className="flex items-center gap-10">
                     <span className="w-16">GAME</span>
                     <span className="w-16">NUM</span>
@@ -238,9 +238,9 @@ export const EditDeleteBillView: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center gap-10">
-                        <span className="w-16 uppercase text-gold font-black">{getDisplayGame(item)}</span>
+                        <span className="w-16 uppercase text-white font-black">{getDisplayGame(item)}</span>
                         <span className="w-16 text-white font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
-                        <span className="text-rose-400 font-black text-sm">{item.count}</span>
+                        <span className="text-white font-black text-sm">{item.count}</span>
                       </div>
                       <span className="text-white font-mono font-bold">₹{item.totalAmount}</span>
                     </div>

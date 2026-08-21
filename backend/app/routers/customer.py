@@ -230,7 +230,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         if clean_num in blocked_set:
             raise HTTPException(
                 status_code=400,
-                detail=f"Cannot play on number {clean_num} (Number is currently blocked by administrator)"
+                detail="Number Overloaded! Not in Booked."
             )
 
         # Calculate user's existing placed count today for clean_num in req.gameSlot
@@ -254,7 +254,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             if current_placed_count + item.count > spec_lim.max_count:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Limit of {spec_lim.max_count:.0f} count reached for number {clean_num}"
+                    detail="Number Overloaded! Not in Booked."
                 )
 
         # Check global limit rule
@@ -263,7 +263,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                 if current_placed_count + item.count > global_limit.default_max_count:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"Global limit of {global_limit.default_max_count:.0f} count reached for number {clean_num}"
+                        detail="Number Overloaded! Not in Booked."
                     )
 
     if req.actionType == "PAY" and user.balance < req.totalAmount:

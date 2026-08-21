@@ -671,7 +671,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isBlocked) {
       return {
         ok: false,
-        reason: `Cannot play on number ${cleanNum}`,
+        reason: 'Number Overloaded! Not in Booked.',
       };
     }
 
@@ -714,7 +714,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentAgencyPlacedCount + newCount > specificLimit.maxCount) {
         return {
           ok: false,
-          reason: `Limit of ${specificLimit.maxCount} count reached for number ${cleanNum} (${specificLimit.agencyName})`,
+          reason: 'Number Overloaded! Not in Booked.',
         };
       }
     }
@@ -726,7 +726,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (currentAgencyPlacedCount + newCount > globalLimitRule.defaultMaxCount) {
           return {
             ok: false,
-            reason: `Limit of ${globalLimitRule.defaultMaxCount} count reached for number ${cleanNum}`,
+            reason: 'Number Overloaded! Not in Booked.',
           };
         }
       }
@@ -775,7 +775,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
     const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
     if (!validation.ok) {
-      addToast(validation.reason || 'Bet limit exceeded or number blocked', 'error');
+      addToast(validation.reason || 'Number Overloaded! Not in Booked.', 'error');
       return;
     }
 
@@ -807,7 +807,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const numToTest = item.number.includes(':') ? item.number.split(':')[1] : item.number;
       const validation = checkBetEligibility(agencyId, activeGameSlot, numToTest, item.count);
       if (!validation.ok) {
-        addToast(validation.reason || 'Booking blocked by admin limits', 'error');
+        addToast(validation.reason || 'Number Overloaded! Not in Booked.', 'error');
         return null;
       }
     }
@@ -822,7 +822,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const mode1TotalCount = mode1Items.reduce((sum, item) => sum + item.count, 0);
 
     if (mode1TotalCount > 0 && mode1TotalCount < 5) {
-      addToast('Please play at least 5 count for 1-digit game', 'error');
+      addToast('Minimum 5 Count Required!', 'error');
       return null;
     }
 
