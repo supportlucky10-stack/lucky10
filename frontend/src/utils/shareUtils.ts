@@ -9,7 +9,7 @@ export interface ShareElementOptions {
 }
 
 /**
- * Captures an HTML element as an image using html2canvas and shares it via Web Share API or triggers download.
+ * Captures an HTML element as an image using html2canvas and shares it via Web Share API or triggers download + WhatsApp.
  */
 export const captureAndShareElement = async ({
   elementId,
@@ -20,10 +20,10 @@ export const captureAndShareElement = async ({
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
 
   if (!targetElem) {
-    if (textSummary) {
-      const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-      window.open(fallbackUrl, '_blank');
-    }
+    const fallbackUrl = textSummary
+      ? `https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`
+      : `https://api.whatsapp.com/send`;
+    window.open(fallbackUrl, '_blank');
     return;
   }
 
@@ -46,7 +46,7 @@ export const captureAndShareElement = async ({
         const clonedTarget = elementId ? clonedDoc.getElementById(elementId) : null;
         if (clonedTarget) {
           clonedTarget.style.transform = 'none';
-          clonedTarget.style.margin = '0 auto';
+          clonedTarget.style.boxShadow = 'none';
         }
       },
     });
@@ -56,10 +56,10 @@ export const captureAndShareElement = async ({
     });
 
     if (!blob) {
-      if (textSummary) {
-        const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-        window.open(fallbackUrl, '_blank');
-      }
+      const fallbackUrl = textSummary
+        ? `https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`
+        : `https://api.whatsapp.com/send`;
+      window.open(fallbackUrl, '_blank');
       return;
     }
 
@@ -67,23 +67,46 @@ export const captureAndShareElement = async ({
       ? fileName
       : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
 
-    const file = new File([blob], jpgFileName, { type: 'image/jpeg' });
+    const file = new File([blob], jpgFileName, { type: 'image/jpeg', lastModified: Date.now() });
 
-    // Check if Web Share API supports file sharing (iOS Safari, Android Chrome/WebView)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    // 1. Try mobile Web Share API for direct WhatsApp / Image Sharing
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      let canShareFiles = false;
       try {
-        // Strictly share only image file — do not pass title or text so WhatsApp has no text caption
-        await navigator.share({
-          files: [file],
-        });
-        return;
-      } catch (shareErr: any) {
-        if (shareErr?.name === 'AbortError') return;
+        if (navigator.canShare) {
+          canShareFiles = navigator.canShare({ files: [file] });
+        } else {
+          canShareFiles = true;
+        }
+      } catch (e) {
+        canShareFiles = false;
+      }
+
+      if (canShareFiles) {
+        try {
+          // Strictly share image file only (no text captions)
+          await navigator.share({
+            files: [file],
+          });
+          return;
+        } catch (shareErr: any) {
+          if (shareErr?.name === 'AbortError') return;
+          // Retry with empty title if browser requires it
+          try {
+            await navigator.share({
+              title: ' ',
+              files: [file],
+            });
+            return;
+          } catch (retryErr: any) {
+            if (retryErr?.name === 'AbortError') return;
+          }
+        }
       }
     }
 
-    // Fallback for desktop browsers / environments without direct image share support:
-    // Trigger download of JPG screenshot image
+    // 2. Fallback for desktop browsers / environments without file share support:
+    // Trigger download of JPG screenshot image & open WhatsApp
     const link = document.createElement('a');
     link.download = jpgFileName;
     link.href = URL.createObjectURL(blob);
@@ -94,11 +117,14 @@ export const captureAndShareElement = async ({
     setTimeout(() => {
       URL.revokeObjectURL(link.href);
     }, 5000);
+
+    const waUrl = `https://api.whatsapp.com/send`;
+    window.open(waUrl, '_blank');
   } catch (err) {
     console.error('Failed to capture screen element image:', err);
-    if (textSummary) {
-      const fallbackUrl = `https://wa.me/?text=${encodeURIComponent(textSummary)}`;
-      window.open(fallbackUrl, '_blank');
-    }
+    const fallbackUrl = textSummary
+      ? `https://api.whatsapp.com/send?text=${encodeURIComponent(textSummary)}`
+      : `https://api.whatsapp.com/send`;
+    window.open(fallbackUrl, '_blank');
   }
 };
