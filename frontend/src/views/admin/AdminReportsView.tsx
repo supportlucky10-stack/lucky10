@@ -588,22 +588,11 @@ export const AdminReportsView: React.FC = () => {
         const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
-          const p1 = res.prize1;
-          const p2 = res.prize2;
-          const p3 = res.prize3;
-          const p4 = res.prize4;
-          const p5 = res.prize5;
-          const comps = res.compliments ? res.compliments.flat() : [];
-
           t.items.forEach((item: any) => {
-            const num = getDisplayNumber(item);
-            const count = item.count || 1;
-            if (num === p1) userPrize += count * 500;
-            else if (num === p2) userPrize += count * 250;
-            else if (num === p3) userPrize += count * 100;
-            else if (num === p4) userPrize += count * 50;
-            else if (num === p5) userPrize += count * 30;
-            else if (comps.includes(num)) userPrize += count * 10;
+            const evalRes = evaluateBetItem(item, res);
+            if (evalRes.isWinner) {
+              userPrize += evalRes.winAmount;
+            }
           });
         }
       });

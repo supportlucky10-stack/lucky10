@@ -331,8 +331,15 @@ export const MyPlayReportView: React.FC = () => {
           const displayD = formatDateDisplay(tDate);
           const existing = dateMap.get(tDate) || { date: displayD, sale: 0, prize: 0 };
           existing.sale += t.totalAmount;
-          if (t.status === 'WON') {
-            existing.prize += t.winAmount || 0;
+          
+          const res = getResultForSlotAndDate(t.gameSlot, tDate);
+          if (res) {
+            t.items.forEach((item: any) => {
+              const evalRes = evaluateBetItem(item, res);
+              if (evalRes.isWinner) {
+                existing.prize += evalRes.winAmount;
+              }
+            });
           }
           dateMap.set(tDate, existing);
         }
@@ -351,7 +358,7 @@ export const MyPlayReportView: React.FC = () => {
     return Array.from(dateMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([_, val]) => val);
-  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets, placedTickets, todayStr]);
+  }, [dailyFromDate, dailyToDate, dailySlotFilter, userTickets, placedTickets, todayStr, getResultForSlotAndDate]);
 
   const userCommissionPercent = React.useMemo(() => {
     const userMode = currentUser?.mode || '';
@@ -388,9 +395,19 @@ export const MyPlayReportView: React.FC = () => {
         );
       });
       const userSale = slotTickets.reduce((acc, t) => acc + t.totalAmount, 0);
-      const userPrize = slotTickets
-        .filter((t) => t.status === 'WON')
-        .reduce((acc, t) => acc + (t.winAmount || 0), 0);
+      let userPrize = 0;
+      slotTickets.forEach((t) => {
+        const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+        const res = getResultForSlotAndDate(t.gameSlot, tDate);
+        if (res) {
+          t.items.forEach((item: any) => {
+            const evalRes = evaluateBetItem(item, res);
+            if (evalRes.isWinner) {
+              userPrize += evalRes.winAmount;
+            }
+          });
+        }
+      });
       const userComm = Math.round(userSale * userCommissionPercent);
 
       return {
@@ -400,7 +417,7 @@ export const MyPlayReportView: React.FC = () => {
         comm: userComm,
       };
     });
-  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr, userCommissionPercent]);
+  }, [dailyFromDate, dailyToDate, userTickets, placedTickets, todayStr, userCommissionPercent, getResultForSlotAndDate]);
 
   const filteredGameRows = dailySlotFilter === 'ALL'
     ? dynamicGameRows
