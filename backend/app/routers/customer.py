@@ -281,8 +281,8 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             detail=f"Insufficient balance (Available: ₹{user.balance}). Total needed: ₹{req.totalAmount}",
         )
 
-    # Determine next sequential ticket ID starting from 2243297 (query last 100 tickets)
-    recent_tickets = db.query(Ticket.id).order_by(Ticket.placed_at.desc()).limit(100).all()
+    # Determine next sequential ticket ID starting from 2243297
+    recent_tickets = db.query(Ticket.id).order_by(Ticket.placed_at.desc()).limit(200).all()
     max_num = 2243296
     for t_tuple in recent_tickets:
         tid = t_tuple[0]
@@ -294,7 +294,11 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                     max_num = val
             except Exception:
                 pass
-    ticket_id = str(max_num + 1)
+    
+    candidate_id = max_num + 1
+    while db.query(Ticket.id).filter(Ticket.id == str(candidate_id)).first() is not None:
+        candidate_id += 1
+    ticket_id = str(candidate_id)
 
     c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
     if c_name.lower() == "customer":
@@ -344,7 +348,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
         for item in req.items:
             bet = BetItem(
-                id=f"bet_{uuid.uuid4().hex[:8]}",
+                id=f"bet_{uuid.uuid4().hex}",
                 ticket_id=ticket_id,
                 number=item.number,
                 count=item.count,
@@ -377,11 +381,11 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
 @router.get("/tickets")
 def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
+    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .filter(Ticket.user_id == payload["sub"])
+        .filter((Ticket.user_id == user.id) | (Ticket.user_id == user.username) | (Ticket.user_id == user.name))
         .order_by(Ticket.placed_at.desc())
         .all()
     )

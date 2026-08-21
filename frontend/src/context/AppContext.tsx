@@ -421,9 +421,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (currentUser && !isAdminLoggedIn) {
         customerService.getUserTickets().then((tkts) => {
           if (tkts) {
-            setPlacedTickets(tkts);
+            setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           }
-        }).catch(() => {});
+        }).catch((err: any) => {
+          const errMsg = err?.message || '';
+          if (errMsg.toLowerCase().includes('deactivated')) {
+            logout();
+            addToast('Your account is deactivated. Please contact administrator.', 'error');
+          }
+        });
 
         customerService.getBankDetails().then((b) => {
           if (b) setBankDetails(b);
@@ -916,7 +922,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let newTicket: PlacedTicket;
       try {
         newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE', cleanCustName);
-      } catch (e) {
+      } catch (e: any) {
+        const errMsg = e?.message || '';
+        const lower = errMsg.toLowerCase();
+        // If backend returned a specific rejection, show the error and stop
+        if (
+          lower.includes('number cant be played') ||
+          lower.includes('overloaded') ||
+          lower.includes('insufficient') ||
+          lower.includes('deactivated') ||
+          lower.includes('empty')
+        ) {
+          addToast(errMsg, 'error');
+          return null;
+        }
+        // Fallback for offline demo mode only
         const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
           id: nextId,
@@ -981,7 +1001,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let newTicket: PlacedTicket;
       try {
         newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'PAY', cleanCustName);
-      } catch (e) {
+      } catch (e: any) {
+        const errMsg = e?.message || '';
+        const lower = errMsg.toLowerCase();
+        // If backend returned a specific rejection, show the error and stop
+        if (
+          lower.includes('number cant be played') ||
+          lower.includes('overloaded') ||
+          lower.includes('insufficient') ||
+          lower.includes('deactivated') ||
+          lower.includes('empty')
+        ) {
+          addToast(errMsg, 'error');
+          return false;
+        }
+        // Fallback for offline demo mode only
         const nextId = getNextSequentialBillId(placedTickets);
         newTicket = {
           id: nextId,
