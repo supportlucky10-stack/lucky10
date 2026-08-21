@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check } from 'lucide-react';
 import type { GameSlot } from '../../types';
@@ -137,6 +137,11 @@ export const GameDashboardView: React.FC = () => {
   const [startRange, setStartRange] = useState('');
   const [endRange, setEndRange] = useState('');
   const [stepVal, setStepVal] = useState('');
+
+  // Input References for auto-advancing cursor
+  const countInputRef = useRef<HTMLInputElement>(null);
+  const endRangeRef = useRef<HTMLInputElement>(null);
+  const stepValRef = useRef<HTMLInputElement>(null);
 
   const unitPrice = 10; // ₹10 per count
 
@@ -540,13 +545,20 @@ export const GameDashboardView: React.FC = () => {
                     maxLength={activeMode}
                     placeholder="Start"
                     value={startRange}
-                    onChange={(e) => setStartRange(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStartRange(val);
+                      if (val.length === activeMode) {
+                        endRangeRef.current?.focus();
+                      }
+                    }}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
 
                 <div>
                   <input
+                    ref={endRangeRef}
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -557,13 +569,20 @@ export const GameDashboardView: React.FC = () => {
                     maxLength={activeMode}
                     placeholder="End"
                     value={endRange}
-                    onChange={(e) => setEndRange(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setEndRange(val);
+                      if (val.length === activeMode) {
+                        stepValRef.current?.focus();
+                      }
+                    }}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
 
                 <div>
                   <input
+                    ref={stepValRef}
                     type="number"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -627,13 +646,20 @@ export const GameDashboardView: React.FC = () => {
                     maxLength={activeMode}
                     placeholder="Number"
                     value={inputNum}
-                    onChange={(e) => setInputNum(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setInputNum(val);
+                      if (val.length === activeMode) {
+                        countInputRef.current?.focus();
+                      }
+                    }}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
 
                 <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                   <input
+                    ref={countInputRef}
                     type="number"
                     inputMode="numeric"
                     pattern="[0-9]*"
@@ -677,7 +703,7 @@ export const GameDashboardView: React.FC = () => {
                       key={pos}
                       type="button"
                       onClick={() => handleMode1Add(pos)}
-                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#ea580c] via-[#c2410c] to-[#7c2d12] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#fb923c] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                      className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#ff7800] via-[#ff5400] to-[#db3e00] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 transition-all uppercase tracking-wide border-2 border-[#ffb370] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                     >
                       {pos}
                     </button>
