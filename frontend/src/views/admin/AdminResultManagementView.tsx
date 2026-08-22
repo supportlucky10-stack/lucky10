@@ -63,7 +63,11 @@ const slotThemes: Record<string, {
 };
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData } = useApp();
+
+  useEffect(() => {
+    refreshAllData();
+  }, []);
 
   const todayStr = getLocalDateStr();
 

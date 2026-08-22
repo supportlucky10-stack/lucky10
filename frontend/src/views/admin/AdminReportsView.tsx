@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
@@ -159,8 +159,13 @@ const getCategoryHeaderTheme = (category: string) => {
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
-  const { registeredUsers, placedTickets, getResultForSlotAndDate } = useApp();
+  const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData } = useApp();
   const todayStr = getLocalDateStr();
+
+  // Auto-sync fresh tickets and results whenever Admin opens Reports
+  useEffect(() => {
+    refreshAllData();
+  }, []);
 
   const triggerDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
     if (ref.current) {

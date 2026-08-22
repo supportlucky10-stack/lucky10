@@ -64,6 +64,7 @@ interface AppContextType {
   removeBlockedNumber: (id: string) => void;
   updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
   checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number, betType?: string, customerName?: string, skipBetSlip?: boolean) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
+  refreshAllData: () => Promise<void>;
 }
 
 
@@ -294,7 +295,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             adminService.getGlobalLimit().catch(() => null),
           ]);
           if (users) setRegisteredUsers(users);
-          if (tkts && tkts.length > 0) setPlacedTickets(tkts);
+          if (tkts) setPlacedTickets(tkts);
           if (lims) setAgencyNumberLimits(lims);
           if (blks) setBlockedNumbers(blks);
           if (g) setGlobalLimitRule(g);
@@ -302,30 +303,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    // Lightweight periodic poll (15 seconds) for live results & limits only
+    // Complete real-time periodic poll (10 seconds) for live tickets, users, results & limits
     const pollLiveUpdates = async () => {
       if (document.visibilityState !== 'visible') return;
 
       try {
         const todayStr = getLocalDateStr();
-        const todayRes = await customerService.getTodayResults(todayStr);
+        const todayRes = await customerService.getTodayResults(todayStr).catch(() => ({}));
         if (todayRes && Object.keys(todayRes).length > 0) {
           setGameResults((prev) => ({ ...prev, ...todayRes }));
+          setAllPublishedResults((prev) => {
+            const updated: Record<string, GameResult> = { ...prev, ...todayRes };
+            Object.values(todayRes).forEach((r: any) => {
+              if (r && r.date && r.gameSlot) {
+                const normDate = extractDateStr(r.date);
+                if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              }
+            });
+            return updated;
+          });
         }
       } catch {}
 
       try {
-        const lims = await customerService.getLimits();
+        const lims = await customerService.getLimits().catch(() => null);
         if (lims) {
           setBlockedNumbers(lims.blockedNumbers || []);
           setAgencyNumberLimits(lims.agencyLimits || []);
           setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
         }
       } catch {}
+
+      if (isAdminLoggedIn) {
+        try {
+          const [users, tkts] = await Promise.all([
+            adminService.getAllUsers().catch(() => null),
+            adminService.getAllTickets().catch(() => null),
+          ]);
+          if (users) setRegisteredUsers(users);
+          if (tkts) setPlacedTickets(tkts);
+        } catch {}
+      } else if (currentUser) {
+        try {
+          const tkts = await customerService.getUserTickets().catch(() => null);
+          if (tkts) {
+            const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
+            setPlacedTickets(myTkts);
+          }
+        } catch {}
+      }
     };
 
     loadInitialData();
-    timer = setInterval(pollLiveUpdates, 15000);
+    timer = setInterval(pollLiveUpdates, 10000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -929,6 +959,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return t;
       })
     );
+
+    // Also pull latest calculated records directly from server
+    if (isAdminLoggedIn) {
+      adminService.getAllTickets().then((tkts) => {
+        if (tkts) setPlacedTickets(tkts);
+      }).catch(() => {});
+    }
   };
 
   const createUser = async (agencyName: string, username: string, password: string, mode: string): Promise<boolean> => {
@@ -1098,6 +1135,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const refreshAllData = async () => {
+    try {
+      const todayStr = getLocalDateStr();
+      const [todayRes, allRes, lims] = await Promise.all([
+        customerService.getTodayResults(todayStr).catch(() => ({})),
+        customerService.getAllResults().catch(() => ({})),
+        customerService.getLimits().catch(() => null),
+      ]);
+
+      if (todayRes && Object.keys(todayRes).length > 0) {
+        setGameResults((prev) => ({ ...prev, ...todayRes }));
+        setAllPublishedResults((prev) => {
+          const updated: Record<string, GameResult> = { ...prev, ...todayRes };
+          Object.values(todayRes).forEach((r: any) => {
+            if (r && r.date && r.gameSlot) {
+              const normDate = extractDateStr(r.date);
+              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+            }
+          });
+          return updated;
+        });
+      }
+
+      if (allRes && Object.keys(allRes).length > 0) {
+        setAllPublishedResults((prev) => {
+          const updated = { ...prev, ...allRes };
+          Object.values(allRes).forEach((r: any) => {
+            if (r && r.date && r.gameSlot) {
+              const normDate = extractDateStr(r.date);
+              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+            }
+          });
+          return updated;
+        });
+      }
+
+      if (lims) {
+        if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
+        if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
+        if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
+      }
+
+      if (isAdminLoggedIn) {
+        const [users, tkts] = await Promise.all([
+          adminService.getAllUsers().catch(() => null),
+          adminService.getAllTickets().catch(() => null),
+        ]);
+        if (users) setRegisteredUsers(users);
+        if (tkts) setPlacedTickets(tkts);
+      } else if (currentUser) {
+        const tkts = await customerService.getUserTickets().catch(() => null);
+        if (tkts) {
+          const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
+          setPlacedTickets(myTkts);
+        }
+      }
+    } catch {}
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1152,6 +1248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeBlockedNumber,
         updateGlobalLimit,
         checkBetEligibility,
+        refreshAllData,
       }}
     >
       {children}

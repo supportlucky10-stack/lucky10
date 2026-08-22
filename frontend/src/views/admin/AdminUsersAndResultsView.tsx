@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { UserAccount } from '../../types';
@@ -17,7 +17,11 @@ const formatDateDDMMYY = (dateStr?: string): string => {
 };
 
 export const AdminUsersAndResultsView: React.FC = () => {
-  const { registeredUsers, createUser, deleteUser, changeUserPassword, updateUserMode, toggleUserStatus, toggleAllUsersStatus } = useApp();
+  const { registeredUsers, createUser, deleteUser, changeUserPassword, updateUserMode, toggleUserStatus, toggleAllUsersStatus, refreshAllData } = useApp();
+
+  useEffect(() => {
+    refreshAllData();
+  }, []);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
