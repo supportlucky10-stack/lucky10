@@ -87,6 +87,26 @@ const formatCustomerName = (name?: string): string => {
   return name.trim();
 };
 
+const isTicketForUser = (t: PlacedTicket, u: UserAccount): boolean => {
+  if (!t || !u) return false;
+  const tUserId = (t.userId || '').trim().toLowerCase();
+  const uId = (u.id || '').trim().toLowerCase();
+  if (tUserId && uId && tUserId === uId) return true;
+
+  const tAgency = ((t as any).agencyName || '').trim().toLowerCase();
+  const uUsername = (u.username || '').trim().toLowerCase();
+  if (tAgency && uUsername && tAgency === uUsername) return true;
+
+  const tUser = ((t as any).userName || '').trim().toLowerCase();
+  const uName = (u.name || '').trim().toLowerCase();
+  if (tUser && uName && tUser === uName) return true;
+
+  if (tAgency && uName && tAgency === uName) return true;
+  if (tUser && uUsername && tUser === uUsername) return true;
+  if (tUserId && (tUserId === uUsername || tUserId === uName)) return true;
+  return false;
+};
+
 const formatDateDisplay = (dateStr: string) => {
   if (!dateStr) return '';
   const parts = dateStr.split('-');
@@ -264,9 +284,8 @@ export const AdminReportsView: React.FC = () => {
 
     return users.map((user) => {
       const userTkts = placedTickets.filter((t) => {
-        const matchesUser = t.userId === user.id || (t as any).agencyName === user.username || (t as any).userName === user.name;
-        if (!matchesUser) return false;
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        if (!isTicketForUser(t, user)) return false;
+        const tDate = extractDateStr(t.placedAt);
         if (fromDate && tDate < fromDate) return false;
         if (toDate && tDate > toDate) return false;
         return true;
@@ -278,7 +297,7 @@ export const AdminReportsView: React.FC = () => {
       // Automatically compute winning prizes won by this user's tickets against published results
       let userWinningPrizes = 0;
       userTkts.forEach((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt);
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
           t.items.forEach((item: any) => {
@@ -302,9 +321,8 @@ export const AdminReportsView: React.FC = () => {
   const selectedUserTickets = useMemo(() => {
     if (!selectedReportUser) return [];
     return placedTickets.filter((t) => {
-      const matchesUser = t.userId === selectedReportUser.id || (t as any).agencyName === selectedReportUser.username || (t as any).userName === selectedReportUser.name;
-      if (!matchesUser) return false;
-      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      if (!isTicketForUser(t, selectedReportUser)) return false;
+      const tDate = extractDateStr(t.placedAt);
       if (fromDate && tDate < fromDate) return false;
       if (toDate && tDate > toDate) return false;
       return true;
@@ -326,9 +344,8 @@ export const AdminReportsView: React.FC = () => {
   const selectedUserPerf = useMemo(() => {
     if (!selectedPerformanceUser) return null;
     const userTkts = placedTickets.filter((t) => {
-      const matches = t.userId === selectedPerformanceUser.id || (t as any).userName === selectedPerformanceUser.name || (t as any).agencyName === selectedPerformanceUser.username;
-      if (!matches) return false;
-      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      if (!isTicketForUser(t, selectedPerformanceUser)) return false;
+      const tDate = extractDateStr(t.placedAt);
       if (fromDate && tDate < fromDate) return false;
       if (toDate && tDate > toDate) return false;
       return true;
@@ -336,7 +353,7 @@ export const AdminReportsView: React.FC = () => {
 
     let userWinningPrizes = 0;
     userTkts.forEach((t) => {
-      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const tDate = extractDateStr(t.placedAt);
       const res = getResultForSlotAndDate(t.gameSlot, tDate);
       if (res) {
         t.items.forEach((item: any) => {
@@ -363,7 +380,7 @@ export const AdminReportsView: React.FC = () => {
       
       let slotWinningPrizes = 0;
       slotTkts.forEach((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt);
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
           t.items.forEach((item: any) => {
@@ -487,9 +504,7 @@ export const AdminReportsView: React.FC = () => {
 
   const userWinningCategories = useMemo(() => {
     if (!selectedWinningUser) return [];
-    const userTkts = placedTickets.filter(
-      (t) => t.userId === selectedWinningUser.id || (t as any).agencyName === selectedWinningUser.username || (t as any).userName === selectedWinningUser.name
-    );
+    const userTkts = placedTickets.filter((t) => isTicketForUser(t, selectedWinningUser));
 
     return computeWinningCategories(
       userTkts,
@@ -511,7 +526,7 @@ export const AdminReportsView: React.FC = () => {
     const dateMap = new Map<string, { date: string; sale: number; prize: number; comm: number; userDisplayName: string }>();
 
     tickets.forEach((t) => {
-      const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+      const tDate = extractDateStr(t.placedAt);
       if (fromDateStr && tDate < fromDateStr) return;
       if (toDateStr && tDate > toDateStr) return;
 
@@ -522,13 +537,7 @@ export const AdminReportsView: React.FC = () => {
         const tAmt = t.totalAmount || 0;
         existing.sale += tAmt;
 
-        const matchedUser = registeredUsers.find(
-          (u) =>
-            u.id === t.userId ||
-            u.username.toLowerCase() === ((t as any).agencyName || '').toLowerCase() ||
-            u.name.toLowerCase() === ((t as any).userName || '').toLowerCase() ||
-            (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()))
-        );
+        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u) || (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase())));
         const commRate = getCommissionPercent(matchedUser?.mode);
         existing.comm += Math.round(tAmt * commRate);
 
@@ -570,7 +579,7 @@ export const AdminReportsView: React.FC = () => {
 
     const gameRows = baseSlots.map((slot) => {
       const slotTickets = tickets.filter((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt);
         return (!fromDateStr || tDate >= fromDateStr) && (!toDateStr || tDate <= toDateStr) && t.gameSlot === slot.slotKey;
       });
 
@@ -580,17 +589,11 @@ export const AdminReportsView: React.FC = () => {
 
       slotTickets.forEach((t) => {
         const tAmt = t.totalAmount || 0;
-        const matchedUser = registeredUsers.find(
-          (u) =>
-            u.id === t.userId ||
-            u.username.toLowerCase() === ((t as any).agencyName || '').toLowerCase() ||
-            u.name.toLowerCase() === ((t as any).userName || '').toLowerCase() ||
-            (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase()))
-        );
+        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u) || (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase())));
         const commRate = getCommissionPercent(matchedUser?.mode);
         userComm += Math.round(tAmt * commRate);
 
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt);
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
           t.items.forEach((item: any) => {
@@ -625,9 +628,7 @@ export const AdminReportsView: React.FC = () => {
 
   const userDailyData = useMemo(() => {
     if (!selectedDailyUser) return { rows: [], totalSale: 0, totalPrize: 0, totalComm: 0, netTotal: 0, filteredGameRows: [] };
-    const userTkts = placedTickets.filter(
-      (t) => t.userId === selectedDailyUser.id || (t as any).agencyName === selectedDailyUser.username || (t as any).userName === selectedDailyUser.name
-    );
+    const userTkts = placedTickets.filter((t) => isTicketForUser(t, selectedDailyUser));
 
     return computeDailyReportData(userTkts, userDailyFromDate, userDailyToDate, userDailySlotFilter, selectedDailyUser.name);
   }, [selectedDailyUser, placedTickets, registeredUsers, userDailyFromDate, userDailyToDate, userDailySlotFilter, getResultForSlotAndDate, todayStr]);

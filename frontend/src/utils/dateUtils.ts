@@ -27,7 +27,20 @@ export const formatDisplayDate = (dateStr: string): string => {
  */
 export const extractDateStr = (raw?: string): string => {
   if (!raw) return getLocalDateStr();
-  const clean = raw.trim();
+  let clean = raw.trim();
+  if (clean.includes(':') || clean.includes('T')) {
+    if (!clean.endsWith('Z') && !clean.includes('+') && !clean.match(/[+-]\d{2}:\d{2}$/)) {
+      clean = clean.replace(' ', 'T') + 'Z';
+    }
+    const d = new Date(clean);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  }
+
   // Match YYYY-MM-DD or YYYY/MM/DD at start
   const ymdMatch = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
   if (ymdMatch) {
