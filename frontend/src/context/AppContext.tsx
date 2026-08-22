@@ -835,8 +835,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (currentUser) {
         newTicket.userId = currentUser.id;
-        newTicket.userName = currentUser.name;
-        newTicket.agencyName = currentUser.username;
+        newTicket.userName = currentUser.username || currentUser.name;
+        newTicket.agencyName = currentUser.name || currentUser.username;
       }
       newTicket.customerName = cleanCustName;
 
@@ -893,8 +893,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (currentUser) {
         newTicket.userId = currentUser.id;
-        newTicket.userName = currentUser.name;
-        newTicket.agencyName = currentUser.username;
+        newTicket.userName = currentUser.username || currentUser.name;
+        newTicket.agencyName = currentUser.name || currentUser.username;
       }
       newTicket.customerName = cleanCustName;
 

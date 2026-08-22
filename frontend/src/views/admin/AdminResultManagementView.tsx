@@ -219,6 +219,18 @@ export const AdminResultManagementView: React.FC = () => {
     const p3 = prize3.trim();
     const p4 = prize4.trim();
     const p5 = prize5.trim();
+    const allCompsEmpty = complimentBoxes.every((n) => !n || !n.trim());
+    const isClearing = !p2 && !p3 && !p4 && !p5 && allCompsEmpty;
+
+    if (isClearing) {
+      await publishGameResult(selectedSlot, p1, '', '', '', [], '', todayStr);
+      setIsOtherPrizesEditing(false);
+      setPreviewSlot(selectedSlot);
+      setPreviewDate(todayStr);
+      setSuccessMessage(`Other Prizes & Compliments for ${selectedSlot} have been cleared and reset successfully!`);
+      setShowSuccessModal(true);
+      return;
+    }
 
     if (!p1) {
       setErrorMessage('Please publish 1st Prize Number first before publishing other prizes.');
@@ -227,14 +239,14 @@ export const AdminResultManagementView: React.FC = () => {
     }
 
     if (!p2 || !p3 || !p4 || !p5) {
-      setErrorMessage('Please fill 2nd, 3rd, 4th, and 5th prize numbers before publishing.');
+      setErrorMessage('Please fill 2nd, 3rd, 4th, and 5th prize numbers before publishing (or clear all to reset).');
       setShowErrorModal(true);
       return;
     }
 
     const emptyCount = complimentBoxes.filter((n) => !n || !n.trim()).length;
     if (emptyCount > 0) {
-      setErrorMessage('Please fill all 30 compliment number boxes before publishing.');
+      setErrorMessage('Please fill all 30 compliment number boxes before publishing (or clear all to reset).');
       setShowErrorModal(true);
       return;
     }
@@ -256,6 +268,7 @@ export const AdminResultManagementView: React.FC = () => {
   const activeSlotTheme = slotThemes[selectedSlot] || slotThemes['1 PM Game'];
   const shortSlot = selectedSlot.replace(' Game', '').replace(' ', '');
   const isOtherDisabled = isOtherPrizesPublished && !isOtherPrizesEditing;
+  const isAllOtherEmpty = !prize2.trim() && !prize3.trim() && !prize4.trim() && !prize5.trim() && complimentBoxes.every((n) => !n || !n.trim());
 
   const [activeTab, setActiveTab] = useState<'publish' | 'preview'>('publish');
   const [previewDate, setPreviewDate] = useState<string>(todayStr);
@@ -532,7 +545,7 @@ export const AdminResultManagementView: React.FC = () => {
                 </div>
 
                 {/* Publish Other Prizes & Compliments Button with Edit Pencil Icon Button */}
-                <div className="flex items-center justify-center gap-2 pt-2">
+                <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                   <button
                     type="button"
                     disabled={isOtherDisabled}
@@ -540,13 +553,34 @@ export const AdminResultManagementView: React.FC = () => {
                     className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
                       isOtherDisabled
                         ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                        : isOtherPrizesEditing && isAllOtherEmpty
+                        ? 'bg-rose-700 hover:bg-rose-600 text-white border-rose-500 cursor-pointer active:scale-95'
                         : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                     }`}
                   >
                     {isOtherDisabled
                       ? 'PUBLISHED'
+                      : isOtherPrizesEditing && isAllOtherEmpty
+                      ? `CLEAR OTHER RESULTS (${shortSlot})`
                       : `PUBLISH OTHER RESULTS (${shortSlot})`}
                   </button>
+
+                  {isOtherPrizesEditing && !isAllOtherEmpty && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrize2('');
+                        setPrize3('');
+                        setPrize4('');
+                        setPrize5('');
+                        setComplimentBoxes(Array(30).fill(''));
+                      }}
+                      className="px-3 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-full text-xs font-bold font-mono uppercase cursor-pointer active:scale-95 transition-all shadow"
+                      title="Clear all fields"
+                    >
+                      Clear All
+                    </button>
+                  )}
 
                   {isOtherPrizesPublished && (
                     <button
