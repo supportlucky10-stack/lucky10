@@ -13,6 +13,7 @@ import {
   Trash2,
   Copy,
   Check,
+  CheckCircle2,
 } from 'lucide-react';
 
 
@@ -86,7 +87,7 @@ const formatCustomerName = (name?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView } = useApp();
+  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView, deleteTicket, addToast } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Dates & Form State for Sales Report Form
@@ -108,6 +109,8 @@ export const MyPlayReportView: React.FC = () => {
   const [deleteSingleTicketTarget, setDeleteSingleTicketTarget] = useState<any | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
+  const [deletedSuccessBillId, setDeletedSuccessBillId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
   const detailLongPressTimerRef = React.useRef<any>(null);
 
@@ -115,20 +118,14 @@ export const MyPlayReportView: React.FC = () => {
   const currentUserTickets = React.useMemo(() => {
     const pool = userTickets.length > 0 ? userTickets : placedTickets;
     if (!currentUser) return [];
-    if (currentUser.role === 'ADMIN') return pool;
+    if (currentUser.role === 'ADMIN') return pool.filter((t) => !deletedTicketIds.includes(t.id));
     const cId = currentUser.id;
-    const cUsername = (currentUser.username || '').toLowerCase();
-    const cName = (currentUser.name || '').toLowerCase();
 
     return pool.filter((t) => {
-      const matchId = t.userId === cId;
-      const agencyName = ((t as any).agencyName || '').toLowerCase();
-      const userName = ((t as any).userName || '').toLowerCase();
-      const matchAgency = agencyName && (agencyName === cUsername || agencyName === cName);
-      const matchUser = userName && (userName === cUsername || userName === cName);
-      return matchId || matchAgency || matchUser;
+      if (deletedTicketIds.includes(t.id)) return false;
+      return t.userId === cId;
     });
-  }, [currentUser, placedTickets, userTickets]);
+  }, [currentUser, placedTickets, userTickets, deletedTicketIds]);
 
   const handleShareBillToWhatsApp = () => {
     if (!selectedSingleTicket) return;
@@ -2370,7 +2367,7 @@ export const MyPlayReportView: React.FC = () => {
 
       {/* DELETE PERMISSION CONFIRMATION DIALOG MODAL (Top-level centered modal) */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
           <div className="bg-neutral-950 border-2 border-rose-600 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(225,29,72,0.4)] space-y-4 text-center">
             <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-500 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
               <Trash2 className="w-6 h-6 stroke-[2.5]" />
@@ -2384,6 +2381,7 @@ export const MyPlayReportView: React.FC = () => {
             <div className="flex items-center gap-3 pt-2 font-mono">
               <button
                 type="button"
+                disabled={isDeleting}
                 onClick={() => setConfirmDeleteId(null)}
                 className="flex-1 py-2.5 bg-neutral-900 text-neutral-300 font-black text-xs rounded-xl border border-neutral-700 hover:text-white cursor-pointer transition-colors"
               >
@@ -2391,17 +2389,62 @@ export const MyPlayReportView: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setDeletedTicketIds((prev) => [...prev, confirmDeleteId]);
-                  setConfirmDeleteId(null);
-                  setDeleteSingleTicketTarget(null);
-                  setSelectedSingleTicket(null);
+                disabled={isDeleting}
+                onClick={async () => {
+                  if (!confirmDeleteId || isDeleting) return;
+                  const targetId = confirmDeleteId;
+                  setIsDeleting(true);
+                  try {
+                    const success = await deleteTicket(targetId);
+                    if (success) {
+                      setDeletedTicketIds((prev) => [...prev, targetId]);
+                      setConfirmDeleteId(null);
+                      setDeleteSingleTicketTarget(null);
+                      setSelectedSingleTicket(null);
+                      setDeletedSuccessBillId(targetId);
+                    }
+                  } catch (err: any) {
+                    addToast(err?.message || 'Failed to delete bill', 'error');
+                  } finally {
+                    setIsDeleting(false);
+                  }
                 }}
-                className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all"
+                className={`flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase rounded-xl shadow cursor-pointer active:scale-95 transition-all ${
+                  isDeleting ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
-                YES, DELETE
+                {isDeleting ? 'DELETING...' : 'YES, DELETE'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* BILL DELETED SUCCESS MODAL */}
+      {deletedSuccessBillId && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-emerald-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(16,185,129,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide">
+                BILL DELETED!
+              </h4>
+              <p className="text-sm font-bold text-emerald-400">
+                Bill #{deletedSuccessBillId}
+              </p>
+              <p className="text-xs text-neutral-400">
+                Permanently removed from all records and reports.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDeletedSuccessBillId(null)}
+              className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
+            >
+              OK
+            </button>
           </div>
         </div>
       )}
