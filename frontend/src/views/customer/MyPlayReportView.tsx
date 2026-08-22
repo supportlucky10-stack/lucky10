@@ -71,6 +71,17 @@ const getPrizePositionDisplay = (card: any): string => {
   return '1ST PRIZE';
 };
 
+const getPrizeRank = (prizeStr: string): number => {
+  const p = (prizeStr || '').toUpperCase();
+  if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) return 1;
+  if (p.includes('2ND')) return 2;
+  if (p.includes('3RD')) return 3;
+  if (p.includes('4TH')) return 4;
+  if (p.includes('5TH')) return 5;
+  if (p.includes('COMPLIMENT') || p.includes('6TH')) return 6;
+  return 1;
+};
+
 const getDisplayNumber = (item: { number?: string; type?: string }): string => {
   const num = item.number || '';
   if (num.includes(':')) {
@@ -576,7 +587,15 @@ export const MyPlayReportView: React.FC = () => {
       });
     });
 
-    return Array.from(catMap.entries()).map(([category, cards]) => ({ category, cards }));
+    return Array.from(catMap.entries()).map(([category, cards]) => {
+      const sortedCards = [...cards].sort((a, b) => {
+        const rankA = getPrizeRank(a.prize);
+        const rankB = getPrizeRank(b.prize);
+        if (rankA !== rankB) return rankA - rankB;
+        return (b.ticketId || '').localeCompare(a.ticketId || '');
+      });
+      return { category, cards: sortedCards };
+    });
   }, [currentUserTickets, winningSlotFilter, winningFromDate, winningToDate, winningSearchNumber, isWinningFullView, winningDigitFilter, winningSubOptionFilter, getResultForSlotAndDate, todayStr]);
 
   const winningTotalCount = displayWinningCategories.reduce(
