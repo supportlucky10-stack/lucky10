@@ -218,9 +218,7 @@ export const GameDashboardView: React.FC = () => {
 
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
-    if (res.blockedCount > 0) {
-      setIsBlockedModalOpen(true);
-    } else if (res.overloadedCount > 0) {
+    if (res.blockedCount > 0 || res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -267,9 +265,7 @@ export const GameDashboardView: React.FC = () => {
 
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
-    if (res.blockedCount > 0) {
-      setIsBlockedModalOpen(true);
-    } else if (res.overloadedCount > 0) {
+    if (res.blockedCount > 0 || res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -376,9 +372,7 @@ export const GameDashboardView: React.FC = () => {
 
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
-    if (res.blockedCount > 0) {
-      setIsBlockedModalOpen(true);
-    } else if (res.overloadedCount > 0) {
+    if (res.blockedCount > 0 || res.overloadedCount > 0) {
       setIsOverloadedModalOpen(true);
     }
 
@@ -426,9 +420,7 @@ export const GameDashboardView: React.FC = () => {
               }
             } catch (err: any) {
               const msg = err?.message || '';
-              if (msg.includes('cant be played')) {
-                setIsBlockedModalOpen(true);
-              } else if (msg.includes('Overloaded')) {
+              if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
                 setIsOverloadedModalOpen(true);
               } else if (msg.includes('Minimum 5')) {
                 setMinCountModalOpen(true);
@@ -970,44 +962,27 @@ export const GameDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* NUMBER OVERLOADED POP-UP MODAL */}
-      {isOverloadedModalOpen && (
+      {/* NUMBER OVERLOADED & BLOCKED POP-UP MODAL */}
+      {(isOverloadedModalOpen || isBlockedModalOpen) && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
           <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
             <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
               <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
             </div>
             <div className="space-y-1 font-mono">
-              <h4 className="font-black text-white text-base uppercase tracking-wide">
-                Number Overloaded! Not in Booked.
+              <h4 className="font-black text-white text-base uppercase tracking-wide leading-tight">
+                NUMBER OVERLOADED!
               </h4>
+              <p className="text-sm font-bold text-neutral-200 uppercase tracking-wide leading-tight">
+                NOT IN BOOKED.
+              </p>
             </div>
             <button
               type="button"
-              onClick={() => setIsOverloadedModalOpen(false)}
-              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* NUMBER BLOCKED POP-UP MODAL */}
-      {isBlockedModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
-          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
-              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
-            </div>
-            <div className="space-y-1 font-mono">
-              <h4 className="font-black text-white text-base uppercase tracking-wide">
-                Number cant be played
-              </h4>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsBlockedModalOpen(false)}
+              onClick={() => {
+                setIsOverloadedModalOpen(false);
+                setIsBlockedModalOpen(false);
+              }}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK

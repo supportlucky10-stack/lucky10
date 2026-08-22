@@ -582,7 +582,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isBlocked) {
       return {
         ok: false,
-        reason: "Number cant be played",
+        reason: "Number Overloaded! Not in Booked.",
         type: 'BLOCKED',
       };
     }
@@ -806,11 +806,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     for (const { num, type, count } of Object.values(betSlipCountByKey)) {
       const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, cleanCustName, true);
       if (!validation.ok) {
-        if (validation.type === 'BLOCKED') {
-          throw new Error('Number cant be played');
-        } else {
-          throw new Error(validation.reason || 'Number Overloaded! Not in Booked.');
-        }
+        throw new Error(validation.reason || 'Number Overloaded! Not in Booked.');
       }
     }
 
@@ -877,11 +873,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     for (const { num, type, count } of Object.values(payBetSlipCountByKey)) {
       const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, cleanCustName, true);
       if (!validation.ok) {
-        if (validation.type === 'BLOCKED') {
-          throw new Error('Number cant be played');
-        } else {
-          throw new Error(validation.reason || 'Payment blocked by admin limits');
-        }
+        throw new Error(validation.reason || 'Number Overloaded! Not in Booked.');
       }
     }
 
