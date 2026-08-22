@@ -4,7 +4,7 @@ import logging
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -51,16 +51,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+import time
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+
+# Structured Request Logging Middleware (Never logs sensitive tokens/passwords)
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    duration_ms = (time.perf_counter() - start_time) * 1000
+    logger.info(f"[HTTP] {request.method} {request.url.path} -> {response.status_code} ({duration_ms:.2f}ms)")
+    return response
+
 # Register Routers (with /api prefix)
 app.include_router(auth.router)
 app.include_router(customer.router)
 app.include_router(admin.router)
 
 @app.get("/api/health")
-def health():
-    return {"message": "Lucky10 Backend OK", "status": "active"}
+def health(db: Session = Depends(get_db)):
+    db_status = "connected"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception as e:
+        logger.error(f"[Lucky10 Health Check DB Error]: {e}")
+        db_status = "disconnected"
+    return {
+        "message": "Lucky10 Backend OK",
+        "status": "active",
+        "database": db_status,
+    }
 
 @app.get("/")
-def root():
-    return {"message": "Lucky10 Backend OK", "status": "active"}
+def root(db: Session = Depends(get_db)):
+    db_status = "connected"
+    try:
+        db.execute(text("SELECT 1"))
+    except Exception:
+        db_status = "disconnected"
+    return {
+        "message": "Lucky10 Backend OK",
+        "status": "active",
+        "database": db_status,
+    }
 

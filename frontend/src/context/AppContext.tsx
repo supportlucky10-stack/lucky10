@@ -75,22 +75,6 @@ interface AppContextType {
 
 
 
-const START_BILL_ID = 2243297;
-
-const getNextSequentialBillId = (tickets: PlacedTicket[]): string => {
-  let maxId = START_BILL_ID - 1;
-  tickets.forEach((t) => {
-    const raw = (t.id || t.ticketId || '').replace(/\D/g, '');
-    if (raw) {
-      const n = parseInt(raw, 10);
-      if (!isNaN(n) && n > maxId) {
-        maxId = n;
-      }
-    }
-  });
-  return String(maxId + 1);
-};
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -250,14 +234,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     let timer: any = null;
 
-    const syncData = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return; // Skip polling when tab is not active
-      }
-
-      // Live sync today's results & all published results for ALL clients
-      const todayStr = getLocalDateStr();
-      customerService.getTodayResults(todayStr).then((todayRes) => {
+    const loadInitialData = async () => {
+      try {
+        const todayStr = getLocalDateStr();
+        const todayRes = await customerService.getTodayResults(todayStr);
         if (todayRes && Object.keys(todayRes).length > 0) {
           setGameResults((prev) => ({ ...prev, ...todayRes }));
           setAllPublishedResults((prev) => {
@@ -273,9 +253,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
           window.dispatchEvent(new Event('lucky10_results_updated'));
         }
-      }).catch(() => {});
+      } catch {}
 
-      customerService.getAllResults().then((allRes) => {
+      try {
+        const allRes = await customerService.getAllResults();
         if (allRes && Object.keys(allRes).length > 0) {
           setAllPublishedResults((prev) => {
             const updated = { ...prev, ...allRes };
@@ -289,68 +270,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           });
           window.dispatchEvent(new Event('lucky10_results_updated'));
         }
-      }).catch(() => {});
+      } catch {}
 
-      // Always sync active game limits and blocked numbers across all players
-      customerService.getLimits().then((lims) => {
+      try {
+        const lims = await customerService.getLimits();
         if (lims) {
           setBlockedNumbers(lims.blockedNumbers || []);
           setAgencyNumberLimits(lims.agencyLimits || []);
           setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
         }
-      }).catch(() => {});
+      } catch {}
 
       if (currentUser && !isAdminLoggedIn) {
-        customerService.getUserTickets().then((tkts) => {
+        try {
+          const tkts = await customerService.getUserTickets();
           if (tkts) {
             setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           }
-        }).catch((err: any) => {
+        } catch (err: any) {
           const errMsg = err?.message || '';
           if (errMsg.toLowerCase().includes('deactivated')) {
             logout();
             addToast('Your account is deactivated. Please contact administrator.', 'error');
           }
-        });
+        }
 
-        customerService.getBankDetails().then((b) => {
+        try {
+          const b = await customerService.getBankDetails();
           if (b) setBankDetails(b);
-        }).catch(() => {});
+        } catch {}
       }
 
       if (isAdminLoggedIn) {
-        adminService.getAllUsers().then((users) => {
-          setRegisteredUsers(users || []);
-        }).catch(() => {});
-
-        adminService.getAllTickets().then((tkts) => {
+        try {
+          const [users, tkts, logs, lims, blks, g] = await Promise.all([
+            adminService.getAllUsers().catch(() => []),
+            adminService.getAllTickets().catch(() => []),
+            adminService.getPayoutLogs().catch(() => []),
+            adminService.getAgencyLimits().catch(() => []),
+            adminService.getBlockedNumbers().catch(() => []),
+            adminService.getGlobalLimit().catch(() => null),
+          ]);
+          if (users) setRegisteredUsers(users);
           if (tkts && tkts.length > 0) setPlacedTickets(tkts);
-        }).catch(() => {});
-
-        adminService.getPayoutLogs().then((logs) => {
           if (logs) setPayoutLogs(logs);
-        }).catch(() => {});
-
-        adminService.getAgencyLimits().then((lims) => {
-          setAgencyNumberLimits(lims || []);
-        }).catch(() => {});
-
-        adminService.getBlockedNumbers().then((blks) => {
-          setBlockedNumbers(blks || []);
-        }).catch(() => {});
-
-        adminService.getGlobalLimit().then((g) => {
-          setGlobalLimitRule(g || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
-        }).catch(() => {});
+          if (lims) setAgencyNumberLimits(lims);
+          if (blks) setBlockedNumbers(blks);
+          if (g) setGlobalLimitRule(g);
+        } catch {}
       }
     };
 
-    syncData();
-    timer = setInterval(syncData, 5000);
+    // Lightweight periodic poll (15 seconds) for live results & limits only
+    const pollLiveUpdates = async () => {
+      if (document.visibilityState !== 'visible') return;
+
+      try {
+        const todayStr = getLocalDateStr();
+        const todayRes = await customerService.getTodayResults(todayStr);
+        if (todayRes && Object.keys(todayRes).length > 0) {
+          setGameResults((prev) => ({ ...prev, ...todayRes }));
+        }
+      } catch {}
+
+      try {
+        const lims = await customerService.getLimits();
+        if (lims) {
+          setBlockedNumbers(lims.blockedNumbers || []);
+          setAgencyNumberLimits(lims.agencyLimits || []);
+          setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
+        }
+      } catch {}
+    };
+
+    loadInitialData();
+    timer = setInterval(pollLiveUpdates, 15000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        syncData();
+        pollLiveUpdates();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -832,43 +830,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
     try {
-      let newTicket: PlacedTicket;
-      try {
-        newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE', cleanCustName);
-      } catch (e: any) {
-        const errMsg = e?.message || '';
-        const lower = errMsg.toLowerCase();
-        // If backend returned a specific rejection, throw the error
-        if (
-          lower.includes('number cant be played') ||
-          lower.includes('overloaded') ||
-          lower.includes('insufficient') ||
-          lower.includes('deactivated') ||
-          lower.includes('empty')
-        ) {
-          throw e;
-        }
-        const nextId = getNextSequentialBillId(placedTickets);
-        newTicket = {
-          id: nextId,
-          ticketId: nextId,
-          userId: currentUser?.id || '',
-          customerName: cleanCustName,
-          gameSlot: activeGameSlot,
-          items: [...betSlip],
-          totalAmount: total,
-          placedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-          status: 'PENDING',
-        };
-      }
+      const newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'SAVE', cleanCustName);
 
       if (currentUser) {
-        newTicket = {
-          ...newTicket,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          agencyName: currentUser.username,
-        };
+        newTicket.userId = currentUser.id;
+        newTicket.userName = currentUser.name;
+        newTicket.agencyName = currentUser.username;
       }
       newTicket.customerName = cleanCustName;
 
@@ -921,56 +888,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
     try {
-      let newTicket: PlacedTicket;
-      try {
-        newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'PAY', cleanCustName);
-      } catch (e: any) {
-        const errMsg = e?.message || '';
-        const lower = errMsg.toLowerCase();
-        // If backend returned a specific rejection, show the error and stop
-        if (
-          lower.includes('number cant be played') ||
-          lower.includes('overloaded') ||
-          lower.includes('insufficient') ||
-          lower.includes('deactivated') ||
-          lower.includes('empty')
-        ) {
-          addToast(errMsg, 'error');
-          return false;
-        }
-        const nextId = getNextSequentialBillId(placedTickets);
-        newTicket = {
-          id: nextId,
-          ticketId: nextId,
-          userId: currentUser?.id || '',
-          customerName: cleanCustName,
-          gameSlot: activeGameSlot,
-          items: [...betSlip],
-          totalAmount: total,
-          placedAt: new Date().toISOString().replace('T', ' ').substring(0, 19),
-          status: 'PAID',
-        };
-      }
+      const newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'PAY', cleanCustName);
 
       if (currentUser) {
-        newTicket = {
-          ...newTicket,
-          userId: currentUser.id,
-          userName: currentUser.name,
-          agencyName: currentUser.username,
-        };
+        newTicket.userId = currentUser.id;
+        newTicket.userName = currentUser.name;
+        newTicket.agencyName = currentUser.username;
       }
       newTicket.customerName = cleanCustName;
 
+      // Update placed tickets and user balance with authoritative response
       setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
-      if (currentUser) {
-        setCurrentUser({ ...currentUser, balance: currentUser.balance - total });
-      }
+      setCurrentUser((prev) => (prev ? { ...prev, balance: prev.balance - newTicket.totalAmount } : prev));
       setBetSlip([]);
-      addToast(`Payment of ₹${total} successful! Ticket ${newTicket.id} is live for ${activeGameSlot}.`, 'success');
+      addToast(`Payment successful! Ticket #${newTicket.id} placed.`, 'success');
       return true;
     } catch (err: any) {
-      addToast(err.message || 'Payment failed', 'error');
+      addToast(err?.message || 'Payment failed. Please try again.', 'error');
       return false;
     } finally {
       isPayingTicketRef.current = false;
@@ -984,12 +918,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         await customerService.deleteTicket(ticketId);
       }
+      setPlacedTickets((prev) => prev.filter((t) => t.id !== ticketId && t.ticketId !== ticketId));
+      addToast(`Bill #${ticketId} deleted successfully!`, 'success');
+      return true;
     } catch (e: any) {
-      console.warn('Backend deleteTicket failed, updating local state:', e?.message);
+      addToast(e?.message || 'Failed to delete bill', 'error');
+      return false;
     }
-    setPlacedTickets((prev) => prev.filter((t) => t.id !== ticketId && t.ticketId !== ticketId));
-    addToast(`Bill #${ticketId} deleted successfully!`, 'success');
-    return true;
   };
 
   const updateBankDetails = async (details: Omit<BankDetails, 'updatedAt'>) => {

@@ -48,13 +48,18 @@ export async function apiRequest<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const fetchPromise = (async () => {
+  const executeFetch = async (retryCount = 0): Promise<T> => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second request timeout
+
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
+        signal: options.signal || controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -63,6 +68,22 @@ export async function apiRequest<T>(
       }
 
       return data as T;
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      // Only retry safe GET requests once on network/timeout errors, never retry POST/financial calls
+      if (isGet && retryCount < 1 && (err.name === 'AbortError' || err.message?.includes('Failed to fetch'))) {
+        return executeFetch(retryCount + 1);
+      }
+      if (err.name === 'AbortError') {
+        throw new Error('Network request timed out. Please check your connection.');
+      }
+      throw err;
+    }
+  };
+
+  const fetchPromise = (async () => {
+    try {
+      return await executeFetch();
     } finally {
       if (isGet) {
         inFlightGetRequests.delete(endpoint);

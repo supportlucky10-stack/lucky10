@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
-from app.core.database import get_db
+from app.core.database import get_db, get_next_ticket_id
 from app.core.security import get_current_customer
 from app.models.user import User
 from app.models.bank_details import BankDetails
@@ -197,6 +197,10 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     user = check_user_active(user)
 
     # ── DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
+    c_req_clean = (req.customerName or "").strip().lower()
+    if c_req_clean == "customer":
+        c_req_clean = ""
+
     recent_same_ticket = db.query(Ticket).options(selectinload(Ticket.items)).filter(
         Ticket.user_id == user.id,
         Ticket.game_slot == req.gameSlot,
@@ -204,10 +208,14 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         Ticket.placed_at >= datetime.now(timezone.utc) - timedelta(seconds=3)
     ).first()
     if recent_same_ticket and len(recent_same_ticket.items) == len(req.items):
-        req_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in req.items])
-        rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
-        if req_nums == rec_nums:
-            return format_ticket(recent_same_ticket)
+        rec_cust_clean = (recent_same_ticket.customer_name or "").strip().lower()
+        if rec_cust_clean == "customer":
+            rec_cust_clean = ""
+        if rec_cust_clean == c_req_clean:
+            req_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in req.items])
+            rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
+            if req_nums == rec_nums:
+                return format_ticket(recent_same_ticket)
 
     # ── SERVER-SIDE LIMIT & BLOCKED NUMBERS VALIDATION ──
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -300,30 +308,49 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
         batch_counts[item_key] = current_batch + float(item.count)
 
-    if req.actionType == "PAY" and user.balance < req.totalAmount:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Insufficient balance (Available: ₹{user.balance}). Total needed: ₹{req.totalAmount}",
-        )
+    # Authoritative calculation of financial values
+    calculated_items = []
+    calculated_total_amount = 0.0
+    for item in req.items:
+        num_str = item.number.strip()
+        cnt = float(item.count)
+        if cnt <= 0:
+            raise HTTPException(status_code=400, detail="Count must be greater than 0")
+        
+        # 1-digit mode (e.g. A:1, B:5): ₹12 per count; 2-digit / 3-digit: ₹10 per count
+        if (":" in num_str and len(num_str.split(":")[1].strip()) == 1) or item.type.upper() == "POSITION":
+            unit_price = 12.0
+        else:
+            unit_price = 10.0
 
-    # Determine next sequential ticket ID starting from 2243297
-    recent_tickets = db.query(Ticket.id).order_by(Ticket.placed_at.desc()).limit(200).all()
-    max_num = 2243296
-    for t_tuple in recent_tickets:
-        tid = t_tuple[0]
-        digits = ''.join(filter(str.isdigit, tid or ''))
-        if digits:
-            try:
-                val = int(digits)
-                if val > max_num:
-                    max_num = val
-            except Exception:
-                pass
-    
-    candidate_id = max_num + 1
-    while db.query(Ticket.id).filter(Ticket.id == str(candidate_id)).first() is not None:
-        candidate_id += 1
-    ticket_id = str(candidate_id)
+        item_total = cnt * unit_price
+        calculated_total_amount += item_total
+        calculated_items.append({
+            "number": num_str,
+            "count": cnt,
+            "type": item.type,
+            "unit_price": unit_price,
+            "total_amount": item_total,
+        })
+
+    # Validate balance if paying
+    if req.actionType == "PAY":
+        user_q = db.query(User).filter(User.id == user.id)
+        bind = db.get_bind()
+        if bind and bind.dialect.name == "postgresql":
+            user_q = user_q.with_for_update()
+        db_user = user_q.first()
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        if db_user.balance < calculated_total_amount:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Insufficient balance (Available: ₹{db_user.balance:.2f}). Total needed: ₹{calculated_total_amount:.2f}",
+            )
+        db_user.balance -= calculated_total_amount
+
+    # Generate atomic, concurrency-safe sequential ticket ID
+    ticket_id = get_next_ticket_id(db)
 
     c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
     if c_name.lower() == "customer":
@@ -355,31 +382,27 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         status_val = "WON" if win_val > 0 else "LOST"
 
     try:
-        # Deduct balance if paying
-        if req.actionType == "PAY":
-            user.balance -= req.totalAmount
-
         new_ticket = Ticket(
             id=ticket_id,
             user_id=user.id,
             customer_name=c_name,
             game_slot=req.gameSlot,
-            total_amount=req.totalAmount,
+            total_amount=calculated_total_amount,
             status=status_val,
             win_amount=win_val,
             placed_at=datetime.now(timezone.utc),
         )
         db.add(new_ticket)
 
-        for item in req.items:
+        for item_data in calculated_items:
             bet = BetItem(
                 id=f"bet_{uuid.uuid4().hex}",
                 ticket_id=ticket_id,
-                number=item.number,
-                count=item.count,
-                type=item.type,
-                unit_price=item.unitPrice,
-                total_amount=item.totalAmount,
+                number=item_data["number"],
+                count=item_data["count"],
+                type=item_data["type"],
+                unit_price=item_data["unit_price"],
+                total_amount=item_data["total_amount"],
             )
             db.add(bet)
 
@@ -390,7 +413,7 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                 user_id=user.id,
                 user_name=user.name,
                 type="Ticket Purchase",
-                amount=f"₹ {req.totalAmount:.0f}",
+                amount=f"₹ {calculated_total_amount:.0f}",
                 account="Wallet Deposit",
                 status="SUCCESS",
                 timestamp=datetime.now(timezone.utc),
