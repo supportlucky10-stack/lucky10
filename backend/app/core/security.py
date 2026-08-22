@@ -140,7 +140,7 @@ from app.models.user import User, UserRole
 def get_current_customer(
     payload: dict = Depends(get_current_user_token),
     db: Session = Depends(get_db),
-) -> dict:
+) -> User:
     if payload.get("role") not in ("CUSTOMER", "ADMIN"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
@@ -153,14 +153,14 @@ def get_current_customer(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User account not found")
 
     if hasattr(user, "is_active") and user.is_active is False:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is deactivated.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your account is deactivated. Please contact administrator.")
 
-    return payload
+    return user
 
 def get_current_admin(
     payload: dict = Depends(get_current_user_token),
     db: Session = Depends(get_db),
-) -> dict:
+) -> User:
     if payload.get("role") != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     
@@ -173,6 +173,6 @@ def get_current_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
         
     if hasattr(user, "is_active") and user.is_active is False:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Your admin account is deactivated.")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin account is deactivated.")
         
-    return payload
+    return user

@@ -11,12 +11,9 @@ from app.models import (
     User,
     Game,
     GameResult,
-    BankDetails,
     Ticket,
     BetItem,
-    PayoutRequest,
     IssueTicket,
-    TransactionLog,
 )
 from app.models.user import UserRole
 
@@ -78,7 +75,6 @@ def provision_first_admin(db: Session):
                 username=admin_username,
                 password_hash=new_hash,
                 role=UserRole.ADMIN,
-                balance=0.0,
                 mode="With Commission",
                 is_active=True,
                 created_at=datetime.now(timezone.utc),
@@ -107,7 +103,6 @@ def provision_first_admin(db: Session):
             username=admin_username,
             password_hash=get_password_hash(admin_password),
             role=UserRole.ADMIN,
-            balance=0.0,
             mode="With Commission",
             is_active=True,
             created_at=datetime.now(timezone.utc),
@@ -124,7 +119,6 @@ def provision_first_admin(db: Session):
             username="admin",
             password_hash=get_password_hash("admin_dev_pass_2026"),
             role=UserRole.ADMIN,
-            balance=0.0,
             mode="With Commission",
             is_active=True,
             created_at=datetime.now(timezone.utc),
@@ -136,6 +130,7 @@ def provision_first_admin(db: Session):
         print("[Lucky10 Admin Init] No ADMIN_USERNAME / ADMIN_PASSWORD set in production. First admin provisioning skipped.")
 
 def seed_db(force: bool = False, dev: bool = False):
+    Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
     try:
         # First ensure admin user is provisioned
@@ -168,15 +163,7 @@ def seed_db(force: bool = False, dev: bool = False):
                 "username": "sriganesh",
                 "password": "123",
                 "role": UserRole.CUSTOMER,
-                "balance": 18450.0,
                 "mode": "With Commission (20%)",
-                "bank": {
-                    "account_holder_name": "Sri Ganesh Enterprises",
-                    "account_number": "30981029384756",
-                    "bank_name": "State Bank of India",
-                    "ifsc": "SBIN0004521",
-                    "branch_name": "Gandhi Nagar, Chennai",
-                },
             },
             {
                 "id": "user_luckystar_003",
@@ -185,15 +172,7 @@ def seed_db(force: bool = False, dev: bool = False):
                 "username": "luckystar",
                 "password": "123",
                 "role": UserRole.CUSTOMER,
-                "balance": 24800.0,
                 "mode": "With Commission (30%)",
-                "bank": {
-                    "account_holder_name": "Lucky Star Agency",
-                    "account_number": "91202004819283",
-                    "bank_name": "ICICI Bank",
-                    "ifsc": "ICIC0000982",
-                    "branch_name": "Koti, Hyderabad",
-                },
             },
             {
                 "id": "user_balaji_004",
@@ -202,15 +181,7 @@ def seed_db(force: bool = False, dev: bool = False):
                 "username": "balaji_agency",
                 "password": "123",
                 "role": UserRole.CUSTOMER,
-                "balance": 12300.0,
                 "mode": "Without Commission",
-                "bank": {
-                    "account_holder_name": "Balaji Agencies",
-                    "account_number": "18491020003948",
-                    "bank_name": "Axis Bank",
-                    "ifsc": "UTIB0001093",
-                    "branch_name": "Camp, Pune",
-                },
             },
             {
                 "id": "user_royal_005",
@@ -219,21 +190,12 @@ def seed_db(force: bool = False, dev: bool = False):
                 "username": "royal_fortune",
                 "password": "123",
                 "role": UserRole.CUSTOMER,
-                "balance": 31500.0,
                 "mode": "With Commission (20%)",
-                "bank": {
-                    "account_holder_name": "Royal Fortune Ltd",
-                    "account_number": "00281040001928",
-                    "bank_name": "Punjab National Bank",
-                    "ifsc": "PUNB0123400",
-                    "branch_name": "Connaught Place, Delhi",
-                },
             },
         ]
 
         for u_data in agencies_data:
             existing = db.query(User).filter((User.id == u_data["id"]) | (User.username == u_data["username"])).first()
-            bank_info = u_data.get("bank")
             if not existing:
                 u = User(
                     id=u_data["id"],
@@ -242,43 +204,16 @@ def seed_db(force: bool = False, dev: bool = False):
                     username=u_data["username"],
                     password_hash=get_password_hash(u_data["password"]),
                     role=u_data["role"],
-                    balance=u_data["balance"],
                     mode=u_data["mode"],
                     is_active=True,
                     created_at=now_utc - timedelta(days=15),
                 )
                 db.add(u)
-                db.flush()
-
-                if bank_info:
-                    b = BankDetails(
-                        id=f"bank_{u.id}",
-                        user_id=u.id,
-                        account_holder_name=bank_info["account_holder_name"],
-                        account_number=bank_info["account_number"],
-                        bank_name=bank_info["bank_name"],
-                        ifsc=bank_info["ifsc"],
-                        branch_name=bank_info["branch_name"],
-                        updated_at=now_utc - timedelta(days=5),
-                    )
-                    db.add(b)
             else:
                 existing.name = u_data["name"]
                 existing.mode = u_data["mode"]
-                if bank_info and not existing.bank_details:
-                    b = BankDetails(
-                        id=f"bank_{existing.id}",
-                        user_id=existing.id,
-                        account_holder_name=bank_info["account_holder_name"],
-                        account_number=bank_info["account_number"],
-                        bank_name=bank_info["bank_name"],
-                        ifsc=bank_info["ifsc"],
-                        branch_name=bank_info["branch_name"],
-                        updated_at=now_utc - timedelta(days=5),
-                    )
-                    db.add(b)
 
-        print("--> Seeded Agencies & Bank Details successfully")
+        print("--> Seeded Agencies successfully")
 
         # ── 2. Seed Games ──
         slots = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
@@ -577,101 +512,7 @@ def seed_db(force: bool = False, dev: bool = False):
 
         print("--> Seeded Placed Tickets with diverse Customers & Agencies")
 
-        # ── 5. Seed Payout Requests ──
-        payouts_data = [
-            {
-                "id": "pay_001",
-                "user_id": "user_sriganesh_002",
-                "user_name": "Sri Ganesh Agency",
-                "amount": 5000.0,
-                "bank_account": "SBIN0004521 - 30981029384756",
-                "status": "SUCCESS",
-                "created_at": now_utc - timedelta(hours=5),
-            },
-            {
-                "id": "pay_002",
-                "user_id": "user_luckystar_003",
-                "user_name": "Lucky Star Agency",
-                "amount": 10000.0,
-                "bank_account": "ICIC0000982 - 91202004819283",
-                "status": "SUCCESS",
-                "created_at": now_utc - timedelta(hours=3),
-            },
-            {
-                "id": "pay_003",
-                "user_id": "user_balaji_004",
-                "user_name": "Balaji Lottery Agency",
-                "amount": 7500.0,
-                "bank_account": "UTIB0001093 - 18491020003948",
-                "status": "SUCCESS",
-                "created_at": now_utc - timedelta(hours=1),
-            },
-            {
-                "id": "pay_004",
-                "user_id": "user_royal_005",
-                "user_name": "Royal Fortune Agency",
-                "amount": 12000.0,
-                "bank_account": "PUNB0123400 - 00281040001928",
-                "status": "PROCESSING",
-                "created_at": now_utc - timedelta(minutes=20),
-            },
-        ]
-
-        for p in payouts_data:
-            existing = db.query(PayoutRequest).filter(PayoutRequest.id == p["id"]).first()
-            if not existing:
-                db.add(PayoutRequest(**p))
-
-        # ── 6. Seed Transaction Logs ──
-        txns_data = [
-            {
-                "id": "TXN_748291",
-                "user_id": "user_sriganesh_002",
-                "user_name": "Sri Ganesh Agency",
-                "type": "Bank Transfer (Payout)",
-                "amount": "₹ 5,000",
-                "account": "SBIN0004521 - 30981029384756",
-                "status": "SUCCESS",
-                "timestamp": now_utc - timedelta(hours=5),
-            },
-            {
-                "id": "TXN_748292",
-                "user_id": "user_luckystar_003",
-                "user_name": "Lucky Star Agency",
-                "type": "Ticket Purchase",
-                "amount": "₹ 600",
-                "account": "Wallet Deposit",
-                "status": "SUCCESS",
-                "timestamp": now_utc - timedelta(hours=2),
-            },
-            {
-                "id": "TXN_748293",
-                "user_id": "user_balaji_004",
-                "user_name": "Balaji Lottery Agency",
-                "type": "Wallet Top-up",
-                "amount": "₹ 15,000",
-                "account": "UPI Transfer",
-                "status": "SUCCESS",
-                "timestamp": now_utc - timedelta(hours=6),
-            },
-            {
-                "id": "TXN_748294",
-                "user_id": "user_royal_005",
-                "user_name": "Royal Fortune Agency",
-                "type": "Ticket Purchase",
-                "amount": "₹ 800",
-                "account": "Wallet Deposit",
-                "status": "SUCCESS",
-                "timestamp": now_utc - timedelta(minutes=30),
-            },
-        ]
-
-        for t in txns_data:
-            existing = db.query(TransactionLog).filter(TransactionLog.id == t["id"]).first()
-            if not existing:
-                db.add(TransactionLog(**t))
-
-        # ── 7. Seed Issue Support Tickets ──
+        # ── 5. Seed Issue Support Tickets ──
         issues_data = [
             {
                 "id": "ISS_109281",

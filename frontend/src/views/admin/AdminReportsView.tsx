@@ -159,7 +159,7 @@ const getCategoryHeaderTheme = (category: string) => {
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
-  const { registeredUsers, placedTickets, getResultForSlotAndDate, payoutLogs } = useApp();
+  const { registeredUsers, placedTickets, getResultForSlotAndDate } = useApp();
   const todayStr = getLocalDateStr();
 
   const triggerDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
@@ -285,25 +285,14 @@ export const AdminReportsView: React.FC = () => {
         }
       });
 
-      const manualPayouts = payoutLogs
-        .filter((p) => {
-          const matchesUser = p.userId === user.id || p.userName === user.name;
-          if (!matchesUser) return false;
-          const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
-          if (fromDate && pDate < fromDate) return false;
-          if (toDate && pDate > toDate) return false;
-          return true;
-        })
-        .reduce((sum, p) => sum + (p.amount || 0), 0);
-
-      const userPayouts = userWinningPrizes + manualPayouts;
+      const userPayouts = userWinningPrizes;
       const commissionPercent = getCommissionPercent(user.mode);
       const totalCommission = Math.round(totalGross * commissionPercent);
       const net = totalGross - userPayouts - totalCommission;
 
       return { user, totalBills, totalGross, totalPayouts: userPayouts, totalCommission, net };
     });
-  }, [registeredUsers, userSearchQuery, placedTickets, payoutLogs, fromDate, toDate, todayStr, getResultForSlotAndDate]);
+  }, [registeredUsers, userSearchQuery, placedTickets, fromDate, toDate, todayStr, getResultForSlotAndDate]);
 
   const selectedUserTickets = useMemo(() => {
     if (!selectedReportUser) return [];
@@ -340,15 +329,6 @@ export const AdminReportsView: React.FC = () => {
       return true;
     });
 
-    const userPays = payoutLogs.filter((p) => {
-      const matches = p.userId === selectedPerformanceUser.id || p.userName === selectedPerformanceUser.name;
-      if (!matches) return false;
-      const pDate = p.date ? p.date.split('T')[0].split(' ')[0] : todayStr;
-      if (fromDate && pDate < fromDate) return false;
-      if (toDate && pDate > toDate) return false;
-      return true;
-    });
-
     let userWinningPrizes = 0;
     userTkts.forEach((t) => {
       const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
@@ -363,8 +343,7 @@ export const AdminReportsView: React.FC = () => {
       }
     });
 
-    const manualPayouts = userPays.reduce((sum, p) => sum + (p.amount || 0), 0);
-    const totalPayouts = userWinningPrizes + manualPayouts;
+    const totalPayouts = userWinningPrizes;
     const totalGross = userTkts.reduce((sum, t) => sum + (t.totalAmount || 0), 0);
     const totalBills = userTkts.length;
     const commissionPercent = getCommissionPercent(selectedPerformanceUser.mode);
@@ -391,14 +370,13 @@ export const AdminReportsView: React.FC = () => {
         }
       });
 
-      const slotManualPays = userPays.filter((p) => (p as any).gameSlot === slot).reduce((sum, p) => sum + (p.amount || 0), 0);
-      const slotPayouts = slotWinningPrizes + slotManualPays;
+      const slotPayouts = slotWinningPrizes;
       const slotNet = slotGross - slotPayouts - slotComm;
       return { slot, bills: slotBills, gross: slotGross, payouts: slotPayouts, commission: slotComm, net: slotNet };
     });
 
     return { user: selectedPerformanceUser, totalBills, totalGross, totalPayouts, totalCommission, net, slotBreakdown };
-  }, [selectedPerformanceUser, placedTickets, payoutLogs, fromDate, toDate, todayStr, getResultForSlotAndDate]);
+  }, [selectedPerformanceUser, placedTickets, fromDate, toDate, todayStr, getResultForSlotAndDate]);
 
   const globalTotalGross = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalGross, 0), [userPerformanceList]);
   const globalTotalCommission = useMemo(() => userPerformanceList.reduce((sum, item) => sum + item.totalCommission, 0), [userPerformanceList]);

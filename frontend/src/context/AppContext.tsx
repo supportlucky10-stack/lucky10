@@ -3,11 +3,9 @@ import type {
   ViewType,
   GameSlot,
   UserAccount,
-  BankDetails,
   BetSlipItem,
   PlacedTicket,
   GameResult,
-  PayoutLog,
   ToastMessage,
   AgencyNumberLimit,
   BlockedNumberRule,
@@ -35,16 +33,11 @@ interface AppContextType {
   placedTickets: PlacedTicket[];
   userTickets: PlacedTicket[];
   saveTicket: (customerName?: string) => Promise<string | null>;
-  payTicket: (customerName?: string) => Promise<boolean>;
   deleteTicket: (ticketId: string) => Promise<boolean>;
-  bankDetails: BankDetails | null;
-  updateBankDetails: (details: Omit<BankDetails, 'updatedAt'>) => Promise<void>;
   gameResults: Record<GameSlot, GameResult>;
   allPublishedResults: Record<string, GameResult>;
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
   publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
-  payoutLogs: PayoutLog[];
-  processPayout: (userId: string, amount: number) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
@@ -93,10 +86,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
-  const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
   const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>({} as any);
   const [allPublishedResults, setAllPublishedResults] = useState<Record<string, GameResult>>({});
-  const [payoutLogs, setPayoutLogs] = useState<PayoutLog[]>([]);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   // Limit / Block States (Synced live from backend database)
@@ -109,7 +100,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const isSavingTicketRef = useRef(false);
-  const isPayingTicketRef = useRef(false);
 
   const dedupeTickets = (list: PlacedTicket[]): PlacedTicket[] => {
     const seen = new Set<string>();
@@ -179,9 +169,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           } else {
             setCurrentUser(user);
             setIsAdminLoggedIn(user.role === 'ADMIN');
-            if (user.bankDetails) {
-              setBankDetails(user.bankDetails);
-            }
           }
         }
       } catch (e) {
@@ -295,26 +282,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             addToast('Your account is deactivated. Please contact administrator.', 'error');
           }
         }
-
-        try {
-          const b = await customerService.getBankDetails();
-          if (b) setBankDetails(b);
-        } catch {}
       }
 
       if (isAdminLoggedIn) {
         try {
-          const [users, tkts, logs, lims, blks, g] = await Promise.all([
+          const [users, tkts, lims, blks, g] = await Promise.all([
             adminService.getAllUsers().catch(() => []),
             adminService.getAllTickets().catch(() => []),
-            adminService.getPayoutLogs().catch(() => []),
             adminService.getAgencyLimits().catch(() => []),
             adminService.getBlockedNumbers().catch(() => []),
             adminService.getGlobalLimit().catch(() => null),
           ]);
           if (users) setRegisteredUsers(users);
           if (tkts && tkts.length > 0) setPlacedTickets(tkts);
-          if (logs) setPayoutLogs(logs);
           if (lims) setAgencyNumberLimits(lims);
           if (blks) setBlockedNumbers(blks);
           if (g) setGlobalLimitRule(g);
@@ -466,7 +446,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         };
         setCurrentUser(finalUser);
         setIsAdminLoggedIn(false);
-        if (res.user.bankDetails) setBankDetails(res.user.bankDetails);
         addToast(`Welcome back, ${res.user.name}!`, 'success');
         setCurrentView('GAME_DASHBOARD');
         return { success: true };
@@ -847,62 +826,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const payTicket = async (customerName?: string): Promise<boolean> => {
-    if (isPayingTicketRef.current) {
-      return false;
-    }
 
-    if (betSlip.length === 0) {
-      throw new Error('Your bet slip is empty!');
-    }
-
-    const agencyId = currentUser?.id || currentUser?.username || '';
-    const cleanCustName = (customerName && customerName.trim() && customerName.trim().toLowerCase() !== 'customer') ? customerName.trim() : '';
-
-    const payBetSlipCountByKey: Record<string, { num: string; type: string; count: number }> = {};
-    for (const item of betSlip) {
-      const rawNum = item.number.trim();
-      const normType = (item.type || '').toUpperCase() === 'SUPER' || (item.type || '').toUpperCase() === 'DIRECT' ? 'DIRECT' : ((item.type || '').toUpperCase() === 'BOX' || (item.type || '').toUpperCase() === 'SHUFFLE' ? 'BOX' : item.type);
-      const key = `${rawNum}_${normType}`;
-      if (!payBetSlipCountByKey[key]) {
-        payBetSlipCountByKey[key] = { num: rawNum, type: item.type || '', count: 0 };
-      }
-      payBetSlipCountByKey[key].count += item.count;
-    }
-
-    for (const { num, type, count } of Object.values(payBetSlipCountByKey)) {
-      const validation = checkBetEligibility(agencyId, activeGameSlot, num, count, type, cleanCustName, true);
-      if (!validation.ok) {
-        throw new Error(validation.reason || 'Number Overloaded! Not in Booked.');
-      }
-    }
-
-    isPayingTicketRef.current = true;
-    const total = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
-
-    try {
-      const newTicket = await customerService.placeTicket(activeGameSlot, betSlip, total, 'PAY', cleanCustName);
-
-      if (currentUser) {
-        newTicket.userId = currentUser.id;
-        newTicket.userName = currentUser.username || currentUser.name;
-        newTicket.agencyName = currentUser.name || currentUser.username;
-      }
-      newTicket.customerName = cleanCustName;
-
-      // Update placed tickets and user balance with authoritative response
-      setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
-      setCurrentUser((prev) => (prev ? { ...prev, balance: prev.balance - newTicket.totalAmount } : prev));
-      setBetSlip([]);
-      addToast(`Payment successful! Ticket #${newTicket.id} placed.`, 'success');
-      return true;
-    } catch (err: any) {
-      addToast(err?.message || 'Payment failed. Please try again.', 'error');
-      return false;
-    } finally {
-      isPayingTicketRef.current = false;
-    }
-  };
 
   const deleteTicket = async (ticketId: string): Promise<boolean> => {
     try {
@@ -920,18 +844,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateBankDetails = async (details: Omit<BankDetails, 'updatedAt'>) => {
-    try {
-      const updated = await customerService.updateBankDetails(details);
-      setBankDetails(updated);
-      if (currentUser) {
-        setCurrentUser({ ...currentUser, bankDetails: updated });
-      }
-      addToast('Bank account details updated successfully!', 'success');
-    } catch (err: any) {
-      addToast(err.message || 'Failed to update bank details', 'error');
-    }
-  };
+
 
   const publishGameResult = async (
     slot: GameSlot,
@@ -1018,16 +931,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  const processPayout = async (userId: string, amount: number) => {
-    try {
-      const newLog = await adminService.processPayout(userId, amount);
-      setPayoutLogs((prev) => [newLog, ...prev]);
-      addToast(`Payout of ₹${amount} transferred successfully!`, 'success');
-    } catch (err: any) {
-      addToast(err.message || 'Failed to process payout', 'error');
-    }
-  };
-
   const createUser = async (agencyName: string, username: string, password: string, mode: string): Promise<boolean> => {
     const cleanAgency = agencyName.trim();
     const cleanUsername = username.trim() || cleanAgency;
@@ -1040,7 +943,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       username: cleanUsername,
       password: cleanPass,
       role: 'CUSTOMER',
-      balance: 1000,
       mode: mode,
       createdAt: new Date().toISOString().split('T')[0],
     };
@@ -1219,16 +1121,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             })
           : [],
         saveTicket,
-        payTicket,
         deleteTicket,
-        bankDetails,
-        updateBankDetails,
         gameResults,
         allPublishedResults,
         getResultForSlotAndDate,
         publishGameResult,
-        payoutLogs,
-        processPayout,
         registerUser,
         createUser,
         deleteUser,

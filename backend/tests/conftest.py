@@ -94,7 +94,6 @@ def test_admin_user(db_session):
         username="admin_test",
         password_hash=get_password_hash("admin12345"),
         role=UserRole.ADMIN,
-        balance=0.0,
         is_active=True,
         created_at=datetime.now(timezone.utc),
     )
@@ -112,7 +111,6 @@ def test_customer_user(db_session):
         username="cust_agency",
         password_hash=get_password_hash("custpass123"),
         role=UserRole.CUSTOMER,
-        balance=5000.0,
         is_active=True,
         created_at=datetime.now(timezone.utc),
     )
@@ -130,7 +128,6 @@ def test_disabled_customer(db_session):
         username="disabled_user",
         password_hash=get_password_hash("disabledpass"),
         role=UserRole.CUSTOMER,
-        balance=1000.0,
         is_active=False,
         created_at=datetime.now(timezone.utc),
     )

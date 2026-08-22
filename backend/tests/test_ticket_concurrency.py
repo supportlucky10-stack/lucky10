@@ -35,7 +35,6 @@ def test_50_concurrent_customers_ticket_creation_and_isolation(client, db_sessio
                 name=f"Customer {i}",
                 password_hash=get_password_hash("pass123"),
                 role=UserRole.CUSTOMER,
-                balance=50000.0,
                 is_active=True,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc),

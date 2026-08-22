@@ -7,13 +7,11 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db, get_next_ticket_id
 from app.core.security import get_current_customer
 from app.models.user import User
-from app.models.bank_details import BankDetails
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
 from app.models.issue import IssueTicket
-from app.models.transaction import TransactionLog
 from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
-from app.schemas.user import BankDetailsSchema, UserAccountResponse
+from app.schemas.user import UserAccountResponse
 from app.schemas.ticket import TicketCreateSchema, PlacedTicketResponse, BetItemSchema
 from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
@@ -93,37 +91,19 @@ def check_user_active(user: Optional[User]) -> User:
     return user
 
 def format_user_account(user: User) -> dict:
-    bank = None
-    if user.bank_details:
-        bank = {
-            "accountHolderName": user.bank_details.account_holder_name or "",
-            "accountNo": user.bank_details.account_number or "",
-            "bankName": user.bank_details.bank_name or "",
-            "ifsc": user.bank_details.ifsc or "",
-            "branchName": user.bank_details.branch_name or "",
-            "updatedAt": safe_format_dt(user.bank_details.updated_at, "%Y-%m-%d"),
-        }
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-        "balance": float(user.balance) if user.balance is not None else 0.0,
         "isActive": user.is_active if hasattr(user, 'is_active') and user.is_active is not None else True,
-        "bankDetails": bank,
         "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),
     }
 
 @router.get("/profile")
-def get_customer_profile(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
-    return format_user_account(user)
-
-@router.get("/balance")
-def get_customer_balance(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
-    return {"balance": user.balance}
+def get_customer_profile(current_user: User = Depends(get_current_customer)):
+    return format_user_account(current_user)
 
 @router.get("/results/today")
 def get_today_results(date: Optional[str] = None, db: Session = Depends(get_db)):
@@ -176,11 +156,9 @@ def get_previous_results(db: Session = Depends(get_db)):
     return [format_result(r) for r in results]
 
 @router.post("/tickets")
-def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
+def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
-
-    user_id = payload["sub"]
 
     # ── SERVER-SIDE FINANCIAL VALIDATION ──
     for item in req.items:
@@ -188,20 +166,14 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     server_total = sum(item.totalAmount for item in req.items)
     req.totalAmount = server_total
 
-    # Lock user row if paying to prevent concurrent balance race conditions
-    if req.actionType == "PAY":
-        user = db.query(User).filter(User.id == user_id).with_for_update().first()
-    else:
-        user = db.query(User).filter(User.id == user_id).first()
-
-    user = check_user_active(user)
+    user = current_user
 
     # ── DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
     c_req_clean = (req.customerName or "").strip().lower()
     if c_req_clean == "customer":
         c_req_clean = ""
 
-    recent_same_ticket = db.query(Ticket).options(selectinload(Ticket.items)).filter(
+    recent_same_ticket = db.query(Ticket).options(joinedload(Ticket.items)).filter(
         Ticket.user_id == user.id,
         Ticket.game_slot == req.gameSlot,
         Ticket.total_amount == req.totalAmount,
@@ -238,19 +210,6 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     # 3. Fetch global limit rule
     global_limit = db.query(GlobalLimitRule).first()
 
-    # Calculate user's existing placed count today for this game slot across all previous tickets in this agency
-    today_start_dt = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    existing_tickets = (
-        db.query(Ticket)
-        .options(selectinload(Ticket.items))
-        .filter(
-            Ticket.user_id == user.id,
-            Ticket.game_slot == req.gameSlot,
-            Ticket.placed_at >= today_start_dt,
-        )
-        .all()
-    )
-
     def norm_type(t: str) -> str:
         if not t:
             return ""
@@ -261,12 +220,23 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             return "BOX"
         return u
 
+    # Calculate user's existing placed count today only if limits exist
     placed_count_by_key: dict[str, float] = {}
-    for tkt in existing_tickets:
-        for bi in tkt.items:
-            bi_raw = bi.number.strip()
-            bi_key = f"{bi_raw}_{norm_type(bi.type)}"
-            placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
+    if agency_limits or (global_limit and global_limit.is_enabled and (global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot)):
+        today_start_dt = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        items_rows = (
+            db.query(BetItem.number, BetItem.type, BetItem.count)
+            .join(Ticket, BetItem.ticket_id == Ticket.id)
+            .filter(
+                Ticket.user_id == user.id,
+                Ticket.game_slot == req.gameSlot,
+                Ticket.placed_at >= today_start_dt,
+            )
+            .all()
+        )
+        for num_val, type_val, cnt_val in items_rows:
+            bi_key = f"{num_val.strip()}_{norm_type(type_val)}"
+            placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(cnt_val)
 
     # Track newly requested counts within this incoming batch
     batch_counts: dict[str, float] = {}
@@ -332,21 +302,6 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             "total_amount": item_total,
         })
 
-    # Validate balance if paying
-    if req.actionType == "PAY":
-        user_q = db.query(User).filter(User.id == user.id)
-        bind = db.get_bind()
-        if bind and bind.dialect.name == "postgresql":
-            user_q = user_q.with_for_update()
-        db_user = user_q.first()
-        if not db_user:
-            raise HTTPException(status_code=404, detail="User not found")
-        if db_user.balance < calculated_total_amount:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Insufficient balance (Available: ₹{db_user.balance:.2f}). Total needed: ₹{calculated_total_amount:.2f}",
-            )
-        db_user.balance -= calculated_total_amount
 
     c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
     if c_name.lower() == "customer":
@@ -411,19 +366,6 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             ]
             db.add_all(bet_objs)
 
-            # Add transaction log if paid
-            if req.actionType == "PAY":
-                txn = TransactionLog(
-                    id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
-                    user_id=user.id,
-                    user_name=user.name,
-                    type="Ticket Purchase",
-                    amount=f"₹ {calculated_total_amount:.0f}",
-                    account="Wallet Deposit",
-                    status="SUCCESS",
-                    timestamp=placed_at_dt,
-                )
-                db.add(txn)
 
             db.commit()
             return {
@@ -457,23 +399,22 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             raise exc
 
 @router.get("/tickets")
-def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
+def get_user_tickets(current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .filter(Ticket.user_id == user.id)
+        .filter(Ticket.user_id == current_user.id)
         .order_by(Ticket.placed_at.desc())
+        .limit(200)
         .all()
     )
     return [format_ticket(t) for t in tickets]
 
 @router.delete("/tickets/{ticket_id}")
-def delete_user_ticket(ticket_id: str, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
+def delete_user_ticket(ticket_id: str, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     ticket = db.query(Ticket).filter(
         Ticket.id == ticket_id,
-        Ticket.user_id == user.id
+        Ticket.user_id == current_user.id
     ).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -487,61 +428,11 @@ def delete_user_ticket(ticket_id: str, payload: dict = Depends(get_current_custo
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
 
-@router.get("/bank-details")
-def get_bank_details(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
-    bank = db.query(BankDetails).filter(BankDetails.user_id == payload["sub"]).first()
-    if not bank:
-        return None
-    return {
-        "accountHolderName": bank.account_holder_name,
-        "accountNo": bank.account_number,
-        "bankName": bank.bank_name,
-        "ifsc": bank.ifsc,
-        "branchName": bank.branch_name,
-        "updatedAt": bank.updated_at.strftime("%Y-%m-%d") if bank.updated_at else "",
-    }
 
-@router.put("/bank-details")
-def update_bank_details(req: BankDetailsSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user_id = payload["sub"]
-    check_user_active(db.query(User).filter(User.id == user_id).first())
-    bank = db.query(BankDetails).filter(BankDetails.user_id == user_id).first()
-
-    today_date = datetime.now(timezone.utc)
-    if bank:
-        bank.account_holder_name = req.accountHolderName
-        bank.account_number = req.accountNo
-        bank.bank_name = req.bankName
-        bank.ifsc = req.ifsc
-        bank.branch_name = req.branchName
-        bank.updated_at = today_date
-    else:
-        bank = BankDetails(
-            id=f"bank_{uuid.uuid4().hex[:8]}",
-            user_id=user_id,
-            account_holder_name=req.accountHolderName,
-            account_number=req.accountNo,
-            bank_name=req.bankName,
-            ifsc=req.ifsc,
-            branch_name=req.branchName,
-            updated_at=today_date,
-        )
-        db.add(bank)
-
-    db.commit()
-    return {
-        "accountHolderName": bank.account_holder_name,
-        "accountNo": bank.account_number,
-        "bankName": bank.bank_name,
-        "ifsc": bank.ifsc,
-        "branchName": bank.branch_name,
-        "updatedAt": today_date.strftime("%Y-%m-%d"),
-    }
 
 @router.post("/issues")
-def submit_issue(req: IssueCreateSchema, payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
-    user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
+def submit_issue(req: IssueCreateSchema, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
+    user = current_user
 
     new_issue = IssueTicket(
         id=f"ISS_{int(datetime.now().timestamp() * 1000) % 900000 + 100000}",

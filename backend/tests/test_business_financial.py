@@ -1,13 +1,11 @@
 import pytest
 from app.models.user import User
 
-def test_ticket_creation_and_balance_deduction(client, test_customer_user, customer_token_headers, db_session):
-    initial_balance = test_customer_user.balance  # 5000.0
-
+def test_ticket_creation_authoritative_save(client, test_customer_user, customer_token_headers, db_session):
     payload = {
         "customerName": "Raju",
         "gameSlot": "3 PM Game",
-        "actionType": "PAY",
+        "actionType": "SAVE",
         "totalAmount": 100.0,
         "items": [
             {
@@ -25,31 +23,27 @@ def test_ticket_creation_and_balance_deduction(client, test_customer_user, custo
     ticket_data = response.json()
     assert ticket_data["totalAmount"] == 100.0
     assert ticket_data["status"] == "PENDING"
+    assert ticket_data["id"] is not None
 
-    # Verify user balance updated in database
-    db_user = db_session.query(User).filter(User.id == test_customer_user.id).first()
-    assert db_user.balance == initial_balance - 100.0
-
-def test_ticket_creation_insufficient_balance(client, test_customer_user, customer_token_headers):
+def test_ticket_creation_zero_count_rejected(client, test_customer_user, customer_token_headers):
     payload = {
-        "customerName": "Big Spender",
+        "customerName": "Invalid Count",
         "gameSlot": "3 PM Game",
-        "actionType": "PAY",
-        "totalAmount": 99999.0,
+        "actionType": "SAVE",
+        "totalAmount": 0.0,
         "items": [
             {
                 "number": "742",
-                "count": 9999.9,
+                "count": 0,
                 "type": "SUPER",
                 "unitPrice": 10.0,
-                "totalAmount": 99999.0,
+                "totalAmount": 0.0,
             }
         ]
     }
 
     response = client.post("/api/customer/tickets", json=payload, headers=customer_token_headers)
-    assert response.status_code == 400
-    assert "Insufficient balance" in response.json()["detail"]
+    assert response.status_code in (400, 422)
 
 def test_result_publication_and_winner_calculation(client, test_customer_user, customer_token_headers, admin_token_headers):
     from datetime import datetime, timezone

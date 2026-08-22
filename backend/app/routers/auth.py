@@ -13,9 +13,8 @@ from app.core.security import (
     check_rate_limit,
 )
 from app.models.user import User, UserRole
-from app.models.bank_details import BankDetails
 from app.schemas.auth import LoginRequest, RegisterRequest, Token
-from app.schemas.user import UserAccountResponse, BankDetailsSchema
+from app.schemas.user import UserAccountResponse
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -32,26 +31,14 @@ def safe_format_dt(val, fmt="%Y-%m-%d") -> str:
     return str(val)
 
 def format_user_response(user: User) -> dict:
-    bank = None
-    if user.bank_details:
-        bank = {
-            "accountHolderName": user.bank_details.account_holder_name or "",
-            "accountNo": user.bank_details.account_number or "",
-            "bankName": user.bank_details.bank_name or "",
-            "ifsc": user.bank_details.ifsc or "",
-            "branchName": user.bank_details.branch_name or "",
-            "updatedAt": safe_format_dt(user.bank_details.updated_at, "%Y-%m-%d"),
-        }
     return {
         "id": user.id,
         "name": user.name,
         "email": user.email,
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),
-        "balance": float(user.balance) if user.balance is not None else 0.0,
         "mode": user.mode or "Commission (20%)",
         "isActive": user.is_active if hasattr(user, 'is_active') and user.is_active is not None else True,
-        "bankDetails": bank,
         "createdAt": safe_format_dt(user.created_at, "%Y-%m-%d"),
     }
 
@@ -78,7 +65,6 @@ def register_customer(req: RegisterRequest, request: Request, db: Session = Depe
         username=username_clean,
         password_hash=get_password_hash(req.password.strip()),
         role=UserRole.CUSTOMER,
-        balance=1000.0,
     )
     db.add(new_user)
     db.commit()

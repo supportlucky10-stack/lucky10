@@ -8,15 +8,11 @@ from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db
 from app.core.security import get_current_admin, get_password_hash
 from app.models.user import User, UserRole
-from app.models.bank_details import BankDetails
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
-from app.models.payout import PayoutRequest
 from app.models.issue import IssueTicket
-from app.models.transaction import TransactionLog
 from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
 from app.schemas.result import GameResultPublishSchema
-from app.schemas.payout import PayoutRequestCreate
 from app.schemas.user import UserCreateSchema
 from app.schemas.limit_rule import AgencyLimitCreate, BlockedNumberCreate, GlobalLimitUpdate
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
@@ -25,28 +21,16 @@ router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
 @router.get("/users")
 def get_all_users(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    users = db.query(User).options(joinedload(User.bank_details)).filter(User.role == UserRole.CUSTOMER).all()
+    users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
     result = []
     for u in users:
-        bank = None
-        if u.bank_details:
-            bank = {
-                "accountHolderName": u.bank_details.account_holder_name,
-                "accountNo": u.bank_details.account_number,
-                "bankName": u.bank_details.bank_name,
-                "ifsc": u.bank_details.ifsc,
-                "branchName": u.bank_details.branch_name,
-                "updatedAt": u.bank_details.updated_at.strftime("%Y-%m-%d") if u.bank_details.updated_at else "",
-            }
         result.append({
             "id": u.id,
             "name": u.name,
             "email": u.email,
             "username": u.username,
             "mode": getattr(u, "mode", None) or "With Commission",
-            "balance": u.balance,
             "isActive": u.is_active if hasattr(u, 'is_active') and u.is_active is not None else True,
-            "bankDetails": bank,
             "createdAt": u.created_at.strftime("%Y-%m-%d") if u.created_at else "",
         })
     return result
@@ -80,9 +64,7 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
             "email": existing.email,
             "username": existing.username,
             "mode": existing.mode,
-            "balance": existing.balance,
             "isActive": existing.is_active,
-            "bankDetails": None,
             "createdAt": existing.created_at.strftime("%Y-%m-%d") if existing.created_at else "",
         }
 
@@ -93,7 +75,6 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
         username=username,
         password_hash=get_password_hash(req.password.strip()),
         role=UserRole.CUSTOMER,
-        balance=1000.0,
         mode=req.mode or "With Commission",
         is_active=True,
         created_at=datetime.now(timezone.utc),
@@ -108,9 +89,7 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
         "email": new_user.email,
         "username": new_user.username,
         "mode": new_user.mode,
-        "balance": new_user.balance,
         "isActive": new_user.is_active,
-        "bankDetails": None,
         "createdAt": new_user.created_at.strftime("%Y-%m-%d"),
     }
 
@@ -183,9 +162,6 @@ def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Clean up any related TransactionLog records
-    db.query(TransactionLog).filter((TransactionLog.user_id == user.id) | (TransactionLog.user_name == user.name)).delete(synchronize_session=False)
-    
     db.delete(user)
     db.commit()
     return {"message": "User deleted successfully"}
@@ -194,7 +170,6 @@ def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), 
 def clear_all_users(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
     users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
     for u in users:
-        db.query(TransactionLog).filter((TransactionLog.user_id == u.id) | (TransactionLog.user_name == u.name)).delete(synchronize_session=False)
         db.delete(u)
     db.commit()
     return {"message": "All users deleted successfully"}
@@ -312,104 +287,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
         db.rollback()
         raise exc
 
-@router.get("/payouts")
-def get_payout_logs(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    logs = db.query(PayoutRequest).order_by(PayoutRequest.created_at.desc()).all()
-    return [
-        {
-            "id": p.id,
-            "userId": p.user_id,
-            "userName": p.user_name,
-            "amount": p.amount,
-            "bankAccount": p.bank_account,
-            "status": p.status,
-            "date": p.created_at.strftime("%Y-%m-%d") if p.created_at else "",
-        }
-        for p in logs
-    ]
 
-@router.post("/payouts/{user_id}")
-def process_user_payout(user_id: str, req: PayoutRequestCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    if req.amount <= 0:
-        raise HTTPException(status_code=400, detail="Payout amount must be greater than zero.")
-
-    # Prevent accidental rapid double-payouts within 5 seconds for the same user and amount
-    recent_payout = db.query(PayoutRequest).filter(
-        PayoutRequest.user_id == user.id,
-        PayoutRequest.amount == req.amount,
-        PayoutRequest.created_at >= datetime.now(timezone.utc) - timedelta(seconds=5)
-    ).first()
-    if recent_payout:
-        return {
-            "id": recent_payout.id,
-            "userId": recent_payout.user_id,
-            "userName": recent_payout.user_name,
-            "amount": recent_payout.amount,
-            "bankAccount": recent_payout.bank_account,
-            "status": recent_payout.status,
-            "date": recent_payout.created_at.strftime("%Y-%m-%d") if recent_payout.created_at else "",
-        }
-
-    try:
-        bank_str = f"{user.bank_details.ifsc} - {user.bank_details.account_number}" if user.bank_details else "Bank Pending"
-        new_log = PayoutRequest(
-            id=f"pay_{int(datetime.now().timestamp() * 1000)}",
-            user_id=user.id,
-            user_name=user.name,
-            amount=req.amount,
-            bank_account=bank_str,
-            status="SUCCESS",
-            created_at=datetime.now(timezone.utc),
-        )
-        db.add(new_log)
-
-        txn = TransactionLog(
-            id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
-            user_id=user.id,
-            user_name=user.name,
-            type="Bank Transfer (Payout)",
-            amount=f"₹ {req.amount:.0f}",
-            account=bank_str,
-            status="SUCCESS",
-            timestamp=datetime.now(timezone.utc),
-        )
-        db.add(txn)
-
-        db.commit()
-        db.refresh(new_log)
-        return {
-            "id": new_log.id,
-            "userId": new_log.user_id,
-            "userName": new_log.user_name,
-            "amount": new_log.amount,
-            "bankAccount": new_log.bank_account,
-            "status": new_log.status,
-            "date": new_log.created_at.strftime("%Y-%m-%d"),
-        }
-    except Exception as exc:
-        db.rollback()
-        raise exc
-
-@router.get("/transactions")
-def get_transactions(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
-    txns = db.query(TransactionLog).order_by(TransactionLog.timestamp.desc()).all()
-    return [
-        {
-            "id": t.id,
-            "user": t.user_name,
-            "type": t.type,
-            "amount": t.amount,
-            "account": t.account,
-            "status": t.status,
-            "date": t.timestamp.strftime("%Y-%m-%d") if t.timestamp else "",
-            "timestamp": t.timestamp.strftime("%Y-%m-%d %I:%M %p") if t.timestamp else "",
-        }
-        for t in txns
-    ]
 
 @router.get("/issues")
 def get_all_issues(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
@@ -511,11 +389,12 @@ def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = 
     today_gross = float(today_gross_res[0] if today_gross_res else 0.0)
     today_bets_count = int(today_gross_res[1] if today_gross_res else 0)
 
-    today_payouts_res = db.query(func.coalesce(func.sum(PayoutRequest.amount), 0.0)).filter(
-        PayoutRequest.created_at >= start_of_today,
-        PayoutRequest.created_at <= end_of_today
+    today_win_res = db.query(func.coalesce(func.sum(Ticket.win_amount), 0.0)).filter(
+        Ticket.placed_at >= start_of_today,
+        Ticket.placed_at <= end_of_today,
+        Ticket.status == "WON"
     ).scalar()
-    today_payout_amount = float(today_payouts_res or 0.0)
+    today_payout_amount = float(today_win_res or 0.0)
     today_net = today_gross - today_payout_amount
 
     return {

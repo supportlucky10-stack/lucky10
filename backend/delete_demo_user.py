@@ -8,9 +8,6 @@ from app.models import (
     User,
     Ticket,
     BetItem,
-    BankDetails,
-    TransactionLog,
-    PayoutRequest,
     IssueTicket,
     AgencyNumberLimit,
 )
@@ -38,10 +35,7 @@ def delete_demo_user():
             db.query(BetItem).filter(BetItem.ticket_id.in_(demo_ticket_ids)).delete(synchronize_session=False)
             db.query(Ticket).filter(Ticket.id.in_(demo_ticket_ids)).delete(synchronize_session=False)
 
-        print("[Lucky10] Deleting associated bank details, transactions, payouts, issues, and limits...")
-        db.query(BankDetails).filter(BankDetails.user_id.in_(demo_user_ids)).delete(synchronize_session=False)
-        db.query(TransactionLog).filter(TransactionLog.user_id.in_(demo_user_ids)).delete(synchronize_session=False)
-        db.query(PayoutRequest).filter(PayoutRequest.user_id.in_(demo_user_ids)).delete(synchronize_session=False)
+        print("[Lucky10] Deleting associated issues and limits...")
         db.query(IssueTicket).filter(IssueTicket.user_id.in_(demo_user_ids)).delete(synchronize_session=False)
         db.query(AgencyNumberLimit).filter(AgencyNumberLimit.agency_id.in_(demo_user_ids)).delete(synchronize_session=False)
 

@@ -23,7 +23,6 @@ async def main():
             name="Perf Agency",
             password_hash=get_password_hash("pass123"),
             role=UserRole.CUSTOMER,
-            balance=500000.0,
             is_active=True,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
@@ -96,7 +95,6 @@ async def main():
                     name=f"Agency {u_idx}",
                     password_hash=get_password_hash("pass"),
                     role=UserRole.CUSTOMER,
-                    balance=100000.0,
                     is_active=True,
                 )
                 db.add(u)

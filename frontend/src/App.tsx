@@ -11,7 +11,6 @@ import { ChangeGameView } from './views/customer/ChangeGameView';
 import { TodaysWinningNumbersView } from './views/customer/TodaysWinningNumbersView';
 import { TodaysResultView } from './views/customer/TodaysResultView';
 import { PreviousWinningNumbersView } from './views/customer/PreviousWinningNumbersView';
-import { UpdateBankDetailsView } from './views/customer/UpdateBankDetailsView';
 import { MyPlayReportView } from './views/customer/MyPlayReportView';
 import { EditDeleteBillView } from './views/customer/EditDeleteBillView';
 import { TotalCountView } from './views/customer/TotalCountView';
@@ -22,8 +21,6 @@ const AdminDrawerView = React.lazy(() => import('./views/admin/AdminDrawerView')
 const AdminUsersAndResultsView = React.lazy(() => import('./views/admin/AdminUsersAndResultsView').then(m => ({ default: m.AdminUsersAndResultsView })));
 const AdminResultManagementView = React.lazy(() => import('./views/admin/AdminResultManagementView').then(m => ({ default: m.AdminResultManagementView })));
 const AdminReportsView = React.lazy(() => import('./views/admin/AdminReportsView').then(m => ({ default: m.AdminReportsView })));
-const AdminPayoutsView = React.lazy(() => import('./views/admin/AdminPayoutsView').then(m => ({ default: m.AdminPayoutsView })));
-const AdminTransactionLogsView = React.lazy(() => import('./views/admin/AdminTransactionLogsView').then(m => ({ default: m.AdminTransactionLogsView })));
 const AdminIssuesView = React.lazy(() => import('./views/admin/AdminIssuesView').then(m => ({ default: m.AdminIssuesView })));
 const AdminLimitBlockView = React.lazy(() => import('./views/admin/AdminLimitBlockView').then(m => ({ default: m.AdminLimitBlockView })));
 
@@ -123,8 +120,6 @@ const ViewRouter: React.FC = () => {
         return <TodaysResultView />;
       case 'PREVIOUS_WINNING_NUMBERS':
         return <PreviousWinningNumbersView />;
-      case 'UPDATE_BANK_DETAILS':
-        return <UpdateBankDetailsView />;
       case 'MY_PLAY_REPORT':
         return <MyPlayReportView />;
       case 'EDIT_DELETE_BILL':
@@ -139,10 +134,6 @@ const ViewRouter: React.FC = () => {
         return <AdminResultManagementView />;
       case 'ADMIN_REPORTS':
         return <AdminReportsView />;
-      case 'ADMIN_PAYOUTS':
-        return <AdminPayoutsView />;
-      case 'ADMIN_TRANSACTION_LOGS':
-        return <AdminTransactionLogsView />;
       case 'ADMIN_ISSUES':
         return <AdminIssuesView />;
       case 'ADMIN_LIMIT_BLOCK':

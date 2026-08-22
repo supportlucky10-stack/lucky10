@@ -9,7 +9,6 @@ export type ViewType =
   | 'COUNT_REPORT'
   | 'TODAYS_RESULT'
   | 'PREVIOUS_WINNING_NUMBERS'
-  | 'UPDATE_BANK_DETAILS'
   | 'MY_PLAY_REPORT'
   | 'EDIT_DELETE_BILL'
   | 'ADMIN_SIGN_IN'
@@ -17,8 +16,6 @@ export type ViewType =
   | 'ADMIN_USERS_LIST'
   | 'ADMIN_RESULT_MANAGEMENT'
   | 'ADMIN_REPORTS'
-  | 'ADMIN_PAYOUTS'
-  | 'ADMIN_TRANSACTION_LOGS'
   | 'ADMIN_ISSUES'
   | 'ADMIN_LIMIT_BLOCK';
 
@@ -55,20 +52,9 @@ export interface UserAccount {
   username: string;
   password?: string;
   role?: string;
-  balance: number;
   mode?: string;
   isActive?: boolean;
-  bankDetails?: BankDetails;
   createdAt: string;
-}
-
-export interface BankDetails {
-  accountHolderName: string;
-  accountNo: string;
-  bankName: string;
-  ifsc: string;
-  branchName: string;
-  updatedAt: string;
 }
 
 export interface BetSlipItem {
@@ -110,16 +96,6 @@ export interface GameResult {
   prize5?: string;
   compliments: string[][];
   publishedAt: string;
-}
-
-export interface PayoutLog {
-  id: string;
-  userId: string;
-  userName: string;
-  amount: number;
-  bankAccount: string;
-  status: 'SUCCESS' | 'PROCESSING' | 'FAILED';
-  date: string;
 }
 
 export interface ToastMessage {

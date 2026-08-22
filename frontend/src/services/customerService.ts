@@ -1,5 +1,5 @@
 import { apiRequest } from './api';
-import type { BankDetails, GameResult, PlacedTicket, GameSlot, BetSlipItem } from '../types';
+import type { GameResult, PlacedTicket, GameSlot, BetSlipItem } from '../types';
 
 export const customerService = {
   async getTodayResults(date?: string): Promise<Record<GameSlot, GameResult>> {
@@ -18,7 +18,7 @@ export const customerService = {
     return await apiRequest<GameResult[]>('/api/customer/results/previous', { method: 'GET' });
   },
 
-  async placeTicket(gameSlot: GameSlot, items: Omit<BetSlipItem, 'id'>[], totalAmount: number, actionType: 'PAY' | 'SAVE' = 'PAY', customerName?: string): Promise<PlacedTicket> {
+  async placeTicket(gameSlot: GameSlot, items: Omit<BetSlipItem, 'id'>[], totalAmount: number, actionType: 'SAVE' | 'PAY' = 'SAVE', customerName?: string): Promise<PlacedTicket> {
     return await apiRequest<PlacedTicket>('/api/customer/tickets', {
       method: 'POST',
       body: JSON.stringify({ gameSlot, items, totalAmount, actionType, customerName }),
@@ -32,17 +32,6 @@ export const customerService = {
   async deleteTicket(ticketId: string): Promise<{ success: boolean; message: string }> {
     return await apiRequest<{ success: boolean; message: string }>(`/api/customer/tickets/${ticketId}`, {
       method: 'DELETE',
-    });
-  },
-
-  async getBankDetails(): Promise<BankDetails | null> {
-    return await apiRequest<BankDetails | null>('/api/customer/bank-details', { method: 'GET' });
-  },
-
-  async updateBankDetails(details: Omit<BankDetails, 'updatedAt'>): Promise<BankDetails> {
-    return await apiRequest<BankDetails>('/api/customer/bank-details', {
-      method: 'PUT',
-      body: JSON.stringify(details),
     });
   },
 
