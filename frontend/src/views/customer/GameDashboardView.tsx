@@ -171,8 +171,11 @@ export const GameDashboardView: React.FC = () => {
   };
 
   // Rotational Permutation Generator for Set Mode (e.g. 314 -> 314, 341, 134, 143, 431, 413)
+  const permCacheRef = React.useRef<Map<string, string[]>>(new Map());
   const getPermutations = (str: string): string[] => {
     if (str.length <= 1) return [str];
+    const cached = permCacheRef.current.get(str);
+    if (cached) return cached;
     const results = new Set<string>();
     for (let i = 0; i < str.length; i++) {
       const char = str[i];
@@ -181,7 +184,9 @@ export const GameDashboardView: React.FC = () => {
         results.add(char + subPerm);
       }
     }
-    return Array.from(results);
+    const arr = Array.from(results);
+    permCacheRef.current.set(str, arr);
+    return arr;
   };
 
   // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count

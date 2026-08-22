@@ -239,10 +239,17 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
     global_limit = db.query(GlobalLimitRule).first()
 
     # Calculate user's existing placed count today for this game slot across all previous tickets in this agency
-    existing_tickets = db.query(Ticket).filter(
-        Ticket.user_id == user.id,
-        Ticket.game_slot == req.gameSlot
-    ).all()
+    today_start_dt = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    existing_tickets = (
+        db.query(Ticket)
+        .options(selectinload(Ticket.items))
+        .filter(
+            Ticket.user_id == user.id,
+            Ticket.game_slot == req.gameSlot,
+            Ticket.placed_at >= today_start_dt,
+        )
+        .all()
+    )
 
     def norm_type(t: str) -> str:
         if not t:
@@ -256,18 +263,10 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
 
     placed_count_by_key: dict[str, float] = {}
     for tkt in existing_tickets:
-        if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
-            tkt_date = tkt.placed_at.strftime("%Y-%m-%d")
-        elif tkt.placed_at:
-            tkt_date = str(tkt.placed_at)[:10]
-        else:
-            tkt_date = today_str
-
-        if tkt_date == today_str:
-            for bi in tkt.items:
-                bi_raw = bi.number.strip()
-                bi_key = f"{bi_raw}_{norm_type(bi.type)}"
-                placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
+        for bi in tkt.items:
+            bi_raw = bi.number.strip()
+            bi_key = f"{bi_raw}_{norm_type(bi.type)}"
+            placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(bi.count)
 
     # Track newly requested counts within this incoming batch
     batch_counts: dict[str, float] = {}
@@ -398,9 +397,8 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             )
             db.add(new_ticket)
 
-            bet_objs = []
-            for item_data in calculated_items:
-                bet = BetItem(
+            bet_objs = [
+                BetItem(
                     id=f"bet_{uuid.uuid4().hex}",
                     ticket_id=ticket_id,
                     number=item_data["number"],
@@ -409,8 +407,9 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
                     unit_price=item_data["unit_price"],
                     total_amount=item_data["total_amount"],
                 )
-                db.add(bet)
-                bet_objs.append(bet)
+                for item_data in calculated_items
+            ]
+            db.add_all(bet_objs)
 
             # Add transaction log if paid
             if req.actionType == "PAY":
@@ -480,7 +479,7 @@ def delete_user_ticket(ticket_id: str, payload: dict = Depends(get_current_custo
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     try:
-        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete()
+        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete(synchronize_session=False)
         db.delete(ticket)
         db.commit()
         return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}

@@ -490,7 +490,7 @@ def delete_admin_ticket(ticket_id: str, admin_payload: dict = Depends(get_curren
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     try:
-        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete()
+        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete(synchronize_session=False)
         db.delete(ticket)
         db.commit()
         return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}

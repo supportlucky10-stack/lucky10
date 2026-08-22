@@ -35,6 +35,10 @@ class BetItem(Base):
 
     ticket = relationship("Ticket", back_populates="items")
 
+    __table_args__ = (
+        Index("ix_bet_items_ticket_number", "ticket_id", "number"),
+    )
+
 
 class TicketCounter(Base):
     __tablename__ = "ticket_counters"
