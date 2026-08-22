@@ -91,18 +91,25 @@ export const AdminResultManagementView: React.FC = () => {
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
   const [is1stPrizeEditing, setIs1stPrizeEditing] = useState(false);
 
+  const isOtherPrizesPublished = Boolean(currentSlotResult && currentSlotResult.prize2 && currentSlotResult.prize2.trim().length > 0);
+  const [isOtherPrizesEditing, setIsOtherPrizesEditing] = useState(false);
+
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
     if (existing && existing.prize1) {
       if (!is1stPrizeEditing) {
         setPrize1(existing.prize1);
       }
-      setPrize2(existing.prize2 || '');
-      setPrize3(existing.prize3 || '');
-      setPrize4(existing.prize4 || '');
-      setPrize5(existing.prize5 || '');
-      const comps = existing.compliments ? existing.compliments.flat() : [];
-      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+      if (!isOtherPrizesEditing) {
+        setPrize2(existing.prize2 || '');
+        setPrize3(existing.prize3 || '');
+        setPrize4(existing.prize4 || '');
+        setPrize5(existing.prize5 || '');
+        const comps = existing.compliments ? existing.compliments.flat() : [];
+        setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+      }
     } else {
       setPrize1('');
       setPrize2('');
@@ -117,13 +124,14 @@ export const AdminResultManagementView: React.FC = () => {
     setSelectedSlot(slot);
     setIsSlotDropdownOpen(false);
     setIs1stPrizeEditing(false);
+    setIsOtherPrizesEditing(false);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
     if (existing && existing.prize1) {
       setPrize1(existing.prize1);
-      setPrize2(existing.prize2);
-      setPrize3(existing.prize3);
-      setPrize4(existing.prize4);
+      setPrize2(existing.prize2 || '');
+      setPrize3(existing.prize3 || '');
+      setPrize4(existing.prize4 || '');
       setPrize5(existing.prize5 || '');
 
       const comps = existing.compliments ? existing.compliments.flat() : [];
@@ -135,6 +143,46 @@ export const AdminResultManagementView: React.FC = () => {
       setPrize4('');
       setPrize5('');
       setComplimentBoxes(Array(30).fill(''));
+    }
+  };
+
+  const handleInputChange = (index: number, rawVal: string) => {
+    const val = rawVal.replace(/\D/g, '').slice(0, 3);
+    if (index === 0) {
+      setPrize1(val);
+    } else if (index === 1) {
+      setPrize2(val);
+    } else if (index === 2) {
+      setPrize3(val);
+    } else if (index === 3) {
+      setPrize4(val);
+    } else if (index === 4) {
+      setPrize5(val);
+    } else if (index >= 5 && index <= 34) {
+      const compIdx = index - 5;
+      const upd = [...complimentBoxes];
+      upd[compIdx] = val;
+      setComplimentBoxes(upd);
+    }
+
+    if (val.length === 3 && index < 34) {
+      const nextInput = inputRefs.current[index + 1];
+      if (nextInput && !nextInput.disabled && !nextInput.readOnly) {
+        nextInput.focus();
+        nextInput.select?.();
+      }
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      const target = e.currentTarget;
+      if (target.value === '' && index > 0) {
+        const prevInput = inputRefs.current[index - 1];
+        if (prevInput && !prevInput.disabled && !prevInput.readOnly) {
+          prevInput.focus();
+        }
+      }
     }
   };
 
@@ -197,6 +245,7 @@ export const AdminResultManagementView: React.FC = () => {
     }
 
     await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
+    setIsOtherPrizesEditing(false);
     setPreviewSlot(selectedSlot);
     setPreviewDate(todayStr);
     setSuccessMessage(`2nd, 3rd, 4th, 5th Prizes & Compliments for ${selectedSlot} published successfully!`);
@@ -206,6 +255,7 @@ export const AdminResultManagementView: React.FC = () => {
   const gameSlots: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const activeSlotTheme = slotThemes[selectedSlot] || slotThemes['1 PM Game'];
   const shortSlot = selectedSlot.replace(' Game', '').replace(' ', '');
+  const isOtherDisabled = isOtherPrizesPublished && !isOtherPrizesEditing;
 
   const [activeTab, setActiveTab] = useState<'publish' | 'preview'>('publish');
   const [previewDate, setPreviewDate] = useState<string>(todayStr);
@@ -308,13 +358,16 @@ export const AdminResultManagementView: React.FC = () => {
                   <span className="text-neutral-400 font-bold">1st Prize Number</span>
                 </div>
                 <input
+                  ref={(el) => { inputRefs.current[0] = el; }}
                   type="text"
+                  inputMode="numeric"
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
                   disabled={is1stPrizePublished && !is1stPrizeEditing}
                   readOnly={is1stPrizePublished && !is1stPrizeEditing}
-                  onChange={(e) => setPrize1(e.target.value)}
+                  onChange={(e) => handleInputChange(0, e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(0, e)}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
                     is1stPrizePublished && !is1stPrizeEditing
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -366,23 +419,41 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">2nd Prize Number</span>
                     <input
+                      ref={(el) => { inputRefs.current[1] = el; }}
                       type="text"
+                      inputMode="numeric"
                       maxLength={3}
                       placeholder="000"
                       value={prize2}
-                      onChange={(e) => setPrize2(e.target.value)}
-                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                      disabled={isOtherDisabled}
+                      readOnly={isOtherDisabled}
+                      onChange={(e) => handleInputChange(1, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(1, e)}
+                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        isOtherDisabled
+                          ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                          : 'bg-white text-black border-gold'
+                      }`}
                     />
                   </div>
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">3rd Prize Number</span>
                     <input
+                      ref={(el) => { inputRefs.current[2] = el; }}
                       type="text"
+                      inputMode="numeric"
                       maxLength={3}
                       placeholder="000"
                       value={prize3}
-                      onChange={(e) => setPrize3(e.target.value)}
-                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                      disabled={isOtherDisabled}
+                      readOnly={isOtherDisabled}
+                      onChange={(e) => handleInputChange(2, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(2, e)}
+                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        isOtherDisabled
+                          ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                          : 'bg-white text-black border-gold'
+                      }`}
                     />
                   </div>
                 </div>
@@ -390,23 +461,41 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span>
                     <input
+                      ref={(el) => { inputRefs.current[3] = el; }}
                       type="text"
+                      inputMode="numeric"
                       maxLength={3}
                       placeholder="000"
                       value={prize4}
-                      onChange={(e) => setPrize4(e.target.value)}
-                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                      disabled={isOtherDisabled}
+                      readOnly={isOtherDisabled}
+                      onChange={(e) => handleInputChange(3, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(3, e)}
+                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        isOtherDisabled
+                          ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                          : 'bg-white text-black border-gold'
+                      }`}
                     />
                   </div>
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span>
                     <input
+                      ref={(el) => { inputRefs.current[4] = el; }}
                       type="text"
+                      inputMode="numeric"
                       maxLength={3}
                       placeholder="000"
                       value={prize5}
-                      onChange={(e) => setPrize5(e.target.value)}
-                      className="w-full px-3 py-2 bg-white text-black font-mono font-black text-base rounded-md border-2 border-gold text-center shadow-inner"
+                      disabled={isOtherDisabled}
+                      readOnly={isOtherDisabled}
+                      onChange={(e) => handleInputChange(4, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(4, e)}
+                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        isOtherDisabled
+                          ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                          : 'bg-white text-black border-gold'
+                      }`}
                     />
                   </div>
                 </div>
@@ -415,34 +504,64 @@ export const AdminResultManagementView: React.FC = () => {
               {/* Compliments 30 Grid */}
               <div className="space-y-3 pt-2 border-t border-neutral-800">
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                  {complimentBoxes.map((num, idx) => (
-                    <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
-                      <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
-                      <input
-                        type="text"
-                        maxLength={3}
-                        placeholder="000"
-                        value={num}
-                        onChange={(e) => {
-                          const upd = [...complimentBoxes];
-                          upd[idx] = e.target.value;
-                          setComplimentBoxes(upd);
-                        }}
-                        className="w-full px-2 py-1.5 bg-white text-black font-mono font-black text-sm rounded-lg border-2 border-gold text-center focus:outline-none"
-                      />
-                    </div>
-                  ))}
+                  {complimentBoxes.map((num, idx) => {
+                    const inputIdx = 5 + idx;
+                    return (
+                      <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
+                        <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
+                        <input
+                          ref={(el) => { inputRefs.current[inputIdx] = el; }}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={3}
+                          placeholder="000"
+                          value={num}
+                          disabled={isOtherDisabled}
+                          readOnly={isOtherDisabled}
+                          onChange={(e) => handleInputChange(inputIdx, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(inputIdx, e)}
+                          className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
+                            isOtherDisabled
+                              ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
+                              : 'bg-white text-black border-gold'
+                          }`}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
 
-                {/* Publish Other Prizes & Compliments Button */}
-                <div className="flex justify-center pt-2">
+                {/* Publish Other Prizes & Compliments Button with Edit Pencil Icon Button */}
+                <div className="flex items-center justify-center gap-2 pt-2">
                   <button
                     type="button"
+                    disabled={isOtherDisabled}
                     onClick={handlePublishOtherPrizesAndCompliments}
-                    className="px-6 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-full uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider border border-gold-dark"
+                    className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
+                      isOtherDisabled
+                        ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                        : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                    }`}
                   >
-                    PUBLISH OTHER RESULTS ({shortSlot})
+                    {isOtherDisabled
+                      ? 'PUBLISHED'
+                      : `PUBLISH OTHER RESULTS (${shortSlot})`}
                   </button>
+
+                  {isOtherPrizesPublished && (
+                    <button
+                      type="button"
+                      onClick={() => setIsOtherPrizesEditing(!isOtherPrizesEditing)}
+                      className={`p-2 rounded-full transition-all cursor-pointer border shadow-md active:scale-90 ${
+                        isOtherPrizesEditing
+                          ? 'bg-gold text-black border-gold'
+                          : 'bg-neutral-800 hover:bg-neutral-700 text-gold border-gold/40'
+                      }`}
+                      title="Edit Other Prizes & Compliments"
+                    >
+                      <Pencil className="w-4 h-4 stroke-[2.5]" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

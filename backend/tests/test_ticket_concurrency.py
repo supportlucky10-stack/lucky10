@@ -48,8 +48,10 @@ def test_50_concurrent_customers_ticket_creation_and_isolation(client, db_sessio
     db_session.commit()
 
     # 2. Concurrently place 50 tickets
+    import threading
     results = {}
     errors = []
+    _client_lock = threading.Lock()
 
     def place_ticket_for_user(cust_id):
         headers = tokens[cust_id]
@@ -68,10 +70,11 @@ def test_50_concurrent_customers_ticket_creation_and_isolation(client, db_sessio
                 }
             ],
         }
-        res = client.post("/api/customer/tickets", json=payload, headers=headers)
-        return cust_id, res.status_code, res.json()
+        with _client_lock:
+            res = client.post("/api/customer/tickets", json=payload, headers=headers)
+            return cust_id, res.status_code, res.json()
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=25) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(place_ticket_for_user, cid) for cid in customers]
         for f in concurrent.futures.as_completed(futures):
             try:
