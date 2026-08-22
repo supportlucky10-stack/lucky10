@@ -25,7 +25,7 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 app_db.engine = engine
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -72,10 +72,12 @@ class AsyncTestClient:
 @pytest.fixture(scope="function")
 def client(db_session):
     def _get_test_db():
+        db = TestingSessionLocal()
         try:
-            yield db_session
+            yield db
         finally:
-            pass
+            db.close()
+            db_session.expire_all()
 
     app.dependency_overrides[get_db] = _get_test_db
     tc = AsyncTestClient(app)

@@ -43,7 +43,7 @@ except Exception as err:
     else:
         raise RuntimeError(f"Database connection failed for '{safe_url}': {err}")
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
 Base = declarative_base()
 
 def get_db():
@@ -56,58 +56,87 @@ def get_db():
     finally:
         db.close()
 
+import threading
+
+_ticket_counter_lock = threading.Lock()
+_pg_seq_initialized = False
+
+def _ensure_pg_sequence(engine_or_bind):
+    global _pg_seq_initialized
+    if _pg_seq_initialized:
+        return
+    with _ticket_counter_lock:
+        if _pg_seq_initialized:
+            return
+        try:
+            with engine.begin() as conn:
+                conn.execute(text("CREATE SEQUENCE IF NOT EXISTS ticket_id_seq START WITH 2243297"))
+                max_val = 2243296
+                try:
+                    res = conn.execute(text("SELECT id FROM tickets")).fetchall()
+                    for (tid,) in res:
+                        digits = ''.join(filter(str.isdigit, str(tid or '')))
+                        if digits:
+                            try:
+                                v = int(digits)
+                                if v > max_val:
+                                    max_val = v
+                            except Exception:
+                                pass
+                except Exception:
+                    pass
+                conn.execute(text(f"SELECT setval('ticket_id_seq', GREATEST({max_val}, nextval('ticket_id_seq')))"))
+            _pg_seq_initialized = True
+        except Exception:
+            pass
+
 def get_next_ticket_id(db: Session) -> str:
     """
     Generate an authoritative, sequential ticket ID atomically.
     Guarantees no race condition or duplicate ID under high concurrency.
-    Preserves exact visible 7-digit numeric string format.
+    Preserves exact visible 7-digit numeric string format (>= 2243297).
     """
     bind = db.get_bind()
     dialect_name = bind.dialect.name if bind else "sqlite"
     is_postgres = dialect_name == "postgresql"
 
-    try:
+    if is_postgres:
+        try:
+            if not _pg_seq_initialized:
+                _ensure_pg_sequence(bind)
+            val = db.execute(text("SELECT nextval('ticket_id_seq')")).scalar()
+            if val:
+                return str(val)
+        except Exception:
+            pass
+
+    # Thread-safe atomic counter for SQLite and Postgres fallback
+    with _ticket_counter_lock:
         from app.models.ticket import TicketCounter, Ticket
         
-        query = db.query(TicketCounter)
-        if is_postgres:
-            query = query.with_for_update()
-
-        counter = query.first()
+        counter = db.query(TicketCounter).filter(TicketCounter.id == 1).first()
         if not counter:
-            recent_ids = db.query(Ticket.id).all()
             max_num = 2243296
+            recent_ids = db.query(Ticket.id).all()
             for (tid,) in recent_ids:
                 digits = ''.join(filter(str.isdigit, str(tid or '')))
                 if digits:
                     try:
-                        val = int(digits)
-                        if val > max_num:
-                            max_num = val
+                        v = int(digits)
+                        if v > max_num:
+                            max_num = v
                     except Exception:
                         pass
             counter = TicketCounter(id=1, current_val=max_num)
             db.add(counter)
             db.flush()
 
-        counter.current_val = int(counter.current_val) + 1
-        db.add(counter)
+        next_val = int(counter.current_val) + 1
+        
+        # Verify next_val doesn't collide with existing tickets
+        while db.query(Ticket.id).filter(Ticket.id == str(next_val)).first() is not None:
+            next_val += 1
+
+        counter.current_val = next_val
         db.flush()
-        return str(counter.current_val)
-    except Exception as e:
-        from app.models.ticket import Ticket
-        recent_ids = db.query(Ticket.id).all()
-        max_num = 2243296
-        for (tid,) in recent_ids:
-            digits = ''.join(filter(str.isdigit, str(tid or '')))
-            if digits:
-                try:
-                    val = int(digits)
-                    if val > max_num:
-                        max_num = val
-                except Exception:
-                    pass
-        candidate = max_num + 1
-        while db.query(Ticket.id).filter(Ticket.id == str(candidate)).first() is not None:
-            candidate += 1
-        return str(candidate)
+        return str(next_val)

@@ -97,3 +97,11 @@ def root(db: Session = Depends(get_db)):
         "database": db_status,
     }
 
+
+@app.get('/api/health/db-timing')
+def health_db_timing(db: Session = Depends(get_db)):
+    start = time.perf_counter()
+    db.execute(text('SELECT 1')).scalar()
+    db_ms = (time.perf_counter() - start) * 1000
+    return {'database': 'connected', 'db_query_ms': round(db_ms, 2)}
+

@@ -285,7 +285,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           const tkts = await customerService.getUserTickets();
           if (tkts) {
-            setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
+            const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
+            setPlacedTickets(myTkts);
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -1222,14 +1223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         userTickets: currentUser
           ? placedTickets.filter((t) => {
               if (currentUser.role === 'ADMIN') return true;
-              const matchId = t.userId === currentUser.id;
-              const agencyName = ((t as any).agencyName || '').toLowerCase();
-              const userName = ((t as any).userName || '').toLowerCase();
-              const cUsername = (currentUser.username || '').toLowerCase();
-              const cName = (currentUser.name || '').toLowerCase();
-              const matchAgency = agencyName && (agencyName === cUsername || agencyName === cName);
-              const matchUser = userName && (userName === cUsername || userName === cName);
-              return matchId || matchAgency || matchUser;
+              return t.userId === currentUser.id;
             })
           : [],
         saveTicket,

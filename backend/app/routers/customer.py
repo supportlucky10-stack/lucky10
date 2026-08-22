@@ -349,9 +349,6 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
             )
         db_user.balance -= calculated_total_amount
 
-    # Generate atomic, concurrency-safe sequential ticket ID
-    ticket_id = get_next_ticket_id(db)
-
     c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
     if c_name.lower() == "customer":
         c_name = ""
@@ -381,51 +378,84 @@ def place_ticket(req: TicketCreateSchema, payload: dict = Depends(get_current_cu
         win_val = eval_res["total_win_amount"]
         status_val = "WON" if win_val > 0 else "LOST"
 
-    try:
-        new_ticket = Ticket(
-            id=ticket_id,
-            user_id=user.id,
-            customer_name=c_name,
-            game_slot=req.gameSlot,
-            total_amount=calculated_total_amount,
-            status=status_val,
-            win_amount=win_val,
-            placed_at=datetime.now(timezone.utc),
-        )
-        db.add(new_ticket)
+    # Save ticket with concurrency retry protection
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            # Generate atomic, concurrency-safe sequential ticket ID
+            ticket_id = get_next_ticket_id(db)
+            placed_at_dt = datetime.now(timezone.utc)
 
-        for item_data in calculated_items:
-            bet = BetItem(
-                id=f"bet_{uuid.uuid4().hex}",
-                ticket_id=ticket_id,
-                number=item_data["number"],
-                count=item_data["count"],
-                type=item_data["type"],
-                unit_price=item_data["unit_price"],
-                total_amount=item_data["total_amount"],
-            )
-            db.add(bet)
-
-        # Add transaction log if paid
-        if req.actionType == "PAY":
-            txn = TransactionLog(
-                id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
+            new_ticket = Ticket(
+                id=ticket_id,
                 user_id=user.id,
-                user_name=user.name,
-                type="Ticket Purchase",
-                amount=f"₹ {calculated_total_amount:.0f}",
-                account="Wallet Deposit",
-                status="SUCCESS",
-                timestamp=datetime.now(timezone.utc),
+                customer_name=c_name,
+                game_slot=req.gameSlot,
+                total_amount=calculated_total_amount,
+                status=status_val,
+                win_amount=win_val,
+                placed_at=placed_at_dt,
             )
-            db.add(txn)
+            db.add(new_ticket)
 
-        db.commit()
-        db.refresh(new_ticket)
-        return format_ticket(new_ticket)
-    except Exception as exc:
-        db.rollback()
-        raise exc
+            bet_objs = []
+            for item_data in calculated_items:
+                bet = BetItem(
+                    id=f"bet_{uuid.uuid4().hex}",
+                    ticket_id=ticket_id,
+                    number=item_data["number"],
+                    count=item_data["count"],
+                    type=item_data["type"],
+                    unit_price=item_data["unit_price"],
+                    total_amount=item_data["total_amount"],
+                )
+                db.add(bet)
+                bet_objs.append(bet)
+
+            # Add transaction log if paid
+            if req.actionType == "PAY":
+                txn = TransactionLog(
+                    id=f"TXN_{uuid.uuid4().hex[:6].upper()}",
+                    user_id=user.id,
+                    user_name=user.name,
+                    type="Ticket Purchase",
+                    amount=f"₹ {calculated_total_amount:.0f}",
+                    account="Wallet Deposit",
+                    status="SUCCESS",
+                    timestamp=placed_at_dt,
+                )
+                db.add(txn)
+
+            db.commit()
+            return {
+                "id": ticket_id,
+                "ticketId": ticket_id,
+                "userId": user.id,
+                "userName": user.name or "",
+                "agencyName": user.username or "",
+                "customerName": c_name,
+                "gameSlot": req.gameSlot,
+                "items": [
+                    {
+                        "id": b.id,
+                        "number": b.number,
+                        "count": b.count,
+                        "type": b.type,
+                        "unitPrice": b.unit_price,
+                        "totalAmount": b.total_amount,
+                    }
+                    for b in bet_objs
+                ],
+                "totalAmount": calculated_total_amount,
+                "placedAt": placed_at_dt.isoformat(),
+                "status": status_val,
+                "winAmount": win_val,
+            }
+        except Exception as exc:
+            db.rollback()
+            if attempt < max_retries - 1 and ("unique" in str(exc).lower() or "integrity" in str(exc).lower() or "primary" in str(exc).lower()):
+                continue
+            raise exc
 
 @router.get("/tickets")
 def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session = Depends(get_db)):
@@ -433,7 +463,7 @@ def get_user_tickets(payload: dict = Depends(get_current_customer), db: Session 
     tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .filter((Ticket.user_id == user.id) | (Ticket.user_id == user.username) | (Ticket.user_id == user.name))
+        .filter(Ticket.user_id == user.id)
         .order_by(Ticket.placed_at.desc())
         .all()
     )
@@ -444,7 +474,7 @@ def delete_user_ticket(ticket_id: str, payload: dict = Depends(get_current_custo
     user = check_user_active(db.query(User).filter(User.id == payload["sub"]).first())
     ticket = db.query(Ticket).filter(
         Ticket.id == ticket_id,
-        (Ticket.user_id == user.id) | (Ticket.user_id == user.username) | (Ticket.user_id == user.name)
+        Ticket.user_id == user.id
     ).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
