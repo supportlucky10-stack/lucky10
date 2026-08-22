@@ -62,6 +62,27 @@ const slotThemes: Record<string, {
   },
 };
 
+export const getDefaultGameSlotByTime = (now: Date = new Date()): GameSlot => {
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+  // 1 PM Game: till 2:59:59 PM (14:59:59)
+  // 3 PM Game: from 3:00:00 PM (15:00:00) till 5:59:59 PM (17:59:59)
+  // 6 PM Game: from 6:00:00 PM (18:00:00) till 7:59:59 PM (19:59:59)
+  // 8 PM Game: from 8:00:00 PM (20:00:00) onwards till midnight
+  if (totalSeconds < 15 * 3600) {
+    return '1 PM Game';
+  } else if (totalSeconds < 18 * 3600) {
+    return '3 PM Game';
+  } else if (totalSeconds < 20 * 3600) {
+    return '6 PM Game';
+  } else {
+    return '8 PM Game';
+  }
+};
+
 export const AdminResultManagementView: React.FC = () => {
   const { publishGameResult, getResultForSlotAndDate, refreshAllData } = useApp();
 
@@ -71,10 +92,23 @@ export const AdminResultManagementView: React.FC = () => {
 
   const todayStr = getLocalDateStr();
 
-  const [selectedSlot, setSelectedSlot] = useState<GameSlot>('1 PM Game');
+  const [userSelectedSlot, setUserSelectedSlot] = useState<GameSlot | null>(null);
+  const [autoSlot, setAutoSlot] = useState<GameSlot>(() => getDefaultGameSlotByTime());
+
+  // Real-time automatic slot watcher (evaluates every second)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const currentDefault = getDefaultGameSlotByTime();
+      setAutoSlot((prev) => (prev !== currentDefault ? currentDefault : prev));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const selectedSlot = userSelectedSlot || autoSlot;
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
 
-  const existingInitial = getResultForSlotAndDate('1 PM Game', todayStr);
+  const initialSlot = getDefaultGameSlotByTime();
+  const existingInitial = getResultForSlotAndDate(initialSlot, todayStr);
   const [prize1, setPrize1] = useState(existingInitial?.prize1 || '');
   const [prize2, setPrize2] = useState(existingInitial?.prize2 || '');
   const [prize3, setPrize3] = useState(existingInitial?.prize3 || '');
@@ -125,7 +159,7 @@ export const AdminResultManagementView: React.FC = () => {
   }, [selectedSlot, todayStr]);
 
   const handleSelectSlot = (slot: GameSlot) => {
-    setSelectedSlot(slot);
+    setUserSelectedSlot(slot);
     setIsSlotDropdownOpen(false);
     setIs1stPrizeEditing(false);
     setIsOtherPrizesEditing(false);
