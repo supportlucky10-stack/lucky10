@@ -131,6 +131,7 @@ export const GameDashboardView: React.FC = () => {
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
+  const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -417,6 +418,10 @@ export const GameDashboardView: React.FC = () => {
           disabled={isSaving || betSlip.length === 0}
           onClick={async () => {
             if (isSaving || betSlip.length === 0) return;
+            if (!isGameSlotOpen(activeGameSlot)) {
+              setIsGameOverModalOpen(true);
+              return;
+            }
             setIsSaving(true);
             try {
               const billId = await saveTicket(customerName);
@@ -426,7 +431,9 @@ export const GameDashboardView: React.FC = () => {
               }
             } catch (err: any) {
               const msg = err?.message || '';
-              if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
+              if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('cutoff')) {
+                setIsGameOverModalOpen(true);
+              } else if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
                 setIsOverloadedModalOpen(true);
               } else if (msg.includes('Minimum 5')) {
                 setMinCountModalOpen(true);
@@ -973,6 +980,32 @@ export const GameDashboardView: React.FC = () => {
                 setMinCountModalOpen(false);
                 countInputRef.current?.focus();
               }}
+              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* GAME OVER POP-UP MODAL */}
+      {isGameOverModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide leading-tight">
+                GAME OVER!
+              </h4>
+              <p className="text-sm font-bold text-neutral-200 uppercase tracking-wide leading-tight">
+                NOT IN BOOKED.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsGameOverModalOpen(false)}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK
