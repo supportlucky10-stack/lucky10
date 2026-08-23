@@ -89,21 +89,19 @@ const formatCustomerName = (name?: string): string => {
 
 const isTicketForUser = (t: PlacedTicket, u: UserAccount): boolean => {
   if (!t || !u) return false;
-  const tUserId = (t.userId || '').trim().toLowerCase();
+  const tUserId = (t.userId || (t as any).user_id || '').trim().toLowerCase();
   const uId = (u.id || '').trim().toLowerCase();
-  if (tUserId && uId && tUserId === uId) return true;
+  if (tUserId && uId) {
+    return tUserId === uId;
+  }
 
+  // Fallback for legacy tickets missing explicit userId: match exact unique username
   const tAgency = ((t as any).agencyName || '').trim().toLowerCase();
   const uUsername = (u.username || '').trim().toLowerCase();
-  if (tAgency && uUsername && tAgency === uUsername) return true;
+  if (tAgency && uUsername && !tUserId) {
+    return tAgency === uUsername;
+  }
 
-  const tUser = ((t as any).userName || '').trim().toLowerCase();
-  const uName = (u.name || '').trim().toLowerCase();
-  if (tUser && uName && tUser === uName) return true;
-
-  if (tAgency && uName && tAgency === uName) return true;
-  if (tUser && uUsername && tUser === uUsername) return true;
-  if (tUserId && (tUserId === uUsername || tUserId === uName)) return true;
   return false;
 };
 
@@ -537,7 +535,7 @@ export const AdminReportsView: React.FC = () => {
         const tAmt = t.totalAmount || 0;
         existing.sale += tAmt;
 
-        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u) || (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase())));
+        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
         const commRate = getCommissionPercent(matchedUser?.mode);
         existing.comm += Math.round(tAmt * commRate);
 
@@ -589,7 +587,7 @@ export const AdminReportsView: React.FC = () => {
 
       slotTickets.forEach((t) => {
         const tAmt = t.totalAmount || 0;
-        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u) || (userDisplayName && userDisplayName !== 'ALL USERS' && (u.name.toLowerCase() === userDisplayName.toLowerCase() || u.username.toLowerCase() === userDisplayName.toLowerCase())));
+        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
         const commRate = getCommissionPercent(matchedUser?.mode);
         userComm += Math.round(tAmt * commRate);
 

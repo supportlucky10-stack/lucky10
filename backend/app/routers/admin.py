@@ -50,10 +50,21 @@ def create_user(req: UserCreateSchema, admin_user: User = Depends(get_current_ad
     if not req.password or len(req.password.strip()) < 3:
         raise HTTPException(status_code=400, detail="Password must be at least 3 characters long")
 
+    # Authoritative normalized agency name uniqueness check
+    normalized_agency = " ".join(agency_name.split()).lower()
+    existing_agency = db.query(User).filter(
+        func.lower(func.trim(User.name)) == normalized_agency
+    ).first()
+    if existing_agency:
+        raise HTTPException(status_code=400, detail="Agency name already exists.")
+
     username = (req.username.strip() if req.username and req.username.strip() else agency_name)
+    normalized_username = " ".join(username.split()).lower()
     
     # Check if username already exists - never mutate or overwrite existing accounts
-    existing_username = db.query(User).filter(User.username.ilike(username)).first()
+    existing_username = db.query(User).filter(
+        func.lower(func.trim(User.username)) == normalized_username
+    ).first()
     if existing_username:
         raise HTTPException(status_code=400, detail=f"Username '{username}' already exists. Please choose a different username.")
 
@@ -85,6 +96,8 @@ def create_user(req: UserCreateSchema, admin_user: User = Depends(get_current_ad
             "isActive": new_user.is_active,
             "createdAt": new_user.created_at.strftime("%Y-%m-%d"),
         }
+    except HTTPException:
+        raise
     except Exception as exc:
         db.rollback()
         raise HTTPException(status_code=400, detail=f"Failed to create user: {str(exc)}")

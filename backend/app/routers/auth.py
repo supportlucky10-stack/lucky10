@@ -2,6 +2,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import (
@@ -51,6 +52,13 @@ def register_customer(req: RegisterRequest, request: Request, db: Session = Depe
     email_clean = req.email.strip().lower()
     name_clean = req.name.strip()
     username_clean = email_clean.split("@")[0] if "@" in email_clean else email_clean
+
+    normalized_agency = " ".join(name_clean.split()).lower()
+    existing_agency = db.query(User).filter(
+        func.lower(func.trim(User.name)) == normalized_agency
+    ).first()
+    if existing_agency:
+        raise HTTPException(status_code=400, detail="Agency name already exists.")
 
     existing = db.query(User).filter(
         (User.email == email_clean) | (User.username == username_clean)
