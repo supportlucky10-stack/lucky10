@@ -155,3 +155,28 @@ export const getDefaultPublishSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game'
     return '1 PM Game';
   }
 };
+
+/**
+ * Determines the authoritative default Game Slot to display on the Customer Result page:
+ * 1. Checks today's published results in reverse chronological order (8 PM, 6 PM, 3 PM, 1 PM).
+ * 2. If one or more results have been published for today, returns the latest published slot.
+ * 3. If no result is published yet today, falls back to the current active cycle slot via getDefaultBillingSlot().
+ */
+export const getLatestPublishedOrCycleSlot = (
+  todayDateStr: string,
+  getResultForSlotAndDate: (slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game', dateStr: string) => { prize1?: string }
+): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {
+  const reverseSlots: ('1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game')[] = [
+    '8 PM Game',
+    '6 PM Game',
+    '3 PM Game',
+    '1 PM Game',
+  ];
+  for (const slot of reverseSlots) {
+    const res = getResultForSlotAndDate(slot, todayDateStr);
+    if (res && res.prize1 && res.prize1.trim().length > 0) {
+      return slot;
+    }
+  }
+  return getDefaultBillingSlot();
+};

@@ -1,28 +1,66 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
-import { getLocalDateStr } from '../../utils/dateUtils';
+import { getBusinessDateIST, getLatestPublishedOrCycleSlot } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 
 export const TodaysResultView: React.FC = () => {
   const { getResultForSlotAndDate } = useApp();
-  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('1 PM Game');
-  const [selectedDate, setSelectedDate] = useState<string>(getLocalDateStr());
+  const initialToday = getBusinessDateIST();
+
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(() =>
+    getLatestPublishedOrCycleSlot(initialToday, getResultForSlotAndDate)
+  );
+  const [selectedDate, setSelectedDate] = useState<string>(initialToday);
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
-  const [, setRefreshTick] = useState(0);
 
-  React.useEffect(() => {
+  const isManualSelectionRef = useRef<boolean>(false);
+  const lastAutoSlotRef = useRef<GameSlot>(
+    getLatestPublishedOrCycleSlot(initialToday, getResultForSlotAndDate)
+  );
+
+  // Synchronize with live published results and IST game cycle
+  const syncLatestResultSlot = useCallback(() => {
+    const currentToday = getBusinessDateIST();
+
+    // Midnight rollover: Reset to new business date & 1 PM Game cycle
+    if (selectedDate !== currentToday && !isManualSelectionRef.current) {
+      setSelectedDate(currentToday);
+      const newSlot = getLatestPublishedOrCycleSlot(currentToday, getResultForSlotAndDate);
+      setActiveGameSlot(newSlot);
+      lastAutoSlotRef.current = newSlot;
+      return;
+    }
+
+    // On today's date: Follow latest published result or auto-switch when new result publishes
+    if (selectedDate === currentToday) {
+      const latestPublishedSlot = getLatestPublishedOrCycleSlot(currentToday, getResultForSlotAndDate);
+      if (latestPublishedSlot !== lastAutoSlotRef.current) {
+        // A new result was published! Automatically switch to newly published game
+        lastAutoSlotRef.current = latestPublishedSlot;
+        setActiveGameSlot(latestPublishedSlot);
+        isManualSelectionRef.current = false;
+      } else if (!isManualSelectionRef.current && activeGameSlot !== latestPublishedSlot) {
+        setActiveGameSlot(latestPublishedSlot);
+      }
+    }
+  }, [selectedDate, activeGameSlot, getResultForSlotAndDate]);
+
+  useEffect(() => {
+    syncLatestResultSlot();
+    const intervalTimer = setInterval(syncLatestResultSlot, 1000);
     const handleResultUpdate = () => {
-      setRefreshTick((prev) => prev + 1);
+      syncLatestResultSlot();
     };
     window.addEventListener('lucky10_results_updated', handleResultUpdate);
     return () => {
+      clearInterval(intervalTimer);
       window.removeEventListener('lucky10_results_updated', handleResultUpdate);
     };
-  }, []);
+  }, [syncLatestResultSlot]);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
@@ -139,7 +177,12 @@ export const TodaysResultView: React.FC = () => {
                 ref={dateInputRef}
                 type="date"
                 value={selectedDate}
-                onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(e.target.value);
+                    isManualSelectionRef.current = true;
+                  }
+                }}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
               />
             </div>
@@ -171,6 +214,7 @@ export const TodaysResultView: React.FC = () => {
                       onClick={() => {
                         setActiveGameSlot(slot);
                         setIsGameDropdownOpen(false);
+                        isManualSelectionRef.current = true;
                       }}
                       className={`w-full py-2 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
                         isSelected
