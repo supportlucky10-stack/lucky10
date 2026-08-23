@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
+import { isGameSlotOpen } from '../../utils/dateUtils';
+import { Lock } from 'lucide-react';
 
 export const ChangeGameView: React.FC = () => {
-  const { setActiveGameSlot, setCurrentView, activeGameSlot } = useApp();
+  const { setActiveGameSlot, setCurrentView, activeGameSlot, addToast } = useApp();
+  const [, setTick] = useState(0);
+
+  // Keep open/locked states live in real-time
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => t + 1), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
@@ -28,6 +37,10 @@ export const ChangeGameView: React.FC = () => {
   };
 
   const handleSelect = (slot: GameSlot) => {
+    if (!isGameSlotOpen(slot)) {
+      addToast(`${slot} billing is locked`, 'error');
+      return;
+    }
     setActiveGameSlot(slot);
     setCurrentView('GAME_DASHBOARD');
   };
@@ -41,16 +54,25 @@ export const ChangeGameView: React.FC = () => {
       <div className="px-4 sm:px-8 py-3 space-y-3 sm:space-y-5 max-w-sm sm:max-w-md mx-auto w-full flex-1 flex flex-col justify-center items-center my-auto">
         {games.map((slot) => {
           const isCurrent = slot === activeGameSlot;
+          const isOpen = isGameSlotOpen(slot);
           const style = slotButtonStyles[slot];
           return (
             <button
               key={slot}
+              disabled={!isOpen}
               onClick={() => handleSelect(slot)}
-              className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl tracking-wider shadow-md transition-all active:scale-98 uppercase flex items-center justify-center text-center cursor-pointer ${
-                isCurrent ? style.active : style.inactive
+              className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl tracking-wider shadow-md transition-all uppercase flex items-center justify-center text-center ${
+                !isOpen
+                  ? 'opacity-40 cursor-not-allowed bg-neutral-900 text-neutral-500 border border-neutral-800'
+                  : isCurrent
+                  ? `${style.active} active:scale-98 cursor-pointer`
+                  : `${style.inactive} active:scale-98 cursor-pointer`
               }`}
             >
-              <span className="w-full text-center">{slot}</span>
+              <span className="w-full text-center flex items-center justify-center gap-2">
+                <span>{slot}</span>
+                {!isOpen && <Lock className="w-4 h-4 text-neutral-400 inline" />}
+              </span>
             </button>
           );
         })}

@@ -49,4 +49,12 @@ export const customerService = {
   }> {
     return await apiRequest('/api/customer/limits', { method: 'GET' });
   },
+
+  async getGameStatus(): Promise<{
+    date: string;
+    ist_time: string;
+    slots: Record<string, { is_open: boolean; cutoff: string }>;
+  }> {
+    return await apiRequest('/api/customer/game-status', { method: 'GET' });
+  },
 };

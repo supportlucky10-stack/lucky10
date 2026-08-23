@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem } from '../../types';
+import { isGameSlotOpen } from '../../utils/dateUtils';
 
 interface SlotTheme {
   name: string;
@@ -429,6 +430,8 @@ export const GameDashboardView: React.FC = () => {
                 setIsOverloadedModalOpen(true);
               } else if (msg.includes('Minimum 5')) {
                 setMinCountModalOpen(true);
+              } else {
+                alert(msg || 'Failed to save bill. Billing may be closed for this game slot.');
               }
             } finally {
               setIsSaving(false);
@@ -460,22 +463,33 @@ export const GameDashboardView: React.FC = () => {
               {(['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'] as GameSlot[]).map((slot) => {
                 const slotTheme = slotThemes[slot];
                 const isSelected = slot === activeGameSlot;
+                const isOpen = isGameSlotOpen(slot);
                 return (
                   <button
                     key={slot}
                     type="button"
+                    disabled={!isOpen}
                     onClick={() => {
+                      if (!isOpen) {
+                        addToast(`${slot} billing is locked`, 'error');
+                        return;
+                      }
                       setActiveGameSlot(slot);
                       setIsSlotDropdownOpen(false);
                       addToast(`Switched to ${slot}`, 'info');
                     }}
-                    className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between cursor-pointer transition-all ${
-                      isSelected
-                        ? `${slotTheme.badgeBg} ${slotTheme.badgeText} border ${slotTheme.badgeBorder}`
-                        : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
+                    className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between transition-all ${
+                      !isOpen
+                        ? 'opacity-40 cursor-not-allowed bg-neutral-900 text-neutral-500 border border-neutral-800'
+                        : isSelected
+                        ? `${slotTheme.badgeBg} ${slotTheme.badgeText} border ${slotTheme.badgeBorder} cursor-pointer`
+                        : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700 cursor-pointer'
                     }`}
                   >
-                    <span>{slot}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span>{slot}</span>
+                      {!isOpen && <Lock className="w-3 h-3 text-neutral-500 inline" />}
+                    </span>
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                   </button>
                 );

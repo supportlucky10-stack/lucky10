@@ -15,7 +15,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr } from '../utils/dateUtils';
+import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, isGameSlotOpen } from '../utils/dateUtils';
 
 interface AppContextType {
   currentView: ViewType;
@@ -84,7 +84,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState<boolean>(false);
   const [registeredUsers, setRegisteredUsers] = useState<UserAccount[]>([]);
-  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>('3 PM Game');
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(getDefaultBillingSlot());
   const [betSlip, setBetSlip] = useState<BetSlipItem[]>([]);
   const [placedTickets, setPlacedTickets] = useState<PlacedTicket[]>([]);
   const [gameResults, setGameResults] = useState<Record<GameSlot, GameResult>>({} as any);
@@ -121,6 +121,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.removeItem('lucky10_blocked_numbers');
       } catch (e) {}
     }
+  }, []);
+
+  // Live Auto-Switching: updates activeGameSlot when game cutoff or midnight is crossed
+  useEffect(() => {
+    const syncActiveGameSlot = () => {
+      const defaultSlot = getDefaultBillingSlot();
+      setActiveGameSlot((currentSlot) => {
+        const currentIsOpen = isGameSlotOpen(currentSlot);
+        // If current slot becomes locked (e.g. was 1 PM and time hit 13:00):
+        if (!currentIsOpen) {
+          return defaultSlot;
+        }
+        return currentSlot;
+      });
+    };
+
+    syncActiveGameSlot();
+    const timer = setInterval(syncActiveGameSlot, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
@@ -511,7 +530,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser(matchedAgency);
         setIsAdminLoggedIn(false);
         setPlacedTickets([]);
-        setActiveGameSlot('3 PM Game');
+        setActiveGameSlot(getDefaultBillingSlot());
         addToast(`Welcome back, ${matchedAgency.name}!`, 'success');
         setCurrentView('GAME_DASHBOARD');
         return { success: true };
@@ -554,7 +573,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsAdminLoggedIn(false);
     setBetSlip([]);
     setPlacedTickets([]);
-    setActiveGameSlot('3 PM Game');
+    setActiveGameSlot(getDefaultBillingSlot());
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
       setCurrentView('ADMIN_SIGN_IN');

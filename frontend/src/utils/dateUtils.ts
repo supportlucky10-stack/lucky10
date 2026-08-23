@@ -110,6 +110,32 @@ export const isGameSlotOpen = (slotName: string): boolean => {
 };
 
 /**
+ * Returns the default Game Slot for Homepage / Customer Billing based on current IST (Asia/Kolkata) time:
+ * - 00:00:00 - 12:59:59 => "1 PM Game"
+ * - 13:00:00 - 14:59:59 => "3 PM Game"
+ * - 15:00:00 - 17:59:59 => "6 PM Game"
+ * - 18:00:00 - 23:59:59 => "8 PM Game"
+ * At midnight (00:00:00 next day) => resets to "1 PM Game"
+ */
+export const getDefaultBillingSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+    if (hour < 13) return '1 PM Game';
+    if (hour < 15) return '3 PM Game';
+    if (hour < 18) return '6 PM Game';
+    return '8 PM Game';
+  } catch (e) {
+    return '1 PM Game';
+  }
+};
+
+/**
  * Returns the default Game Slot for Admin publishing based on current IST time.
  */
 export const getDefaultPublishSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {

@@ -63,7 +63,12 @@ export async function apiRequest<T>(
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        const errorDetail = data?.detail || 'An unexpected server error occurred';
+        let errorDetail = 'An unexpected server error occurred';
+        if (typeof data?.detail === 'string') {
+          errorDetail = data.detail;
+        } else if (data?.detail && typeof data.detail === 'object') {
+          errorDetail = data.detail.message || JSON.stringify(data.detail);
+        }
         throw new Error(errorDetail);
       }
 
