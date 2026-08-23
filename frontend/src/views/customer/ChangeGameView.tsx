@@ -63,7 +63,7 @@ export const ChangeGameView: React.FC = () => {
               onClick={() => handleSelect(slot)}
               className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl tracking-wider shadow-md transition-all uppercase flex items-center justify-center text-center ${
                 !isOpen
-                  ? 'opacity-40 cursor-not-allowed bg-neutral-900 text-neutral-500 border border-neutral-800'
+                  ? `${style.inactive} opacity-40 cursor-not-allowed`
                   : isCurrent
                   ? `${style.active} active:scale-98 cursor-pointer`
                   : `${style.inactive} active:scale-98 cursor-pointer`
