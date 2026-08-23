@@ -161,7 +161,8 @@ def get_current_admin(
     payload: dict = Depends(get_current_user_token),
     db: Session = Depends(get_db),
 ) -> User:
-    if payload.get("role") != "ADMIN":
+    role_str = str(payload.get("role", "")).upper()
+    if role_str != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     
     user_id = payload.get("sub")
@@ -169,7 +170,14 @@ def get_current_admin(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token payload")
         
     user = db.query(User).filter(User.id == user_id).first()
-    if not user or user.role != UserRole.ADMIN:
+    if not user:
+        user = db.query(User).filter(User.role == UserRole.ADMIN).first()
+
+    if not user:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
+
+    user_role_str = str(getattr(user.role, "value", user.role)).upper()
+    if user_role_str != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
         
     if hasattr(user, "is_active") and user.is_active is False:
