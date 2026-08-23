@@ -87,6 +87,8 @@ export const AdminUsersAndResultsView: React.FC = () => {
         setCommissionRate('20%');
         setShowCreateForm(false);
       }
+    } catch (err: any) {
+      setFormError(err?.message || 'Failed to create user. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

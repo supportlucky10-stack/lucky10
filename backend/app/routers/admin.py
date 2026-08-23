@@ -37,61 +37,50 @@ def get_all_users(admin_user: User = Depends(get_current_admin), db: Session = D
 
 @router.post("/users")
 def create_user(req: UserCreateSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    if not req.agencyName or not req.agencyName.strip():
+    agency_name = req.agencyName.strip() if req.agencyName else ""
+    if not agency_name:
         raise HTTPException(status_code=400, detail="Agency Name is required")
     if not req.password or len(req.password.strip()) < 3:
         raise HTTPException(status_code=400, detail="Password must be at least 3 characters long")
 
-    agency_name = req.agencyName.strip()
     username = (req.username.strip() if req.username and req.username.strip() else agency_name)
+    
+    # Check if username already exists - never mutate or overwrite existing accounts
+    existing_username = db.query(User).filter(User.username.ilike(username)).first()
+    if existing_username:
+        raise HTTPException(status_code=400, detail=f"Username '{username}' already exists. Please choose a different username.")
+
     slug = "".join(c for c in username.lower() if c.isalnum() or c == "_") or "agency"
     email = f"{slug}_{uuid.uuid4().hex[:6]}@lucky10.com"
 
-    existing = db.query(User).filter(
-        (User.username.ilike(username)) | (User.name.ilike(agency_name))
-    ).first()
-    if existing:
-        existing.name = agency_name
-        existing.username = username
-        existing.password_hash = get_password_hash(req.password.strip())
-        existing.mode = req.mode or "With Commission"
-        existing.is_active = True
+    try:
+        new_user = User(
+            id=f"user_{uuid.uuid4().hex[:12]}",
+            name=agency_name,
+            email=email,
+            username=username,
+            password_hash=get_password_hash(req.password.strip()),
+            role=UserRole.CUSTOMER,
+            mode=req.mode or "With Commission (20%)",
+            is_active=True,
+            created_at=datetime.now(timezone.utc),
+        )
+        db.add(new_user)
         db.commit()
-        db.refresh(existing)
+        db.refresh(new_user)
+
         return {
-            "id": existing.id,
-            "name": existing.name,
-            "email": existing.email,
-            "username": existing.username,
-            "mode": existing.mode,
-            "isActive": existing.is_active,
-            "createdAt": existing.created_at.strftime("%Y-%m-%d") if existing.created_at else "",
+            "id": new_user.id,
+            "name": new_user.name,
+            "email": new_user.email,
+            "username": new_user.username,
+            "mode": new_user.mode,
+            "isActive": new_user.is_active,
+            "createdAt": new_user.created_at.strftime("%Y-%m-%d"),
         }
-
-    new_user = User(
-        id=f"user_{uuid.uuid4().hex[:12]}",
-        name=agency_name,
-        email=email,
-        username=username,
-        password_hash=get_password_hash(req.password.strip()),
-        role=UserRole.CUSTOMER,
-        mode=req.mode or "With Commission",
-        is_active=True,
-        created_at=datetime.now(timezone.utc),
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-
-    return {
-        "id": new_user.id,
-        "name": new_user.name,
-        "email": new_user.email,
-        "username": new_user.username,
-        "mode": new_user.mode,
-        "isActive": new_user.is_active,
-        "createdAt": new_user.created_at.strftime("%Y-%m-%d"),
-    }
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f"Failed to create user: {str(exc)}")
 
 @router.put("/users/status-all")
 @router.patch("/users/status-all")
