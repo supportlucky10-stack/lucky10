@@ -15,6 +15,12 @@ from app.schemas.user import UserAccountResponse
 from app.schemas.ticket import TicketCreateSchema, PlacedTicketResponse, BetItemSchema
 from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
+from app.core.game_timing import (
+    get_ist_now,
+    get_business_date,
+    is_game_slot_open,
+    get_all_game_slot_statuses,
+)
 
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
 
@@ -44,28 +50,31 @@ def format_ticket(ticket: Ticket) -> dict:
             for item in ticket.items
         ],
         "totalAmount": ticket.total_amount,
-        "placedAt": (ticket.placed_at.replace(tzinfo=timezone.utc) if ticket.placed_at.tzinfo is None else ticket.placed_at).isoformat() if ticket.placed_at else datetime.now(timezone.utc).isoformat(),
+        "placedAt": safe_format_dt(ticket.placed_at, "%Y-%m-%d %H:%M:%S"),
         "status": ticket.status,
         "winAmount": ticket.win_amount,
+        "createdAt": safe_format_dt(ticket.placed_at, "%Y-%m-%d %H:%M:%S"),
     }
 
 def format_result(res: GameResult) -> dict:
-    try:
-        compliments = json.loads(res.compliments_json)
-    except Exception:
-        compliments = []
-
+    compliments = []
+    if res.compliments_json:
+        try:
+            compliments = json.loads(res.compliments_json)
+        except Exception:
+            compliments = []
     return {
         "id": res.id,
-        "date": res.date,
+        "date": safe_format_dt(res.date, "%Y-%m-%d"),
         "gameSlot": res.game_slot,
-        "prize1": res.prize1,
-        "prize2": res.prize2,
-        "prize3": res.prize3,
-        "prize4": res.prize4,
+        "prize1": res.prize1 or "",
+        "prize2": res.prize2 or "",
+        "prize3": res.prize3 or "",
+        "prize4": res.prize4 or "",
         "prize5": res.prize5 or "",
+        "prize6": res.prize6 or "",
         "compliments": compliments,
-        "publishedAt": res.published_at.isoformat() if res.published_at else "",
+        "publishedAt": safe_format_dt(res.published_at, "%Y-%m-%d %H:%M:%S"),
     }
 
 def safe_format_dt(val, fmt="%Y-%m-%d") -> str:
@@ -105,30 +114,24 @@ def format_user_account(user: User) -> dict:
 def get_customer_profile(current_user: User = Depends(get_current_customer)):
     return format_user_account(current_user)
 
+@router.get("/game-status")
+def get_game_status():
+    """Returns authoritative IST game timing, business date, and slot open/locked statuses."""
+    return get_all_game_slot_statuses()
+
 @router.get("/results/today")
 def get_today_results(date: Optional[str] = None, db: Session = Depends(get_db)):
-    today_str = date.strip() if date and date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_str = date.strip() if date and date.strip() else get_business_date()
     results = db.query(GameResult).filter(GameResult.date == today_str).all()
     out = {}
     for r in results:
         out[r.game_slot] = format_result(r)
         out[f"{r.date}_{r.game_slot}"] = format_result(r)
-    
-    # Fill in any missing game slots with the most recently published result
-    all_slots = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
-    missing_slots = [s for s in all_slots if s not in out]
-    if missing_slots:
-        recent_results = db.query(GameResult).order_by(GameResult.published_at.desc()).all()
-        for r in recent_results:
-            if r.game_slot in missing_slots and r.game_slot not in out:
-                out[r.game_slot] = format_result(r)
-                out[f"{r.date}_{r.game_slot}"] = format_result(r)
-                
     return out
 
 @router.get("/results/by-date")
 def get_results_by_date(date: Optional[str] = None, db: Session = Depends(get_db)):
-    target_date = date.strip() if date and date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target_date = date.strip() if date and date.strip() else get_business_date()
     results = db.query(GameResult).filter(GameResult.date == target_date).all()
     out = {}
     for r in results:
@@ -151,7 +154,7 @@ def get_all_results(db: Session = Depends(get_db)):
 
 @router.get("/results/previous")
 def get_previous_results(db: Session = Depends(get_db)):
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_str = get_business_date()
     results = db.query(GameResult).filter(GameResult.date != today_str).all()
     return [format_result(r) for r in results]
 
@@ -159,6 +162,20 @@ def get_previous_results(db: Session = Depends(get_db)):
 def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
+
+    # ── 1. AUTHORITATIVE BILLING CUTOFF VALIDATION ──
+    now_ist = get_ist_now()
+    business_date = get_business_date(now_ist)
+    if not is_game_slot_open(req.gameSlot, now_ist):
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "BILLING_CLOSED",
+                "message": "Billing time has ended for this game.",
+                "game_slot": req.gameSlot,
+                "business_date": business_date,
+            }
+        )
 
     # ── SERVER-SIDE FINANCIAL VALIDATION ──
     for item in req.items:
@@ -177,7 +194,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_curre
         Ticket.user_id == user.id,
         Ticket.game_slot == req.gameSlot,
         Ticket.total_amount == req.totalAmount,
-        Ticket.placed_at >= datetime.now(timezone.utc) - timedelta(seconds=3)
+        Ticket.placed_at >= (now_ist.astimezone(timezone.utc) - timedelta(seconds=3))
     ).first()
     if recent_same_ticket and len(recent_same_ticket.items) == len(req.items):
         rec_cust_clean = (recent_same_ticket.customer_name or "").strip().lower()
@@ -338,7 +355,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_curre
         try:
             # Generate atomic, concurrency-safe sequential ticket ID
             ticket_id = get_next_ticket_id(db)
-            placed_at_dt = datetime.now(timezone.utc)
+            placed_at_dt = now_ist.astimezone(timezone.utc)
 
             new_ticket = Ticket(
                 id=ticket_id,

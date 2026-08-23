@@ -122,9 +122,11 @@ def test_duplicate_ticket_placement_idempotency(client, db_session, test_custome
     assert tkt1["id"] == tkt2["id"]
 
 def test_result_edit_and_winner_recalculation(client, test_customer_user, customer_token_headers, admin_token_headers):
+    from app.core.game_timing import set_mock_ist_now, IST_TZ
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # 1. Place a ticket on 111
+    # 1. Place a ticket on 111 before 8 PM
+    set_mock_ist_now(datetime(2026, 8, 23, 19, 30, 0, tzinfo=IST_TZ))
     res = client.post(
         "/api/customer/tickets",
         json={
@@ -138,7 +140,8 @@ def test_result_edit_and_winner_recalculation(client, test_customer_user, custom
     )
     assert res.status_code == 200
 
-    # 2. Admin publishes initial result 999 (ticket 111 is LOST)
+    # 2. Admin publishes initial result 999 after 8 PM (ticket 111 is LOST)
+    set_mock_ist_now(datetime(2026, 8, 23, 20, 5, 0, tzinfo=IST_TZ))
     client.post(
         "/api/admin/results",
         json={

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
-from typing import List, Optional
+from typing import List, Optional, Any, Union
 
 class GameResultPublishSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -11,7 +11,7 @@ class GameResultPublishSchema(BaseModel):
     prize4: Optional[str] = Field(default="", max_length=10)
     prize5: Optional[str] = Field(default="", max_length=10)
     prize6: Optional[str] = Field(default="", max_length=10)
-    compliments: List[List[str]] = []
+    compliments: Optional[Union[List[List[str]], List[str], List[Any]]] = []
     date: Optional[str] = None
 
 class GameResultResponse(BaseModel):

@@ -11,7 +11,7 @@ class BetItemSchema(BaseModel):
     count: float = Field(..., gt=0)
     type: str = Field(..., min_length=1, max_length=30)
     unitPrice: float = Field(default=10.0, gt=0)
-    totalAmount: float = Field(..., gt=0)
+    totalAmount: Optional[float] = None
 
     @field_validator("number")
     @classmethod

@@ -53,3 +53,79 @@ export const extractDateStr = (raw?: string): string => {
   }
   return clean.split('T')[0].split(' ')[0] || getLocalDateStr();
 };
+
+/**
+ * Returns current business date in YYYY-MM-DD in Asia/Kolkata (IST).
+ */
+export const getBusinessDateIST = (): string => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    return formatter.format(new Date());
+  } catch (e) {
+    return getLocalDateStr();
+  }
+};
+
+/**
+ * Checks if billing for a game slot is OPEN in Asia/Kolkata (IST).
+ * Cutoffs: 1 PM at 13:00, 3 PM at 15:00, 6 PM at 18:00, 8 PM at 20:00.
+ */
+export const isGameSlotOpen = (slotName: string): boolean => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+    const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+    const totalSeconds = hour * 3600 + minute * 60 + second;
+
+    const s = (slotName || '').toUpperCase();
+    if (s.includes('1') && s.includes('PM')) {
+      return totalSeconds < 13 * 3600;
+    }
+    if (s.includes('3') && s.includes('PM')) {
+      return totalSeconds < 15 * 3600;
+    }
+    if (s.includes('6') && s.includes('PM')) {
+      return totalSeconds < 18 * 3600;
+    }
+    if (s.includes('8') && s.includes('PM')) {
+      return totalSeconds < 20 * 3600;
+    }
+    return true;
+  } catch (e) {
+    return true;
+  }
+};
+
+/**
+ * Returns the default Game Slot for Admin publishing based on current IST time.
+ */
+export const getDefaultPublishSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+    if (hour >= 20) return '8 PM Game';
+    if (hour >= 18) return '6 PM Game';
+    if (hour >= 15) return '3 PM Game';
+    return '1 PM Game';
+  } catch (e) {
+    return '1 PM Game';
+  }
+};

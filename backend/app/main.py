@@ -70,16 +70,6 @@ app.include_router(auth.router)
 app.include_router(customer.router)
 app.include_router(admin.router)
 
-@app.on_event("startup")
-def on_startup():
-    try:
-        from app.core.database import SessionLocal
-        with SessionLocal() as db:
-            db.execute(text("ALTER TABLE users DROP COLUMN IF EXISTS balance;"))
-            db.commit()
-    except Exception as e:
-        logger.info(f"[Lucky10 Schema Alignment]: {e}")
-
 @app.get("/api/health")
 def health(db: Session = Depends(get_db)):
     db_status = "connected"

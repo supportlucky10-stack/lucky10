@@ -3,7 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
 import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil } from 'lucide-react';
-import { getLocalDateStr } from '../../utils/dateUtils';
+import { getLocalDateStr, getDefaultPublishSlot } from '../../utils/dateUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -71,10 +71,10 @@ export const AdminResultManagementView: React.FC = () => {
 
   const todayStr = getLocalDateStr();
 
-  const [selectedSlot, setSelectedSlot] = useState<GameSlot>('1 PM Game');
+  const [selectedSlot, setSelectedSlot] = useState<GameSlot>(() => getDefaultPublishSlot());
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
 
-  const existingInitial = getResultForSlotAndDate('1 PM Game', todayStr);
+  const existingInitial = getResultForSlotAndDate(selectedSlot, todayStr);
   const [prize1, setPrize1] = useState(existingInitial?.prize1 || '');
   const [prize2, setPrize2] = useState(existingInitial?.prize2 || '');
   const [prize3, setPrize3] = useState(existingInitial?.prize3 || '');

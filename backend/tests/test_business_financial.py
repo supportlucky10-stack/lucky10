@@ -47,9 +47,11 @@ def test_ticket_creation_zero_count_rejected(client, test_customer_user, custome
 
 def test_result_publication_and_winner_calculation(client, test_customer_user, customer_token_headers, admin_token_headers):
     from datetime import datetime, timezone
+    from app.core.game_timing import set_mock_ist_now, IST_TZ
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    # 1. Place a ticket on 742 (SUPER 1st prize)
+    # 1. Place a ticket on 742 (SUPER 1st prize) before 3 PM
+    set_mock_ist_now(datetime(2026, 8, 23, 14, 0, 0, tzinfo=IST_TZ))
     client.post(
         "/api/customer/tickets",
         json={
@@ -62,7 +64,8 @@ def test_result_publication_and_winner_calculation(client, test_customer_user, c
         headers=customer_token_headers
     )
 
-    # 2. Admin publishes result 742 for 3 PM Game on today's UTC date
+    # 2. Admin publishes result 742 for 3 PM Game after 3 PM
+    set_mock_ist_now(datetime(2026, 8, 23, 15, 5, 0, tzinfo=IST_TZ))
     res = client.post(
         "/api/admin/results",
         json={

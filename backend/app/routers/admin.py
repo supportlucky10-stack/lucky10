@@ -16,6 +16,13 @@ from app.schemas.result import GameResultPublishSchema
 from app.schemas.user import UserCreateSchema
 from app.schemas.limit_rule import AgencyLimitCreate, BlockedNumberCreate, GlobalLimitUpdate
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
+from app.core.game_timing import (
+    get_ist_now,
+    get_business_date,
+    is_game_result_publishable,
+    normalize_slot_name,
+    IST_TZ,
+)
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
@@ -163,6 +170,16 @@ def clear_all_users(admin_user: User = Depends(get_current_admin), db: Session =
     db.commit()
     return {"message": "All users deleted successfully"}
 
+def get_ticket_business_date(tkt: Ticket) -> str:
+    if tkt.placed_at:
+        dt = tkt.placed_at
+        if dt.tzinfo is None:
+            utc_dt = dt.replace(tzinfo=timezone.utc)
+        else:
+            utc_dt = dt.astimezone(timezone.utc)
+        return utc_dt.astimezone(IST_TZ).strftime("%Y-%m-%d")
+    return ""
+
 def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
     flat_comps = get_flat_compliments(result.compliments_json)
     res = evaluate_ticket_items(
@@ -179,11 +196,21 @@ def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
 
 @router.post("/results")
 def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    target_date = req.date.strip() if req.date and req.date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target_date = req.date.strip() if req.date and req.date.strip() else get_business_date()
+    now_ist = get_ist_now()
+
+    # Verify billing for that game slot has closed before allowing publishing
+    if not is_game_result_publishable(req.gameSlot, target_date, now_ist):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot publish result for {req.gameSlot} on {target_date} before game billing is closed."
+        )
+
     compliments_json = json.dumps(req.compliments or [])
 
     try:
         # Check if result already exists for slot on target date
+        norm_target_slot = normalize_slot_name(req.gameSlot)
         existing = db.query(GameResult).filter(
             GameResult.date == target_date,
             GameResult.game_slot == req.gameSlot
@@ -224,22 +251,17 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
 
         db.flush()
 
-        # Automatically calculate winners and update all tickets for this slot on this date
-        slot_tickets = (
+        # Automatically calculate winners and update all tickets for this exact slot and date
+        all_tickets = (
             db.query(Ticket)
             .options(selectinload(Ticket.items))
-            .filter(Ticket.game_slot == req.gameSlot)
             .all()
         )
-        for tkt in slot_tickets:
-            if tkt.placed_at and hasattr(tkt.placed_at, "strftime"):
-                t_date = tkt.placed_at.strftime("%Y-%m-%d")
-            elif tkt.placed_at:
-                t_date = str(tkt.placed_at)[:10]
-            else:
-                t_date = target_date
+        for tkt in all_tickets:
+            tkt_slot = normalize_slot_name(tkt.game_slot)
+            t_date = get_ticket_business_date(tkt)
 
-            if t_date == target_date:
+            if tkt_slot == norm_target_slot and t_date == target_date:
                 if not p1:
                     tkt.win_amount = 0.0
                     tkt.status = "PENDING"
@@ -366,32 +388,59 @@ def delete_admin_ticket(ticket_id: str, admin_user: User = Depends(get_current_a
         raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
 
 @router.get("/reports")
-def get_reports(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    start_of_today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-    end_of_today = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
+def get_reports(
+    date: Optional[str] = None,
+    game_slot: Optional[str] = None,
+    admin_user: User = Depends(get_current_admin),
+    db: Session = Depends(get_db)
+):
+    target_date = date.strip() if date and date.strip() else get_business_date()
+    norm_slot = normalize_slot_name(game_slot) if game_slot and game_slot != "ALL" else None
 
-    today_gross_res = db.query(func.coalesce(func.sum(Ticket.total_amount), 0.0), func.count(Ticket.id)).filter(
-        Ticket.placed_at >= start_of_today,
-        Ticket.placed_at <= end_of_today
-    ).first()
-    today_gross = float(today_gross_res[0] if today_gross_res else 0.0)
-    today_bets_count = int(today_gross_res[1] if today_gross_res else 0)
+    # Fetch all tickets with items and user
+    tickets = (
+        db.query(Ticket)
+        .options(selectinload(Ticket.items), selectinload(Ticket.user))
+        .all()
+    )
 
-    today_win_res = db.query(func.coalesce(func.sum(Ticket.win_amount), 0.0)).filter(
-        Ticket.placed_at >= start_of_today,
-        Ticket.placed_at <= end_of_today,
-        Ticket.status == "WON"
-    ).scalar()
-    today_payout_amount = float(today_win_res or 0.0)
-    today_net = today_gross - today_payout_amount
+    filtered_tickets = []
+    for t in tickets:
+        t_date = get_ticket_business_date(t)
+        t_slot = normalize_slot_name(t.game_slot)
+        if t_date == target_date:
+            if not norm_slot or t_slot == norm_slot:
+                filtered_tickets.append(t)
+
+    total_bills = len(filtered_tickets)
+    total_sales = sum(t.total_amount for t in filtered_tickets)
+    total_tickets = sum(sum(item.count for item in t.items) for t in filtered_tickets)
+    
+    winning_tickets = [t for t in filtered_tickets if t.status == "WON"]
+    winning_ticket_count = len(winning_tickets)
+    winning_user_count = len({t.user_id for t in winning_tickets if t.user_id})
+    total_win_amount = sum(t.win_amount for t in winning_tickets)
+
+    # Fetch published result for slot/date if specified
+    res = None
+    if norm_slot:
+        res = db.query(GameResult).filter(GameResult.date == target_date, GameResult.game_slot == norm_slot).first()
 
     return {
-        "todayStr": today_str,
-        "todayGross": today_gross,
-        "todayPayouts": today_payout_amount,
-        "todayNet": today_net,
-        "todayBetsCount": today_bets_count,
+        "date": target_date,
+        "gameSlot": norm_slot or "ALL",
+        "totalBills": total_bills,
+        "totalTickets": total_tickets,
+        "totalSales": total_sales,
+        "winningTickets": winning_ticket_count,
+        "winningUsers": winning_user_count,
+        "totalWinningAmount": total_win_amount,
+        "netAmount": total_sales - total_win_amount,
+        "isSettled": bool(res and res.prize1),
+        "todayGross": total_sales,
+        "todayPayouts": total_win_amount,
+        "todayNet": total_sales - total_win_amount,
+        "todayBetsCount": total_bills,
     }
 
 # ── Limit & Block Rules API Endpoints ──────────────────────────────────────────

@@ -145,3 +145,10 @@ def customer_token_headers(test_customer_user):
 def admin_token_headers(test_admin_user):
     token = create_access_token(data={"sub": test_admin_user.id, "role": "ADMIN"})
     return {"Authorization": f"Bearer {token}"}
+
+@pytest.fixture(autouse=True)
+def default_mock_timing():
+    from app.core.game_timing import set_mock_ist_now, IST_TZ
+    set_mock_ist_now(datetime(2026, 8, 23, 10, 0, 0, tzinfo=IST_TZ))
+    yield
+    set_mock_ist_now(None)

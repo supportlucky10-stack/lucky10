@@ -125,19 +125,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
     const rawKey = `${dateStr}_${slot}`;
-    if (allPublishedResults[rawKey]) {
-      return allPublishedResults[rawKey];
+    if (allPublishedResults[rawKey] && allPublishedResults[rawKey].gameSlot === slot) {
+      const resDate = extractDateStr(allPublishedResults[rawKey].date);
+      const targetDate = extractDateStr(dateStr);
+      if (resDate === targetDate) {
+        return allPublishedResults[rawKey];
+      }
     }
     const normDate = dateStr ? extractDateStr(dateStr) : getLocalDateStr();
     const normKey = `${normDate}_${slot}`;
-    if (allPublishedResults[normKey]) {
-      return allPublishedResults[normKey];
+    if (allPublishedResults[normKey] && allPublishedResults[normKey].gameSlot === slot) {
+      const resDate = extractDateStr(allPublishedResults[normKey].date);
+      if (resDate === normDate) {
+        return allPublishedResults[normKey];
+      }
     }
 
     const todayStr = getLocalDateStr();
-    if (gameResults[slot]) {
+    if (gameResults[slot] && gameResults[slot].gameSlot === slot) {
       const gResDate = gameResults[slot].date ? extractDateStr(gameResults[slot].date) : '';
-      if (!dateStr || normDate === gResDate || dateStr === todayStr || normDate === todayStr) {
+      if (normDate === todayStr && gResDate === todayStr) {
         return gameResults[slot];
       }
     }
