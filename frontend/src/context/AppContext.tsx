@@ -15,7 +15,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, isGameSlotOpen } from '../utils/dateUtils';
+import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, isGameSlotOpen, getBusinessDateIST } from '../utils/dateUtils';
 
 interface AppContextType {
   currentView: ViewType;
@@ -123,13 +123,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Live Auto-Switching: updates activeGameSlot when game cutoff or midnight is crossed
+  // Live Auto-Switching: updates activeGameSlot when game cutoff, cycle transition, or midnight is crossed
+  const lastCycleSlotRef = useRef<GameSlot>(getDefaultBillingSlot());
+  const lastBusinessDateRef = useRef<string>(getBusinessDateIST());
+
   useEffect(() => {
     const syncActiveGameSlot = () => {
       const defaultSlot = getDefaultBillingSlot();
+      const currentBusinessDate = getBusinessDateIST();
+
+      const cycleChanged = defaultSlot !== lastCycleSlotRef.current;
+      const dateChanged = currentBusinessDate !== lastBusinessDateRef.current;
+
+      if (cycleChanged || dateChanged) {
+        lastCycleSlotRef.current = defaultSlot;
+        lastBusinessDateRef.current = currentBusinessDate;
+        setActiveGameSlot(defaultSlot);
+        return;
+      }
+
+      // If the current slot has become locked (e.g. was open when selected, now passed cutoff), fall back to defaultSlot
       setActiveGameSlot((currentSlot) => {
         const currentIsOpen = isGameSlotOpen(currentSlot);
-        // If current slot becomes locked (e.g. was 1 PM and time hit 13:00):
         if (!currentIsOpen) {
           return defaultSlot;
         }

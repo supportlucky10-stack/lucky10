@@ -487,7 +487,7 @@ export const GameDashboardView: React.FC = () => {
                     }}
                     className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between transition-all ${
                       !isOpen
-                        ? 'opacity-40 cursor-not-allowed bg-neutral-900 text-neutral-500 border border-neutral-800'
+                        ? `${slotTheme.badgeBg} ${slotTheme.badgeText} border ${slotTheme.badgeBorder} opacity-40 cursor-not-allowed`
                         : isSelected
                         ? `${slotTheme.badgeBg} ${slotTheme.badgeText} border ${slotTheme.badgeBorder} cursor-pointer`
                         : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700 cursor-pointer'
