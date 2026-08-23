@@ -590,7 +590,7 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Start"
                     value={startRange}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      const val = e.target.value.replace(/\D/g, '');
                       setStartRange(val);
                       if (val.length === activeMode) {
                         endRangeRef.current?.focus();
@@ -614,7 +614,7 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="End"
                     value={endRange}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      const val = e.target.value.replace(/\D/g, '');
                       setEndRange(val);
                       if (val.length === activeMode) {
                         stepValRef.current?.focus();
@@ -627,7 +627,7 @@ export const GameDashboardView: React.FC = () => {
                 <div>
                   <input
                     ref={stepValRef}
-                    type="number"
+                    type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="off"
@@ -636,14 +636,14 @@ export const GameDashboardView: React.FC = () => {
                     spellCheck={false}
                     placeholder="Step"
                     value={stepVal}
-                    onChange={(e) => setStepVal(e.target.value)}
+                    onChange={(e) => setStepVal(e.target.value.replace(/\D/g, ''))}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
 
                 <div>
                   <input
-                    type="number"
+                    type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="off"
@@ -652,7 +652,7 @@ export const GameDashboardView: React.FC = () => {
                     spellCheck={false}
                     placeholder="Count"
                     value={inputCount}
-                    onChange={(e) => setInputCount(e.target.value)}
+                    onChange={(e) => setInputCount(e.target.value.replace(/\D/g, ''))}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -660,7 +660,7 @@ export const GameDashboardView: React.FC = () => {
                 {activeMode === 3 && (
                   <div>
                     <input
-                      type="number"
+                      type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       autoComplete="off"
@@ -669,7 +669,7 @@ export const GameDashboardView: React.FC = () => {
                       spellCheck={false}
                       placeholder="Box Count"
                       value={boxCount}
-                      onChange={(e) => setBoxCount(e.target.value)}
+                      onChange={(e) => setBoxCount(e.target.value.replace(/\D/g, ''))}
                       className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[9px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[9px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                     />
                   </div>
@@ -691,7 +691,7 @@ export const GameDashboardView: React.FC = () => {
                     placeholder="Number"
                     value={inputNum}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      const val = e.target.value.replace(/\D/g, '');
                       setInputNum(val);
                       if (val.length === activeMode) {
                         countInputRef.current?.focus();
@@ -704,7 +704,7 @@ export const GameDashboardView: React.FC = () => {
                 <div className={activeMode === 3 ? 'col-span-4' : 'col-span-6'}>
                   <input
                     ref={countInputRef}
-                    type="number"
+                    type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
                     autoComplete="off"
@@ -713,7 +713,7 @@ export const GameDashboardView: React.FC = () => {
                     spellCheck={false}
                     placeholder="Count"
                     value={inputCount}
-                    onChange={(e) => setInputCount(e.target.value)}
+                    onChange={(e) => setInputCount(e.target.value.replace(/\D/g, ''))}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                   />
                 </div>
@@ -721,7 +721,7 @@ export const GameDashboardView: React.FC = () => {
                 {activeMode === 3 && (
                   <div className="col-span-4">
                     <input
-                      type="number"
+                      type="text"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       autoComplete="off"
@@ -730,7 +730,7 @@ export const GameDashboardView: React.FC = () => {
                       spellCheck={false}
                       placeholder="Box Count"
                       value={boxCount}
-                      onChange={(e) => setBoxCount(e.target.value)}
+                      onChange={(e) => setBoxCount(e.target.value.replace(/\D/g, ''))}
                       className="w-full h-10 sm:h-11 px-1 bg-white text-black font-extrabold text-[11px] sm:text-xs rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner leading-none"
                     />
                   </div>
