@@ -20,7 +20,7 @@ from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
 @router.get("/users")
-def get_all_users(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_all_users(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
     result = []
     for u in users:
@@ -36,7 +36,7 @@ def get_all_users(admin_payload: dict = Depends(get_current_admin), db: Session 
     return result
 
 @router.post("/users")
-def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def create_user(req: UserCreateSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     if not req.agencyName or not req.agencyName.strip():
         raise HTTPException(status_code=400, detail="Agency Name is required")
     if not req.password or len(req.password.strip()) < 3:
@@ -45,7 +45,7 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
     agency_name = req.agencyName.strip()
     username = (req.username.strip() if req.username and req.username.strip() else agency_name)
     slug = "".join(c for c in username.lower() if c.isalnum() or c == "_") or "agency"
-    email = f"{slug}@lucky10.com"
+    email = f"{slug}_{uuid.uuid4().hex[:6]}@lucky10.com"
 
     existing = db.query(User).filter(
         (User.username.ilike(username)) | (User.name.ilike(agency_name))
@@ -95,7 +95,7 @@ def create_user(req: UserCreateSchema, admin_payload: dict = Depends(get_current
 
 @router.put("/users/status-all")
 @router.patch("/users/status-all")
-def set_all_users_status(status_payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def set_all_users_status(status_payload: dict, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     is_active = status_payload.get("isActive", True)
     db.query(User).filter(User.role == UserRole.CUSTOMER).update({"is_active": is_active}, synchronize_session=False)
     db.commit()
@@ -103,7 +103,7 @@ def set_all_users_status(status_payload: dict, admin_payload: dict = Depends(get
 
 @router.put("/users/{user_id}/status")
 @router.patch("/users/{user_id}/status")
-def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
@@ -121,7 +121,7 @@ def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admi
 
 @router.put("/users/{user_id}/password")
 @router.patch("/users/{user_id}/password")
-def change_user_password(user_id: str, payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def change_user_password(user_id: str, payload: dict, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     new_password = payload.get("password")
     if not new_password or len(str(new_password).strip()) < 1:
         raise HTTPException(status_code=400, detail="Password cannot be empty")
@@ -138,7 +138,7 @@ def change_user_password(user_id: str, payload: dict, admin_payload: dict = Depe
 
 @router.put("/users/{user_id}/mode")
 @router.patch("/users/{user_id}/mode")
-def update_user_mode(user_id: str, payload: dict, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def update_user_mode(user_id: str, payload: dict, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     mode = payload.get("mode")
     if not mode:
         raise HTTPException(status_code=400, detail="Mode / Commission rate is required")
@@ -155,7 +155,7 @@ def update_user_mode(user_id: str, payload: dict, admin_payload: dict = Depends(
     return {"message": "Commission mode updated successfully", "id": user.id, "mode": user.mode}
 
 @router.delete("/users/{user_id}")
-def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def delete_user(user_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
@@ -167,7 +167,7 @@ def delete_user(user_id: str, admin_payload: dict = Depends(get_current_admin), 
     return {"message": "User deleted successfully"}
 
 @router.delete("/users")
-def clear_all_users(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def clear_all_users(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
     for u in users:
         db.delete(u)
@@ -189,7 +189,7 @@ def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
     return res["total_win_amount"]
 
 @router.post("/results")
-def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     target_date = req.date.strip() if req.date and req.date.strip() else datetime.now(timezone.utc).strftime("%Y-%m-%d")
     compliments_json = json.dumps(req.compliments or [])
 
@@ -290,7 +290,7 @@ def publish_results(req: GameResultPublishSchema, admin_payload: dict = Depends(
 
 
 @router.get("/issues")
-def get_all_issues(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_all_issues(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     issues = db.query(IssueTicket).order_by(IssueTicket.created_at.desc()).all()
     return [
         {
@@ -307,7 +307,7 @@ def get_all_issues(admin_payload: dict = Depends(get_current_admin), db: Session
     ]
 
 @router.put("/issues/{issue_id}")
-def update_issue_status(issue_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def update_issue_status(issue_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     issue = db.query(IssueTicket).filter(IssueTicket.id == issue_id).first()
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
@@ -321,7 +321,7 @@ def update_issue_status(issue_id: str, admin_payload: dict = Depends(get_current
     }
 
 @router.get("/tickets")
-def get_all_admin_tickets(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
@@ -362,7 +362,7 @@ def get_all_admin_tickets(admin_payload: dict = Depends(get_current_admin), db: 
     return out
 
 @router.delete("/tickets/{ticket_id}")
-def delete_admin_ticket(ticket_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def delete_admin_ticket(ticket_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
@@ -377,7 +377,7 @@ def delete_admin_ticket(ticket_id: str, admin_payload: dict = Depends(get_curren
         raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
 
 @router.get("/reports")
-def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_reports(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     start_of_today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     end_of_today = datetime.now(timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -408,7 +408,7 @@ def get_reports(admin_payload: dict = Depends(get_current_admin), db: Session = 
 # ── Limit & Block Rules API Endpoints ──────────────────────────────────────────
 
 @router.get("/limits/agency")
-def get_agency_limits(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_agency_limits(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     limits = db.query(AgencyNumberLimit).order_by(AgencyNumberLimit.created_at.desc()).all()
     return [
         {
@@ -424,7 +424,7 @@ def get_agency_limits(admin_payload: dict = Depends(get_current_admin), db: Sess
     ]
 
 @router.post("/limits/agency")
-def create_agency_limit(req: AgencyLimitCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def create_agency_limit(req: AgencyLimitCreate, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     clean_num = req.number.strip()
     slot_val = req.gameSlot or "ALL"
     existing = db.query(AgencyNumberLimit).filter(
@@ -471,7 +471,7 @@ def create_agency_limit(req: AgencyLimitCreate, admin_payload: dict = Depends(ge
     }
 
 @router.delete("/limits/agency/{limit_id}")
-def delete_agency_limit(limit_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def delete_agency_limit(limit_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     item = db.query(AgencyNumberLimit).filter(AgencyNumberLimit.id == limit_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Agency limit rule not found")
@@ -480,7 +480,7 @@ def delete_agency_limit(limit_id: str, admin_payload: dict = Depends(get_current
     return {"message": "Agency limit removed"}
 
 @router.get("/limits/blocked")
-def get_blocked_numbers(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_blocked_numbers(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     blocked = db.query(BlockedNumberRule).order_by(BlockedNumberRule.created_at.desc()).all()
     return [
         {
@@ -494,7 +494,7 @@ def get_blocked_numbers(admin_payload: dict = Depends(get_current_admin), db: Se
     ]
 
 @router.post("/limits/blocked")
-def create_blocked_number(req: BlockedNumberCreate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def create_blocked_number(req: BlockedNumberCreate, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     clean_num = req.number.strip()
     slot_val = req.gameSlot or "ALL"
     existing = db.query(BlockedNumberRule).filter(
@@ -533,7 +533,7 @@ def create_blocked_number(req: BlockedNumberCreate, admin_payload: dict = Depend
     }
 
 @router.delete("/limits/blocked/{blocked_id}")
-def delete_blocked_number(blocked_id: str, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def delete_blocked_number(blocked_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     rule = db.query(BlockedNumberRule).filter(BlockedNumberRule.id == blocked_id).first()
     if not rule:
         raise HTTPException(status_code=404, detail="Blocked number rule not found")
@@ -542,7 +542,7 @@ def delete_blocked_number(blocked_id: str, admin_payload: dict = Depends(get_cur
     return {"message": "Blocked number rule removed"}
 
 @router.get("/limits/global")
-def get_global_limit(admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def get_global_limit(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     rule = db.query(GlobalLimitRule).first()
     if not rule:
         return {"defaultMaxCount": 100.0, "isEnabled": False, "gameSlot": "ALL"}
@@ -554,7 +554,7 @@ def get_global_limit(admin_payload: dict = Depends(get_current_admin), db: Sessi
     }
 
 @router.put("/limits/global")
-def update_global_limit(req: GlobalLimitUpdate, admin_payload: dict = Depends(get_current_admin), db: Session = Depends(get_db)):
+def update_global_limit(req: GlobalLimitUpdate, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     rule = db.query(GlobalLimitRule).first()
     if not rule:
         rule = GlobalLimitRule(

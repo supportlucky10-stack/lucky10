@@ -972,35 +972,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const cleanAgency = agencyName.trim();
     const cleanUsername = username.trim() || cleanAgency;
     const cleanPass = password.trim();
-    const slug = cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '') || 'agency';
-    const fallbackUser: UserAccount = {
-      id: `user_${Date.now()}`,
-      name: cleanAgency,
-      email: `${slug}@lucky10.com`,
-      username: cleanUsername,
-      password: cleanPass,
-      role: 'CUSTOMER',
-      mode: mode,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
 
     try {
       const newUser = await adminService.createUser({ agencyName: cleanAgency, username: cleanUsername, password: cleanPass, mode });
-      const userToSave: UserAccount = {
-        ...(newUser || fallbackUser),
-        name: cleanAgency,
-        username: cleanUsername,
-        password: cleanPass,
-        mode: mode,
-      };
-      setRegisteredUsers((prev) => [userToSave, ...prev]);
-      addToast(`Agency '${cleanAgency}' (User: ${cleanUsername}) created successfully!`, 'success');
-      return true;
+      if (newUser && newUser.id) {
+        const userToSave: UserAccount = {
+          id: newUser.id,
+          name: newUser.name || cleanAgency,
+          email: newUser.email || `${cleanUsername.toLowerCase().replace(/[^a-z0-9]/g, '') || 'agency'}@lucky10.com`,
+          username: newUser.username || cleanUsername,
+          password: cleanPass,
+          mode: newUser.mode || mode,
+          role: newUser.role || 'CUSTOMER',
+          isActive: newUser.isActive !== false,
+          createdAt: newUser.createdAt || new Date().toISOString().split('T')[0],
+        };
+        setRegisteredUsers((prev) => [userToSave, ...prev.filter((u) => u.id !== userToSave.id)]);
+        addToast(`Agency '${cleanAgency}' (User: ${cleanUsername}) created successfully!`, 'success');
+        
+        // Immediately refresh users from database
+        adminService.getAllUsers().then((fresh) => {
+          if (fresh) setRegisteredUsers(fresh);
+        }).catch(() => {});
+        return true;
+      }
+      throw new Error('Failed to create agency user on server');
     } catch (err: any) {
-      console.warn('Backend user creation failed, creating locally:', err);
-      setRegisteredUsers((prev) => [fallbackUser, ...prev]);
-      addToast(`Agency '${cleanAgency}' (User: ${cleanUsername}) created successfully!`, 'success');
-      return true;
+      const msg = err?.message || 'Failed to create user on server';
+      addToast(msg, 'error');
+      throw err;
     }
   };
 
