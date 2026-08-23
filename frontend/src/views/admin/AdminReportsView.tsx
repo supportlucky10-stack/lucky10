@@ -737,7 +737,7 @@ export const AdminReportsView: React.FC = () => {
                   <table className="w-full text-left text-xs border-collapse font-sans">
                     <thead>
                       <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                        <th className="py-2.5 px-3">User / Agency</th>
+                        <th className="py-2.5 px-3">Agency</th>
                         <th className="py-2.5 px-2 text-center">Bills</th>
                         <th className="py-2.5 px-2 text-right">Sales</th>
                         <th className="py-2.5 px-2 text-right">Price</th>
@@ -801,7 +801,7 @@ export const AdminReportsView: React.FC = () => {
                   <table className="w-full text-left text-xs border-collapse font-sans">
                     <thead>
                       <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                        <th className="py-2.5 px-4">User / Agency</th>
+                        <th className="py-2.5 px-4">Agency</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-neutral-900">
@@ -978,7 +978,7 @@ export const AdminReportsView: React.FC = () => {
                       <table className="w-full text-left text-xs border-collapse font-sans">
                         <thead>
                           <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                            <th className="py-2.5 px-4">User / Agency</th>
+                            <th className="py-2.5 px-4">Agency</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-900">
@@ -1113,7 +1113,7 @@ export const AdminReportsView: React.FC = () => {
                       <table className="w-full text-left text-xs border-collapse font-sans">
                         <thead>
                           <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                            <th className="py-2.5 px-4">User / Agency</th>
+                            <th className="py-2.5 px-4">Agency</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-900">
@@ -1227,7 +1227,7 @@ export const AdminReportsView: React.FC = () => {
                 <table className="w-full text-left text-xs border-collapse font-sans">
                   <thead>
                     <tr className="bg-neutral-900/90 text-neutral-400 border-b border-neutral-800 font-bold uppercase text-[10px] tracking-wider">
-                      <th className="py-2.5 px-3">User / Agency</th>
+                      <th className="py-2.5 px-3">Agency</th>
                       <th className="py-2.5 px-2 text-center">Bills</th>
                       <th className="py-2.5 px-2 text-right">Sales</th>
                       <th className="py-2.5 px-2 text-right">Price</th>
