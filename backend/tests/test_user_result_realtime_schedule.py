@@ -22,12 +22,16 @@ def evaluate_result_page_slot(dt_ist: datetime) -> str:
     second = dt_ist.second
     total_seconds = hour * 3600 + minute * 60 + second
 
-    if total_seconds < 12 * 3600 + 59 * 60:
-        return "1 PM Game"
+    # 12:00:00 AM -> 2:58:59 PM (14:58:59) => 1 PM Game
     if total_seconds < 14 * 3600 + 59 * 60:
-        return "3 PM Game"
+        return "1 PM Game"
+    # 2:59:00 PM -> 5:58:59 PM (17:58:59) => 3 PM Game
     if total_seconds < 17 * 3600 + 59 * 60:
+        return "3 PM Game"
+    # 5:59:00 PM -> 7:58:59 PM (19:58:59) => 6 PM Game
+    if total_seconds < 19 * 3600 + 59 * 60:
         return "6 PM Game"
+    # 7:59:00 PM -> 11:59:59 PM => 8 PM Game
     return "8 PM Game"
 
 def setup_data():
@@ -59,25 +63,28 @@ def run_tests():
     print("=== STARTING USER RESULT PAGE AUTOMATIC SWITCH & REALTIME SUITE ===")
     setup_data()
 
-    # ── TEST 1-6: User Result State Machine Cutoff Boundaries ──
-    print("\n--- TEST 1 to 6: Cutoff Boundary State Machine Transitions ---")
-    # 1 PM Window
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 12, 58, 59)) == "1 PM Game"
-    # Cutoff to 3 PM
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 12, 59, 0)) == "3 PM Game"
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 14, 58, 59)) == "3 PM Game"
-    # Cutoff to 6 PM
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 14, 59, 0)) == "6 PM Game"
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 17, 58, 59)) == "6 PM Game"
-    # Cutoff to 8 PM
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 17, 59, 0)) == "8 PM Game"
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 19, 58, 59)) == "8 PM Game"
-    # 8 PM cutoff stays on 8 PM until midnight
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 19, 59, 0)) == "8 PM Game"
-    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 23, 59, 59)) == "8 PM Game"
-    # Midnight 00:00:00 AM next day -> 1 PM Game
+    # ── TEST 1-8: User Result State Machine Exact Boundaries ──
+    print("\n--- TEST 1 to 8: Exact Boundary Second State Machine Transitions ---")
+    # 12:00:00 AM -> 2:58:59 PM: SHOW 1 PM RESULT
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 0, 0, 0)) == "1 PM Game"
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 12, 59, 0)) == "1 PM Game"
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 14, 58, 59)) == "1 PM Game" # 2:58:59 PM -> 1 PM result
+
+    # 2:59:00 PM -> 5:58:59 PM: SHOW 3 PM RESULT
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 14, 59, 0)) == "3 PM Game" # 2:59:00 PM -> 3 PM result
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 17, 58, 59)) == "3 PM Game" # 5:58:59 PM -> 3 PM result
+
+    # 5:59:00 PM -> 7:58:59 PM: SHOW 6 PM RESULT
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 17, 59, 0)) == "6 PM Game" # 5:59:00 PM -> 6 PM result
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 19, 58, 59)) == "6 PM Game" # 7:58:59 PM -> 6 PM result
+
+    # 7:59:00 PM -> 11:59:59 PM: SHOW 8 PM RESULT
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 19, 59, 0)) == "8 PM Game" # 7:59:00 PM -> 8 PM result
+    assert evaluate_result_page_slot(make_ist_dt(2026, 8, 24, 23, 59, 59)) == "8 PM Game" # 11:59:59 PM -> 8 PM result
+
+    # 12:00:00 AM (Midnight next day): START NEW CYCLE -> SHOW 1 PM RESULT
     assert evaluate_result_page_slot(make_ist_dt(2026, 8, 25, 0, 0, 0)) == "1 PM Game"
-    print("[PASSED] All 10 boundary seconds verified for Result Page State Machine.")
+    print("[PASSED] All exact boundary seconds verified for User Result Schedule.")
 
     # ── TEST 7 & 10: Realtime Result Publishing & Live API Retrieval ──
     print("\n--- TEST 7 & 10: Result Publishing & Live API Retrieval ---")

@@ -161,11 +161,11 @@ export const getDefaultPublishSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game'
 
 /**
  * Returns the active Game Slot for the User Result page based strictly on Asia/Kolkata (IST) time:
- * - 00:00:00 - 12:58:59 => "1 PM Game"
- * - 12:59:00 - 14:58:59 => "3 PM Game"
- * - 14:59:00 - 17:58:59 => "6 PM Game"
- * - 17:59:00 - 23:59:59 => "8 PM Game" (remains on 8 PM until midnight)
- * - 00:00:00 next day   => resets to "1 PM Game"
+ * - 12:00:00 AM (00:00:00) -> 2:58:59 PM (14:58:59) => "1 PM Game" (SHOW 1 PM RESULT)
+ * - 2:59:00 PM (14:59:00)  -> 5:58:59 PM (17:58:59) => "3 PM Game" (SHOW 3 PM RESULT)
+ * - 5:59:00 PM (17:59:00)  -> 7:58:59 PM (19:58:59) => "6 PM Game" (SHOW 6 PM RESULT)
+ * - 7:59:00 PM (19:59:00)  -> 11:59:59 PM (23:59:59) => "8 PM Game" (SHOW 8 PM RESULT)
+ * - 12:00:00 AM (00:00:00 next day)                  => resets to "1 PM Game" (NEW CYCLE)
  */
 export const getResultPageActiveSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {
   try {
@@ -182,9 +182,13 @@ export const getResultPageActiveSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Gam
     const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
     const totalSeconds = hour * 3600 + minute * 60 + second;
 
-    if (totalSeconds < 12 * 3600 + 59 * 60) return '1 PM Game';
-    if (totalSeconds < 14 * 3600 + 59 * 60) return '3 PM Game';
-    if (totalSeconds < 17 * 3600 + 59 * 60) return '6 PM Game';
+    // 12:00:00 AM -> 2:58:59 PM (0 to 53,939s) => 1 PM Game
+    if (totalSeconds < 14 * 3600 + 59 * 60) return '1 PM Game';
+    // 2:59:00 PM -> 5:58:59 PM (53,940 to 64,739s) => 3 PM Game
+    if (totalSeconds < 17 * 3600 + 59 * 60) return '3 PM Game';
+    // 5:59:00 PM -> 7:58:59 PM (64,740 to 71,939s) => 6 PM Game
+    if (totalSeconds < 19 * 3600 + 59 * 60) return '6 PM Game';
+    // 7:59:00 PM -> 11:59:59 PM (71,940 to 86,399s) => 8 PM Game
     return '8 PM Game';
   } catch (e) {
     return '1 PM Game';
