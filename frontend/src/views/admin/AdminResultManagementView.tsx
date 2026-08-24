@@ -98,7 +98,8 @@ export const AdminResultManagementView: React.FC = () => {
   const isOtherPrizesPublished = Boolean(currentSlotResult && currentSlotResult.prize2 && currentSlotResult.prize2.trim().length > 0);
   const [isOtherPrizesEditing, setIsOtherPrizesEditing] = useState(false);
 
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const prize1InputRef = useRef<HTMLInputElement | null>(null);
+  const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
@@ -150,31 +151,35 @@ export const AdminResultManagementView: React.FC = () => {
     }
   };
 
-  const handleInputChange = (index: number, rawVal: string) => {
+  // 1st Prize is completely independent - NO auto-cursor navigation
+  const handle1stPrizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/\D/g, '').slice(0, 3);
+    setPrize1(val);
+  };
+
+  // Auto-cursor forward navigation ONLY for 2nd Prize through 30th Prize (indices 0 to 33 in otherPrizeRefs)
+  const handleOtherPrizeChange = (index: number, rawVal: string) => {
     const val = rawVal.replace(/\D/g, '').slice(0, 3);
     if (index === 0) {
-      setPrize1(val);
-    } else if (index === 1) {
       setPrize2(val);
-    } else if (index === 2) {
+    } else if (index === 1) {
       setPrize3(val);
-    } else if (index === 3) {
+    } else if (index === 2) {
       setPrize4(val);
-    } else if (index === 4) {
+    } else if (index === 3) {
       setPrize5(val);
-    } else if (index >= 5 && index <= 34) {
-      const compIdx = index - 5;
+    } else if (index >= 4 && index <= 33) {
+      const compIdx = index - 4;
       const upd = [...complimentBoxes];
       upd[compIdx] = val;
       setComplimentBoxes(upd);
     }
 
     // Auto-cursor forward navigation:
-    // IMPORTANT: 1st Prize (index 0) is completely excluded from auto-navigation.
-    // Navigation starts ONLY from 2nd Prize (index 1) through index 33.
-    // When 30th/last prize (index 34) is entered: STOP, do not navigate anywhere else.
-    if (index >= 1 && index < 34 && val.length === 3) {
-      const nextInput = inputRefs.current[index + 1];
+    // Starts at 2nd Prize (index 0) and moves forward sequentially upon entering 3 digits.
+    // Stops at 30th Prize (index 33) - does not navigate anywhere else.
+    if (index >= 0 && index < 33 && val.length === 3) {
+      const nextInput = otherPrizeRefs.current[index + 1];
       if (nextInput && !nextInput.disabled && !nextInput.readOnly) {
         nextInput.focus();
         nextInput.select?.();
@@ -182,12 +187,11 @@ export const AdminResultManagementView: React.FC = () => {
     }
   };
 
-  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleOtherPrizeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       const target = e.currentTarget;
-      // Normal backspace deletion; never jump back to 1st Prize (index 0)
-      if (target.value === '' && index > 1) {
-        const prevInput = inputRefs.current[index - 1];
+      if (target.value === '' && index > 0) {
+        const prevInput = otherPrizeRefs.current[index - 1];
         if (prevInput && !prevInput.disabled && !prevInput.readOnly) {
           prevInput.focus();
         }
@@ -380,7 +384,7 @@ export const AdminResultManagementView: React.FC = () => {
                   <span className="text-neutral-400 font-bold">1st Prize Number</span>
                 </div>
                 <input
-                  ref={(el) => { inputRefs.current[0] = el; }}
+                  ref={prize1InputRef}
                   type="text"
                   inputMode="numeric"
                   maxLength={3}
@@ -388,8 +392,7 @@ export const AdminResultManagementView: React.FC = () => {
                   value={prize1}
                   disabled={is1stPrizePublished && !is1stPrizeEditing}
                   readOnly={is1stPrizePublished && !is1stPrizeEditing}
-                  onChange={(e) => handleInputChange(0, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(0, e)}
+                  onChange={handle1stPrizeChange}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
                     is1stPrizePublished && !is1stPrizeEditing
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -441,7 +444,7 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">2nd Prize Number</span>
                     <input
-                      ref={(el) => { inputRefs.current[1] = el; }}
+                      ref={(el) => { otherPrizeRefs.current[0] = el; }}
                       type="text"
                       inputMode="numeric"
                       maxLength={3}
@@ -449,8 +452,8 @@ export const AdminResultManagementView: React.FC = () => {
                       value={prize2}
                       disabled={isOtherDisabled}
                       readOnly={isOtherDisabled}
-                      onChange={(e) => handleInputChange(1, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(1, e)}
+                      onChange={(e) => handleOtherPrizeChange(0, e.target.value)}
+                      onKeyDown={(e) => handleOtherPrizeKeyDown(0, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherDisabled
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -461,7 +464,7 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">3rd Prize Number</span>
                     <input
-                      ref={(el) => { inputRefs.current[2] = el; }}
+                      ref={(el) => { otherPrizeRefs.current[1] = el; }}
                       type="text"
                       inputMode="numeric"
                       maxLength={3}
@@ -469,8 +472,8 @@ export const AdminResultManagementView: React.FC = () => {
                       value={prize3}
                       disabled={isOtherDisabled}
                       readOnly={isOtherDisabled}
-                      onChange={(e) => handleInputChange(2, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(2, e)}
+                      onChange={(e) => handleOtherPrizeChange(1, e.target.value)}
+                      onKeyDown={(e) => handleOtherPrizeKeyDown(1, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherDisabled
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -483,7 +486,7 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span>
                     <input
-                      ref={(el) => { inputRefs.current[3] = el; }}
+                      ref={(el) => { otherPrizeRefs.current[2] = el; }}
                       type="text"
                       inputMode="numeric"
                       maxLength={3}
@@ -491,8 +494,8 @@ export const AdminResultManagementView: React.FC = () => {
                       value={prize4}
                       disabled={isOtherDisabled}
                       readOnly={isOtherDisabled}
-                      onChange={(e) => handleInputChange(3, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(3, e)}
+                      onChange={(e) => handleOtherPrizeChange(2, e.target.value)}
+                      onKeyDown={(e) => handleOtherPrizeKeyDown(2, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherDisabled
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -503,7 +506,7 @@ export const AdminResultManagementView: React.FC = () => {
                   <div>
                     <span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span>
                     <input
-                      ref={(el) => { inputRefs.current[4] = el; }}
+                      ref={(el) => { otherPrizeRefs.current[3] = el; }}
                       type="text"
                       inputMode="numeric"
                       maxLength={3}
@@ -511,8 +514,8 @@ export const AdminResultManagementView: React.FC = () => {
                       value={prize5}
                       disabled={isOtherDisabled}
                       readOnly={isOtherDisabled}
-                      onChange={(e) => handleInputChange(4, e.target.value)}
-                      onKeyDown={(e) => handleKeyDown(4, e)}
+                      onChange={(e) => handleOtherPrizeChange(3, e.target.value)}
+                      onKeyDown={(e) => handleOtherPrizeKeyDown(3, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherDisabled
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -527,12 +530,12 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="space-y-3 pt-2 border-t border-neutral-800">
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                   {complimentBoxes.map((num, idx) => {
-                    const inputIdx = 5 + idx;
+                    const inputIdx = 4 + idx;
                     return (
                       <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
                         <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
                         <input
-                          ref={(el) => { inputRefs.current[inputIdx] = el; }}
+                          ref={(el) => { otherPrizeRefs.current[inputIdx] = el; }}
                           type="text"
                           inputMode="numeric"
                           maxLength={3}
@@ -540,8 +543,8 @@ export const AdminResultManagementView: React.FC = () => {
                           value={num}
                           disabled={isOtherDisabled}
                           readOnly={isOtherDisabled}
-                          onChange={(e) => handleInputChange(inputIdx, e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(inputIdx, e)}
+                          onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
+                          onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
                             isOtherDisabled
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
