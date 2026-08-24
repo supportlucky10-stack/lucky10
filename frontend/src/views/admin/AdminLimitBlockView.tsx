@@ -42,6 +42,20 @@ export const AdminLimitBlockView: React.FC = () => {
     }
   }, [globalLimitRule]);
 
+  // Restrict keydown to strictly digits 0-9 and control keys
+  const allowOnlyDigits = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (
+      ['Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter'].includes(e.key) ||
+      e.ctrlKey ||
+      e.metaKey
+    ) {
+      return;
+    }
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   // Handlers
   const handleSaveAgencyLimit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,10 +222,12 @@ export const AdminLimitBlockView: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       maxLength={4}
                       placeholder="e.g. 742"
                       value={limitNumber}
-                      onChange={(e) => setLimitNumber(e.target.value.replace(/[^0-9]/g, ''))}
+                      onChange={(e) => setLimitNumber(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={allowOnlyDigits}
                       className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-gold focus:border-gold outline-none"
                     />
                   </div>
@@ -221,11 +237,13 @@ export const AdminLimitBlockView: React.FC = () => {
                       MAX COUNT LIMIT
                     </label>
                     <input
-                      type="number"
-                      min={1}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
                       placeholder="e.g. 50"
                       value={limitMaxCount}
-                      onChange={(e) => setLimitMaxCount(e.target.value)}
+                      onChange={(e) => setLimitMaxCount(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={allowOnlyDigits}
                       className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-gold focus:border-gold outline-none"
                     />
                   </div>
@@ -316,10 +334,12 @@ export const AdminLimitBlockView: React.FC = () => {
                     </label>
                     <input
                       type="text"
+                      inputMode="numeric"
                       maxLength={4}
                       placeholder="e.g. 742"
                       value={blockNumberInput}
-                      onChange={(e) => setBlockNumberInput(e.target.value.replace(/[^0-9]/g, ''))}
+                      onChange={(e) => setBlockNumberInput(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={allowOnlyDigits}
                       className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-rose-400 focus:border-rose-500 outline-none"
                     />
                   </div>
@@ -441,11 +461,13 @@ export const AdminLimitBlockView: React.FC = () => {
                       LIMIT COUNT
                     </label>
                     <input
-                      type="number"
-                      min={1}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
                       placeholder="e.g. 50"
                       value={globalMaxCount}
-                      onChange={(e) => setGlobalMaxCount(e.target.value)}
+                      onChange={(e) => setGlobalMaxCount(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={allowOnlyDigits}
                       className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-mono font-black text-gold focus:border-gold outline-none"
                     />
                   </div>
