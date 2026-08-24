@@ -193,11 +193,22 @@ export const MyPlayReportView: React.FC = () => {
   const [overCountDate, setOverCountDate] = useState<string>(todayStr);
   const [overCountToDate, setOverCountToDate] = useState<string>(todayStr);
   const [overCountSlot, setOverCountSlot] = useState<'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM'>('ALL');
-  const [appliedCountFilter, setAppliedCountFilter] = useState<{
+  
+  interface DisplayedCountReportData {
+    rows: Array<{
+      name: string;
+      count: number;
+      rate: string;
+      cash: number;
+    }>;
+    totalCount: number;
+    totalCash: number;
+    slot: 'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM';
     fromDate: string;
     toDate: string;
-    slot: 'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM';
-  } | null>(null);
+  }
+  const [displayedCountReport, setDisplayedCountReport] = useState<DisplayedCountReportData | null>(null);
+  const [isCountReportLoading, setIsCountReportLoading] = useState<boolean>(false);
 
   const salesFromRef = React.useRef<HTMLInputElement>(null);
   const salesToRef = React.useRef<HTMLInputElement>(null);
@@ -223,7 +234,7 @@ export const MyPlayReportView: React.FC = () => {
   };
 
   const resetDatesToCurrent = () => {
-    const currentToday = new Date().toISOString().split('T')[0];
+    const currentToday = getLocalDateStr();
     setFromDate(currentToday);
     setToDate(currentToday);
     setWinningFromDate(currentToday);
@@ -233,101 +244,130 @@ export const MyPlayReportView: React.FC = () => {
     setOverCountDate(currentToday);
     setOverCountToDate(currentToday);
     setOverCountSlot('ALL');
-    setAppliedCountFilter(null);
+    setDisplayedCountReport(null);
+    setIsCountReportLoading(false);
   };
 
-  const { countReportRows, countReportTotalCount, countReportTotalCash } = React.useMemo(() => {
-    if (!appliedCountFilter) {
-      return { countReportRows: [], countReportTotalCount: 0, countReportTotalCash: 0 };
-    }
-    const targetFrom = appliedCountFilter.fromDate;
-    const targetTo = appliedCountFilter.toDate;
-    const targetSlot = appliedCountFilter.slot;
-    const ticketSource = currentUserTickets;
+  const handleSelectOverCountSlot = (slot: 'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM') => {
+    setOverCountSlot(slot);
+    setDisplayedCountReport(null);
+    setIsCountReportLoading(false);
+  };
 
-    const filtered = ticketSource.filter((tkt) => {
-      if (targetSlot !== 'ALL') {
-        const slotPrefix = targetSlot.split(' ')[0];
-        if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(targetSlot)) {
+  const handleOverCountDateChange = (val: string) => {
+    setOverCountDate(val);
+    setDisplayedCountReport(null);
+    setIsCountReportLoading(false);
+  };
+
+  const handleOverCountToDateChange = (val: string) => {
+    setOverCountToDate(val);
+    setDisplayedCountReport(null);
+    setIsCountReportLoading(false);
+  };
+
+  const handleGenerateCountReport = () => {
+    setDisplayedCountReport(null);
+    setIsCountReportLoading(true);
+
+    setTimeout(() => {
+      const targetFrom = overCountDate;
+      const targetTo = overCountToDate;
+      const targetSlot = overCountSlot;
+      const ticketSource = currentUserTickets;
+
+      const filtered = ticketSource.filter((tkt) => {
+        if (targetSlot !== 'ALL') {
+          const slotPrefix = targetSlot.split(' ')[0];
+          if (!tkt.gameSlot.startsWith(slotPrefix) && !tkt.gameSlot.includes(targetSlot)) {
+            return false;
+          }
+        }
+        const tktDate = extractDateStr(tkt.placedAt || (tkt as any).createdAt);
+        if (tktDate < targetFrom || tktDate > targetTo) {
           return false;
         }
-      }
-      const tktDate = extractDateStr(tkt.placedAt || (tkt as any).createdAt);
-      if (tktDate < targetFrom || tktDate > targetTo) {
-        return false;
-      }
-      return true;
-    });
-
-    let superCount = 0, superCash = 0;
-    let boxCount = 0, boxCash = 0;
-    let pairCount = 0, pairCash = 0;
-    let singleCount = 0, singleCash = 0;
-
-    filtered.forEach((tkt) => {
-      tkt.items.forEach((item: any) => {
-        const type = (item.type || '').toUpperCase();
-        const numStr = String(item.number || '').trim();
-        const cnt = Number(item.count || 0);
-        const amt = Number(item.totalAmount || 0);
-
-        // Detect 1-digit (A, B, C) - ₹12 unit price
-        const is1Digit = numStr.startsWith('A:') || numStr.startsWith('B:') || numStr.startsWith('C:') || ['A', 'B', 'C', 'POSITION'].includes(type) || item.unitPrice === 12;
-        // Detect 2-digit (AB, BC, AC) - ₹10 unit price
-        const is2Digit = !is1Digit && (numStr.startsWith('AB:') || numStr.startsWith('AC:') || numStr.startsWith('BC:') || ['AB', 'AC', 'BC', 'PAIR'].includes(type));
-        // Detect 3-digit Box - ₹10 unit price
-        const isBox = !is1Digit && !is2Digit && (type === 'BOX' || type === 'SHUFFLE' || type === 'BOX COUNT');
-        // Remaining is 3-digit Super - ₹10 unit price
-        const isSuper = !is1Digit && !is2Digit && !isBox;
-
-        if (is1Digit) {
-          singleCount += cnt;
-          singleCash += amt || (cnt * 12);
-        } else if (is2Digit) {
-          pairCount += cnt;
-          pairCash += amt || (cnt * 10);
-        } else if (isBox) {
-          boxCount += cnt;
-          boxCash += amt || (cnt * 10);
-        } else if (isSuper) {
-          superCount += cnt;
-          superCash += amt || (cnt * 10);
-        }
+        return true;
       });
-    });
 
-    const rows = [
-      {
-        name: 'SUPER',
-        count: superCount,
-        rate: superCount > 0 ? (superCash / superCount).toFixed(1) : '10.0',
-        cash: superCash,
-      },
-      {
-        name: 'BOX',
-        count: boxCount,
-        rate: boxCount > 0 ? (boxCash / boxCount).toFixed(1) : '10.0',
-        cash: boxCash,
-      },
-      {
-        name: 'AB/BC/AC',
-        count: pairCount,
-        rate: pairCount > 0 ? (pairCash / pairCount).toFixed(1) : '10.0',
-        cash: pairCash,
-      },
-      {
-        name: 'A/B/C',
-        count: singleCount,
-        rate: singleCount > 0 ? (singleCash / singleCount).toFixed(1) : '12.0',
-        cash: singleCash,
-      },
-    ];
+      let superCount = 0, superCash = 0;
+      let boxCount = 0, boxCash = 0;
+      let pairCount = 0, pairCash = 0;
+      let singleCount = 0, singleCash = 0;
 
-    const totalCount = superCount + boxCount + pairCount + singleCount;
-    const totalCash = superCash + boxCash + pairCash + singleCash;
+      filtered.forEach((tkt) => {
+        tkt.items.forEach((item: any) => {
+          const type = (item.type || '').toUpperCase();
+          const numStr = String(item.number || '').trim();
+          const cnt = Number(item.count || 0);
+          const amt = Number(item.totalAmount || 0);
 
-    return { countReportRows: rows, countReportTotalCount: totalCount, countReportTotalCash: totalCash };
-  }, [userTickets, placedTickets, appliedCountFilter, todayStr]);
+          // Detect 1-digit (A, B, C) - ₹12 unit price
+          const is1Digit = numStr.startsWith('A:') || numStr.startsWith('B:') || numStr.startsWith('C:') || ['A', 'B', 'C', 'POSITION'].includes(type) || item.unitPrice === 12;
+          // Detect 2-digit (AB, BC, AC) - ₹10 unit price
+          const is2Digit = !is1Digit && (numStr.startsWith('AB:') || numStr.startsWith('AC:') || numStr.startsWith('BC:') || ['AB', 'AC', 'BC', 'PAIR'].includes(type));
+          // Detect 3-digit Box - ₹10 unit price
+          const isBox = !is1Digit && !is2Digit && (type === 'BOX' || type === 'SHUFFLE' || type === 'BOX COUNT');
+          // Remaining is 3-digit Super - ₹10 unit price
+          const isSuper = !is1Digit && !is2Digit && !isBox;
+
+          if (is1Digit) {
+            singleCount += cnt;
+            singleCash += amt || (cnt * 12);
+          } else if (is2Digit) {
+            pairCount += cnt;
+            pairCash += amt || (cnt * 10);
+          } else if (isBox) {
+            boxCount += cnt;
+            boxCash += amt || (cnt * 10);
+          } else if (isSuper) {
+            superCount += cnt;
+            superCash += amt || (cnt * 10);
+          }
+        });
+      });
+
+      const rows = [
+        {
+          name: 'SUPER',
+          count: superCount,
+          rate: superCount > 0 ? (superCash / superCount).toFixed(1) : '10.0',
+          cash: superCash,
+        },
+        {
+          name: 'BOX',
+          count: boxCount,
+          rate: boxCount > 0 ? (boxCash / boxCount).toFixed(1) : '10.0',
+          cash: boxCash,
+        },
+        {
+          name: 'AB/BC/AC',
+          count: pairCount,
+          rate: pairCount > 0 ? (pairCash / pairCount).toFixed(1) : '10.0',
+          cash: pairCash,
+        },
+        {
+          name: 'A/B/C',
+          count: singleCount,
+          rate: singleCount > 0 ? (singleCash / singleCount).toFixed(1) : '12.0',
+          cash: singleCash,
+        },
+      ];
+
+      const totalCount = superCount + boxCount + pairCount + singleCount;
+      const totalCash = superCash + boxCash + pairCash + singleCash;
+
+      setDisplayedCountReport({
+        rows,
+        totalCount,
+        totalCash,
+        slot: targetSlot,
+        fromDate: targetFrom,
+        toDate: targetTo,
+      });
+      setIsCountReportLoading(false);
+    }, 120);
+  };
 
   const [isDayDetail, setIsDayDetail] = useState<boolean>(true);
   const [isGameDetail, setIsGameDetail] = useState<boolean>(false);
@@ -2283,7 +2323,7 @@ export const MyPlayReportView: React.FC = () => {
                     value={overCountDate}
                     onChange={(e) => {
                       if (e.target.value) {
-                        setOverCountDate(e.target.value);
+                        handleOverCountDateChange(e.target.value);
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
@@ -2307,7 +2347,7 @@ export const MyPlayReportView: React.FC = () => {
                     value={overCountToDate}
                     onChange={(e) => {
                       if (e.target.value) {
-                        setOverCountToDate(e.target.value);
+                        handleOverCountToDateChange(e.target.value);
                       }
                     }}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
@@ -2323,7 +2363,7 @@ export const MyPlayReportView: React.FC = () => {
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => setOverCountSlot(opt)}
+                      onClick={() => handleSelectOverCountSlot(opt)}
                       className={`py-2 px-1 text-[11px] sm:text-xs font-black uppercase text-center rounded-xl border transition-all cursor-pointer ${
                         isSelected
                           ? 'bg-gold-metallic text-black border-gold-dark shadow-md scale-[1.02]'
@@ -2340,7 +2380,7 @@ export const MyPlayReportView: React.FC = () => {
               <div className="w-full pt-1">
                 <button
                   type="button"
-                  onClick={() => setAppliedCountFilter({ fromDate: overCountDate, toDate: overCountToDate, slot: overCountSlot })}
+                  onClick={handleGenerateCountReport}
                   className="w-full py-3 bg-gradient-to-b from-[#edd177] via-[#c89825] to-[#996e19] text-black font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-xl cursor-pointer hover:brightness-110 active:scale-95 transition-all border border-gold-dark"
                 >
                   SHOW REPORT
@@ -2348,8 +2388,16 @@ export const MyPlayReportView: React.FC = () => {
               </div>
             </div>
 
-            {/* Summary Table (Rendered ONLY when SHOW REPORT is clicked) */}
-            {appliedCountFilter && (
+            {/* Loading Indicator */}
+            {isCountReportLoading && (
+              <div className="w-full py-8 flex flex-col items-center justify-center gap-2 text-gold animate-pulse font-mono">
+                <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">Generating report...</span>
+              </div>
+            )}
+
+            {/* Summary Table (Rendered ONLY when SHOW REPORT has generated displayedCountReport) */}
+            {!isCountReportLoading && displayedCountReport && (
               <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(184,137,40,0.15)] animate-drop-in font-mono">
                 {/* Header Row */}
                 <div className="grid grid-cols-4 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 sm:px-3 text-center uppercase tracking-wider text-gold text-[11px] sm:text-xs shadow-inner">
@@ -2361,7 +2409,7 @@ export const MyPlayReportView: React.FC = () => {
 
                 {/* Data Rows */}
                 <div className="divide-y divide-gold/70">
-                  {countReportRows.map((row) => (
+                  {displayedCountReport.rows.map((row) => (
                     <div key={row.name} className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
                       <span className="text-left font-black text-white pl-2 tracking-wide text-xs">{row.name}</span>
                       <span className="font-mono text-neutral-200 text-xs sm:text-sm">{row.count > 0 ? row.count : '-'}</span>
@@ -2374,9 +2422,9 @@ export const MyPlayReportView: React.FC = () => {
                 {/* Total Row */}
                 <div className="grid grid-cols-4 py-3 px-2 sm:px-3 items-center text-center border-t-2 border-gold/70 bg-black font-black text-xs sm:text-sm">
                   <span className="text-left pl-2 uppercase font-black text-rose-400">TOTAL</span>
-                  <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCount > 0 ? countReportTotalCount : '-'}</span>
+                  <span className="font-mono text-gold text-xs sm:text-sm">{displayedCountReport.totalCount > 0 ? displayedCountReport.totalCount : '-'}</span>
                   <span className="font-mono text-neutral-500">-</span>
-                  <span className="font-mono text-gold text-xs sm:text-sm">{countReportTotalCash > 0 ? `₹${countReportTotalCash.toFixed(0)}` : '-'}</span>
+                  <span className="font-mono text-gold text-xs sm:text-sm">{displayedCountReport.totalCash > 0 ? `₹${displayedCountReport.totalCash.toFixed(0)}` : '-'}</span>
                 </div>
               </div>
             )}
