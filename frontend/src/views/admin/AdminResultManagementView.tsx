@@ -169,7 +169,11 @@ export const AdminResultManagementView: React.FC = () => {
       setComplimentBoxes(upd);
     }
 
-    if (val.length === 3 && index < 34) {
+    // Auto-cursor forward navigation:
+    // IMPORTANT: 1st Prize (index 0) is completely excluded from auto-navigation.
+    // Navigation starts ONLY from 2nd Prize (index 1) through index 33.
+    // When 30th/last prize (index 34) is entered: STOP, do not navigate anywhere else.
+    if (index >= 1 && index < 34 && val.length === 3) {
       const nextInput = inputRefs.current[index + 1];
       if (nextInput && !nextInput.disabled && !nextInput.readOnly) {
         nextInput.focus();
@@ -181,7 +185,8 @@ export const AdminResultManagementView: React.FC = () => {
   const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace') {
       const target = e.currentTarget;
-      if (target.value === '' && index > 0) {
+      // Normal backspace deletion; never jump back to 1st Prize (index 0)
+      if (target.value === '' && index > 1) {
         const prevInput = inputRefs.current[index - 1];
         if (prevInput && !prevInput.disabled && !prevInput.readOnly) {
           prevInput.focus();

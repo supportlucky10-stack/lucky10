@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
 @router.get("/users")
 def get_all_users(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    users = db.query(User).filter(User.role == UserRole.CUSTOMER).all()
+    users = db.query(User).filter(User.role == UserRole.CUSTOMER).order_by(User.created_at.desc(), User.id.asc()).all()
     result = []
     for u in users:
         result.append({
