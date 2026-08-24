@@ -35,14 +35,30 @@ const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: s
   return 'DIRECT';
 };
 
-const getPrizePositionDisplay = (card: any): string => {
+const WINNING_SECTION_ORDER = ['SUPER', 'BOX', 'AB', 'BC', 'AC', 'A', 'B', 'C'];
+
+const getCategoryOrderRank = (category: string): number => {
+  const catUpper = (category || '').toUpperCase().trim();
+  const idx = WINNING_SECTION_ORDER.indexOf(catUpper);
+  return idx !== -1 ? idx : 999;
+};
+
+const getPrizePositionDisplay = (card: any, category?: string): string => {
+  const catUpper = (category || card.gameMode || card.type || '').toUpperCase().trim();
+  
+  // For all non-SUPER sections (BOX, AB, BC, AC, A, B, C), badge must display WINNER
+  if (catUpper && catUpper !== 'SUPER') {
+    return 'WINNER';
+  }
+
+  // Inside SUPER section:
   const p = (card.prize || '').toUpperCase();
-  if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) return '1ST PRIZE';
+  if (p.includes('1ST')) return '1ST PRIZE';
   if (p.includes('2ND')) return '2ND PRIZE';
   if (p.includes('3RD')) return '3RD PRIZE';
   if (p.includes('4TH')) return '4TH PRIZE';
   if (p.includes('5TH')) return '5TH PRIZE';
-  if (p.includes('COMPLIMENT')) return 'COMPLIMENT';
+  if (p.includes('COMPLIMENT')) return 'COMPLIMENTS';
   return '1ST PRIZE';
 };
 
@@ -464,15 +480,17 @@ export const AdminReportsView: React.FC = () => {
       });
     });
 
-    return Array.from(catMap.entries()).map(([category, cards]) => {
-      const sortedCards = [...cards].sort((a, b) => {
-        const rankA = getPrizeRank(a.prize);
-        const rankB = getPrizeRank(b.prize);
-        if (rankA !== rankB) return rankA - rankB;
-        return (b.ticketId || '').localeCompare(a.ticketId || '');
+    return Array.from(catMap.entries())
+      .sort(([catA], [catB]) => getCategoryOrderRank(catA) - getCategoryOrderRank(catB))
+      .map(([category, cards]) => {
+        const sortedCards = [...cards].sort((a, b) => {
+          const rankA = getPrizeRank(a.prize);
+          const rankB = getPrizeRank(b.prize);
+          if (rankA !== rankB) return rankA - rankB;
+          return (b.ticketId || '').localeCompare(a.ticketId || '');
+        });
+        return { category, cards: sortedCards };
       });
-      return { category, cards: sortedCards };
-    });
   };
 
   const totalWinningCategories = useMemo(() => {
@@ -1333,7 +1351,7 @@ export const AdminReportsView: React.FC = () => {
                           {/* Prize & Number Header Bar with vivid glowing colors */}
                           <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 px-4 py-2.5 font-mono flex items-center justify-between border-b border-gold/30 shadow-inner">
                             <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
-                              🏆 {getPrizePositionDisplay(card)}
+                              🏆 {getPrizePositionDisplay(card, group.category)}
                             </span>
                             <span className="text-amber-300 font-black text-base font-mono tracking-widest bg-black px-2.5 py-0.5 rounded-lg border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.35)]">
                               {card.number}
@@ -1538,7 +1556,7 @@ export const AdminReportsView: React.FC = () => {
                               {/* Prize & Number Header Bar with vivid glowing colors */}
                               <div className="bg-gradient-to-r from-neutral-950 via-neutral-900 to-neutral-950 px-4 py-2.5 font-mono flex items-center justify-between border-b border-gold/30 shadow-inner">
                                 <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs px-3 py-1 rounded-lg shadow-[0_0_12px_rgba(16,185,129,0.5)] border border-emerald-300/60 uppercase tracking-widest flex items-center gap-1.5">
-                                  🏆 {getPrizePositionDisplay(card)}
+                                  🏆 {getPrizePositionDisplay(card, group.category)}
                                 </span>
                                 <span className="text-amber-300 font-black text-base font-mono tracking-widest bg-black px-2.5 py-0.5 rounded-lg border border-amber-400/50 shadow-[0_0_10px_rgba(251,191,36,0.35)]">
                                   {card.number}
