@@ -160,6 +160,38 @@ export const getDefaultPublishSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game'
 };
 
 /**
+ * Returns the active Game Slot for the User Result page based strictly on Asia/Kolkata (IST) time:
+ * - 00:00:00 - 12:58:59 => "1 PM Game"
+ * - 12:59:00 - 14:58:59 => "3 PM Game"
+ * - 14:59:00 - 17:58:59 => "6 PM Game"
+ * - 17:59:00 - 23:59:59 => "8 PM Game" (remains on 8 PM until midnight)
+ * - 00:00:00 next day   => resets to "1 PM Game"
+ */
+export const getResultPageActiveSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' => {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+    const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+    const totalSeconds = hour * 3600 + minute * 60 + second;
+
+    if (totalSeconds < 12 * 3600 + 59 * 60) return '1 PM Game';
+    if (totalSeconds < 14 * 3600 + 59 * 60) return '3 PM Game';
+    if (totalSeconds < 17 * 3600 + 59 * 60) return '6 PM Game';
+    return '8 PM Game';
+  } catch (e) {
+    return '1 PM Game';
+  }
+};
+
+/**
  * Determines the authoritative default Game Slot to display on the Customer Result page:
  * 1. Checks today's published results in reverse chronological order (8 PM, 6 PM, 3 PM, 1 PM).
  * 2. If one or more results have been published for today, returns the latest published slot.
@@ -181,5 +213,5 @@ export const getLatestPublishedOrCycleSlot = (
       return slot;
     }
   }
-  return getDefaultBillingSlot();
+  return getResultPageActiveSlot();
 };

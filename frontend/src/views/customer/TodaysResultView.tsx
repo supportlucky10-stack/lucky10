@@ -3,64 +3,95 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { CheckCircle2, ChevronDown, Calendar } from 'lucide-react';
 import type { GameSlot } from '../../types';
-import { getBusinessDateIST, getLatestPublishedOrCycleSlot } from '../../utils/dateUtils';
+import { getBusinessDateIST, getResultPageActiveSlot } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 
 export const TodaysResultView: React.FC = () => {
-  const { getResultForSlotAndDate } = useApp();
+  const { getResultForSlotAndDate, refreshResults } = useApp();
   const initialToday = getBusinessDateIST();
 
-  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(() =>
-    getLatestPublishedOrCycleSlot(initialToday, getResultForSlotAndDate)
-  );
+  const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(() => getResultPageActiveSlot());
   const [selectedDate, setSelectedDate] = useState<string>(initialToday);
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  const isManualSelectionRef = useRef<boolean>(false);
-  const lastAutoSlotRef = useRef<GameSlot>(
-    getLatestPublishedOrCycleSlot(initialToday, getResultForSlotAndDate)
-  );
+  const isManualDateRef = useRef<boolean>(false);
+  const isManualSlotRef = useRef<boolean>(false);
+  const lastCutoffSlotRef = useRef<GameSlot>(getResultPageActiveSlot());
 
-  // Synchronize with live published results and IST game cycle
-  const syncLatestResultSlot = useCallback(() => {
+  // 1. Silent automatic game transition based strictly on IST cutoff times
+  const syncResultSchedule = useCallback(() => {
     const currentToday = getBusinessDateIST();
+    const expectedSlot = getResultPageActiveSlot();
 
     // Midnight rollover: Reset to new business date & 1 PM Game cycle
-    if (selectedDate !== currentToday && !isManualSelectionRef.current) {
+    if (selectedDate !== currentToday && !isManualDateRef.current) {
       setSelectedDate(currentToday);
-      const newSlot = getLatestPublishedOrCycleSlot(currentToday, getResultForSlotAndDate);
-      setActiveGameSlot(newSlot);
-      lastAutoSlotRef.current = newSlot;
+      setActiveGameSlot(expectedSlot);
+      lastCutoffSlotRef.current = expectedSlot;
+      isManualSlotRef.current = false;
       return;
     }
 
-    // On today's date: Follow latest published result or auto-switch when new result publishes
+    // On current today's date:
     if (selectedDate === currentToday) {
-      const latestPublishedSlot = getLatestPublishedOrCycleSlot(currentToday, getResultForSlotAndDate);
-      if (latestPublishedSlot !== lastAutoSlotRef.current) {
-        // A new result was published! Automatically switch to newly published game
-        lastAutoSlotRef.current = latestPublishedSlot;
-        setActiveGameSlot(latestPublishedSlot);
-        isManualSelectionRef.current = false;
-      } else if (!isManualSelectionRef.current && activeGameSlot !== latestPublishedSlot) {
-        setActiveGameSlot(latestPublishedSlot);
+      // If cutoff threshold was crossed (12:59 -> 3 PM, 2:59 -> 6 PM, 5:59 -> 8 PM, 00:00 -> 1 PM)
+      if (expectedSlot !== lastCutoffSlotRef.current) {
+        lastCutoffSlotRef.current = expectedSlot;
+        setActiveGameSlot(expectedSlot);
+        isManualSlotRef.current = false; // Cutoff transition takes precedence
+      } else if (!isManualSlotRef.current && activeGameSlot !== expectedSlot) {
+        setActiveGameSlot(expectedSlot);
       }
     }
-  }, [selectedDate, activeGameSlot, getResultForSlotAndDate]);
+  }, [selectedDate, activeGameSlot]);
 
+  // 2. Realtime results polling & event listeners
   useEffect(() => {
-    syncLatestResultSlot();
-    const intervalTimer = setInterval(syncLatestResultSlot, 1000);
+    syncResultSchedule();
+    if (refreshResults) {
+      refreshResults(selectedDate);
+    }
+
+    // 1-second tick for exact cutoff second transition (12:59:00, 14:59:00, 17:59:00, 00:00:00)
+    const scheduleTimer = setInterval(() => {
+      syncResultSchedule();
+    }, 1000);
+
+    // Live result polling every 2 seconds for active tab
+    const livePollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible' && refreshResults) {
+        refreshResults(selectedDate);
+      }
+    }, 2000);
+
     const handleResultUpdate = () => {
-      syncLatestResultSlot();
+      if (refreshResults) {
+        refreshResults(selectedDate);
+      }
     };
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        syncResultSchedule();
+        if (refreshResults) {
+          refreshResults(selectedDate);
+        }
+      }
+    };
+
     window.addEventListener('lucky10_results_updated', handleResultUpdate);
+    window.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
     return () => {
-      clearInterval(intervalTimer);
+      clearInterval(scheduleTimer);
+      clearInterval(livePollTimer);
       window.removeEventListener('lucky10_results_updated', handleResultUpdate);
+      window.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
     };
-  }, [syncLatestResultSlot]);
+  }, [syncResultSchedule, refreshResults, selectedDate]);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
@@ -180,7 +211,7 @@ export const TodaysResultView: React.FC = () => {
                 onChange={(e) => {
                   if (e.target.value) {
                     setSelectedDate(e.target.value);
-                    isManualSelectionRef.current = true;
+                    isManualDateRef.current = e.target.value !== getBusinessDateIST();
                   }
                 }}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
@@ -214,7 +245,7 @@ export const TodaysResultView: React.FC = () => {
                       onClick={() => {
                         setActiveGameSlot(slot);
                         setIsGameDropdownOpen(false);
-                        isManualSelectionRef.current = true;
+                        isManualSlotRef.current = true;
                       }}
                       className={`w-full py-2 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
                         isSelected

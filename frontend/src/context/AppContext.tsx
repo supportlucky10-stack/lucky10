@@ -39,6 +39,7 @@ interface AppContextType {
   gameResults: Record<GameSlot, GameResult>;
   allPublishedResults: Record<string, GameResult>;
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
+  refreshResults: (dateStr?: string) => Promise<void>;
   publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
@@ -1253,6 +1254,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   };
 
+  const refreshResults = async (dateStr?: string) => {
+    try {
+      const targetDate = dateStr && dateStr.trim() ? dateStr.trim() : getBusinessDateIST();
+      const [byDateRes, allRes] = await Promise.all([
+        customerService.getResultsByDate(targetDate).catch(() => ({})),
+        customerService.getAllResults().catch(() => ({})),
+      ]);
+
+      if (byDateRes && Object.keys(byDateRes).length > 0) {
+        setGameResults((prev) => ({ ...prev, ...byDateRes }));
+        setAllPublishedResults((prev) => {
+          const updated: Record<string, GameResult> = { ...prev, ...byDateRes };
+          Object.values(byDateRes).forEach((r: any) => {
+            if (r && r.date && r.gameSlot) {
+              const normDate = extractDateStr(r.date);
+              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              updated[`${r.date}_${r.gameSlot}`] = r;
+            }
+          });
+          return updated;
+        });
+      }
+
+      if (allRes && Object.keys(allRes).length > 0) {
+        setAllPublishedResults((prev) => {
+          const updated: Record<string, GameResult> = { ...prev, ...allRes };
+          Object.values(allRes).forEach((r: any) => {
+            if (r && r.date && r.gameSlot) {
+              const normDate = extractDateStr(r.date);
+              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              updated[`${r.date}_${r.gameSlot}`] = r;
+            }
+          });
+          return updated;
+        });
+      }
+    } catch {}
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -1280,6 +1320,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         gameResults,
         allPublishedResults,
         getResultForSlotAndDate,
+        refreshResults,
         publishGameResult,
         registerUser,
         createUser,
