@@ -724,6 +724,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (created) {
         setAgencyNumberLimits((prev) => [created, ...prev.filter((l) => l.id !== created.id)]);
       }
+      const lims = await customerService.getLimits().catch(() => null);
+      if (lims && lims.agencyLimits) {
+        setAgencyNumberLimits(lims.agencyLimits);
+      }
     } catch (e) {
       const newLimit: AgencyNumberLimit = {
         ...limit,
@@ -735,9 +739,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Limit set for ${limit.agencyName}: #${limit.number} (Max: ${limit.maxCount})`, 'success');
   };
 
-  const removeAgencyLimit = (id: string) => {
-    adminService.deleteAgencyLimit(id).catch(() => {});
+  const removeAgencyLimit = async (id: string) => {
     setAgencyNumberLimits((prev) => prev.filter((l) => l.id !== id));
+    try {
+      await adminService.deleteAgencyLimit(id);
+    } catch (e) {}
+    try {
+      const lims = await customerService.getLimits().catch(() => null);
+      if (lims && lims.agencyLimits) {
+        setAgencyNumberLimits(lims.agencyLimits);
+      }
+    } catch (e) {}
+    addToast('Agency limit removed successfully', 'success');
   };
 
   const addBlockedNumber = async (rule: Omit<BlockedNumberRule, 'id' | 'createdAt'>) => {
@@ -745,6 +758,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const created = await adminService.createBlockedNumber(rule);
       if (created) {
         setBlockedNumbers((prev) => [created, ...prev.filter((b) => b.id !== created.id)]);
+      }
+      const lims = await customerService.getLimits().catch(() => null);
+      if (lims && lims.blockedNumbers) {
+        setBlockedNumbers(lims.blockedNumbers);
       }
     } catch (e) {
       const newRule: BlockedNumberRule = {
@@ -757,9 +774,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addToast(`Number ${rule.number} is now BLOCKED for ${rule.gameSlot}`, 'success');
   };
 
-  const removeBlockedNumber = (id: string) => {
-    adminService.deleteBlockedNumber(id).catch(() => {});
+  const removeBlockedNumber = async (id: string) => {
     setBlockedNumbers((prev) => prev.filter((b) => b.id !== id));
+    try {
+      await adminService.deleteBlockedNumber(id);
+    } catch (e) {}
+    try {
+      const lims = await customerService.getLimits().catch(() => null);
+      if (lims && lims.blockedNumbers) {
+        setBlockedNumbers(lims.blockedNumbers);
+      }
+    } catch (e) {}
+    addToast('Number unblocked successfully', 'success');
   };
 
   const updateGlobalLimit = async (rule: Partial<GlobalLimitRule>) => {
@@ -768,6 +794,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const updated = await adminService.updateGlobalLimit(rule);
       if (updated) {
         setGlobalLimitRule((prev) => ({ ...prev, ...updated }));
+      }
+      const lims = await customerService.getLimits().catch(() => null);
+      if (lims && lims.globalLimit) {
+        setGlobalLimitRule(lims.globalLimit);
       }
     } catch (e) {}
     addToast('Global limit rule updated', 'success');

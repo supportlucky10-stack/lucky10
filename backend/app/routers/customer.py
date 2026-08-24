@@ -1,5 +1,6 @@
 import json
 import uuid
+import threading
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -158,262 +159,263 @@ def get_previous_results(db: Session = Depends(get_db)):
     results = db.query(GameResult).filter(GameResult.date != today_str).all()
     return [format_result(r) for r in results]
 
+_ticket_placement_lock = threading.Lock()
+
 @router.post("/tickets")
 def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
 
-    # ── 1. AUTHORITATIVE BILLING CUTOFF VALIDATION ──
-    now_ist = get_ist_now()
-    business_date = get_business_date(now_ist)
-    if not is_game_slot_open(req.gameSlot, now_ist):
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "code": "BILLING_CLOSED",
-                "message": "Billing time has ended for this game.",
-                "game_slot": req.gameSlot,
-                "business_date": business_date,
-            }
-        )
-
-    # ── SERVER-SIDE FINANCIAL VALIDATION ──
-    for item in req.items:
-        item.totalAmount = float(item.unitPrice) * float(item.count)
-    server_total = sum(item.totalAmount for item in req.items)
-    req.totalAmount = server_total
-
-    user = current_user
-
-    # ── DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
-    c_req_clean = (req.customerName or "").strip().lower()
-    if c_req_clean == "customer":
-        c_req_clean = ""
-
-    recent_same_ticket = db.query(Ticket).options(joinedload(Ticket.items)).filter(
-        Ticket.user_id == user.id,
-        Ticket.game_slot == req.gameSlot,
-        Ticket.total_amount == req.totalAmount,
-        Ticket.placed_at >= (now_ist.astimezone(timezone.utc) - timedelta(seconds=3))
-    ).first()
-    if recent_same_ticket and len(recent_same_ticket.items) == len(req.items):
-        rec_cust_clean = (recent_same_ticket.customer_name or "").strip().lower()
-        if rec_cust_clean == "customer":
-            rec_cust_clean = ""
-        if rec_cust_clean == c_req_clean:
-            req_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in req.items])
-            rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
-            if req_nums == rec_nums:
-                return format_ticket(recent_same_ticket)
-
-    # ── SERVER-SIDE LIMIT & BLOCKED NUMBERS VALIDATION ──
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    
-    # 1. Fetch blocked numbers for this slot or ALL
-    blocked_rules = db.query(BlockedNumberRule).filter(
-        (BlockedNumberRule.game_slot == "ALL") | (BlockedNumberRule.game_slot == req.gameSlot)
-    ).all()
-    blocked_set = {b.number.strip() for b in blocked_rules}
-
-    # 2. Fetch agency limits for this user/username or ALL
-    agency_limits = db.query(AgencyNumberLimit).filter(
-        (AgencyNumberLimit.agency_id == user.id) |
-        (AgencyNumberLimit.agency_name.ilike(user.username)) |
-        (AgencyNumberLimit.agency_name.ilike(user.name)) |
-        (AgencyNumberLimit.agency_id == "ALL"),
-        (AgencyNumberLimit.game_slot == "ALL") | (AgencyNumberLimit.game_slot == req.gameSlot)
-    ).all()
-
-    # 3. Fetch global limit rule
-    global_limit = db.query(GlobalLimitRule).first()
-
-    def norm_type(t: str) -> str:
-        if not t:
-            return ""
-        u = t.upper()
-        if u in ("SUPER", "DIRECT"):
-            return "DIRECT"
-        if u in ("BOX", "SHUFFLE"):
-            return "BOX"
-        return u
-
-    # Calculate user's existing placed count today only if limits exist
-    placed_count_by_key: dict[str, float] = {}
-    if agency_limits or (global_limit and global_limit.is_enabled and (global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot)):
-        today_start_dt = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
-        items_rows = (
-            db.query(BetItem.number, BetItem.type, BetItem.count)
-            .join(Ticket, BetItem.ticket_id == Ticket.id)
-            .filter(
-                Ticket.user_id == user.id,
-                Ticket.game_slot == req.gameSlot,
-                Ticket.placed_at >= today_start_dt,
-            )
-            .all()
-        )
-        for num_val, type_val, cnt_val in items_rows:
-            bi_key = f"{num_val.strip()}_{norm_type(type_val)}"
-            placed_count_by_key[bi_key] = placed_count_by_key.get(bi_key, 0.0) + float(cnt_val)
-
-    # Track newly requested counts within this incoming batch
-    batch_counts: dict[str, float] = {}
-
-    for item in req.items:
-        raw_num = item.number.strip()
-        clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
-        item_key = f"{raw_num}_{norm_type(item.type)}"
-        
-        # Check if number or clean_num is blocked
-        if clean_num in blocked_set or raw_num in blocked_set:
+    with _ticket_placement_lock:
+        # ── 1. AUTHORITATIVE BILLING CUTOFF VALIDATION ──
+        now_ist = get_ist_now()
+        business_date = get_business_date(now_ist)
+        if not is_game_slot_open(req.gameSlot, now_ist):
             raise HTTPException(
                 status_code=400,
-                detail="Number cant be played"
+                detail={
+                    "code": "BILLING_CLOSED",
+                    "message": "Billing time has ended for this game.",
+                    "game_slot": req.gameSlot,
+                    "business_date": business_date,
+                }
             )
 
-        current_placed = placed_count_by_key.get(item_key, 0.0)
-        current_batch = batch_counts.get(item_key, 0.0)
-        total_requested = current_placed + current_batch + float(item.count)
+        # ── SERVER-SIDE FINANCIAL VALIDATION ──
+        for item in req.items:
+            item.totalAmount = float(item.unitPrice) * float(item.count)
+        server_total = sum(item.totalAmount for item in req.items)
+        req.totalAmount = server_total
 
-        # Check agency limit rule
-        spec_lim = next((l for l in agency_limits if l.number.strip() == raw_num or l.number.strip() == clean_num), None)
-        if spec_lim:
-            if total_requested > spec_lim.max_count:
+        user = current_user
+
+        # ── 1. SERVER-SIDE BLOCK NUMBER ENFORCEMENT ──
+        # Number cannot be played if blocked for this slot or ALL
+        blocked_rules = db.query(BlockedNumberRule).filter(
+            (BlockedNumberRule.game_slot == "ALL") | (BlockedNumberRule.game_slot == req.gameSlot)
+        ).all()
+        blocked_set = {b.number.strip() for b in blocked_rules}
+
+        for item in req.items:
+            raw_num = item.number.strip()
+            clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
+            if clean_num in blocked_set or raw_num in blocked_set:
                 raise HTTPException(
                     status_code=400,
-                    detail="Number Overloaded! Not in Booked."
+                    detail="Number cant be played"
                 )
 
-        # Check global limit rule ("Limit All")
-        if global_limit and global_limit.is_enabled:
-            if global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot:
-                if total_requested > global_limit.default_max_count:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Number Overloaded! Not in Booked."
-                    )
+        # ── 2. SERVER-SIDE LIMIT ENFORCEMENT (AGENCY LIMITS & LIMIT ALL) ──
+        agency_limits = db.query(AgencyNumberLimit).filter(
+            (AgencyNumberLimit.agency_id == user.id) |
+            (AgencyNumberLimit.agency_name.ilike(user.username)) |
+            (AgencyNumberLimit.agency_name.ilike(user.name)) |
+            (AgencyNumberLimit.agency_id == "ALL"),
+            (AgencyNumberLimit.game_slot == "ALL") | (AgencyNumberLimit.game_slot == req.gameSlot)
+        ).all()
 
-        batch_counts[item_key] = current_batch + float(item.count)
+        global_limit = db.query(GlobalLimitRule).first()
+        has_agency_limits = len(agency_limits) > 0
+        has_global_limit = bool(global_limit and global_limit.is_enabled and (global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot))
 
-    # Authoritative calculation of financial values
-    calculated_items = []
-    calculated_total_amount = 0.0
-    for item in req.items:
-        num_str = item.number.strip()
-        cnt = float(item.count)
-        if cnt <= 0:
-            raise HTTPException(status_code=400, detail="Count must be greater than 0")
-        
-        # 1-digit mode (e.g. A:1, B:5): ₹12 per count; 2-digit / 3-digit: ₹10 per count
-        if (":" in num_str and len(num_str.split(":")[1].strip()) == 1) or item.type.upper() == "POSITION":
-            unit_price = 12.0
-        else:
-            unit_price = 10.0
+        if has_agency_limits or has_global_limit:
+            # Query placed count for TODAY (exact IST business day) in this game slot for this agency
+            today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_start_utc = today_start_ist.astimezone(timezone.utc)
+            today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
+            today_end_utc = today_end_ist.astimezone(timezone.utc)
 
-        item_total = cnt * unit_price
-        calculated_total_amount += item_total
-        calculated_items.append({
-            "number": num_str,
-            "count": cnt,
-            "type": item.type,
-            "unit_price": unit_price,
-            "total_amount": item_total,
-        })
-
-
-    c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
-    if c_name.lower() == "customer":
-        c_name = ""
-
-    # Check if result is already published for today
-    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    existing_res = db.query(GameResult).filter(
-        GameResult.date == today_str,
-        GameResult.game_slot == req.gameSlot
-    ).first()
-
-    status_val = "PENDING"
-    win_val = 0.0
-
-    if existing_res and existing_res.prize1:
-        flat_comps = get_flat_compliments(existing_res.compliments_json)
-        eval_res = evaluate_ticket_items(
-            items=req.items,
-            p1=existing_res.prize1 or "",
-            p2=existing_res.prize2 or "",
-            p3=existing_res.prize3 or "",
-            p4=existing_res.prize4 or "",
-            p5=existing_res.prize5 or "",
-            p6=existing_res.prize6 or "",
-            compliments=flat_comps,
-        )
-        win_val = eval_res["total_win_amount"]
-        status_val = "WON" if win_val > 0 else "LOST"
-
-    # Save ticket with concurrency retry protection
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            # Generate atomic, concurrency-safe sequential ticket ID
-            ticket_id = get_next_ticket_id(db)
-            placed_at_dt = now_ist.astimezone(timezone.utc)
-
-            new_ticket = Ticket(
-                id=ticket_id,
-                user_id=user.id,
-                customer_name=c_name,
-                game_slot=req.gameSlot,
-                total_amount=calculated_total_amount,
-                status=status_val,
-                win_amount=win_val,
-                placed_at=placed_at_dt,
+            existing_items = (
+                db.query(BetItem.number, BetItem.count)
+                .join(Ticket, BetItem.ticket_id == Ticket.id)
+                .filter(
+                    Ticket.user_id == user.id,
+                    Ticket.game_slot == req.gameSlot,
+                    Ticket.placed_at >= today_start_utc,
+                    Ticket.placed_at <= today_end_utc,
+                )
+                .all()
             )
-            db.add(new_ticket)
 
-            bet_objs = [
-                BetItem(
-                    id=f"bet_{uuid.uuid4().hex}",
-                    ticket_id=ticket_id,
-                    number=item_data["number"],
-                    count=item_data["count"],
-                    type=item_data["type"],
-                    unit_price=item_data["unit_price"],
-                    total_amount=item_data["total_amount"],
+            placed_counts: dict[str, float] = {}
+            for num_val, cnt_val in existing_items:
+                n_raw = num_val.strip()
+                n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
+                placed_counts[n_raw] = placed_counts.get(n_raw, 0.0) + float(cnt_val)
+                if n_clean != n_raw:
+                    placed_counts[n_clean] = placed_counts.get(n_clean, 0.0) + float(cnt_val)
+
+            batch_counts: dict[str, float] = {}
+            for item in req.items:
+                raw_num = item.number.strip()
+                clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
+                item_cnt = float(item.count)
+
+                current_placed = max(placed_counts.get(raw_num, 0.0), placed_counts.get(clean_num, 0.0))
+                current_batch = max(batch_counts.get(raw_num, 0.0), batch_counts.get(clean_num, 0.0))
+                total_requested = current_placed + current_batch + item_cnt
+
+                # Check agency-specific limit
+                spec_lim = next((l for l in agency_limits if l.number.strip() == raw_num or l.number.strip() == clean_num), None)
+                if spec_lim:
+                    if total_requested > spec_lim.max_count:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Number Overloaded! Not in Booked."
+                        )
+
+                # Check global limit ("Limit All")
+                if has_global_limit:
+                    if total_requested > global_limit.default_max_count:
+                        raise HTTPException(
+                            status_code=400,
+                            detail="Number Overloaded! Not in Booked."
+                        )
+
+                batch_counts[raw_num] = batch_counts.get(raw_num, 0.0) + item_cnt
+                if clean_num != raw_num:
+                    batch_counts[clean_num] = batch_counts.get(clean_num, 0.0) + item_cnt
+
+        # ── 3. DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
+        c_req_clean = (req.customerName or "").strip().lower()
+        if c_req_clean == "customer":
+            c_req_clean = ""
+
+        recent_same_ticket = db.query(Ticket).options(joinedload(Ticket.items)).filter(
+            Ticket.user_id == user.id,
+            Ticket.game_slot == req.gameSlot,
+            Ticket.total_amount == req.totalAmount,
+            Ticket.placed_at >= (now_ist.astimezone(timezone.utc) - timedelta(seconds=3))
+        ).first()
+        if recent_same_ticket and len(recent_same_ticket.items) == len(req.items):
+            rec_cust_clean = (recent_same_ticket.customer_name or "").strip().lower()
+            if rec_cust_clean == "customer":
+                rec_cust_clean = ""
+            if rec_cust_clean == c_req_clean:
+                req_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in req.items])
+                rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
+                if req_nums == rec_nums:
+                    return format_ticket(recent_same_ticket)
+
+        # Authoritative calculation of financial values
+
+        calculated_items = []
+        calculated_total_amount = 0.0
+        for item in req.items:
+            num_str = item.number.strip()
+            cnt = float(item.count)
+            if cnt <= 0:
+                raise HTTPException(status_code=400, detail="Count must be greater than 0")
+            
+            # 1-digit mode (e.g. A:1, B:5): ₹12 per count; 2-digit / 3-digit: ₹10 per count
+            if (":" in num_str and len(num_str.split(":")[1].strip()) == 1) or item.type.upper() == "POSITION":
+                unit_price = 12.0
+            else:
+                unit_price = 10.0
+
+            item_total = cnt * unit_price
+            calculated_total_amount += item_total
+            calculated_items.append({
+                "number": num_str,
+                "count": cnt,
+                "type": item.type,
+                "unit_price": unit_price,
+                "total_amount": item_total,
+            })
+
+        c_name = req.customerName.strip() if req.customerName and req.customerName.strip() else ""
+        if c_name.lower() == "customer":
+            c_name = ""
+
+        # Check if result is already published for today
+        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        existing_res = db.query(GameResult).filter(
+            GameResult.date == today_str,
+            GameResult.game_slot == req.gameSlot
+        ).first()
+
+        status_val = "PENDING"
+        win_val = 0.0
+
+        if existing_res and existing_res.prize1:
+            flat_comps = get_flat_compliments(existing_res.compliments_json)
+            eval_res = evaluate_ticket_items(
+                items=req.items,
+                p1=existing_res.prize1 or "",
+                p2=existing_res.prize2 or "",
+                p3=existing_res.prize3 or "",
+                p4=existing_res.prize4 or "",
+                p5=existing_res.prize5 or "",
+                p6=existing_res.prize6 or "",
+                compliments=flat_comps,
+            )
+            win_val = eval_res["total_win_amount"]
+            status_val = "WON" if win_val > 0 else "LOST"
+
+        # Save ticket with concurrency retry protection
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                ticket_id = get_next_ticket_id(db)
+                placed_at_dt = now_ist.astimezone(timezone.utc)
+
+                new_ticket = Ticket(
+                    id=ticket_id,
+                    user_id=user.id,
+                    customer_name=c_name,
+                    game_slot=req.gameSlot,
+                    total_amount=calculated_total_amount,
+                    status=status_val,
+                    win_amount=win_val,
+                    placed_at=placed_at_dt,
                 )
-                for item_data in calculated_items
-            ]
-            db.add_all(bet_objs)
+                db.add(new_ticket)
 
+                bet_objs = [
+                    BetItem(
+                        id=f"bet_{uuid.uuid4().hex}",
+                        ticket_id=ticket_id,
+                        number=item_data["number"],
+                        count=item_data["count"],
+                        type=item_data["type"],
+                        unit_price=item_data["unit_price"],
+                        total_amount=item_data["total_amount"],
+                    )
+                    for item_data in calculated_items
+                ]
+                db.add_all(bet_objs)
 
-            db.commit()
-            return {
-                "id": ticket_id,
-                "ticketId": ticket_id,
-                "userId": user.id,
-                "userName": user.name or "",
-                "agencyName": user.username or "",
-                "customerName": c_name,
-                "gameSlot": req.gameSlot,
-                "items": [
-                    {
-                        "id": b.id,
-                        "number": b.number,
-                        "count": b.count,
-                        "type": b.type,
-                        "unitPrice": b.unit_price,
-                        "totalAmount": b.total_amount,
-                    }
-                    for b in bet_objs
-                ],
-                "totalAmount": calculated_total_amount,
-                "placedAt": placed_at_dt.isoformat(),
-                "status": status_val,
-                "winAmount": win_val,
-            }
-        except Exception as exc:
-            db.rollback()
-            if attempt < max_retries - 1 and ("unique" in str(exc).lower() or "integrity" in str(exc).lower() or "primary" in str(exc).lower()):
-                continue
-            raise exc
+                db.commit()
+                return {
+                    "id": ticket_id,
+                    "ticketId": ticket_id,
+                    "userId": user.id,
+                    "userName": user.name or "",
+                    "agencyName": user.username or "",
+                    "customerName": c_name,
+                    "gameSlot": req.gameSlot,
+                    "totalAmount": calculated_total_amount,
+                    "status": status_val,
+                    "winAmount": win_val,
+                    "placedAt": placed_at_dt.isoformat(),
+                    "items": [
+                        {
+                            "id": b.id,
+                            "number": b.number,
+                            "count": b.count,
+                            "type": b.type,
+                            "unitPrice": b.unit_price,
+                            "totalAmount": b.total_amount,
+                        }
+                        for b in bet_objs
+                    ],
+                }
+            except Exception as exc:
+                db.rollback()
+                if attempt < max_retries - 1 and ("unique" in str(exc).lower() or "integrity" in str(exc).lower() or "primary" in str(exc).lower()):
+                    continue
+                raise exc
+
 
 @router.get("/tickets")
 def get_user_tickets(current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):

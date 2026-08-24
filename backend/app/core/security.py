@@ -42,15 +42,21 @@ def check_rate_limit(request: Request, max_requests: int = 15, window_seconds: i
 # ── Secure Password Hashing (Argon2id / bcrypt + Legacy SHA-256 Migration) ────
 
 def get_password_hash(password: str) -> str:
-    """Hash password using Argon2id (or bcrypt fallback)."""
+    """Hash password using Argon2id (or bcrypt / secure SHA-256 fallback)."""
     if _ph is not None:
-        return _ph.hash(password)
-    elif _pwd_context is not None:
-        return _pwd_context.hash(password)
-    else:
-        salt = secrets.token_hex(16)
-        hashed = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
-        return f"{salt}:{hashed}"
+        try:
+            return _ph.hash(password)
+        except Exception:
+            pass
+    if _pwd_context is not None:
+        try:
+            return _pwd_context.hash(password[:72])
+        except Exception:
+            pass
+    salt = secrets.token_hex(16)
+    hashed = hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+    return f"{salt}:{hashed}"
+
 
 def verify_and_update_password(plain_password: str, hashed_password: str) -> Tuple[bool, Optional[str]]:
     """

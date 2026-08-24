@@ -500,7 +500,7 @@ def create_agency_limit(req: AgencyLimitCreate, admin_user: User = Depends(get_c
         }
 
     new_limit = AgencyNumberLimit(
-        id=f"lim_{int(datetime.now().timestamp() * 1000)}",
+        id=f"lim_{int(datetime.now().timestamp() * 1000)}_{uuid.uuid4().hex[:6]}",
         agency_id=req.agencyId,
         agency_name=req.agencyName,
         number=clean_num,
@@ -523,7 +523,10 @@ def create_agency_limit(req: AgencyLimitCreate, admin_user: User = Depends(get_c
 
 @router.delete("/limits/agency/{limit_id}")
 def delete_agency_limit(limit_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    item = db.query(AgencyNumberLimit).filter(AgencyNumberLimit.id == limit_id).first()
+    target_id = limit_id.strip()
+    item = db.query(AgencyNumberLimit).filter(AgencyNumberLimit.id == target_id).first()
+    if not item:
+        item = db.query(AgencyNumberLimit).filter(AgencyNumberLimit.number == target_id).first()
     if not item:
         raise HTTPException(status_code=404, detail="Agency limit rule not found")
     db.delete(item)
@@ -566,7 +569,7 @@ def create_blocked_number(req: BlockedNumberCreate, admin_user: User = Depends(g
         }
 
     new_rule = BlockedNumberRule(
-        id=f"blk_{int(datetime.now().timestamp() * 1000)}",
+        id=f"blk_{int(datetime.now().timestamp() * 1000)}_{uuid.uuid4().hex[:6]}",
         number=clean_num,
         game_slot=slot_val,
         reason=req.reason or "",
@@ -585,7 +588,10 @@ def create_blocked_number(req: BlockedNumberCreate, admin_user: User = Depends(g
 
 @router.delete("/limits/blocked/{blocked_id}")
 def delete_blocked_number(blocked_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    rule = db.query(BlockedNumberRule).filter(BlockedNumberRule.id == blocked_id).first()
+    target_id = blocked_id.strip()
+    rule = db.query(BlockedNumberRule).filter(BlockedNumberRule.id == target_id).first()
+    if not rule:
+        rule = db.query(BlockedNumberRule).filter(BlockedNumberRule.number == target_id).first()
     if not rule:
         raise HTTPException(status_code=404, detail="Blocked number rule not found")
     db.delete(rule)
@@ -630,4 +636,5 @@ def update_global_limit(req: GlobalLimitUpdate, admin_user: User = Depends(get_c
         "isEnabled": rule.is_enabled,
         "gameSlot": rule.game_slot,
     }
+
 
