@@ -38,7 +38,7 @@ export const ChangeGameView: React.FC = () => {
 
   const handleSelect = (slot: GameSlot) => {
     if (!isGameSlotOpen(slot)) {
-      addToast(`${slot} billing is locked`, 'error');
+      addToast(`${slot} Time Out. Billing is closed for this game.`, 'error');
       return;
     }
     setActiveGameSlot(slot);

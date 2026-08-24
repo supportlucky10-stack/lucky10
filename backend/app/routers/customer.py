@@ -20,8 +20,10 @@ from app.core.game_timing import (
     get_ist_now,
     get_business_date,
     is_game_slot_open,
+    normalize_slot_name,
     get_all_game_slot_statuses,
 )
+
 
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
 
@@ -171,14 +173,10 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_curre
         now_ist = get_ist_now()
         business_date = get_business_date(now_ist)
         if not is_game_slot_open(req.gameSlot, now_ist):
+            norm_slot = normalize_slot_name(req.gameSlot)
             raise HTTPException(
                 status_code=400,
-                detail={
-                    "code": "BILLING_CLOSED",
-                    "message": "Billing time has ended for this game.",
-                    "game_slot": req.gameSlot,
-                    "business_date": business_date,
-                }
+                detail=f"{norm_slot} Time Out. Billing is closed for this game."
             )
 
         # ── SERVER-SIDE FINANCIAL VALIDATION ──

@@ -6,17 +6,18 @@ IST_OFFSET = timedelta(hours=5, minutes=30)
 IST_TZ = timezone(IST_OFFSET, name="IST")
 
 SLOT_CUTOFF_TIMES = {
-    "1 PM": time(13, 0, 0),
-    "1 PM Game": time(13, 0, 0),
-    "3 PM": time(15, 0, 0),
-    "3 PM Game": time(15, 0, 0),
-    "6 PM": time(18, 0, 0),
-    "6 PM Game": time(18, 0, 0),
-    "8 PM": time(20, 0, 0),
-    "8 PM Game": time(20, 0, 0),
+    "1 PM": time(12, 59, 0),
+    "1 PM Game": time(12, 59, 0),
+    "3 PM": time(14, 59, 0),
+    "3 PM Game": time(14, 59, 0),
+    "6 PM": time(17, 59, 0),
+    "6 PM Game": time(17, 59, 0),
+    "8 PM": time(19, 59, 0),
+    "8 PM Game": time(19, 59, 0),
 }
 
 STANDARD_SLOTS = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]
+
 
 _mock_ist_now: Optional[datetime] = None
 
@@ -54,11 +55,12 @@ def normalize_slot_name(slot: str) -> str:
 def is_game_slot_open(game_slot: str, now_ist: Optional[datetime] = None) -> bool:
     """
     Determines if billing for a game slot is OPEN.
-    Cutoff Rules in IST:
-      - 1 PM Game: OPEN before 13:00:00; LOCKED at/after 13:00:00
-      - 3 PM Game: OPEN before 15:00:00; LOCKED at/after 15:00:00
-      - 6 PM Game: OPEN before 18:00:00; LOCKED at/after 18:00:00
-      - 8 PM Game: OPEN before 20:00:00; LOCKED at/after 20:00:00
+    All 4 games are available from 12:00:00 AM.
+    Cutoff Rules in Asia/Kolkata (IST):
+      - 1 PM Game: OPEN 00:00:00 to 12:58:59; LOCKED at/after 12:59:00 (12:59:00 PM)
+      - 3 PM Game: OPEN 00:00:00 to 14:58:59; LOCKED at/after 14:59:00 (2:59:00 PM)
+      - 6 PM Game: OPEN 00:00:00 to 17:58:59; LOCKED at/after 17:59:00 (5:59:00 PM)
+      - 8 PM Game: OPEN 00:00:00 to 19:58:59; LOCKED at/after 19:59:00 (7:59:00 PM)
     """
     if now_ist is None:
         now_ist = get_ist_now()
@@ -67,7 +69,7 @@ def is_game_slot_open(game_slot: str, now_ist: Optional[datetime] = None) -> boo
     cutoff = SLOT_CUTOFF_TIMES.get(norm_slot)
     if cutoff is None:
         # Fallback to direct lookup
-        cutoff = SLOT_CUTOFF_TIMES.get(game_slot, time(20, 0, 0))
+        cutoff = SLOT_CUTOFF_TIMES.get(game_slot, time(19, 59, 0))
 
     # Exact boundary check: open strictly before cutoff
     return now_ist.time() < cutoff

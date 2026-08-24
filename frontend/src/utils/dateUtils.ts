@@ -72,7 +72,11 @@ export const getBusinessDateIST = (): string => {
 
 /**
  * Checks if billing for a game slot is OPEN in Asia/Kolkata (IST).
- * Cutoffs: 1 PM at 13:00, 3 PM at 15:00, 6 PM at 18:00, 8 PM at 20:00.
+ * Cutoffs:
+ * - 1 PM Game: OPEN until 12:58:59 PM (Cutoff at 12:59:00 PM)
+ * - 3 PM Game: OPEN until 2:58:59 PM (Cutoff at 2:59:00 PM)
+ * - 6 PM Game: OPEN until 5:58:59 PM (Cutoff at 5:59:00 PM)
+ * - 8 PM Game: OPEN until 7:58:59 PM (Cutoff at 7:59:00 PM)
  */
 export const isGameSlotOpen = (slotName: string): boolean => {
   try {
@@ -91,16 +95,16 @@ export const isGameSlotOpen = (slotName: string): boolean => {
 
     const s = (slotName || '').toUpperCase();
     if (s.includes('1') && s.includes('PM')) {
-      return totalSeconds < 13 * 3600;
+      return totalSeconds < 12 * 3600 + 59 * 60; // 12:59:00
     }
     if (s.includes('3') && s.includes('PM')) {
-      return totalSeconds < 15 * 3600;
+      return totalSeconds < 14 * 3600 + 59 * 60; // 14:59:00
     }
     if (s.includes('6') && s.includes('PM')) {
-      return totalSeconds < 18 * 3600;
+      return totalSeconds < 17 * 3600 + 59 * 60; // 17:59:00
     }
     if (s.includes('8') && s.includes('PM')) {
-      return totalSeconds < 20 * 3600;
+      return totalSeconds < 19 * 3600 + 59 * 60; // 19:59:00
     }
     return true;
   } catch (e) {

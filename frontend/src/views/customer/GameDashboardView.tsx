@@ -419,6 +419,7 @@ export const GameDashboardView: React.FC = () => {
           onClick={async () => {
             if (isSaving || betSlip.length === 0) return;
             if (!isGameSlotOpen(activeGameSlot)) {
+              addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
               setIsGameOverModalOpen(true);
               return;
             }
@@ -431,14 +432,15 @@ export const GameDashboardView: React.FC = () => {
               }
             } catch (err: any) {
               const msg = err?.message || '';
-              if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('cutoff')) {
+              if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('time out') || msg.toLowerCase().includes('cutoff')) {
+                addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
                 setIsGameOverModalOpen(true);
               } else if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
                 setIsOverloadedModalOpen(true);
               } else if (msg.includes('Minimum 5')) {
                 setMinCountModalOpen(true);
               } else {
-                alert(msg || 'Failed to save bill. Billing may be closed for this game slot.');
+                addToast(msg || 'Failed to save bill. Billing may be closed for this game slot.', 'error');
               }
             } finally {
               setIsSaving(false);
