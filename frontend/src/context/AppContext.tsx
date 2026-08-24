@@ -15,7 +15,9 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, isGameSlotOpen, getBusinessDateIST } from '../utils/dateUtils';
+import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
+
+
 
 interface AppContextType {
   currentView: ViewType;
@@ -139,17 +141,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lastCycleSlotRef.current = defaultSlot;
         lastBusinessDateRef.current = currentBusinessDate;
         setActiveGameSlot(defaultSlot);
-        return;
       }
-
-      // If the current slot has become locked (e.g. was open when selected, now passed cutoff), fall back to defaultSlot
-      setActiveGameSlot((currentSlot) => {
-        const currentIsOpen = isGameSlotOpen(currentSlot);
-        if (!currentIsOpen) {
-          return defaultSlot;
-        }
-        return currentSlot;
-      });
     };
 
     syncActiveGameSlot();

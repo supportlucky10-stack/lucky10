@@ -133,6 +133,20 @@ export const GameDashboardView: React.FC = () => {
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
 
+  const handleGameOverOk = () => {
+    setIsGameOverModalOpen(false);
+    if (activeGameSlot === '1 PM Game') {
+      setActiveGameSlot('3 PM Game');
+    } else if (activeGameSlot === '3 PM Game') {
+      setActiveGameSlot('6 PM Game');
+    } else if (activeGameSlot === '6 PM Game') {
+      setActiveGameSlot('8 PM Game');
+    } else if (activeGameSlot === '8 PM Game') {
+      // 8 PM is the last game of the daily cycle.
+      // Keep 8 PM visible and completely disabled. It will switch to 1 PM at 12:00:00 AM midnight.
+    }
+  };
+
   // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');
@@ -1007,7 +1021,7 @@ export const GameDashboardView: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => setIsGameOverModalOpen(false)}
+              onClick={handleGameOverOk}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK
