@@ -196,10 +196,24 @@ export const AdminReportsView: React.FC = () => {
   const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData } = useApp();
   const todayStr = getLocalDateStr();
 
-  // Auto-sync fresh tickets and results whenever Admin opens Reports
+  // Auto-sync fresh tickets and results whenever Admin opens Reports or live updates occur
   useEffect(() => {
     refreshAllData();
-  }, []);
+
+    const handleSync = () => {
+      refreshAllData();
+    };
+
+    window.addEventListener('lucky10_results_updated', handleSync);
+    window.addEventListener('lucky10_tickets_updated', handleSync);
+    window.addEventListener('focus', handleSync);
+
+    return () => {
+      window.removeEventListener('lucky10_results_updated', handleSync);
+      window.removeEventListener('lucky10_tickets_updated', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, [refreshAllData]);
 
   const triggerDatePicker = (ref: React.RefObject<HTMLInputElement | null>) => {
     if (ref.current) {

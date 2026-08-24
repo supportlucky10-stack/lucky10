@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
@@ -114,8 +114,27 @@ const formatCustomerName = (name?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView, deleteTicket, addToast } = useApp();
+  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView, deleteTicket, addToast, refreshAllData } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
+
+  // Auto-sync fresh tickets and results whenever Customer opens Reports or results/tickets update
+  useEffect(() => {
+    refreshAllData();
+
+    const handleSync = () => {
+      refreshAllData();
+    };
+
+    window.addEventListener('lucky10_results_updated', handleSync);
+    window.addEventListener('lucky10_tickets_updated', handleSync);
+    window.addEventListener('focus', handleSync);
+
+    return () => {
+      window.removeEventListener('lucky10_results_updated', handleSync);
+      window.removeEventListener('lucky10_tickets_updated', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, [refreshAllData]);
 
   // Dates & Form State for Sales Report Form
   const todayStr = getLocalDateStr();
@@ -143,14 +162,18 @@ export const MyPlayReportView: React.FC = () => {
 
   // Strictly isolate tickets for the logged-in user / agency
   const currentUserTickets = React.useMemo(() => {
-    const pool = userTickets.length > 0 ? userTickets : placedTickets;
-    if (!currentUser) return [];
+    const pool = userTickets && userTickets.length > 0 ? userTickets : placedTickets;
+    if (!currentUser) return pool;
     if (currentUser.role === 'ADMIN') return pool.filter((t) => !deletedTicketIds.includes(t.id));
-    const cId = currentUser.id;
+    const cId = (currentUser.id || '').toLowerCase();
+    const uName = (currentUser.username || currentUser.name || '').toLowerCase();
 
     return pool.filter((t) => {
       if (deletedTicketIds.includes(t.id)) return false;
-      return t.userId === cId;
+      if (!t.userId) return true;
+      const tUid = (t.userId || '').toLowerCase();
+      const tUser = ((t as any).userName || (t as any).agencyName || '').toLowerCase();
+      return tUid === cId || tUid === uName || tUser === uName;
     });
   }, [currentUser, placedTickets, userTickets, deletedTicketIds]);
 

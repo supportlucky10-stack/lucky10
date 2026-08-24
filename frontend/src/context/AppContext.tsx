@@ -307,8 +307,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           const tkts = await customerService.getUserTickets();
           if (tkts) {
-            const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
-            setPlacedTickets(myTkts);
+            setPlacedTickets(tkts);
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -337,7 +336,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
-    // Complete real-time periodic poll (10 seconds) for live tickets, users, results & limits
+    // Complete real-time periodic poll (3 seconds) for live tickets, users, results & limits
     const pollLiveUpdates = async () => {
       if (document.visibilityState !== 'visible') return;
 
@@ -391,8 +390,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           const tkts = await customerService.getUserTickets().catch(() => null);
           if (tkts) {
-            const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
-            setPlacedTickets(myTkts);
+            setPlacedTickets(tkts);
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -405,7 +403,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     loadInitialData();
-    timer = setInterval(pollLiveUpdates, 10000);
+    timer = setInterval(pollLiveUpdates, 3000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -1000,7 +998,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Immediately evaluate and update local placed tickets for this slot and date
     setPlacedTickets((prev) =>
       prev.map((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0].split(' ')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
         if (t.gameSlot === slot && tDate === targetDate) {
           if (!resultToApply.prize1 || !resultToApply.prize1.trim()) {
             return {
@@ -1023,7 +1021,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Also pull latest calculated records directly from server
     if (isAdminLoggedIn) {
       adminService.getAllTickets().then((tkts) => {
-        if (tkts) setPlacedTickets(tkts);
+        if (tkts) {
+          setPlacedTickets(tkts);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('lucky10_tickets_updated'));
+          }
+        }
+      }).catch(() => {});
+    } else if (currentUser) {
+      customerService.getUserTickets().then((tkts) => {
+        if (tkts) {
+          setPlacedTickets(tkts);
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('lucky10_tickets_updated'));
+          }
+        }
       }).catch(() => {});
     }
   };
@@ -1247,8 +1259,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (currentUser) {
         const tkts = await customerService.getUserTickets().catch(() => null);
         if (tkts) {
-          const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
-          setPlacedTickets(myTkts);
+          setPlacedTickets(tkts);
         }
       }
     } catch {}
@@ -1310,11 +1321,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         clearBetSlip,
         placedTickets,
         userTickets: currentUser
-          ? placedTickets.filter((t) => {
-              if (currentUser.role === 'ADMIN') return true;
-              return t.userId === currentUser.id;
-            })
-          : [],
+          ? (currentUser.role === 'ADMIN'
+              ? placedTickets
+              : placedTickets.filter((t) => {
+                  if (!t.userId) return true;
+                  const tUid = (t.userId || '').toLowerCase();
+                  const cId = (currentUser.id || '').toLowerCase();
+                  const uName = (currentUser.username || currentUser.name || '').toLowerCase();
+                  return tUid === cId || tUid === uName || ((t as any).userName || '').toLowerCase() === uName;
+                }))
+          : placedTickets,
         saveTicket,
         deleteTicket,
         gameResults,
