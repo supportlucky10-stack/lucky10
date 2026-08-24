@@ -62,6 +62,8 @@ const slotThemes: Record<string, {
   },
 };
 
+type PreviewTarget = '1ST' | '2ND' | '3RD' | '4TH' | '5TH' | 'COMPLIMENTS' | 'ALL_OTHER' | null;
+
 export const AdminResultManagementView: React.FC = () => {
   const { publishGameResult, getResultForSlotAndDate, refreshAllData } = useApp();
 
@@ -86,6 +88,10 @@ export const AdminResultManagementView: React.FC = () => {
     return Array.from({ length: 30 }, (_, i) => comps[i] || '');
   });
 
+  // Target for the individual preview modal
+  const [activePreviewTarget, setActivePreviewTarget] = useState<PreviewTarget>(null);
+  const [isPublishing, setIsPublishing] = useState(false);
+
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
@@ -93,28 +99,27 @@ export const AdminResultManagementView: React.FC = () => {
 
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
-  const [is1stPrizeEditing, setIs1stPrizeEditing] = useState(false);
-
-  const isOtherPrizesPublished = Boolean(currentSlotResult && currentSlotResult.prize2 && currentSlotResult.prize2.trim().length > 0);
-  const [isOtherPrizesEditing, setIsOtherPrizesEditing] = useState(false);
+  const is2ndPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize2 && currentSlotResult.prize2.trim().length > 0);
+  const is3rdPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize3 && currentSlotResult.prize3.trim().length > 0);
+  const is4thPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize4 && currentSlotResult.prize4.trim().length > 0);
+  const is5thPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize5 && currentSlotResult.prize5.trim().length > 0);
+  const isComplimentsPublished = Boolean(currentSlotResult && currentSlotResult.compliments && currentSlotResult.compliments.flat().filter(n => n && n.trim()).length >= 30);
+  const isOtherPrizesPublished = is2ndPrizePublished && is3rdPrizePublished && is4thPrizePublished && is5thPrizePublished && isComplimentsPublished;
 
   const prize1InputRef = useRef<HTMLInputElement | null>(null);
   const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
+    setActivePreviewTarget(null);
     if (existing && existing.prize1) {
-      if (!is1stPrizeEditing) {
-        setPrize1(existing.prize1);
-      }
-      if (!isOtherPrizesEditing) {
-        setPrize2(existing.prize2 || '');
-        setPrize3(existing.prize3 || '');
-        setPrize4(existing.prize4 || '');
-        setPrize5(existing.prize5 || '');
-        const comps = existing.compliments ? existing.compliments.flat() : [];
-        setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-      }
+      setPrize1(existing.prize1);
+      setPrize2(existing.prize2 || '');
+      setPrize3(existing.prize3 || '');
+      setPrize4(existing.prize4 || '');
+      setPrize5(existing.prize5 || '');
+      const comps = existing.compliments ? existing.compliments.flat() : [];
+      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
     } else {
       setPrize1('');
       setPrize2('');
@@ -128,8 +133,7 @@ export const AdminResultManagementView: React.FC = () => {
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
     setIsSlotDropdownOpen(false);
-    setIs1stPrizeEditing(false);
-    setIsOtherPrizesEditing(false);
+    setActivePreviewTarget(null);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
     if (existing && existing.prize1) {
@@ -157,7 +161,7 @@ export const AdminResultManagementView: React.FC = () => {
     setPrize1(val);
   };
 
-  // Auto-cursor forward navigation ONLY for 2nd Prize through 30th Prize (indices 0 to 33 in otherPrizeRefs)
+  // Auto-cursor forward navigation for 2nd Prize through 30th Compliment (indices 0 to 33 in otherPrizeRefs)
   const handleOtherPrizeChange = (index: number, rawVal: string) => {
     const val = rawVal.replace(/\D/g, '').slice(0, 3);
     if (index === 0) {
@@ -175,9 +179,6 @@ export const AdminResultManagementView: React.FC = () => {
       setComplimentBoxes(upd);
     }
 
-    // Auto-cursor forward navigation:
-    // Starts at 2nd Prize (index 0) and moves forward sequentially upon entering 3 digits.
-    // Stops at 30th Prize (index 33) - does not navigate anywhere else.
     if (index >= 0 && index < 33 && val.length === 3) {
       const nextInput = otherPrizeRefs.current[index + 1];
       if (nextInput && !nextInput.disabled && !nextInput.readOnly) {
@@ -199,89 +200,158 @@ export const AdminResultManagementView: React.FC = () => {
     }
   };
 
-  const handlePublish1stPrize = async () => {
+  // Trigger Individual Previews
+  const handleTrigger1stPrizePreview = () => {
     const p1 = prize1.trim();
-    const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    // Top button publishes or clears 1st Prize.
-    const p2 = existing?.prize2 || '';
-    const p3 = existing?.prize3 || '';
-    const p4 = existing?.prize4 || '';
-    const p5 = existing?.prize5 || '';
-
-    let complimentSets: string[][] = [];
-    if (existing && existing.compliments && existing.compliments.flat().length > 0) {
-      complimentSets = existing.compliments;
+    if (!p1 || p1.length !== 3) {
+      setErrorMessage('Please enter a valid 3-digit 1st Prize Number before publishing.');
+      setShowErrorModal(true);
+      return;
     }
-
-    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
-    setIs1stPrizeEditing(false);
-    setPreviewSlot(selectedSlot);
-    setPreviewDate(todayStr);
-    if (!p1) {
-      setSuccessMessage(`1st Prize Number for ${selectedSlot} has been cleared and reset successfully!`);
-    } else {
-      setSuccessMessage(`1st Prize Number (${p1}) for ${selectedSlot} has been published successfully!`);
-    }
-    setShowSuccessModal(true);
+    setActivePreviewTarget('1ST');
   };
 
-  const handlePublishOtherPrizesAndCompliments = async () => {
-    const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    const p1 = prize1.trim() || existing?.prize1 || '';
+  const handleTrigger2ndPrizePreview = () => {
+    const p2 = prize2.trim();
+    if (!p2 || p2.length !== 3) {
+      setErrorMessage('Please enter a valid 3-digit 2nd Prize Number before publishing.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('2ND');
+  };
+
+  const handleTrigger3rdPrizePreview = () => {
+    const p3 = prize3.trim();
+    if (!p3 || p3.length !== 3) {
+      setErrorMessage('Please enter a valid 3-digit 3rd Prize Number before publishing.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('3RD');
+  };
+
+  const handleTrigger4thPrizePreview = () => {
+    const p4 = prize4.trim();
+    if (!p4 || p4.length !== 3) {
+      setErrorMessage('Please enter a valid 3-digit 4th Prize Number before publishing.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('4TH');
+  };
+
+  const handleTrigger5thPrizePreview = () => {
+    const p5 = prize5.trim();
+    if (!p5 || p5.length !== 3) {
+      setErrorMessage('Please enter a valid 3-digit 5th Prize Number before publishing.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('5TH');
+  };
+
+  const handleTriggerComplimentsPreview = () => {
+    const emptyCount = complimentBoxes.filter((n) => !n || n.trim().length !== 3).length;
+    if (emptyCount > 0) {
+      setErrorMessage('Please fill all 30 compliment number boxes with 3 digits before publishing.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('COMPLIMENTS');
+  };
+
+  const handleTriggerAllOtherPreview = () => {
     const p2 = prize2.trim();
     const p3 = prize3.trim();
     const p4 = prize4.trim();
     const p5 = prize5.trim();
-    const allCompsEmpty = complimentBoxes.every((n) => !n || !n.trim());
-    const isClearing = !p2 && !p3 && !p4 && !p5 && allCompsEmpty;
+    if (!p2 || p2.length !== 3 || !p3 || p3.length !== 3 || !p4 || p4.length !== 3 || !p5 || p5.length !== 3) {
+      setErrorMessage('Please fill all 2nd, 3rd, 4th, and 5th prize numbers with 3 digits.');
+      setShowErrorModal(true);
+      return;
+    }
+    const emptyCount = complimentBoxes.filter((n) => !n || n.trim().length !== 3).length;
+    if (emptyCount > 0) {
+      setErrorMessage('Please fill all 30 compliment number boxes with 3 digits.');
+      setShowErrorModal(true);
+      return;
+    }
+    setActivePreviewTarget('ALL_OTHER');
+  };
 
-    if (isClearing) {
-      await publishGameResult(selectedSlot, p1, '', '', '', [], '', todayStr);
-      setIsOtherPrizesEditing(false);
+  // Confirm and Publish specific prize target
+  const handleConfirmAndPublish = async () => {
+    if (isPublishing || !activePreviewTarget) return; // Prevent double-clicks / duplicate publishing
+    setIsPublishing(true);
+
+    const existing = getResultForSlotAndDate(selectedSlot, todayStr);
+    let p1 = existing?.prize1 || '';
+    let p2 = existing?.prize2 || '';
+    let p3 = existing?.prize3 || '';
+    let p4 = existing?.prize4 || '';
+    let p5 = existing?.prize5 || '';
+    let compSets: string[][] = existing?.compliments ? existing.compliments : [];
+
+    if (activePreviewTarget === '1ST') {
+      p1 = prize1.trim();
+    } else if (activePreviewTarget === '2ND') {
+      p2 = prize2.trim();
+    } else if (activePreviewTarget === '3RD') {
+      p3 = prize3.trim();
+    } else if (activePreviewTarget === '4TH') {
+      p4 = prize4.trim();
+    } else if (activePreviewTarget === '5TH') {
+      p5 = prize5.trim();
+    } else if (activePreviewTarget === 'COMPLIMENTS') {
+      compSets = [];
+      for (let i = 0; i < complimentBoxes.length; i += 5) {
+        compSets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
+      }
+    } else if (activePreviewTarget === 'ALL_OTHER') {
+      p2 = prize2.trim();
+      p3 = prize3.trim();
+      p4 = prize4.trim();
+      p5 = prize5.trim();
+      compSets = [];
+      for (let i = 0; i < complimentBoxes.length; i += 5) {
+        compSets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
+      }
+    }
+
+    try {
+      await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr);
+      const targetLabel =
+        activePreviewTarget === '1ST'
+          ? '1st Prize'
+          : activePreviewTarget === '2ND'
+          ? '2nd Prize'
+          : activePreviewTarget === '3RD'
+          ? '3rd Prize'
+          : activePreviewTarget === '4TH'
+          ? '4th Prize'
+          : activePreviewTarget === '5TH'
+          ? '5th Prize'
+          : activePreviewTarget === 'COMPLIMENTS'
+          ? 'Compliments'
+          : 'Other Prizes & Compliments';
+
+      setActivePreviewTarget(null);
       setPreviewSlot(selectedSlot);
       setPreviewDate(todayStr);
-      setSuccessMessage(`Other Prizes & Compliments for ${selectedSlot} have been cleared and reset successfully!`);
+      setSuccessMessage(`${targetLabel} for ${selectedSlot} (${todayStr}) published successfully!`);
       setShowSuccessModal(true);
-      return;
-    }
-
-    if (!p1) {
-      setErrorMessage('Please publish 1st Prize Number first before publishing other prizes.');
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to publish result. Please try again.');
       setShowErrorModal(true);
-      return;
+    } finally {
+      setIsPublishing(false);
     }
-
-    if (!p2 || !p3 || !p4 || !p5) {
-      setErrorMessage('Please fill 2nd, 3rd, 4th, and 5th prize numbers before publishing (or clear all to reset).');
-      setShowErrorModal(true);
-      return;
-    }
-
-    const emptyCount = complimentBoxes.filter((n) => !n || !n.trim()).length;
-    if (emptyCount > 0) {
-      setErrorMessage('Please fill all 30 compliment number boxes before publishing (or clear all to reset).');
-      setShowErrorModal(true);
-      return;
-    }
-
-    const complimentSets: string[][] = [];
-    for (let i = 0; i < complimentBoxes.length; i += 5) {
-      complimentSets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
-    }
-
-    await publishGameResult(selectedSlot, p1, p2, p3, p4, complimentSets, p5, todayStr);
-    setIsOtherPrizesEditing(false);
-    setPreviewSlot(selectedSlot);
-    setPreviewDate(todayStr);
-    setSuccessMessage(`2nd, 3rd, 4th, 5th Prizes & Compliments for ${selectedSlot} published successfully!`);
-    setShowSuccessModal(true);
   };
 
   const gameSlots: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
   const activeSlotTheme = slotThemes[selectedSlot] || slotThemes['1 PM Game'];
   const shortSlot = selectedSlot.replace(' Game', '').replace(' ', '');
-  const isOtherDisabled = isOtherPrizesPublished && !isOtherPrizesEditing;
-  const isAllOtherEmpty = !prize2.trim() && !prize3.trim() && !prize4.trim() && !prize5.trim() && complimentBoxes.every((n) => !n || !n.trim());
 
   const [activeTab, setActiveTab] = useState<'publish' | 'preview'>('publish');
   const [previewDate, setPreviewDate] = useState<string>(todayStr);
@@ -294,6 +364,7 @@ export const AdminResultManagementView: React.FC = () => {
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none font-sans relative">
       <HeaderBanner title="Result Management" />
 
+      {/* ── SUCCESS MODAL ── */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-neutral-950 border-2 border-gold rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
@@ -317,6 +388,7 @@ export const AdminResultManagementView: React.FC = () => {
         </div>
       )}
 
+      {/* ── ERROR MODAL ── */}
       {showErrorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-neutral-950 border-2 border-amber-500/80 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scale-up">
@@ -340,6 +412,143 @@ export const AdminResultManagementView: React.FC = () => {
         </div>
       )}
 
+      {/* ── INDIVIDUAL PREVIEW MODAL / DIALOG BEFORE PUBLISHING ── */}
+      {activePreviewTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="bg-neutral-950 border-2 border-gold rounded-2xl p-5 sm:p-6 max-w-md w-full text-center space-y-4 shadow-2xl animate-scale-up">
+            <div className="flex items-center justify-center gap-2 text-gold font-black text-sm uppercase tracking-widest border-b border-neutral-800 pb-2">
+              <span>
+                {activePreviewTarget === '1ST' && '1ST PRIZE PREVIEW'}
+                {activePreviewTarget === '2ND' && '2ND PRIZE PREVIEW'}
+                {activePreviewTarget === '3RD' && '3RD PRIZE PREVIEW'}
+                {activePreviewTarget === '4TH' && '4TH PRIZE PREVIEW'}
+                {activePreviewTarget === '5TH' && '5TH PRIZE PREVIEW'}
+                {activePreviewTarget === 'COMPLIMENTS' && 'COMPLIMENTS PREVIEW'}
+                {activePreviewTarget === 'ALL_OTHER' && 'OTHER RESULTS PREVIEW'}
+              </span>
+            </div>
+
+            {/* Preview Value Display */}
+            {activePreviewTarget === '1ST' && (
+              <div className="py-4">
+                <div className="text-5xl font-mono font-black text-white tracking-widest">
+                  {prize1.trim()}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === '2ND' && (
+              <div className="py-4">
+                <div className="text-5xl font-mono font-black text-white tracking-widest">
+                  {prize2.trim()}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === '3RD' && (
+              <div className="py-4">
+                <div className="text-5xl font-mono font-black text-white tracking-widest">
+                  {prize3.trim()}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === '4TH' && (
+              <div className="py-4">
+                <div className="text-5xl font-mono font-black text-white tracking-widest">
+                  {prize4.trim()}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === '5TH' && (
+              <div className="py-4">
+                <div className="text-5xl font-mono font-black text-white tracking-widest">
+                  {prize5.trim()}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === 'COMPLIMENTS' && (
+              <div className="space-y-2 max-h-64 overflow-y-auto py-1">
+                <div className="grid grid-cols-5 gap-1.5 font-mono text-xs text-white">
+                  {complimentBoxes.map((num, idx) => (
+                    <div key={idx} className="bg-neutral-900 py-1.5 px-1 rounded border border-neutral-800 font-black tracking-wider">
+                      {num.trim()}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activePreviewTarget === 'ALL_OTHER' && (
+              <div className="space-y-3 max-h-72 overflow-y-auto py-1 text-left">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-neutral-900 p-2 rounded-lg border border-neutral-800">
+                    <span className="text-[10px] text-neutral-400 block font-bold">2nd Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize2.trim()}</span>
+                  </div>
+                  <div className="bg-neutral-900 p-2 rounded-lg border border-neutral-800">
+                    <span className="text-[10px] text-neutral-400 block font-bold">3rd Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize3.trim()}</span>
+                  </div>
+                  <div className="bg-neutral-900 p-2 rounded-lg border border-neutral-800">
+                    <span className="text-[10px] text-neutral-400 block font-bold">4th Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize4.trim()}</span>
+                  </div>
+                  <div className="bg-neutral-900 p-2 rounded-lg border border-neutral-800">
+                    <span className="text-[10px] text-neutral-400 block font-bold">5th Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize5.trim()}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-neutral-400 font-bold block">Compliments (30)</span>
+                  <div className="grid grid-cols-5 gap-1 font-mono text-[11px] text-white text-center">
+                    {complimentBoxes.map((num, idx) => (
+                      <div key={idx} className="bg-neutral-900 py-1 px-0.5 rounded border border-neutral-800 font-bold">
+                        {num.trim()}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Preview Action Buttons */}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isPublishing}
+                onClick={() => {
+                  const target = activePreviewTarget;
+                  setActivePreviewTarget(null);
+                  if (target === '1ST') prize1InputRef.current?.focus();
+                  else if (target === '2ND') otherPrizeRefs.current[0]?.focus();
+                  else if (target === '3RD') otherPrizeRefs.current[1]?.focus();
+                  else if (target === '4TH') otherPrizeRefs.current[2]?.focus();
+                  else if (target === '5TH') otherPrizeRefs.current[3]?.focus();
+                }}
+                className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-black text-xs sm:text-sm rounded-xl uppercase border border-neutral-600 cursor-pointer transition-all active:scale-95 tracking-wider flex items-center justify-center gap-1.5"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                EDIT
+              </button>
+
+              <button
+                type="button"
+                disabled={isPublishing}
+                onClick={handleConfirmAndPublish}
+                className={`flex-1 py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase border border-gold-dark shadow-md transition-all tracking-wider flex items-center justify-center gap-2 ${
+                  isPublishing ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-95 cursor-pointer active:scale-95'
+                }`}
+              >
+                {isPublishing ? 'PUBLISHING...' : 'CONFIRM & PUBLISH'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-4 sm:px-6 py-5 space-y-4 max-w-4xl mx-auto w-full">
         <div className="bg-neutral-950 border border-gold/40 p-1.5 rounded-2xl grid grid-cols-2 gap-2 shadow-md">
           <button
@@ -358,17 +567,27 @@ export const AdminResultManagementView: React.FC = () => {
           </button>
         </div>
 
+        {/* ── TAB 1: PUBLISH RESULT WITH INDIVIDUAL PREVIEWS ── */}
         {activeTab === 'publish' && (
           <div className="bg-neutral-950 border border-gold/40 p-5 rounded-2xl space-y-5 shadow-md overflow-visible relative">
             <div className="relative z-30">
-              <button type="button" onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)} className={`w-full py-2.5 px-4 ${activeSlotTheme.badgeBg} ${activeSlotTheme.badgeText} font-black text-xs sm:text-sm rounded-xl border ${activeSlotTheme.badgeBorder} shadow-lg flex items-center justify-between gap-3 cursor-pointer transition-all`}>
+              <button
+                type="button"
+                onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)}
+                className={`w-full py-2.5 px-4 ${activeSlotTheme.badgeBg} ${activeSlotTheme.badgeText} font-black text-xs sm:text-sm rounded-xl border ${activeSlotTheme.badgeBorder} shadow-lg flex items-center justify-between gap-3 cursor-pointer transition-all`}
+              >
                 <div className="flex items-center gap-2"><span className="opacity-80 text-[10px] tracking-wider uppercase">SLOT:</span><span>{selectedSlot}</span></div>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSlotDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {isSlotDropdownOpen && (
                 <div className="absolute left-0 right-0 top-12 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl z-50">
                   {gameSlots.map((slot) => (
-                    <button key={slot} type="button" onClick={() => handleSelectSlot(slot)} className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between ${slot === selectedSlot ? `${slotThemes[slot].badgeBg} text-white` : 'bg-neutral-900 text-neutral-300'}`}>
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => handleSelectSlot(slot)}
+                      className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between ${slot === selectedSlot ? `${slotThemes[slot].badgeBg} text-white` : 'bg-neutral-900 text-neutral-300'}`}
+                    >
                       <span>{slot}</span>
                       {slot === selectedSlot && <CheckCircle2 className="w-4 h-4" />}
                     </button>
@@ -377,11 +596,16 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            {/* 1st Prize Number with Dedicated Publish Button and Small Edit Icon Button */}
+            {/* 1st Prize Number with Dedicated Publish Button */}
             <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-neutral-400 font-bold">1st Prize Number</span>
+                  {is1stPrizePublished && (
+                    <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      LOCKED
+                    </span>
+                  )}
                 </div>
                 <input
                   ref={prize1InputRef}
@@ -390,11 +614,11 @@ export const AdminResultManagementView: React.FC = () => {
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
-                  disabled={is1stPrizePublished && !is1stPrizeEditing}
-                  readOnly={is1stPrizePublished && !is1stPrizeEditing}
+                  disabled={is1stPrizePublished}
+                  readOnly={is1stPrizePublished}
                   onChange={handle1stPrizeChange}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
-                    is1stPrizePublished && !is1stPrizeEditing
+                    is1stPrizePublished
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                       : 'bg-white text-black border-gold'
                   }`}
@@ -403,46 +627,31 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="flex items-center justify-center gap-2 pt-0.5">
                 <button
                   type="button"
-                  disabled={is1stPrizePublished && !is1stPrizeEditing}
-                  onClick={handlePublish1stPrize}
+                  disabled={is1stPrizePublished}
+                  onClick={handleTrigger1stPrizePreview}
                   className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                    is1stPrizePublished && !is1stPrizeEditing
-                      ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
-                      : is1stPrizeEditing && !prize1.trim()
-                      ? 'bg-rose-700 hover:bg-rose-600 text-white border-rose-500 cursor-pointer active:scale-95'
+                    is1stPrizePublished
+                      ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                       : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                   }`}
                 >
-                  {is1stPrizePublished && !is1stPrizeEditing
-                    ? 'PUBLISHED'
-                    : is1stPrizeEditing && !prize1.trim()
-                    ? `CLEAR (${shortSlot})`
-                    : `PUBLISH (${shortSlot})`}
+                  {is1stPrizePublished ? 'PUBLISHED' : `PUBLISH (${shortSlot})`}
                 </button>
-
-                {is1stPrizePublished && (
-                  <button
-                    type="button"
-                    onClick={() => setIs1stPrizeEditing(!is1stPrizeEditing)}
-                    className={`p-2 rounded-full transition-all cursor-pointer border shadow-md active:scale-90 ${
-                      is1stPrizeEditing
-                        ? 'bg-gold text-black border-gold'
-                        : 'bg-neutral-800 hover:bg-neutral-700 text-gold border-gold/40'
-                    }`}
-                    title="Edit 1st Prize Number"
-                  >
-                    <Pencil className="w-4 h-4 stroke-[2.5]" />
-                  </button>
-                )}
               </div>
             </div>
 
-            {/* Other Prizes (2nd to 5th) and Compliments with Dedicated Publish Button */}
+            {/* Other Prizes (2nd to 5th) with Individual Publish & Navigation */}
             <div className="space-y-4 pt-1">
               <div className="space-y-3">
+                {/* 2nd & 3rd Prizes */}
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
-                  <div>
-                    <span className="text-neutral-400 font-bold block mb-1">2nd Prize Number</span>
+                  <div className="bg-neutral-900/60 p-2.5 rounded-xl border border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 font-bold block">2nd Prize</span>
+                      {is2ndPrizePublished && (
+                        <span className="text-[9px] text-emerald-400 font-bold uppercase">Locked</span>
+                      )}
+                    </div>
                     <input
                       ref={(el) => { otherPrizeRefs.current[0] = el; }}
                       type="text"
@@ -450,19 +659,39 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize2}
-                      disabled={isOtherDisabled}
-                      readOnly={isOtherDisabled}
+                      disabled={is2ndPrizePublished}
+                      readOnly={is2ndPrizePublished}
                       onChange={(e) => handleOtherPrizeChange(0, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(0, e)}
-                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherDisabled
+                      className={`w-full px-2 py-1.5 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        is2ndPrizePublished
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
                     />
+                    <div className="text-center pt-0.5">
+                      <button
+                        type="button"
+                        disabled={is2ndPrizePublished}
+                        onClick={handleTrigger2ndPrizePreview}
+                        className={`w-full py-1 px-2 font-black text-[11px] rounded-lg uppercase tracking-wider border transition-all ${
+                          is2ndPrizePublished
+                            ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
+                            : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                        }`}
+                      >
+                        {is2ndPrizePublished ? 'PUBLISHED' : 'PUBLISH'}
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-neutral-400 font-bold block mb-1">3rd Prize Number</span>
+
+                  <div className="bg-neutral-900/60 p-2.5 rounded-xl border border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 font-bold block">3rd Prize</span>
+                      {is3rdPrizePublished && (
+                        <span className="text-[9px] text-emerald-400 font-bold uppercase">Locked</span>
+                      )}
+                    </div>
                     <input
                       ref={(el) => { otherPrizeRefs.current[1] = el; }}
                       type="text"
@@ -470,21 +699,42 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize3}
-                      disabled={isOtherDisabled}
-                      readOnly={isOtherDisabled}
+                      disabled={is3rdPrizePublished}
+                      readOnly={is3rdPrizePublished}
                       onChange={(e) => handleOtherPrizeChange(1, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(1, e)}
-                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherDisabled
+                      className={`w-full px-2 py-1.5 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        is3rdPrizePublished
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
                     />
+                    <div className="text-center pt-0.5">
+                      <button
+                        type="button"
+                        disabled={is3rdPrizePublished}
+                        onClick={handleTrigger3rdPrizePreview}
+                        className={`w-full py-1 px-2 font-black text-[11px] rounded-lg uppercase tracking-wider border transition-all ${
+                          is3rdPrizePublished
+                            ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
+                            : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                        }`}
+                      >
+                        {is3rdPrizePublished ? 'PUBLISHED' : 'PUBLISH'}
+                      </button>
+                    </div>
                   </div>
                 </div>
+
+                {/* 4th & 5th Prizes */}
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
-                  <div>
-                    <span className="text-neutral-400 font-bold block mb-1">4th Prize Number</span>
+                  <div className="bg-neutral-900/60 p-2.5 rounded-xl border border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 font-bold block">4th Prize</span>
+                      {is4thPrizePublished && (
+                        <span className="text-[9px] text-emerald-400 font-bold uppercase">Locked</span>
+                      )}
+                    </div>
                     <input
                       ref={(el) => { otherPrizeRefs.current[2] = el; }}
                       type="text"
@@ -492,19 +742,39 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize4}
-                      disabled={isOtherDisabled}
-                      readOnly={isOtherDisabled}
+                      disabled={is4thPrizePublished}
+                      readOnly={is4thPrizePublished}
                       onChange={(e) => handleOtherPrizeChange(2, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(2, e)}
-                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherDisabled
+                      className={`w-full px-2 py-1.5 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        is4thPrizePublished
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
                     />
+                    <div className="text-center pt-0.5">
+                      <button
+                        type="button"
+                        disabled={is4thPrizePublished}
+                        onClick={handleTrigger4thPrizePreview}
+                        className={`w-full py-1 px-2 font-black text-[11px] rounded-lg uppercase tracking-wider border transition-all ${
+                          is4thPrizePublished
+                            ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
+                            : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                        }`}
+                      >
+                        {is4thPrizePublished ? 'PUBLISHED' : 'PUBLISH'}
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-neutral-400 font-bold block mb-1">5th Prize Number</span>
+
+                  <div className="bg-neutral-900/60 p-2.5 rounded-xl border border-neutral-800 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 font-bold block">5th Prize</span>
+                      {is5thPrizePublished && (
+                        <span className="text-[9px] text-emerald-400 font-bold uppercase">Locked</span>
+                      )}
+                    </div>
                     <input
                       ref={(el) => { otherPrizeRefs.current[3] = el; }}
                       type="text"
@@ -512,22 +782,44 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize5}
-                      disabled={isOtherDisabled}
-                      readOnly={isOtherDisabled}
+                      disabled={is5thPrizePublished}
+                      readOnly={is5thPrizePublished}
                       onChange={(e) => handleOtherPrizeChange(3, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(3, e)}
-                      className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherDisabled
+                      className={`w-full px-2 py-1.5 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
+                        is5thPrizePublished
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
                     />
+                    <div className="text-center pt-0.5">
+                      <button
+                        type="button"
+                        disabled={is5thPrizePublished}
+                        onClick={handleTrigger5thPrizePreview}
+                        className={`w-full py-1 px-2 font-black text-[11px] rounded-lg uppercase tracking-wider border transition-all ${
+                          is5thPrizePublished
+                            ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
+                            : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
+                        }`}
+                      >
+                        {is5thPrizePublished ? 'PUBLISHED' : 'PUBLISH'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Compliments 30 Grid */}
               <div className="space-y-3 pt-2 border-t border-neutral-800">
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-400 font-bold text-xs">Compliments (30 Numbers)</span>
+                  {isComplimentsPublished && (
+                    <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      LOCKED
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                   {complimentBoxes.map((num, idx) => {
                     const inputIdx = 4 + idx;
@@ -541,12 +833,12 @@ export const AdminResultManagementView: React.FC = () => {
                           maxLength={3}
                           placeholder="000"
                           value={num}
-                          disabled={isOtherDisabled}
-                          readOnly={isOtherDisabled}
+                          disabled={isComplimentsPublished}
+                          readOnly={isComplimentsPublished}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
-                            isOtherDisabled
+                            isComplimentsPublished
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                               : 'bg-white text-black border-gold'
                           }`}
@@ -556,56 +848,28 @@ export const AdminResultManagementView: React.FC = () => {
                   })}
                 </div>
 
-                {/* Publish Other Prizes & Compliments Button with Edit Pencil Icon Button */}
-                <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
+                {/* Compliments / All Other Publish Actions */}
+                <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
                   <button
                     type="button"
-                    disabled={isOtherDisabled}
-                    onClick={handlePublishOtherPrizesAndCompliments}
-                    className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                      isOtherDisabled
-                        ? 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
-                        : isOtherPrizesEditing && isAllOtherEmpty
-                        ? 'bg-rose-700 hover:bg-rose-600 text-white border-rose-500 cursor-pointer active:scale-95'
+                    disabled={isComplimentsPublished}
+                    onClick={handleTriggerComplimentsPreview}
+                    className={`px-5 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
+                      isComplimentsPublished
+                        ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                         : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                     }`}
                   >
-                    {isOtherDisabled
-                      ? 'PUBLISHED'
-                      : isOtherPrizesEditing && isAllOtherEmpty
-                      ? `CLEAR OTHER RESULTS (${shortSlot})`
-                      : `PUBLISH OTHER RESULTS (${shortSlot})`}
+                    {isComplimentsPublished ? 'COMPLIMENTS PUBLISHED' : `PUBLISH COMPLIMENTS (${shortSlot})`}
                   </button>
 
-                  {isOtherPrizesEditing && !isAllOtherEmpty && (
+                  {!isOtherPrizesPublished && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setPrize2('');
-                        setPrize3('');
-                        setPrize4('');
-                        setPrize5('');
-                        setComplimentBoxes(Array(30).fill(''));
-                      }}
-                      className="px-3 py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-full text-xs font-bold font-mono uppercase cursor-pointer active:scale-95 transition-all shadow"
-                      title="Clear all fields"
+                      onClick={handleTriggerAllOtherPreview}
+                      className="px-5 py-2 bg-neutral-800 hover:bg-neutral-700 text-gold font-black text-xs sm:text-sm rounded-full uppercase border border-gold/40 shadow-md cursor-pointer active:scale-95 transition-all tracking-wider"
                     >
-                      Clear All
-                    </button>
-                  )}
-
-                  {isOtherPrizesPublished && (
-                    <button
-                      type="button"
-                      onClick={() => setIsOtherPrizesEditing(!isOtherPrizesEditing)}
-                      className={`p-2 rounded-full transition-all cursor-pointer border shadow-md active:scale-90 ${
-                        isOtherPrizesEditing
-                          ? 'bg-gold text-black border-gold'
-                          : 'bg-neutral-800 hover:bg-neutral-700 text-gold border-gold/40'
-                      }`}
-                      title="Edit Other Prizes & Compliments"
-                    >
-                      <Pencil className="w-4 h-4 stroke-[2.5]" />
+                      PUBLISH ALL OTHER RESULTS
                     </button>
                   )}
                 </div>
@@ -614,6 +878,7 @@ export const AdminResultManagementView: React.FC = () => {
           </div>
         )}
 
+        {/* ── TAB 2: RESULT PREVIEW (UNCHANGED) ── */}
         {activeTab === 'preview' && (
           <div className="bg-neutral-950 border border-gold/40 p-4 sm:p-5 rounded-2xl space-y-3.5 shadow-md">
             {/* Date & Change Date Row */}
