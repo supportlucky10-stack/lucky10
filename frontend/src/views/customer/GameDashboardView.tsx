@@ -147,6 +147,17 @@ export const GameDashboardView: React.FC = () => {
     }
   };
 
+  // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle
+  useEffect(() => {
+    const checkCutoff = () => {
+      if (!isGameSlotOpen(activeGameSlot) && !isGameOverModalOpen) {
+        setIsGameOverModalOpen(true);
+      }
+    };
+    const interval = setInterval(checkCutoff, 1000);
+    return () => clearInterval(interval);
+  }, [activeGameSlot, isGameOverModalOpen]);
+
   // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');

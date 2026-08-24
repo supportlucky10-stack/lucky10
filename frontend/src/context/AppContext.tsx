@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type {
   ViewType,
   GameSlot,
@@ -150,7 +150,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => clearInterval(timer);
   }, []);
 
-  const getResultForSlotAndDate = (slot: GameSlot, dateStr: string): GameResult => {
+  const getResultForSlotAndDate = useCallback((slot: GameSlot, dateStr: string): GameResult => {
     const rawKey = `${dateStr}_${slot}`;
     if (allPublishedResults[rawKey] && allPublishedResults[rawKey].gameSlot === slot) {
       const resDate = extractDateStr(allPublishedResults[rawKey].date);
@@ -188,7 +188,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       compliments: [],
       publishedAt: '',
     };
-  };
+  }, [allPublishedResults, gameResults]);
 
   // 1. Initial Load from Backend API
   useEffect(() => {
@@ -1207,7 +1207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const refreshAllData = async () => {
+  const refreshAllData = useCallback(async () => {
     try {
       const todayStr = getLocalDateStr();
       const [todayRes, allRes, lims] = await Promise.all([
@@ -1224,6 +1224,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             if (r && r.date && r.gameSlot) {
               const normDate = extractDateStr(r.date);
               if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              updated[`${r.date}_${r.gameSlot}`] = r;
             }
           });
           return updated;
@@ -1232,11 +1233,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (allRes && Object.keys(allRes).length > 0) {
         setAllPublishedResults((prev) => {
-          const updated = { ...prev, ...allRes };
+          const updated: Record<string, GameResult> = { ...prev, ...allRes };
           Object.values(allRes).forEach((r: any) => {
             if (r && r.date && r.gameSlot) {
               const normDate = extractDateStr(r.date);
               if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              updated[`${r.date}_${r.gameSlot}`] = r;
             }
           });
           return updated;
@@ -1263,9 +1265,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }
     } catch {}
-  };
+  }, [currentUser, isAdminLoggedIn]);
 
-  const refreshResults = async (dateStr?: string) => {
+  const refreshResults = useCallback(async (dateStr?: string) => {
     try {
       const targetDate = dateStr && dateStr.trim() ? dateStr.trim() : getBusinessDateIST();
       const [byDateRes, allRes] = await Promise.all([
@@ -1302,7 +1304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       }
     } catch {}
-  };
+  }, []);
 
   return (
     <AppContext.Provider

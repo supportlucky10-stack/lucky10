@@ -129,7 +129,14 @@ export const MyPlayReportView: React.FC = () => {
     window.addEventListener('lucky10_tickets_updated', handleSync);
     window.addEventListener('focus', handleSync);
 
+    const pollTimer = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        refreshAllData();
+      }
+    }, 2000);
+
     return () => {
+      clearInterval(pollTimer);
       window.removeEventListener('lucky10_results_updated', handleSync);
       window.removeEventListener('lucky10_tickets_updated', handleSync);
       window.removeEventListener('focus', handleSync);
