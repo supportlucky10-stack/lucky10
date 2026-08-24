@@ -528,21 +528,23 @@ export const TotalCountView: React.FC = () => {
 
       {/* Full-Screen Overlay Window for Calculated Total Count Results */}
       {showCountDetails && (
-        <div className="fixed inset-0 bg-black text-white z-50 flex flex-col justify-start overflow-y-auto animate-drop-in font-sans">
+        <div className="fixed inset-0 h-[100dvh] max-h-[100dvh] bg-black text-white z-50 flex flex-col justify-start overflow-hidden animate-drop-in font-sans">
           {/* Header Banner */}
-          <HeaderBanner
-            title="TOTAL COUNT RESULT"
-            showBack={true}
-            onBackClick={() => setShowCountDetails(false)}
-            onHomeClick={() => {
-              setShowCountDetails(false);
-              setCurrentView('GAME_DASHBOARD');
-            }}
-          />
+          <div className="shrink-0">
+            <HeaderBanner
+              title="TOTAL COUNT RESULT"
+              showBack={true}
+              onBackClick={() => setShowCountDetails(false)}
+              onHomeClick={() => {
+                setShowCountDetails(false);
+                setCurrentView('GAME_DASHBOARD');
+              }}
+            />
+          </div>
 
-          <div className="max-w-md mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+          <div className="max-w-md mx-auto w-full flex-1 min-h-0 flex flex-col px-3 sm:px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))] space-y-3">
             {/* Summary Banner Card */}
-            <div className="border-2 border-gold/70 rounded-xl bg-black px-4 py-3 flex items-center justify-between shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono font-black text-xs sm:text-sm">
+            <div className="shrink-0 border-2 border-gold/70 rounded-xl bg-black px-4 py-3 flex items-center justify-between shadow-[0_0_15px_rgba(212,175,55,0.15)] font-mono font-black text-xs sm:text-sm">
               <div className="flex items-center gap-6">
                 <span className="text-gold">COUNT: <span className="text-white">{totalCount}</span></span>
                 <span className="text-gold">TOT: <span className="text-white">₹{totalAmount.toFixed(1)}</span></span>
@@ -557,10 +559,10 @@ export const TotalCountView: React.FC = () => {
               </button>
             </div>
 
-            {/* Data Table */}
-            <div className="w-full border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs font-bold shadow-[0_0_20px_rgba(212,175,55,0.15)] animate-drop-in font-mono">
-              {/* Header Row */}
-              <div className="grid grid-cols-5 bg-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 text-center uppercase tracking-wider text-gold text-[11px]">
+            {/* Data Table Container - Dynamically fills remaining vertical space */}
+            <div className="w-full flex-1 min-h-0 flex flex-col border-2 border-gold/70 rounded-2xl overflow-hidden bg-[#0c0c0c] text-white text-xs font-bold shadow-[0_0_20px_rgba(212,175,55,0.15)] font-mono">
+              {/* Sticky Header Row */}
+              <div className="shrink-0 grid grid-cols-5 bg-neutral-900 border-b-2 border-gold/70 font-extrabold py-3 px-2 text-center uppercase tracking-wider text-gold text-[11px] shadow-sm z-10">
                 <span>#</span>
                 <span className="text-left">GAME</span>
                 <span>NUM</span>
@@ -568,8 +570,8 @@ export const TotalCountView: React.FC = () => {
                 <span>AMT</span>
               </div>
 
-              {/* Data Rows */}
-              <div className="divide-y divide-gold/70 min-h-[220px] sm:min-h-[300px] max-h-[420px] sm:max-h-[500px] overflow-y-auto font-mono">
+              {/* Scrollable Data Rows Container */}
+              <div className="flex-1 min-h-0 divide-y divide-gold/70 overflow-y-auto overscroll-contain font-mono">
                 {filteredCountDataset.length > 0 ? (
                   filteredCountDataset.map((row, idx) => (
                     <div key={row.id} className="grid grid-cols-5 py-2.5 px-2 items-center text-center font-bold hover:bg-neutral-900/60 transition-colors">
@@ -581,7 +583,7 @@ export const TotalCountView: React.FC = () => {
                     </div>
                   ))
                 ) : (
-                  <div className="py-8 text-center text-neutral-400 font-sans text-xs">
+                  <div className="py-12 flex items-center justify-center text-center text-neutral-400 font-sans text-xs">
                     No count records found
                   </div>
                 )}
