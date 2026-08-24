@@ -46,7 +46,7 @@ interface AppContextType {
   changeUserPassword: (userId: string, newPassword: string) => Promise<boolean>;
   updateUserMode: (userId: string, mode: string) => Promise<boolean>;
   clearAllUsers: () => Promise<void>;
-  toggleUserStatus: (userId: string) => Promise<void>;
+  toggleUserStatus: (userId: string, targetActive?: boolean) => Promise<void>;
   toggleAllUsersStatus: (isActive: boolean) => Promise<void>;
   loginUser: (username: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   loginAdmin: (username: string, password?: string) => Promise<boolean>;
@@ -378,12 +378,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch {}
       } else if (currentUser) {
         try {
+          // Authoritatively verify currentUser status from backend database
+          const freshProfile = await authService.getCurrentUser().catch(() => null);
+          if (freshProfile) {
+            if (freshProfile.isActive === false) {
+              logout();
+              addToast('Your account is deactivated. Please contact administrator.', 'error');
+              return;
+            }
+            setCurrentUser(freshProfile);
+          }
           const tkts = await customerService.getUserTickets().catch(() => null);
           if (tkts) {
             const myTkts = tkts.filter((t) => !t.userId || t.userId === currentUser.id);
             setPlacedTickets(myTkts);
           }
-        } catch {}
+        } catch (err: any) {
+          const errMsg = err?.message || '';
+          if (errMsg.toLowerCase().includes('deactivated')) {
+            logout();
+            addToast('Your account is deactivated. Please contact administrator.', 'error');
+          }
+        }
       }
     };
 
@@ -500,15 +516,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           authService.logout();
           return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
         }
-        const matchedLocal = registeredUsers.find(
-          (u) => u.id === res.user.id || u.username.toLowerCase() === res.user.username.toLowerCase() || u.name.toLowerCase() === res.user.name.toLowerCase()
-        );
         const finalUser: UserAccount = {
           ...res.user,
-          mode: res.user.mode || matchedLocal?.mode || 'Commission (20%)',
+          mode: res.user.mode || 'Commission (20%)',
         };
         setCurrentUser(finalUser);
         setIsAdminLoggedIn(false);
+        setPlacedTickets([]);
+        setActiveGameSlot(getDefaultBillingSlot());
         addToast(`Welcome back, ${res.user.name}!`, 'success');
         setCurrentView('GAME_DASHBOARD');
         return { success: true };
@@ -517,30 +532,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const errMsg = err?.message || 'Login failed';
       const lower = errMsg.toLowerCase();
       if (lower.includes('deactivated') || lower.includes('disabled') || lower.includes('inactive')) {
+        authService.logout();
         return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
-      }
-      
-      // Offline / Local fallback: check registeredUsers by username, agency name, or email
-      const matchedAgency = registeredUsers.find(
-        (u) =>
-          u.username.toLowerCase() === inputClean.toLowerCase() ||
-          u.name.toLowerCase() === inputClean.toLowerCase() ||
-          (u.email && u.email.toLowerCase() === inputClean.toLowerCase())
-      );
-      if (matchedAgency) {
-        if (matchedAgency.isActive === false) {
-          return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
-        }
-        if (matchedAgency.password && passClean && passClean !== matchedAgency.password && passClean !== '123') {
-          return { success: false, error: 'Invalid password for Agency / User.' };
-        }
-        setCurrentUser(matchedAgency);
-        setIsAdminLoggedIn(false);
-        setPlacedTickets([]);
-        setActiveGameSlot(getDefaultBillingSlot());
-        addToast(`Welcome back, ${matchedAgency.name}!`, 'success');
-        setCurrentView('GAME_DASHBOARD');
-        return { success: true };
       }
 
       if (lower.includes('invalid') || lower.includes('401') || lower.includes('password') || lower.includes('username')) {
@@ -578,8 +571,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     authService.logout();
     setCurrentUser(null);
     setIsAdminLoggedIn(false);
+    setRegisteredUsers([]);
     setBetSlip([]);
     setPlacedTickets([]);
+    setAgencyNumberLimits([]);
+    setBlockedNumbers([]);
     setActiveGameSlot(getDefaultBillingSlot());
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
@@ -1157,30 +1153,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const toggleUserStatus = async (userId: string) => {
+  const toggleUserStatus = async (userId: string, targetActive?: boolean) => {
     try {
-      const res = await adminService.toggleUserStatus(userId);
+      const explicitActive = targetActive !== undefined ? targetActive : undefined;
+      const res = await adminService.toggleUserStatus(userId, explicitActive);
+      const newActive = res.isActive !== undefined ? res.isActive : (targetActive !== undefined ? targetActive : true);
       setRegisteredUsers((prev) =>
         prev.map((u) =>
           u.id === userId || u.name === userId || u.username === userId
-            ? { ...u, isActive: res.isActive !== undefined ? res.isActive : (u.isActive === false ? true : false) }
+            ? { ...u, isActive: newActive }
             : u
         )
       );
-      addToast('User status updated successfully', 'info');
-      // Fetch fresh users from backend to ensure 100% sync
-      adminService.getAllUsers().then((users) => {
-        if (users) setRegisteredUsers(users);
-      }).catch(() => {});
+      addToast(`User ${newActive ? 'activated' : 'deactivated'} successfully`, 'info');
+      // Fetch fresh authoritative users list from backend to ensure 100% database sync
+      const freshUsers = await adminService.getAllUsers();
+      if (freshUsers) setRegisteredUsers(freshUsers);
     } catch (err: any) {
-      setRegisteredUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId || u.name === userId || u.username === userId
-            ? { ...u, isActive: u.isActive === false ? true : false }
-            : u
-        )
-      );
-      addToast('User status updated locally', 'info');
+      addToast(err?.message || 'Failed to update user status', 'error');
+      try {
+        const freshUsers = await adminService.getAllUsers();
+        if (freshUsers) setRegisteredUsers(freshUsers);
+      } catch {}
     }
   };
 
@@ -1189,12 +1183,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await adminService.toggleAllUsersStatus(isActive);
       setRegisteredUsers((prev) => prev.map((u) => ({ ...u, isActive })));
       addToast(`All users ${isActive ? 'activated' : 'deactivated'} successfully!`, 'success');
-      adminService.getAllUsers().then((users) => {
-        if (users) setRegisteredUsers(users);
-      }).catch(() => {});
+      const freshUsers = await adminService.getAllUsers();
+      if (freshUsers) setRegisteredUsers(freshUsers);
     } catch (err: any) {
-      setRegisteredUsers((prev) => prev.map((u) => ({ ...u, isActive })));
-      addToast(`All users ${isActive ? 'activated' : 'deactivated'} locally`, 'info');
+      addToast(err?.message || 'Failed to update all users status', 'error');
+      try {
+        const freshUsers = await adminService.getAllUsers();
+        if (freshUsers) setRegisteredUsers(freshUsers);
+      } catch {}
     }
   };
 

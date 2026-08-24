@@ -250,7 +250,7 @@ export const AdminUsersAndResultsView: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => toggleUserStatus(u.id)}
+                        onClick={() => toggleUserStatus(u.id, !isUserActive)}
                         className={`px-2.5 py-1.5 rounded-lg text-xs font-extrabold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-sm border ${
                           isUserActive
                             ? 'bg-emerald-950/60 hover:bg-emerald-900/80 border-emerald-500/60 text-emerald-300'

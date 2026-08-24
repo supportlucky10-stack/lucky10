@@ -105,24 +105,29 @@ def create_user(req: UserCreateSchema, admin_user: User = Depends(get_current_ad
 @router.put("/users/status-all")
 @router.patch("/users/status-all")
 def set_all_users_status(status_payload: dict, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    is_active = status_payload.get("isActive", True)
-    db.query(User).filter(User.role == UserRole.CUSTOMER).update({"is_active": is_active}, synchronize_session=False)
+    is_active = bool(status_payload.get("isActive", True))
+    db.query(User).filter(User.role == UserRole.CUSTOMER).update({"is_active": is_active}, synchronize_session="fetch")
     db.commit()
     return {"message": f"All users status updated to {'Active' if is_active else 'Deactivated'}"}
 
 @router.put("/users/{user_id}/status")
 @router.patch("/users/{user_id}/status")
 def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
+    clean_id = str(user_id).strip()
+    user = db.query(User).filter(User.id == clean_id).first()
     if not user:
-        user = db.query(User).filter((User.name == user_id) | (User.username == user_id)).first()
+        user = db.query(User).filter(
+            (func.lower(User.id) == clean_id.lower()) |
+            (func.lower(User.name) == clean_id.lower()) |
+            (func.lower(User.username) == clean_id.lower())
+        ).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
     if status_payload and "isActive" in status_payload and status_payload["isActive"] is not None:
         user.is_active = bool(status_payload["isActive"])
     else:
-        user.is_active = not user.is_active
+        user.is_active = not bool(user.is_active)
         
     db.commit()
     db.refresh(user)

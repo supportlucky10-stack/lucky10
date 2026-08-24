@@ -1,4 +1,7 @@
-import pytest
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from datetime import datetime
 from app.core.game_timing import (
     IST_TZ,
@@ -6,6 +9,7 @@ from app.core.game_timing import (
     set_mock_ist_now,
     normalize_slot_name,
 )
+
 from app.models.user import User, UserRole
 from app.models.ticket import Ticket, BetItem
 from app.core.security import create_access_token, get_password_hash
@@ -87,3 +91,11 @@ def test_all_games_available_from_midnight_and_at_1230pm():
     assert is_game_slot_open("3 PM Game", t1230) is True
     assert is_game_slot_open("6 PM Game", t1230) is True
     assert is_game_slot_open("8 PM Game", t1230) is True
+
+if __name__ == "__main__":
+    test_1pm_cutoff_exact_seconds()
+    test_3pm_cutoff_exact_seconds()
+    test_6pm_cutoff_exact_seconds()
+    test_8pm_cutoff_exact_seconds()
+    test_all_games_available_from_midnight_and_at_1230pm()
+    print("ALL BILLING CUTOFF BOUNDARY TESTS PASSED!")
