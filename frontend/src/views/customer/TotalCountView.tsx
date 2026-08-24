@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Download } from 'lucide-react';
+import { extractDateStr, getLocalDateStr } from '../../utils/dateUtils';
 
 interface CountRowItem {
   id: string;
@@ -16,7 +17,7 @@ interface CountRowItem {
 export const TotalCountView: React.FC = () => {
   const { placedTickets, userTickets, setCurrentView } = useApp();
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getLocalDateStr();
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
   const [isFullView, setIsFullView] = useState<boolean>(false);
@@ -93,16 +94,7 @@ export const TotalCountView: React.FC = () => {
     const ticketSource = userTickets;
 
     const matchedTickets = ticketSource.filter((t) => {
-      let tDate = todayStr;
-      if (t.placedAt) {
-        if (t.placedAt.includes('T')) {
-          tDate = t.placedAt.split('T')[0];
-        } else if (t.placedAt.includes(' ')) {
-          tDate = t.placedAt.split(' ')[0];
-        } else {
-          tDate = t.placedAt;
-        }
-      }
+      const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
       return tDate >= fromDate && tDate <= toDate;
     });
 
@@ -149,7 +141,7 @@ export const TotalCountView: React.FC = () => {
             count: item.count,
             amount: item.totalAmount,
             slot: ticketSlot,
-            date: t.placedAt ? t.placedAt.split('T')[0] : todayStr,
+            date: extractDateStr(t.placedAt || (t as any).createdAt),
           });
         }
       });

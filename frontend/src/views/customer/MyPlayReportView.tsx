@@ -252,10 +252,7 @@ export const MyPlayReportView: React.FC = () => {
           return false;
         }
       }
-      let tktDate = todayStr;
-      if (tkt.placedAt) {
-        tktDate = tkt.placedAt.includes('T') ? tkt.placedAt.split('T')[0] : tkt.placedAt.split(' ')[0];
-      }
+      const tktDate = extractDateStr(tkt.placedAt || (tkt as any).createdAt);
       if (tktDate < targetFrom || tktDate > targetTo) {
         return false;
       }
@@ -352,7 +349,7 @@ export const MyPlayReportView: React.FC = () => {
     const ticketSource = currentUserTickets;
 
     ticketSource.forEach((t) => {
-      const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+      const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
       if (tDate >= dailyFromDate && tDate <= dailyToDate) {
         if (dailySlotFilter === 'ALL' || t.gameSlot.toUpperCase().startsWith(dailySlotFilter.toUpperCase())) {
           const displayD = formatDateDisplay(tDate);
@@ -410,7 +407,7 @@ export const MyPlayReportView: React.FC = () => {
 
     return baseSlots.map((slot) => {
       const slotTickets = ticketSource.filter((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
         return (
           tDate >= dailyFromDate &&
           tDate <= dailyToDate &&
@@ -420,7 +417,7 @@ export const MyPlayReportView: React.FC = () => {
       const userSale = slotTickets.reduce((acc, t) => acc + t.totalAmount, 0);
       let userPrize = 0;
       slotTickets.forEach((t) => {
-        const tDate = t.placedAt ? t.placedAt.split('T')[0] : todayStr;
+        const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
         if (res) {
           t.items.forEach((item: any) => {
@@ -485,6 +482,9 @@ export const MyPlayReportView: React.FC = () => {
   const displayTickets = allTickets
     .map((tkt) => {
       if (deletedTicketIds.includes(tkt.id)) return null;
+      const tDate = extractDateStr(tkt.placedAt || (tkt as any).createdAt);
+      if (fromDate && tDate < fromDate) return null;
+      if (toDate && tDate > toDate) return null;
       if (slotFilter !== 'ALL' && !tkt.gameSlot.startsWith(slotFilter)) return null;
 
       const matchingItems = tkt.items.filter((item: any) => {

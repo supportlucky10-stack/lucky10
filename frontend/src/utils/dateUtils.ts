@@ -28,6 +28,16 @@ export const formatDisplayDate = (dateStr: string): string => {
 export const extractDateStr = (raw?: string): string => {
   if (!raw) return getLocalDateStr();
   let clean = raw.trim();
+  // Match YYYY-MM-DD or YYYY/MM/DD at start
+  const ymdMatch = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+  if (ymdMatch) {
+    return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+  }
+  // Match DD-MM-YYYY or DD/MM/YYYY at start
+  const dmyMatch = clean.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+  if (dmyMatch) {
+    return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+  }
   if (clean.includes(':') || clean.includes('T')) {
     if (!clean.endsWith('Z') && !clean.includes('+') && !clean.match(/[+-]\d{2}:\d{2}$/)) {
       clean = clean.replace(' ', 'T') + 'Z';
@@ -39,17 +49,6 @@ export const extractDateStr = (raw?: string): string => {
       const day = String(d.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     }
-  }
-
-  // Match YYYY-MM-DD or YYYY/MM/DD at start
-  const ymdMatch = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
-  if (ymdMatch) {
-    return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
-  }
-  // Match DD-MM-YYYY or DD/MM/YYYY at start
-  const dmyMatch = clean.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
-  if (dmyMatch) {
-    return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
   }
   return clean.split('T')[0].split(' ')[0] || getLocalDateStr();
 };
