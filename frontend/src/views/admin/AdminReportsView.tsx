@@ -207,18 +207,8 @@ const getWinnerCardTheme = (_prize?: string) => {
   };
 };
 
-const getCategoryHeaderTheme = (category: string) => {
-  const catUpper = category.toUpperCase();
-  if (catUpper.includes('1 PM') || catUpper.includes('1PM')) {
-    return 'bg-gradient-to-r from-blue-600 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]';
-  }
-  if (catUpper.includes('3 PM') || catUpper.includes('3PM')) {
-    return 'bg-gradient-to-r from-[#9a3412] via-[#7c2d12] to-[#5a1e06] text-white border-2 border-orange-400/60 shadow-[0_0_12px_rgba(154,52,18,0.3)]';
-  }
-  if (catUpper.includes('6 PM') || catUpper.includes('6PM')) {
-    return 'bg-gradient-to-r from-fuchsia-600 via-pink-600 to-rose-600 text-white border-2 border-fuchsia-300 shadow-[0_0_15px_rgba(217,70,239,0.4)]';
-  }
-  return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-white border-gold/50 shadow-[0_0_15px_rgba(212,175,55,0.2)] font-black';
+const getCategoryHeaderTheme = (_category?: string) => {
+  return 'bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 text-white border-2 border-gold/60 shadow-[0_0_20px_rgba(212,175,55,0.25)] font-black';
 };
 
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
@@ -1464,7 +1454,7 @@ export const AdminReportsView: React.FC = () => {
             ) : (
               totalWinningCategories.map((group) => (
                 <div key={group.category} className="space-y-3">
-                  <div className={`${getCategoryHeaderTheme(group.category)} border text-sm font-black tracking-widest uppercase py-2.5 px-4 rounded-xl text-center font-mono transition-all`}>
+                  <div className={`${getCategoryHeaderTheme(group.category)} text-base sm:text-lg font-black tracking-widest uppercase py-2.5 sm:py-3 px-4 rounded-2xl text-center font-mono transition-all`}>
                     {group.category}
                   </div>
                   <div className="space-y-3">
@@ -1668,7 +1658,7 @@ export const AdminReportsView: React.FC = () => {
                 ) : (
                   userWinningCategories.map((group) => (
                     <div key={group.category} className="space-y-3">
-                      <div className={`${getCategoryHeaderTheme(group.category)} border text-sm font-black tracking-widest uppercase py-2.5 px-4 rounded-xl text-center font-mono transition-all`}>
+                      <div className={`${getCategoryHeaderTheme(group.category)} text-base sm:text-lg font-black tracking-widest uppercase py-2.5 sm:py-3 px-4 rounded-2xl text-center font-mono transition-all`}>
                         {group.category}
                       </div>
 
