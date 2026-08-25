@@ -180,14 +180,22 @@ export const MyPlayReportView: React.FC = () => {
     if (!currentUser) return pool;
     if (currentUser.role === 'ADMIN') return pool.filter((t) => !deletedTicketIds.includes(t.id));
     const cId = (currentUser.id || '').toLowerCase();
-    const uName = (currentUser.username || currentUser.name || '').toLowerCase();
+    const uUsername = (currentUser.username || '').toLowerCase();
+    const uName = (currentUser.name || '').toLowerCase();
 
     return pool.filter((t) => {
       if (deletedTicketIds.includes(t.id)) return false;
       if (!t.userId) return true;
       const tUid = (t.userId || '').toLowerCase();
-      const tUser = ((t as any).userName || (t as any).agencyName || '').toLowerCase();
-      return tUid === cId || tUid === uName || tUser === uName;
+      const tAgency = ((t as any).agencyName || '').toLowerCase();
+      const tUser = ((t as any).userName || '').toLowerCase();
+      return (
+        tUid === cId ||
+        tUid === uUsername ||
+        tUid === uName ||
+        (tAgency && (tAgency === uUsername || tAgency === uName)) ||
+        (tUser && (tUser === uUsername || tUser === uName))
+      );
     });
   }, [currentUser, placedTickets, userTickets, deletedTicketIds]);
 

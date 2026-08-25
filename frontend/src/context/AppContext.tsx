@@ -1384,8 +1384,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   if (!t.userId) return true;
                   const tUid = (t.userId || '').toLowerCase();
                   const cId = (currentUser.id || '').toLowerCase();
-                  const uName = (currentUser.username || currentUser.name || '').toLowerCase();
-                  return tUid === cId || tUid === uName || ((t as any).userName || '').toLowerCase() === uName;
+                  const uUsername = (currentUser.username || '').toLowerCase();
+                  const uName = (currentUser.name || '').toLowerCase();
+                  const tAgency = ((t as any).agencyName || '').toLowerCase();
+                  const tUser = ((t as any).userName || '').toLowerCase();
+                  return (
+                    tUid === cId ||
+                    tUid === uUsername ||
+                    tUid === uName ||
+                    (tAgency && (tAgency === uUsername || tAgency === uName)) ||
+                    (tUser && (tUser === uUsername || tUser === uName))
+                  );
                 }))
           : placedTickets,
         saveTicket,
