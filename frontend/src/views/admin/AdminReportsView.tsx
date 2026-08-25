@@ -81,11 +81,19 @@ const getDisplayNumber = (item: { number?: string; type?: string }): string => {
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
-  let utcStr = str.trim();
-  if (!utcStr.endsWith('Z') && !utcStr.includes('+') && !utcStr.match(/[+-]\d{2}:\d{2}$/)) {
-    utcStr = utcStr.replace(' ', 'T') + 'Z';
+  const clean = str.trim();
+  const match = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (match) {
+    const [, yyyy, mm, dd, hStr, mStr, sStr] = match;
+    const yy = yyyy.slice(-2);
+    const rawH = parseInt(hStr, 10);
+    const ampm = rawH >= 12 ? 'PM' : 'AM';
+    const hh = String(rawH % 12 || 12).padStart(2, '0');
+    const min = mStr || '00';
+    const ss = sStr || '00';
+    return `${dd}/${mm}/${yy} ${hh}:${min}:${ss} ${ampm}`;
   }
-  const d = new Date(utcStr);
+  const d = new Date(clean);
   if (isNaN(d.getTime())) return str;
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
