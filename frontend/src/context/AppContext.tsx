@@ -143,6 +143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         lastCycleSlotRef.current = defaultSlot;
         lastBusinessDateRef.current = currentBusinessDate;
         setActiveGameSlot(defaultSlot);
+        setBetSlip([]);
       }
     };
 

@@ -133,31 +133,6 @@ export const GameDashboardView: React.FC = () => {
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
 
-  const handleGameOverOk = () => {
-    setIsGameOverModalOpen(false);
-    if (activeGameSlot === '1 PM Game') {
-      setActiveGameSlot('3 PM Game');
-    } else if (activeGameSlot === '3 PM Game') {
-      setActiveGameSlot('6 PM Game');
-    } else if (activeGameSlot === '6 PM Game') {
-      setActiveGameSlot('8 PM Game');
-    } else if (activeGameSlot === '8 PM Game') {
-      // 8 PM is the last game of the daily cycle.
-      // Keep 8 PM visible and completely disabled. It will switch to 1 PM at 12:00:00 AM midnight.
-    }
-  };
-
-  // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle
-  useEffect(() => {
-    const checkCutoff = () => {
-      if (!isGameSlotOpen(activeGameSlot) && !isGameOverModalOpen) {
-        setIsGameOverModalOpen(true);
-      }
-    };
-    const interval = setInterval(checkCutoff, 1000);
-    return () => clearInterval(interval);
-  }, [activeGameSlot, isGameOverModalOpen]);
-
   // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');
@@ -174,6 +149,61 @@ export const GameDashboardView: React.FC = () => {
   const stepValRef = useRef<HTMLInputElement>(null);
 
   const unitPrice = 10; // ₹10 per count
+
+  // Completely reset temporary bill entry form state (draft rows, inputs, counts, selections)
+  const clearTemporaryBillForm = () => {
+    clearBetSlip();
+    setInputNum('');
+    setInputCount('');
+    setBoxCount('');
+    setCustomerName('');
+    setStartRange('');
+    setEndRange('');
+    setStepVal('');
+    setIsReverse(false);
+    setIsSet(false);
+    setActiveMode(3);
+    setSavedBillId(null);
+    setCopiedSavedBill(false);
+    setMinCountModalOpen(false);
+    setIsOverloadedModalOpen(false);
+    setIsBlockedModalOpen(false);
+  };
+
+  const handleGameOverOk = () => {
+    setIsGameOverModalOpen(false);
+    clearTemporaryBillForm();
+    if (activeGameSlot === '1 PM Game') {
+      setActiveGameSlot('3 PM Game');
+    } else if (activeGameSlot === '3 PM Game') {
+      setActiveGameSlot('6 PM Game');
+    } else if (activeGameSlot === '6 PM Game') {
+      setActiveGameSlot('8 PM Game');
+    } else if (activeGameSlot === '8 PM Game') {
+      // 8 PM is the last game of the daily cycle.
+      // Keep 8 PM visible and completely disabled. It will switch to 1 PM at 12:00:00 AM midnight.
+    }
+  };
+
+  // Reset temporary bill-entry state whenever the active game slot changes (Game Over transition, midnight reset, slot switch)
+  const prevSlotRef = useRef<GameSlot>(activeGameSlot);
+  useEffect(() => {
+    if (prevSlotRef.current !== activeGameSlot) {
+      prevSlotRef.current = activeGameSlot;
+      clearTemporaryBillForm();
+    }
+  }, [activeGameSlot]);
+
+  // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle
+  useEffect(() => {
+    const checkCutoff = () => {
+      if (!isGameSlotOpen(activeGameSlot) && !isGameOverModalOpen) {
+        setIsGameOverModalOpen(true);
+      }
+    };
+    const interval = setInterval(checkCutoff, 1000);
+    return () => clearInterval(interval);
+  }, [activeGameSlot, isGameOverModalOpen]);
 
   // Clear unsaved generated draft numbers if user navigates to another page/section without saving
   useEffect(() => {
