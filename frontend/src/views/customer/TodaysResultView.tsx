@@ -321,15 +321,21 @@ export const TodaysResultView: React.FC = () => {
                 COMPLIMENTS
               </h3>
 
-              <div className="grid grid-cols-5 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
-                {compliments30.map((val, idx) => (
-                  <div
-                    key={idx}
-                    className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5 sm:py-2 rounded-lg border border-neutral-850 shadow-inner"
-                  >
-                    {val}
-                  </div>
-                ))}
+              <div className="grid grid-cols-3 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
+                {Array.from({ length: 30 }, (_, cellIndex) => {
+                  const row = Math.floor(cellIndex / 3);
+                  const col = cellIndex % 3;
+                  const compIdx = row + col * 10;
+                  const val = compliments30[compIdx] || '---';
+                  return (
+                    <div
+                      key={cellIndex}
+                      className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5 sm:py-2 rounded-lg border border-neutral-850 shadow-inner"
+                    >
+                      {val}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );

@@ -410,12 +410,18 @@ export const AdminResultManagementView: React.FC = () => {
                   <span className="text-xs text-neutral-300 font-bold block text-center uppercase tracking-wider">
                     Compliments (30)
                   </span>
-                  <div className="grid grid-cols-5 gap-1.5 font-mono text-xs text-white text-center">
-                    {complimentBoxes.map((num, idx) => (
-                      <div key={idx} className="bg-neutral-900 py-1.5 px-0.5 rounded border border-neutral-800 font-black tracking-wider">
-                        {num.trim()}
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-3 gap-1.5 font-mono text-xs text-white text-center">
+                    {Array.from({ length: 30 }, (_, cellIndex) => {
+                      const row = Math.floor(cellIndex / 3);
+                      const col = cellIndex % 3;
+                      const compIdx = row + col * 10;
+                      const num = complimentBoxes[compIdx] || '';
+                      return (
+                        <div key={cellIndex} className="bg-neutral-900 py-1.5 px-0.5 rounded border border-neutral-800 font-black tracking-wider">
+                          {num.trim() || '---'}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
@@ -801,15 +807,21 @@ export const AdminResultManagementView: React.FC = () => {
                     <h4 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wider">
                       Compliments
                     </h4>
-                    <div className="grid grid-cols-5 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono">
-                      {display30.map((val, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5"
-                        >
-                          {val}
-                        </div>
-                      ))}
+                    <div className="grid grid-cols-3 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono">
+                      {Array.from({ length: 30 }, (_, cellIndex) => {
+                        const row = Math.floor(cellIndex / 3);
+                        const col = cellIndex % 3;
+                        const compIdx = row + col * 10;
+                        const val = display30[compIdx] || '—';
+                        return (
+                          <div
+                            key={cellIndex}
+                            className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5"
+                          >
+                            {val}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
