@@ -28,20 +28,33 @@ export const formatDisplayDate = (dateStr: string): string => {
 export const extractDateStr = (raw?: string): string => {
   if (!raw) return getLocalDateStr();
   let clean = raw.trim();
-  // Match YYYY-MM-DD or YYYY/MM/DD at start
-  const ymdMatch = clean.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+
+  // 1. YYYY-MM-DD or YYYY/MM/DD at start (e.g. 2026-08-25, 2026-08-25 14:01:58)
+  const ymdMatch = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
   if (ymdMatch) {
-    return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+    const mm = ymdMatch[2].padStart(2, '0');
+    const dd = ymdMatch[3].padStart(2, '0');
+    return `${ymdMatch[1]}-${mm}-${dd}`;
   }
-  // Match DD-MM-YYYY or DD/MM/YYYY at start
-  const dmyMatch = clean.match(/^(\d{2})[-/](\d{2})[-/](\d{4})/);
+
+  // 2. DD-MM-YYYY or DD/MM/YYYY at start (e.g. 25-08-2026, 25/08/2026 02:01:58 PM)
+  const dmyMatch = clean.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
   if (dmyMatch) {
-    return `${dmyMatch[3]}-${dmyMatch[2]}-${dmyMatch[1]}`;
+    const dd = dmyMatch[1].padStart(2, '0');
+    const mm = dmyMatch[2].padStart(2, '0');
+    return `${dmyMatch[3]}-${mm}-${dd}`;
   }
+
+  // 3. DD-MM-YY or DD/MM/YY at start (e.g. 25/08/26, 25/08/26 02:01:58 PM)
+  const dmy2Match = clean.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})(?!\d)/);
+  if (dmy2Match) {
+    const dd = dmy2Match[1].padStart(2, '0');
+    const mm = dmy2Match[2].padStart(2, '0');
+    const yyyy = `20${dmy2Match[3]}`;
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
   if (clean.includes(':') || clean.includes('T')) {
-    if (!clean.endsWith('Z') && !clean.includes('+') && !clean.match(/[+-]\d{2}:\d{2}$/)) {
-      clean = clean.replace(' ', 'T') + 'Z';
-    }
     const d = new Date(clean);
     if (!isNaN(d.getTime())) {
       const year = d.getFullYear();
@@ -50,7 +63,8 @@ export const extractDateStr = (raw?: string): string => {
       return `${year}-${month}-${day}`;
     }
   }
-  return clean.split('T')[0].split(' ')[0] || getLocalDateStr();
+
+  return getLocalDateStr();
 };
 
 /**
