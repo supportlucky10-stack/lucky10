@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem } from '../../types';
-import { isGameSlotOpen } from '../../utils/dateUtils';
+import { isGameSlotOpen, getBusinessDateIST } from '../../utils/dateUtils';
 
 interface SlotTheme {
   name: string;
@@ -132,6 +132,7 @@ export const GameDashboardView: React.FC = () => {
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
+  const [acknowledgedCutoffSlot, setAcknowledgedCutoffSlot] = useState<string | null>(null);
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -171,6 +172,9 @@ export const GameDashboardView: React.FC = () => {
   };
 
   const handleGameOverOk = () => {
+    const currentBusinessDate = getBusinessDateIST();
+    const currentKey = `${currentBusinessDate}_${activeGameSlot}`;
+    setAcknowledgedCutoffSlot(currentKey);
     setIsGameOverModalOpen(false);
     clearTemporaryBillForm();
     if (activeGameSlot === '1 PM Game') {
@@ -197,13 +201,17 @@ export const GameDashboardView: React.FC = () => {
   // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle
   useEffect(() => {
     const checkCutoff = () => {
-      if (!isGameSlotOpen(activeGameSlot) && !isGameOverModalOpen) {
-        setIsGameOverModalOpen(true);
+      const currentBusinessDate = getBusinessDateIST();
+      const currentKey = `${currentBusinessDate}_${activeGameSlot}`;
+      if (!isGameSlotOpen(activeGameSlot)) {
+        if (!isGameOverModalOpen && acknowledgedCutoffSlot !== currentKey) {
+          setIsGameOverModalOpen(true);
+        }
       }
     };
     const interval = setInterval(checkCutoff, 1000);
     return () => clearInterval(interval);
-  }, [activeGameSlot, isGameOverModalOpen]);
+  }, [activeGameSlot, isGameOverModalOpen, acknowledgedCutoffSlot]);
 
   // Clear unsaved generated draft numbers if user navigates to another page/section without saving
   useEffect(() => {
@@ -248,6 +256,10 @@ export const GameDashboardView: React.FC = () => {
 
   // Mode 1 Handlers (A, B, C, ALL) - Minimum 5 count required, ₹12 per count
   const handleMode1Add = (pos: 'A' | 'B' | 'C' | 'ALL') => {
+    if (!isGameSlotOpen(activeGameSlot)) {
+      addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
+      return;
+    }
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 5) {
       setMinCountModalOpen(true);
@@ -296,6 +308,10 @@ export const GameDashboardView: React.FC = () => {
 
   // Mode 2 Handlers (AB, AC, BC, ALL)
   const handleMode2Add = (pair: 'AB' | 'AC' | 'BC' | 'ALL') => {
+    if (!isGameSlotOpen(activeGameSlot)) {
+      addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
+      return;
+    }
     const cnt = parseInt(inputCount);
     if (!cnt || cnt < 1) {
       addToast('Please enter a valid count', 'error');
@@ -343,6 +359,10 @@ export const GameDashboardView: React.FC = () => {
 
   // Mode 3 Handlers (BOTH, BOX, SUPER) with Set Rotational Permutations
   const handleMode3Add = (modeType: 'BOTH' | 'BOX' | 'SUPER') => {
+    if (!isGameSlotOpen(activeGameSlot)) {
+      addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
+      return;
+    }
     let targetNums = isReverse ? getRangeNumbers(3) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 3 || isNaN(Number(n)))) {
       addToast('Please enter a valid 3-digit number or range (000-999)', 'error');
