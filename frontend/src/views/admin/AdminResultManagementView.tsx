@@ -194,7 +194,16 @@ export const AdminResultManagementView: React.FC = () => {
   };
 
   const handleOtherPrizeKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace') {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (index >= 0 && index < 33) {
+        const nextInput = otherPrizeRefs.current[index + 1];
+        if (nextInput && !nextInput.disabled && !nextInput.readOnly) {
+          nextInput.focus();
+          nextInput.select?.();
+        }
+      }
+    } else if (e.key === 'Backspace') {
       const target = e.currentTarget;
       if (target.value === '' && index > 0) {
         const prevInput = otherPrizeRefs.current[index - 1];
@@ -635,11 +644,16 @@ export const AdminResultManagementView: React.FC = () => {
                   )}
                 </div>
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                  {complimentBoxes.map((num, idx) => {
-                    const inputIdx = 4 + idx;
+                  {Array.from({ length: 30 }, (_, cellIndex) => {
+                    const row = Math.floor(cellIndex / 3);
+                    const col = cellIndex % 3;
+                    const compIdx = row + col * 10;
+                    const inputIdx = 4 + compIdx;
+                    const num = complimentBoxes[compIdx] || '';
+
                     return (
-                      <div key={idx} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
-                        <span className="text-[10px] text-neutral-400 font-bold font-mono">#{idx + 1}</span>
+                      <div key={cellIndex} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
+                        <span className="text-[10px] text-neutral-400 font-bold font-mono">#{compIdx + 1}</span>
                         <input
                           ref={(el) => { otherPrizeRefs.current[inputIdx] = el; }}
                           type="text"
@@ -649,6 +663,7 @@ export const AdminResultManagementView: React.FC = () => {
                           value={num}
                           disabled={isOtherPrizesPublished}
                           readOnly={isOtherPrizesPublished}
+                          tabIndex={5 + compIdx}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
