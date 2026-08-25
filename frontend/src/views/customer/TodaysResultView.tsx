@@ -166,7 +166,7 @@ export const TodaysResultView: React.FC = () => {
   };
 
   return (
-    <div className="w-full min-h-[100dvh] min-h-screen bg-black text-white flex flex-col justify-between overflow-y-auto antialiased select-none font-sans pb-4">
+    <div className="w-full h-[100dvh] h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
       {/* Header Banner with WhatsApp Share Button on Right */}
       <HeaderBanner
         title="RESULT"
@@ -175,10 +175,10 @@ export const TodaysResultView: React.FC = () => {
           <button
             type="button"
             onClick={handleShareToWhatsApp}
-            className="px-3 sm:px-3.5 py-1.5 bg-[#075e54] hover:bg-[#128c7e] active:scale-90 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-[#25d366]/40"
+            className="px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-[#075e54] hover:bg-[#128c7e] active:scale-90 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-[#25d366]/40"
             title="Share to WhatsApp"
           >
-            <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-white shrink-0" viewBox="0 0 24 24">
               <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
             </svg>
             <span>Share</span>
@@ -186,18 +186,18 @@ export const TodaysResultView: React.FC = () => {
         }
       />
 
-      <div id="result-view-container" className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-3 flex-1 flex flex-col justify-start space-y-3 bg-black">
+      <div id="result-view-container" className="max-w-md mx-auto w-full px-2.5 sm:px-4 py-1.5 sm:py-2 flex-1 flex flex-col justify-between space-y-1.5 sm:space-y-2 bg-black overflow-hidden">
         
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
-        <div className="space-y-2.5 shrink-0">
-          {/* Row 1: Date Pill (Increased Size & Prominence) & Change Date Button */}
-          <div className="grid grid-cols-2 gap-2 sm:gap-2.5 items-center">
+        <div className="space-y-1.5 shrink-0">
+          {/* Row 1: Date Pill & Change Date Button */}
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 items-center">
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark overflow-hidden select-none"
+              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-0.5 cursor-pointer flex items-center justify-center shadow-md h-[36px] sm:h-[42px] border-2 border-gold-dark overflow-hidden select-none"
             >
-              <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+              <span className="text-black font-black text-xs sm:text-sm tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 {displayDateFormatted.replace(/-/g, '\u2011')}
               </span>
             </div>
@@ -205,10 +205,10 @@ export const TodaysResultView: React.FC = () => {
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] overflow-hidden select-none"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-0.5 cursor-pointer flex items-center justify-center gap-1.5 shadow-md h-[36px] sm:h-[42px] overflow-hidden select-none"
             >
-              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
-              <span className="font-bold text-xs sm:text-sm tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gold shrink-0" />
+              <span className="font-bold text-[11px] sm:text-xs tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 Change date
               </span>
               <input
@@ -231,17 +231,17 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[46px] sm:h-[48px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[36px] sm:h-[42px] px-3.5 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
-              <div className="flex items-center gap-2">
-                <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
-                <span className="font-black tracking-wider text-sm sm:text-base">{activeGameSlot.replace(' Game', '')}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="opacity-85 text-[11px] sm:text-xs font-bold tracking-wider uppercase">TIME:</span>
+                <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot.replace(' Game', '')}</span>
               </div>
-              <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isGameDropdownOpen && (
-              <div className="absolute left-0 right-0 top-13 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
+              <div className="absolute left-0 right-0 top-11 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
                 {games.map((slot) => {
                   const theme = slotThemeStyles[slot];
                   const isSelected = slot === activeGameSlot;
@@ -254,14 +254,14 @@ export const TodaysResultView: React.FC = () => {
                         setIsGameDropdownOpen(false);
                         isManualSlotRef.current = true;
                       }}
-                      className={`w-full py-2 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
+                      className={`w-full py-1.5 px-3 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
                         isSelected
                           ? theme.pillActive
                           : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                       }`}
                     >
                       <span>{slot.replace(' Game', '')}</span>
-                      {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                      {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                     </button>
                   );
                 })}
@@ -270,8 +270,8 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Winning Number Cards (1st Prize slightly larger than other prizes) */}
-        <div className="space-y-1.5 shrink-0">
+        {/* 5 Winning Number Cards with Larger Uniform Numbers */}
+        <div className="space-y-1 shrink-0">
           {[
             { id: 1, label: '1', val: currentResult.prize1 || '---' },
             { id: 2, label: '2', val: currentResult.prize2 || '---' },
@@ -281,22 +281,16 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all ${
-                item.id === 1 ? 'py-2 sm:py-2.5 px-3.5 shadow-md border-opacity-100' : 'py-1.5 sm:py-2 px-3.5 shadow-sm'
-              }`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1 sm:py-1.5 px-3 shadow-sm`}
             >
-              <div className="flex items-center gap-3.5 w-full">
+              <div className="flex items-center gap-3 w-full">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
                 >
                   {item.label}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span
-                    className={`font-black font-mono tracking-widest block text-white ${
-                      item.id === 1 ? 'text-2xl sm:text-3xl' : 'text-lg sm:text-xl'
-                    }`}
-                  >
+                  <span className="font-black font-mono tracking-widest block text-white text-lg sm:text-xl md:text-2xl leading-none">
                     {item.val}
                   </span>
                 </div>
@@ -305,7 +299,7 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table */}
+        {/* COMPLIMENTS Matrix Table (10 Rows x 3 Columns Column-Wise) */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const compliments30 = Array.from({ length: 30 }, (_, index) => {
@@ -315,13 +309,13 @@ export const TodaysResultView: React.FC = () => {
           return (
             <div
               key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border border-neutral-800 space-y-1.5 shrink-0 my-0.5"
+              className="bg-neutral-950 text-white rounded-xl p-1.5 sm:p-2 shadow-2xl border border-neutral-800 space-y-1 shrink-0"
             >
-              <h3 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-widest shrink-0">
+              <h3 className="font-black text-[11px] sm:text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
                 COMPLIMENTS
               </h3>
 
-              <div className="grid grid-cols-3 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
+              <div className="grid grid-cols-3 gap-0.5 sm:gap-1 bg-neutral-900 border border-neutral-800 p-0.5 sm:p-1 rounded-lg overflow-hidden font-mono">
                 {Array.from({ length: 30 }, (_, cellIndex) => {
                   const row = Math.floor(cellIndex / 3);
                   const col = cellIndex % 3;
@@ -330,7 +324,7 @@ export const TodaysResultView: React.FC = () => {
                   return (
                     <div
                       key={cellIndex}
-                      className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5 sm:py-2 rounded-lg border border-neutral-850 shadow-inner"
+                      className="bg-black text-center text-lg sm:text-xl md:text-2xl font-black text-neutral-100 tracking-wider flex items-center justify-center py-0.5 sm:py-1 rounded-md border border-neutral-850 shadow-inner leading-none"
                     >
                       {val}
                     </div>
