@@ -195,9 +195,9 @@ export const TodaysResultView: React.FC = () => {
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-0.5 cursor-pointer flex items-center justify-center shadow-lg h-[38px] sm:h-[42px] border-2 border-gold-dark overflow-hidden select-none"
+              className="bg-gold-metallic text-black rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark overflow-hidden select-none"
             >
-              <span className="text-black font-black text-xs sm:text-sm tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+              <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 {displayDateFormatted.replace(/-/g, '\u2011')}
               </span>
             </div>
@@ -205,7 +205,7 @@ export const TodaysResultView: React.FC = () => {
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-0.5 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[38px] sm:h-[42px] overflow-hidden select-none"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] overflow-hidden select-none"
             >
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
               <span className="font-bold text-xs sm:text-sm tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
@@ -231,11 +231,11 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[38px] sm:h-[42px] px-4 rounded-xl font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[46px] sm:h-[48px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
               <div className="flex items-center gap-2">
                 <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
-                <span className="font-black tracking-wider text-xs sm:text-sm">{activeGameSlot.replace(' Game', '')}</span>
+                <span className="font-black tracking-wider text-sm sm:text-base">{activeGameSlot.replace(' Game', '')}</span>
               </div>
               <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
