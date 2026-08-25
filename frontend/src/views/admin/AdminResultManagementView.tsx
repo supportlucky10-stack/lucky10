@@ -643,7 +643,7 @@ export const AdminResultManagementView: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                   {Array.from({ length: 30 }, (_, cellIndex) => {
                     const row = Math.floor(cellIndex / 3);
                     const col = cellIndex % 3;
@@ -652,8 +652,8 @@ export const AdminResultManagementView: React.FC = () => {
                     const num = complimentBoxes[compIdx] || '';
 
                     return (
-                      <div key={cellIndex} className="bg-neutral-900/90 p-2 rounded-xl border border-neutral-800 focus-within:border-gold/60 transition-all">
-                        <span className="text-[10px] text-neutral-400 font-bold font-mono">#{compIdx + 1}</span>
+                      <div key={cellIndex} className="bg-neutral-900/90 px-1.5 py-1 rounded-lg border border-neutral-800 focus-within:border-gold/60 transition-all flex items-center gap-1.5">
+                        <span className="text-[10px] sm:text-xs text-neutral-400 font-bold font-mono w-6 sm:w-7 shrink-0 text-left">#{compIdx + 1}</span>
                         <input
                           ref={(el) => { otherPrizeRefs.current[inputIdx] = el; }}
                           type="text"
@@ -666,7 +666,7 @@ export const AdminResultManagementView: React.FC = () => {
                           tabIndex={5 + compIdx}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
-                          className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
+                          className={`flex-1 min-w-0 px-1 py-1 font-mono font-black text-xs sm:text-sm rounded-md border-2 text-center focus:outline-none transition-all ${
                             isOtherPrizesPublished
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                               : 'bg-white text-black border-gold'
