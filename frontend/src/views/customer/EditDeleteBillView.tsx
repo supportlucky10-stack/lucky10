@@ -73,7 +73,7 @@ const formatCustomerName = (name?: string): string => {
 };
 
 export const EditDeleteBillView: React.FC = () => {
-  const { userTickets, deleteTicket, addToast } = useApp();
+  const { userTickets, deleteTicket, addToast, currentUser } = useApp();
   const [billIdInput, setBillIdInput] = useState('');
   const [searchedBill, setSearchedBill] = useState<any | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
@@ -236,7 +236,7 @@ export const EditDeleteBillView: React.FC = () => {
 
                 {/* Agency, Customer & Slot Info Bar */}
                 <div className="bg-white px-4 py-2.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
-                  <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(searchedBill as any).agencyName || (searchedBill as any).userName || 'Agency'}</strong></div>
+                  <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(searchedBill as any).agencyName || (searchedBill as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
                   <div className="text-center">{formatCustomerName((searchedBill as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((searchedBill as any).customerName)}</strong></> : null}</div>
                   <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
                 </div>

@@ -359,8 +359,8 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
     )
     out = []
     for t in tickets:
-        user_name = t.user.name if t.user else ""
-        agency_name = t.user.username if t.user else ""
+        agency_name = (t.user.name or t.user.username) if t.user else ""
+        user_name = agency_name
         ist_dt_str = ""
         if t.placed_at:
             dt = t.placed_at
@@ -416,8 +416,8 @@ def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Dep
         t_date = get_ticket_business_date(t)
         if t_date != target_date:
             continue
-        user_name = t.user.name if t.user else ""
-        agency_name = t.user.username if t.user else ""
+        agency_name = (t.user.name or t.user.username) if t.user else ""
+        user_name = agency_name
         ist_dt_str = ""
         if t.placed_at:
             dt = t.placed_at

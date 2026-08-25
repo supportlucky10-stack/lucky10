@@ -32,8 +32,9 @@ def format_ticket(ticket: Ticket) -> dict:
     cust_name = getattr(ticket, "customer_name", "") or ""
     if cust_name.lower() == "customer":
         cust_name = ""
-    user_name = ticket.user.name if getattr(ticket, "user", None) else ""
-    agency_name = (ticket.user.username or ticket.user.name) if getattr(ticket, "user", None) else ""
+    user_obj = getattr(ticket, "user", None)
+    agency_name = (user_obj.name or user_obj.username) if user_obj else ""
+    user_name = agency_name
 
     if ticket.placed_at:
         dt = ticket.placed_at

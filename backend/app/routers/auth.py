@@ -35,6 +35,7 @@ def format_user_response(user: User) -> dict:
     return {
         "id": user.id,
         "name": user.name,
+        "agencyName": user.name,
         "email": user.email,
         "username": user.username,
         "role": user.role.value if hasattr(user.role, 'value') else str(user.role),

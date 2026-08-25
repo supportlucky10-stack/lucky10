@@ -900,8 +900,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (currentUser) {
         newTicket.userId = currentUser.id;
-        newTicket.userName = currentUser.username || currentUser.name;
-        newTicket.agencyName = currentUser.name || currentUser.username;
+        newTicket.userName = currentUser.name || currentUser.agencyName || currentUser.username;
+        newTicket.agencyName = currentUser.name || currentUser.agencyName || currentUser.username;
       }
       newTicket.customerName = cleanCustName;
 

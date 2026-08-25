@@ -718,8 +718,8 @@ export const MyPlayReportView: React.FC = () => {
           existing.push({
             id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
             ticketId: ticket.ticketId || ticket.id,
-            userName: (ticket as any).userName || (ticket as any).agencyName || currentUser?.name || 'Agency',
-            agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || 'Agency',
+            userName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
+            agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
             customerName: formatCustomerName((ticket as any).customerName),
             prize: prizeTitle,
             number: num,
@@ -1959,7 +1959,7 @@ export const MyPlayReportView: React.FC = () => {
                           <div className="bg-black/75 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-white/5 text-xs font-mono">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">AGENCY:</span>
-                              <span className="text-amber-400 font-extrabold text-xs tracking-wide">{card.agencyName || card.userName || currentUser?.name || 'Agency'}</span>
+                              <span className="text-amber-400 font-extrabold text-xs tracking-wide">{card.agencyName || card.userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">CUSTOMER:</span>
@@ -2065,7 +2065,7 @@ export const MyPlayReportView: React.FC = () => {
 
               {/* Agency, Customer & Slot Info Bar */}
               <div className="bg-white px-4 py-2.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
-                <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || 'Agency'}</strong></div>
+                <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
                 <div className="text-center">{formatCustomerName((selectedSingleTicket as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></> : null}</div>
                 <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(selectedSingleTicket.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
               </div>

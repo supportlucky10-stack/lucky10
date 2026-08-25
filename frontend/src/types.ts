@@ -48,6 +48,7 @@ export interface GlobalLimitRule {
 export interface UserAccount {
   id: string;
   name: string;
+  agencyName?: string;
   email: string;
   username: string;
   password?: string;
