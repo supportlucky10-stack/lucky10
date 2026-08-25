@@ -73,6 +73,15 @@ const getDisplayGame = (item: { number?: string; type?: string }): string => {
   return 'SUPER';
 };
 
+const getGameDetailGroup = (item: { number?: string; type?: string }): 'SUPER' | 'BOX' | 'AB / BC / AC' | 'A / B / C' => {
+  const g = getDisplayGame(item);
+  if (g === 'SUPER') return 'SUPER';
+  if (g === 'BOX') return 'BOX';
+  if (['AB', 'BC', 'AC'].includes(g)) return 'AB / BC / AC';
+  if (['A', 'B', 'C'].includes(g)) return 'A / B / C';
+  return 'SUPER';
+};
+
 const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: string }): string => {
   if (item.playMode) return item.playMode.toUpperCase();
   const typeStr = (item.type || '').toUpperCase();
@@ -545,52 +554,96 @@ export const MyPlayReportView: React.FC = () => {
 
   // Game slot rows dynamically reflecting the selected date range & user tickets
   const dynamicGameRows = React.useMemo(() => {
-    const baseSlots = [
-      { slotName: '1 PM', slotKey: '1 PM Game' },
-      { slotName: '3 PM', slotKey: '3 PM Game' },
-      { slotName: '6 PM', slotKey: '6 PM Game' },
-      { slotName: '8 PM', slotKey: '8 PM Game' },
-    ];
-
     const ticketSource = currentUserTickets;
 
-    return baseSlots.map((slot) => {
-      const slotTickets = ticketSource.filter((t) => {
-        const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
-        return (
-          tDate >= dailyFromDate &&
-          tDate <= dailyToDate &&
-          t.gameSlot === slot.slotKey
-        );
+    if (dailySlotFilter === 'ALL') {
+      const baseSlots = [
+        { slotName: '1 PM', slotKey: '1 PM Game' },
+        { slotName: '3 PM', slotKey: '3 PM Game' },
+        { slotName: '6 PM', slotKey: '6 PM Game' },
+        { slotName: '8 PM', slotKey: '8 PM Game' },
+      ];
+
+      return baseSlots.map((slot) => {
+        const slotTickets = ticketSource.filter((t) => {
+          const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
+          return (
+            tDate >= dailyFromDate &&
+            tDate <= dailyToDate &&
+            t.gameSlot === slot.slotKey
+          );
+        });
+        const userSale = slotTickets.reduce((acc, t) => acc + t.totalAmount, 0);
+        let userPrize = 0;
+        slotTickets.forEach((t) => {
+          const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
+          const res = getResultForSlotAndDate(t.gameSlot, tDate);
+          if (res) {
+            t.items.forEach((item: any) => {
+              const evalRes = evaluateBetItem(item, res);
+              if (evalRes.isWinner) {
+                userPrize += evalRes.winAmount;
+              }
+            });
+          }
+        });
+        const userComm = Math.round(userSale * userCommissionPercent);
+
+        return {
+          slotName: slot.slotName,
+          sale: userSale,
+          prize: userPrize,
+          comm: userComm,
+        };
       });
-      const userSale = slotTickets.reduce((acc, t) => acc + t.totalAmount, 0);
-      let userPrize = 0;
+    }
+
+    // Specific game slot selected (1 PM / 3 PM / 6 PM / 8 PM):
+    // Group bills into EXACTLY 4 rows: SUPER, BOX, AB / BC / AC, A / B / C
+    const GAME_TYPE_GROUPS = ['SUPER', 'BOX', 'AB / BC / AC', 'A / B / C'] as const;
+    const slotTickets = ticketSource.filter((t) => {
+      const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
+      return (
+        tDate >= dailyFromDate &&
+        tDate <= dailyToDate &&
+        t.gameSlot.toUpperCase().startsWith(dailySlotFilter.toUpperCase())
+      );
+    });
+
+    return GAME_TYPE_GROUPS.map((groupName) => {
+      let groupSale = 0;
+      let groupPrize = 0;
+
       slotTickets.forEach((t) => {
         const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
         const res = getResultForSlotAndDate(t.gameSlot, tDate);
-        if (res) {
-          t.items.forEach((item: any) => {
-            const evalRes = evaluateBetItem(item, res);
-            if (evalRes.isWinner) {
-              userPrize += evalRes.winAmount;
+
+        t.items.forEach((item: any) => {
+          if (getGameDetailGroup(item) === groupName) {
+            const itemAmt = item.totalAmount ?? (item.count * (item.unitPrice || 10));
+            groupSale += itemAmt;
+            if (res) {
+              const evalRes = evaluateBetItem(item, res);
+              if (evalRes.isWinner) {
+                groupPrize += evalRes.winAmount;
+              }
             }
-          });
-        }
+          }
+        });
       });
-      const userComm = Math.round(userSale * userCommissionPercent);
+
+      const groupComm = Math.round(groupSale * userCommissionPercent);
 
       return {
-        slotName: slot.slotName,
-        sale: userSale,
-        prize: userPrize,
-        comm: userComm,
+        slotName: groupName,
+        sale: groupSale,
+        prize: groupPrize,
+        comm: groupComm,
       };
     });
-  }, [dailyFromDate, dailyToDate, currentUserTickets, todayStr, userCommissionPercent, getResultForSlotAndDate]);
+  }, [dailyFromDate, dailyToDate, dailySlotFilter, currentUserTickets, todayStr, userCommissionPercent, getResultForSlotAndDate]);
 
-  const filteredGameRows = dailySlotFilter === 'ALL'
-    ? dynamicGameRows
-    : dynamicGameRows.filter((r) => r.slotName === dailySlotFilter);
+  const filteredGameRows = dynamicGameRows;
 
   const allTickets = currentUserTickets;
 

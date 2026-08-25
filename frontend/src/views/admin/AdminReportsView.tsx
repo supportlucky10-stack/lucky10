@@ -27,6 +27,15 @@ const getDisplayGame = (item: { number?: string; type?: string }): string => {
   return 'SUPER';
 };
 
+const getGameDetailGroup = (item: { number?: string; type?: string }): 'SUPER' | 'BOX' | 'AB / BC / AC' | 'A / B / C' => {
+  const g = getDisplayGame(item);
+  if (g === 'SUPER') return 'SUPER';
+  if (g === 'BOX') return 'BOX';
+  if (['AB', 'BC', 'AC'].includes(g)) return 'AB / BC / AC';
+  if (['A', 'B', 'C'].includes(g)) return 'A / B / C';
+  return 'SUPER';
+};
+
 const getDisplayPlayMode = (item: { playMode?: string; type?: string; number?: string }): string => {
   if (item.playMode) return item.playMode.toUpperCase();
   const typeStr = (item.type || '').toUpperCase();
@@ -663,45 +672,84 @@ export const AdminReportsView: React.FC = () => {
     const totalComm = rows.reduce((acc, r) => acc + (r.comm || 0), 0);
     const netTotal = totalSale - totalPrize - totalComm;
 
-    const baseSlots = [
-      { slotName: '1 PM', slotKey: '1 PM Game' },
-      { slotName: '3 PM', slotKey: '3 PM Game' },
-      { slotName: '6 PM', slotKey: '6 PM Game' },
-      { slotName: '8 PM', slotKey: '8 PM Game' },
-    ];
+    let filteredGameRows: Array<{ slotName: string; sale: number; prize: number; comm: number }>;
 
-    const gameRows = baseSlots.map((slot) => {
+    if (slotF === 'ALL') {
+      const baseSlots = [
+        { slotName: '1 PM', slotKey: '1 PM Game' },
+        { slotName: '3 PM', slotKey: '3 PM Game' },
+        { slotName: '6 PM', slotKey: '6 PM Game' },
+        { slotName: '8 PM', slotKey: '8 PM Game' },
+      ];
+
+      filteredGameRows = baseSlots.map((slot) => {
+        const slotTickets = tickets.filter((t) => {
+          const tDate = extractDateStr(t.placedAt);
+          return (!fromDateStr || tDate >= fromDateStr) && (!toDateStr || tDate <= toDateStr) && t.gameSlot === slot.slotKey;
+        });
+
+        const userSale = slotTickets.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
+        let userPrize = 0;
+        let userComm = 0;
+
+        slotTickets.forEach((t) => {
+          const tAmt = t.totalAmount || 0;
+          const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
+          const commRate = getCommissionPercent(matchedUser?.mode);
+          userComm += Math.round(tAmt * commRate);
+
+          const tDate = extractDateStr(t.placedAt);
+          const res = getResultForSlotAndDate(t.gameSlot, tDate);
+          if (res) {
+            t.items.forEach((item: any) => {
+              const evalRes = evaluateBetItem(item, res);
+              if (evalRes.isWinner) {
+                userPrize += evalRes.winAmount;
+              }
+            });
+          }
+        });
+
+        return { slotName: slot.slotName, sale: userSale, prize: userPrize, comm: userComm };
+      });
+    } else {
+      // Specific game slot selected (1 PM / 3 PM / 6 PM / 8 PM):
+      // Group bills into EXACTLY 4 rows: SUPER, BOX, AB / BC / AC, A / B / C
+      const GAME_TYPE_GROUPS = ['SUPER', 'BOX', 'AB / BC / AC', 'A / B / C'] as const;
       const slotTickets = tickets.filter((t) => {
         const tDate = extractDateStr(t.placedAt);
-        return (!fromDateStr || tDate >= fromDateStr) && (!toDateStr || tDate <= toDateStr) && t.gameSlot === slot.slotKey;
+        return (!fromDateStr || tDate >= fromDateStr) && (!toDateStr || tDate <= toDateStr) && t.gameSlot.toUpperCase().startsWith(slotF.toUpperCase());
       });
 
-      const userSale = slotTickets.reduce((acc, t) => acc + (t.totalAmount || 0), 0);
-      let userPrize = 0;
-      let userComm = 0;
+      filteredGameRows = GAME_TYPE_GROUPS.map((groupName) => {
+        let groupSale = 0;
+        let groupPrize = 0;
+        let groupComm = 0;
 
-      slotTickets.forEach((t) => {
-        const tAmt = t.totalAmount || 0;
-        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
-        const commRate = getCommissionPercent(matchedUser?.mode);
-        userComm += Math.round(tAmt * commRate);
+        slotTickets.forEach((t) => {
+          const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
+          const commRate = getCommissionPercent(matchedUser?.mode);
+          const tDate = extractDateStr(t.placedAt);
+          const res = getResultForSlotAndDate(t.gameSlot, tDate);
 
-        const tDate = extractDateStr(t.placedAt);
-        const res = getResultForSlotAndDate(t.gameSlot, tDate);
-        if (res) {
           t.items.forEach((item: any) => {
-            const evalRes = evaluateBetItem(item, res);
-            if (evalRes.isWinner) {
-              userPrize += evalRes.winAmount;
+            if (getGameDetailGroup(item) === groupName) {
+              const itemAmt = item.totalAmount ?? (item.count * (item.unitPrice || 10));
+              groupSale += itemAmt;
+              groupComm += Math.round(itemAmt * commRate);
+              if (res) {
+                const evalRes = evaluateBetItem(item, res);
+                if (evalRes.isWinner) {
+                  groupPrize += evalRes.winAmount;
+                }
+              }
             }
           });
-        }
+        });
+
+        return { slotName: groupName, sale: groupSale, prize: groupPrize, comm: groupComm };
       });
-
-      return { slotName: slot.slotName, sale: userSale, prize: userPrize, comm: userComm };
-    });
-
-    const filteredGameRows = slotF === 'ALL' ? gameRows : gameRows.filter((r) => r.slotName === slotF);
+    }
 
     return { rows, totalSale, totalPrize, totalComm, netTotal, filteredGameRows };
   };
