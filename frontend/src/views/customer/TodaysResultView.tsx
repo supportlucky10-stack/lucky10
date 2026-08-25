@@ -186,16 +186,16 @@ export const TodaysResultView: React.FC = () => {
         }
       />
 
-      <div id="result-view-container" className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-2 flex-1 flex flex-col justify-between space-y-2 bg-black overflow-hidden">
+      <div id="result-view-container" className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-1.5 sm:py-2 flex-1 flex flex-col justify-start space-y-1.5 sm:space-y-2 bg-black overflow-hidden">
         
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
-        <div className="space-y-2 shrink-0">
+        <div className="space-y-1.5 sm:space-y-2 shrink-0">
           {/* Row 1: Date Pill & Change Date Button */}
           <div className="grid grid-cols-2 gap-2 sm:gap-2.5 items-center">
             {/* Left: Date Display Pill */}
             <div
               onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[44px] sm:h-[48px] border-2 border-gold-dark overflow-hidden select-none"
+              className="bg-gold-metallic text-black rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[40px] sm:h-[46px] border-2 border-gold-dark overflow-hidden select-none"
             >
               <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 {displayDateFormatted.replace(/-/g, '\u2011')}
@@ -205,7 +205,7 @@ export const TodaysResultView: React.FC = () => {
             {/* Right: Change Date Button */}
             <div
               onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[44px] sm:h-[48px] overflow-hidden select-none"
+              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-1.5 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[40px] sm:h-[46px] overflow-hidden select-none"
             >
               <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0" />
               <span className="font-bold text-xs sm:text-sm tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
@@ -231,7 +231,7 @@ export const TodaysResultView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[44px] sm:h-[46px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              className={`w-full h-[40px] sm:h-[44px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
             >
               <div className="flex items-center gap-2">
                 <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
@@ -270,7 +270,7 @@ export const TodaysResultView: React.FC = () => {
           </div>
         </div>
 
-        {/* 5 Winning Number Cards (All numbers same size as 1st Prize) */}
+        {/* 5 Winning Number Cards (All 5 prize numbers identical large font size) */}
         <div className="space-y-1 shrink-0">
           {[
             { id: 1, label: '1', val: currentResult.prize1 || '---' },
@@ -281,11 +281,11 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1.5 sm:py-2 px-3.5 shadow-sm`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1 sm:py-1.5 px-3.5 shadow-sm`}
             >
               <div className="flex items-center gap-3.5 w-full">
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
                 >
                   {item.label}
                 </div>
@@ -299,7 +299,7 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table (10 Rows x 3 Columns Column-Wise) */}
+        {/* COMPLIMENTS Matrix Table (Starts immediately after 5th prize with tight consistent gap) */}
         {(() => {
           const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
           const compliments30 = Array.from({ length: 30 }, (_, index) => {
@@ -309,7 +309,7 @@ export const TodaysResultView: React.FC = () => {
           return (
             <div
               key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-2xl p-2 sm:p-2.5 shadow-2xl border border-neutral-800 space-y-1 shrink-0"
+              className="bg-neutral-950 text-white rounded-2xl p-1.5 sm:p-2 shadow-2xl border border-neutral-800 space-y-1 shrink-0"
             >
               <h3 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0">
                 COMPLIMENTS
@@ -324,7 +324,7 @@ export const TodaysResultView: React.FC = () => {
                   return (
                     <div
                       key={cellIndex}
-                      className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 sm:py-1.5 rounded-lg border border-neutral-850 shadow-inner"
+                      className="bg-black text-center text-base sm:text-lg md:text-xl font-black text-neutral-100 tracking-wider flex items-center justify-center py-0.5 sm:py-1 rounded-lg border border-neutral-850 shadow-inner leading-none"
                     >
                       {val}
                     </div>
