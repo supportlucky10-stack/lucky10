@@ -25,6 +25,10 @@ export const customerService = {
     });
   },
 
+  async getTicketsByDate(date: string): Promise<PlacedTicket[]> {
+    return await apiRequest<PlacedTicket[]>(`/api/customer/tickets/by-date?date=${encodeURIComponent(date)}`, { method: 'GET' });
+  },
+
   async getUserTickets(): Promise<PlacedTicket[]> {
     return await apiRequest<PlacedTicket[]>('/api/customer/tickets', { method: 'GET' });
   },

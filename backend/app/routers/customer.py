@@ -415,6 +415,37 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_curre
                 raise exc
 
 
+@router.get("/tickets/by-date")
+def get_user_tickets_by_date(date: Optional[str] = None, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
+    """Return the authenticated user's tickets for the requested IST business date only.
+    Uses IST conversion of placed_at (UTC) to determine business date, matching the same
+    logic used in winning calculation and admin reports."""
+    from app.core.game_timing import IST_TZ
+    target_date = date.strip() if date and date.strip() else get_business_date()
+
+    # Fetch all of this user's tickets and filter by IST business date server-side
+    all_tickets = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.user), selectinload(Ticket.items))
+        .filter(Ticket.user_id == current_user.id)
+        .order_by(Ticket.placed_at.desc())
+        .all()
+    )
+
+    result = []
+    for t in all_tickets:
+        # Convert placed_at UTC → IST → extract YYYY-MM-DD
+        if t.placed_at:
+            dt = t.placed_at
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            t_ist_date = dt.astimezone(IST_TZ).strftime("%Y-%m-%d")
+        else:
+            t_ist_date = ""
+        if t_ist_date == target_date:
+            result.append(format_ticket(t))
+    return result
+
 @router.get("/tickets")
 def get_user_tickets(current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     tickets = (

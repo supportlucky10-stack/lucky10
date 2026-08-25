@@ -193,7 +193,7 @@ const getCategoryHeaderTheme = (category: string) => {
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
-  const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData } = useApp();
+  const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData, fetchDataForDate } = useApp();
   const todayStr = getLocalDateStr();
 
   // Auto-sync fresh tickets and results whenever Admin opens Reports or live updates occur
@@ -308,6 +308,40 @@ export const AdminReportsView: React.FC = () => {
     setCopiedBillId(id);
     setTimeout(() => setCopiedBillId((prev) => (prev === id ? null : prev)), 2000);
   };
+
+  // ── Historical Date Fetch ────────────────────────────────────────────────
+  // When admin selects a different date, immediately load that date's data from
+  // the backend and merge into state, so all reports update without re-login.
+  const allAdminActiveDates = useMemo(() => {
+    const dates = new Set<string>();
+    const addRange = (from: string, to: string) => {
+      if (!from || !to) return;
+      const start = new Date(from);
+      const end = new Date(to);
+      const maxDays = 31;
+      let count = 0;
+      const cur = new Date(start);
+      while (cur <= end && count < maxDays) {
+        dates.add(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+        count++;
+      }
+    };
+    addRange(fromDate, toDate);
+    addRange(winningFromDate, winningToDate);
+    addRange(userWinFromDate, userWinToDate);
+    addRange(dailyFromDate, dailyToDate);
+    addRange(userDailyFromDate, userDailyToDate);
+    return Array.from(dates);
+  }, [fromDate, toDate, winningFromDate, winningToDate, userWinFromDate, userWinToDate, dailyFromDate, dailyToDate, userDailyFromDate, userDailyToDate]);
+
+  useEffect(() => {
+    if (!fetchDataForDate) return;
+    allAdminActiveDates.forEach((date) => {
+      fetchDataForDate(date);
+    });
+  }, [allAdminActiveDates, fetchDataForDate]);
+
 
   // ── Tab 1: Performance Calculations ─────────────────────────────────────────
   const userPerformanceList = useMemo(() => {

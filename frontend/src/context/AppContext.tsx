@@ -40,6 +40,7 @@ interface AppContextType {
   allPublishedResults: Record<string, GameResult>;
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
   refreshResults: (dateStr?: string) => Promise<void>;
+  fetchDataForDate: (date: string) => Promise<void>;
   publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
@@ -1306,6 +1307,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
   }, []);
 
+  // ── fetchDataForDate ──────────────────────────────────────────────────────────
+  // Fetches tickets and results for a SPECIFIC business date from the backend,
+  // merging them into global state without replacing other-date records.
+  // This is the authoritative fix for historical-date data isolation:
+  //   - Results are stored by `${date}_${slot}` key (already correct)
+  //   - Tickets are merged by ID deduplication so any date's records persist
+  // Live realtime events (today's publication) do NOT fire fetchDataForDate,
+  // so historical date data is never overwritten by today's events.
+  const fetchDataForDate = useCallback(async (date: string) => {
+    if (!date || !date.trim()) return;
+    const targetDate = date.trim();
+    try {
+      // 1. Fetch results for this date and merge into allPublishedResults
+      const dateResults = await customerService.getResultsByDate(targetDate).catch(() => ({}));
+      if (dateResults && Object.keys(dateResults).length > 0) {
+        setAllPublishedResults((prev) => {
+          const updated: Record<string, GameResult> = { ...prev };
+          Object.values(dateResults).forEach((r: any) => {
+            if (r && r.date && r.gameSlot) {
+              const normDate = extractDateStr(r.date);
+              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+              updated[`${r.date}_${r.gameSlot}`] = r;
+            }
+          });
+          return updated;
+        });
+      }
+
+      // 2. Fetch tickets for this date and MERGE into placedTickets (never replace)
+      // Admin sees all agencies; customer sees only their own.
+      const dateTickets = isAdminLoggedIn
+        ? await adminService.getTicketsByDate(targetDate).catch(() => [] as PlacedTicket[])
+        : currentUser
+          ? await customerService.getTicketsByDate(targetDate).catch(() => [] as PlacedTicket[])
+          : [];
+
+      if (dateTickets && dateTickets.length > 0) {
+        setPlacedTickets((prev) => {
+          // Build a set of existing ticket IDs for fast lookup
+          const existingIds = new Set(prev.map((t) => t.ticketId || t.id));
+          // Only add tickets not already in state (dedup by ID)
+          const newTickets = dateTickets.filter((t) => {
+            const tid = (t as any).ticketId || t.id;
+            return tid && !existingIds.has(tid);
+          });
+          if (newTickets.length === 0) return prev;
+          return dedupeTickets([...prev, ...newTickets]);
+        });
+      }
+    } catch {
+      // non-fatal — historical fetch failure must not crash the UI
+    }
+  }, [currentUser, isAdminLoggedIn]);
+
   return (
     <AppContext.Provider
       value={{
@@ -1339,6 +1394,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         allPublishedResults,
         getResultForSlotAndDate,
         refreshResults,
+        fetchDataForDate,
         publishGameResult,
         registerUser,
         createUser,

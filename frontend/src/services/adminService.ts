@@ -81,6 +81,10 @@ export const adminService = {
     return await apiRequest<PlacedTicket[]>('/api/admin/tickets', { method: 'GET' });
   },
 
+  async getTicketsByDate(date: string): Promise<PlacedTicket[]> {
+    return await apiRequest<PlacedTicket[]>(`/api/admin/tickets/by-date?date=${encodeURIComponent(date)}`, { method: 'GET' });
+  },
+
   async deleteTicket(ticketId: string): Promise<{ success: boolean; message: string }> {
     return await apiRequest<{ success: boolean; message: string }>(`/api/admin/tickets/${ticketId}`, {
       method: 'DELETE',

@@ -114,7 +114,7 @@ const formatCustomerName = (name?: string): string => {
 type ReportSection = 'HUB' | 'SALES' | 'WINNING' | 'OVER_COUNT' | 'DAILY';
 
 export const MyPlayReportView: React.FC = () => {
-  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView, deleteTicket, addToast, refreshAllData } = useApp();
+  const { userTickets, placedTickets, currentUser, getResultForSlotAndDate, setCurrentView, deleteTicket, addToast, refreshAllData, fetchDataForDate } = useApp();
   const [activeSection, setActiveSection] = useState<ReportSection>('HUB');
 
   // Auto-sync fresh tickets and results whenever Customer opens Reports or results/tickets update
@@ -293,6 +293,40 @@ export const MyPlayReportView: React.FC = () => {
     setDisplayedCountReport(null);
     setIsCountReportLoading(false);
   };
+
+  // ── Historical Date Fetch ────────────────────────────────────────────────
+  // Whenever a date filter changes, immediately fetch that date's authoritative
+  // tickets + results from the backend and merge into global state.
+  // This ensures historical dates show the correct data without logout/login.
+  const allActiveDates = React.useMemo(() => {
+    const dates = new Set<string>();
+    const addRange = (from: string, to: string) => {
+      if (!from || !to) return;
+      const start = new Date(from);
+      const end = new Date(to);
+      const maxDays = 31;
+      let count = 0;
+      const cur = new Date(start);
+      while (cur <= end && count < maxDays) {
+        dates.add(cur.toISOString().split('T')[0]);
+        cur.setDate(cur.getDate() + 1);
+        count++;
+      }
+    };
+    addRange(fromDate, toDate);
+    addRange(winningFromDate, winningToDate);
+    addRange(dailyFromDate, dailyToDate);
+    addRange(overCountDate, overCountToDate);
+    return Array.from(dates);
+  }, [fromDate, toDate, winningFromDate, winningToDate, dailyFromDate, dailyToDate, overCountDate, overCountToDate]);
+
+  useEffect(() => {
+    if (!fetchDataForDate) return;
+    allActiveDates.forEach((date) => {
+      fetchDataForDate(date);
+    });
+  }, [allActiveDates, fetchDataForDate]);
+
 
   const handleSelectOverCountSlot = (slot: 'ALL' | '1 PM' | '3 PM' | '6 PM' | '8 PM') => {
     setOverCountSlot(slot);

@@ -390,6 +390,56 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
         })
     return out
 
+@router.get("/tickets/by-date")
+def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    """Return ALL users' tickets for the requested IST business date only.
+    Uses get_ticket_business_date() for correct UTC→IST conversion — same as the winning
+    evaluation logic in publish_results(). This makes admin date-scoped queries authoritative."""
+    target_date = date.strip() if date and date.strip() else get_business_date()
+
+    all_tickets = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.user), selectinload(Ticket.items))
+        .order_by(Ticket.placed_at.desc())
+        .all()
+    )
+
+    out = []
+    for t in all_tickets:
+        t_date = get_ticket_business_date(t)
+        if t_date != target_date:
+            continue
+        user_name = t.user.name if t.user else ""
+        agency_name = t.user.username if t.user else ""
+        out.append({
+            "id": t.id,
+            "ticketId": t.id,
+            "userId": t.user_id,
+            "userName": user_name,
+            "agencyName": agency_name,
+            "customerName": t.customer_name or "",
+            "gameSlot": t.game_slot,
+            "items": [
+                {
+                    "id": item.id,
+                    "number": item.number,
+                    "count": item.count,
+                    "amount": item.total_amount,
+                    "totalAmount": item.total_amount,
+                    "unitPrice": item.unit_price,
+                    "type": item.type,
+                }
+                for item in t.items
+            ],
+            "totalAmount": t.total_amount,
+            "actionType": "PAY" if (t.id and t.id.startswith("PAY")) else "SAVE",
+            "status": t.status,
+            "winAmount": t.win_amount,
+            "placedAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+            "createdAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+        })
+    return out
+
 @router.delete("/tickets/{ticket_id}")
 def delete_admin_ticket(ticket_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()

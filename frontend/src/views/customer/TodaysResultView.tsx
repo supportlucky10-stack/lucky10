@@ -7,7 +7,7 @@ import { getBusinessDateIST, getResultPageActiveSlot } from '../../utils/dateUti
 import { captureAndShareElement } from '../../utils/shareUtils';
 
 export const TodaysResultView: React.FC = () => {
-  const { getResultForSlotAndDate, refreshResults } = useApp();
+  const { getResultForSlotAndDate, refreshResults, fetchDataForDate } = useApp();
   const initialToday = getBusinessDateIST();
 
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(() => getResultPageActiveSlot());
@@ -92,6 +92,13 @@ export const TodaysResultView: React.FC = () => {
       window.removeEventListener('focus', handleVisibilityOrFocus);
     };
   }, [syncResultSchedule, refreshResults, selectedDate]);
+
+  // Fetch historical date data when user picks a past date
+  useEffect(() => {
+    if (fetchDataForDate && selectedDate) {
+      fetchDataForDate(selectedDate);
+    }
+  }, [selectedDate, fetchDataForDate]);
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
