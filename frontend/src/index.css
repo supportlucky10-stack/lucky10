@@ -117,7 +117,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -125,7 +125,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-BoldItalic.ttf') format('truetype');
   font-weight: 700;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -133,7 +133,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-ExtraBold.ttf') format('truetype');
   font-weight: 800;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -141,7 +141,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-ExtraBoldItalic.ttf') format('truetype');
   font-weight: 800;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -149,7 +149,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-Black.ttf') format('truetype');
   font-weight: 900;
   font-style: normal;
-  font-display: swap;
+  font-display: block;
 }
 
 @font-face {
@@ -157,7 +157,7 @@ code, kbd, samp, pre, .font-mono {
   src: url('/fonts/Montserrat-BlackItalic.ttf') format('truetype');
   font-weight: 900;
   font-style: italic;
-  font-display: swap;
+  font-display: block;
 }
 
 @layer base {
