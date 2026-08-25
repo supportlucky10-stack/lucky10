@@ -26,6 +26,10 @@ def set_mock_ist_now(dt: Optional[datetime]) -> None:
     global _mock_ist_now
     _mock_ist_now = dt
 
+def make_ist_dt(year: int, month: int, day: int, hour: int = 0, minute: int = 0, second: int = 0) -> datetime:
+    """Helper to create an IST-aware datetime."""
+    return datetime(year, month, day, hour, minute, second, tzinfo=IST_TZ)
+
 def get_ist_now() -> datetime:
     """Returns current authoritative time in Asia/Kolkata (IST)."""
     global _mock_ist_now

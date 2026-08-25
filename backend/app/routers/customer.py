@@ -28,11 +28,21 @@ from app.core.game_timing import (
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
 
 def format_ticket(ticket: Ticket) -> dict:
+    from app.core.game_timing import IST_TZ
     cust_name = getattr(ticket, "customer_name", "") or ""
     if cust_name.lower() == "customer":
         cust_name = ""
-    user_name = ticket.user.username if getattr(ticket, "user", None) else ""
-    agency_name = (ticket.user.name or ticket.user.username) if getattr(ticket, "user", None) else ""
+    user_name = ticket.user.name if getattr(ticket, "user", None) else ""
+    agency_name = (ticket.user.username or ticket.user.name) if getattr(ticket, "user", None) else ""
+
+    if ticket.placed_at:
+        dt = ticket.placed_at
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        ist_str = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        ist_str = ""
+
     return {
         "id": ticket.id,
         "ticketId": ticket.id,
@@ -53,10 +63,10 @@ def format_ticket(ticket: Ticket) -> dict:
             for item in ticket.items
         ],
         "totalAmount": ticket.total_amount,
-        "placedAt": safe_format_dt(ticket.placed_at, "%Y-%m-%d %H:%M:%S"),
+        "placedAt": ist_str,
         "status": ticket.status,
         "winAmount": ticket.win_amount,
-        "createdAt": safe_format_dt(ticket.placed_at, "%Y-%m-%d %H:%M:%S"),
+        "createdAt": ist_str,
     }
 
 def format_result(res: GameResult) -> dict:
@@ -384,30 +394,8 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_curre
                 db.add_all(bet_objs)
 
                 db.commit()
-                return {
-                    "id": ticket_id,
-                    "ticketId": ticket_id,
-                    "userId": user.id,
-                    "userName": user.name or "",
-                    "agencyName": user.username or "",
-                    "customerName": c_name,
-                    "gameSlot": req.gameSlot,
-                    "totalAmount": calculated_total_amount,
-                    "status": status_val,
-                    "winAmount": win_val,
-                    "placedAt": placed_at_dt.isoformat(),
-                    "items": [
-                        {
-                            "id": b.id,
-                            "number": b.number,
-                            "count": b.count,
-                            "type": b.type,
-                            "unitPrice": b.unit_price,
-                            "totalAmount": b.total_amount,
-                        }
-                        for b in bet_objs
-                    ],
-                }
+                db.refresh(new_ticket)
+                return format_ticket(new_ticket)
             except Exception as exc:
                 db.rollback()
                 if attempt < max_retries - 1 and ("unique" in str(exc).lower() or "integrity" in str(exc).lower() or "primary" in str(exc).lower()):

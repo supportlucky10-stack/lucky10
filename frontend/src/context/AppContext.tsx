@@ -308,7 +308,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try {
           const tkts = await customerService.getUserTickets();
           if (tkts) {
-            setPlacedTickets(tkts);
+            setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -329,7 +329,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             adminService.getGlobalLimit().catch(() => null),
           ]);
           if (users) setRegisteredUsers(users);
-          if (tkts) setPlacedTickets(tkts);
+          if (tkts) setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           if (lims) setAgencyNumberLimits(lims);
           if (blks) setBlockedNumbers(blks);
           if (g) setGlobalLimitRule(g);
@@ -375,7 +375,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             adminService.getAllTickets().catch(() => null),
           ]);
           if (users) setRegisteredUsers(users);
-          if (tkts) setPlacedTickets(tkts);
+          if (tkts) setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
         } catch {}
       } else if (currentUser) {
         try {
@@ -391,7 +391,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
           const tkts = await customerService.getUserTickets().catch(() => null);
           if (tkts) {
-            setPlacedTickets(tkts);
+            setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -1023,7 +1023,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isAdminLoggedIn) {
       adminService.getAllTickets().then((tkts) => {
         if (tkts) {
-          setPlacedTickets(tkts);
+          setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('lucky10_tickets_updated'));
           }
@@ -1032,7 +1032,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } else if (currentUser) {
       customerService.getUserTickets().then((tkts) => {
         if (tkts) {
-          setPlacedTickets(tkts);
+          setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('lucky10_tickets_updated'));
           }
@@ -1258,11 +1258,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           adminService.getAllTickets().catch(() => null),
         ]);
         if (users) setRegisteredUsers(users);
-        if (tkts) setPlacedTickets(tkts);
+        if (tkts) setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
       } else if (currentUser) {
         const tkts = await customerService.getUserTickets().catch(() => null);
         if (tkts) {
-          setPlacedTickets(tkts);
+          setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
         }
       }
     } catch {}

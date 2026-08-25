@@ -361,6 +361,13 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
     for t in tickets:
         user_name = t.user.name if t.user else ""
         agency_name = t.user.username if t.user else ""
+        ist_dt_str = ""
+        if t.placed_at:
+            dt = t.placed_at
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            from app.core.game_timing import IST_TZ
+            ist_dt_str = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
         out.append({
             "id": t.id,
             "ticketId": t.id,
@@ -385,8 +392,8 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
             "actionType": "PAY" if (t.id and t.id.startswith("PAY")) else "SAVE",
             "status": t.status,
             "winAmount": t.win_amount,
-            "placedAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
-            "createdAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+            "placedAt": ist_dt_str,
+            "createdAt": ist_dt_str,
         })
     return out
 
@@ -411,6 +418,13 @@ def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Dep
             continue
         user_name = t.user.name if t.user else ""
         agency_name = t.user.username if t.user else ""
+        ist_dt_str = ""
+        if t.placed_at:
+            dt = t.placed_at
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            from app.core.game_timing import IST_TZ
+            ist_dt_str = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
         out.append({
             "id": t.id,
             "ticketId": t.id,
@@ -435,8 +449,8 @@ def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Dep
             "actionType": "PAY" if (t.id and t.id.startswith("PAY")) else "SAVE",
             "status": t.status,
             "winAmount": t.win_amount,
-            "placedAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
-            "createdAt": t.placed_at.strftime("%Y-%m-%d %H:%M:%S") if t.placed_at else "",
+            "placedAt": ist_dt_str,
+            "createdAt": ist_dt_str,
         })
     return out
 
