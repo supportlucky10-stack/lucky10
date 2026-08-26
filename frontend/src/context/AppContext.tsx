@@ -341,11 +341,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const todayStr = getLocalDateStr();
         const todayRes = await customerService.getTodayResults(todayStr).catch(() => ({}));
         if (todayRes && Object.keys(todayRes).length > 0) {
+          const isResultDifferent = (a?: any, b?: any): boolean => {
+            if (!a || !b) return true;
+            if ((a.prize1 || '') !== (b.prize1 || '')) return true;
+            if ((a.prize2 || '') !== (b.prize2 || '')) return true;
+            if ((a.prize3 || '') !== (b.prize3 || '')) return true;
+            if ((a.prize4 || '') !== (b.prize4 || '')) return true;
+            if ((a.prize5 || '') !== (b.prize5 || '')) return true;
+            if (a.publishedAt !== b.publishedAt) return true;
+            if (JSON.stringify(a.compliments || []) !== JSON.stringify(b.compliments || [])) return true;
+            return false;
+          };
+
           let hasResultChange = false;
           setGameResults((prev) => {
             let changed = false;
             for (const k in todayRes) {
-              if (!prev[k] || prev[k].publishedAt !== todayRes[k].publishedAt || prev[k].prize1 !== todayRes[k].prize1) {
+              if (isResultDifferent(prev[k], todayRes[k])) {
                 changed = true;
                 break;
               }
@@ -361,7 +373,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 const normDate = extractDateStr(r.date);
                 if (normDate) {
                   const key = `${normDate}_${r.gameSlot}`;
-                  if (!prev[key] || prev[key].publishedAt !== r.publishedAt || prev[key].prize1 !== r.prize1) {
+                  if (isResultDifferent(prev[key], r)) {
                     updated[key] = r;
                     changed = true;
                   }

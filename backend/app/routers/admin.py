@@ -269,10 +269,13 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
 
         db.flush()
 
-        # Automatically calculate winners and update all tickets for this exact slot and date
+        # Automatically calculate winners and update all tickets for this exact slot
         all_tickets = (
             db.query(Ticket)
             .options(selectinload(Ticket.items))
+            .filter(
+                (Ticket.game_slot == req.gameSlot) | (Ticket.game_slot == norm_target_slot)
+            )
             .all()
         )
         for tkt in all_tickets:
