@@ -15,7 +15,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST, isGameSlotOpen } from '../utils/dateUtils';
+import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
 
 
 
@@ -127,37 +127,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
-  // Live Auto-Switching: updates activeGameSlot when game cutoff, cycle transition, or midnight is crossed
-  const lastCycleSlotRef = useRef<GameSlot>(getDefaultBillingSlot());
+  // Midnight Business Date Reset: resets to default slot when crossing midnight
   const lastBusinessDateRef = useRef<string>(getBusinessDateIST());
 
   useEffect(() => {
-    const syncActiveGameSlot = () => {
-      const defaultSlot = getDefaultBillingSlot();
+    const syncMidnightDate = () => {
       const currentBusinessDate = getBusinessDateIST();
-
-      const cycleChanged = defaultSlot !== lastCycleSlotRef.current;
       const dateChanged = currentBusinessDate !== lastBusinessDateRef.current;
 
-      if (cycleChanged || dateChanged) {
-        lastCycleSlotRef.current = defaultSlot;
+      if (dateChanged) {
         lastBusinessDateRef.current = currentBusinessDate;
-        setActiveGameSlot((currentSlot) => {
-          if (dateChanged) {
-            setBetSlip([]);
-            return defaultSlot;
-          }
-          if (!isGameSlotOpen(currentSlot)) {
-            setBetSlip([]);
-            return defaultSlot;
-          }
-          return currentSlot;
-        });
+        const defaultSlot = getDefaultBillingSlot();
+        setActiveGameSlot(defaultSlot);
+        setBetSlip([]);
       }
     };
 
-    syncActiveGameSlot();
-    const timer = setInterval(syncActiveGameSlot, 1000);
+    const timer = setInterval(syncMidnightDate, 5000);
     return () => clearInterval(timer);
   }, []);
 
@@ -355,6 +341,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const todayStr = getLocalDateStr();
         const todayRes = await customerService.getTodayResults(todayStr).catch(() => ({}));
         if (todayRes && Object.keys(todayRes).length > 0) {
+          let hasResultChange = false;
           setGameResults((prev) => {
             let changed = false;
             for (const k in todayRes) {
@@ -363,6 +350,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 break;
               }
             }
+            if (changed) hasResultChange = true;
             return changed ? { ...prev, ...todayRes } : prev;
           });
           setAllPublishedResults((prev) => {
@@ -380,8 +368,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 }
               }
             });
+            if (changed) hasResultChange = true;
             return changed ? updated : prev;
           });
+          if (hasResultChange) {
+            window.dispatchEvent(new Event('lucky10_results_updated'));
+          }
         }
       } catch {}
 
@@ -475,7 +467,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     loadInitialData();
-    timer = setInterval(pollLiveUpdates, 3000);
+    timer = setInterval(pollLiveUpdates, 2000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
