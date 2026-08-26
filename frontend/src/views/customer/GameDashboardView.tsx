@@ -1119,35 +1119,6 @@ export const GameDashboardView: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* BILL SAVED SUCCESS MODAL */}
-      {savedBillId && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
-          <div className="bg-neutral-950 border-2 border-emerald-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(16,185,129,0.35)] space-y-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mx-auto shadow-inner">
-              <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
-            </div>
-            <div className="space-y-1 font-mono">
-              <h4 className="font-black text-white text-base uppercase tracking-wide">
-                BILL SAVED!
-              </h4>
-              <p className="text-sm font-bold text-emerald-400">
-                Bill #{savedBillId}
-              </p>
-              <p className="text-xs text-neutral-400">
-                Saved successfully for {activeGameSlot}.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSavedBillId(null)}
-              className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

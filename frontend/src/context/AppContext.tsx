@@ -15,7 +15,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
+import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST, isGameSlotOpen } from '../utils/dateUtils';
 
 
 
@@ -142,8 +142,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (cycleChanged || dateChanged) {
         lastCycleSlotRef.current = defaultSlot;
         lastBusinessDateRef.current = currentBusinessDate;
-        setActiveGameSlot(defaultSlot);
-        setBetSlip([]);
+        setActiveGameSlot((currentSlot) => {
+          if (dateChanged) {
+            setBetSlip([]);
+            return defaultSlot;
+          }
+          if (!isGameSlotOpen(currentSlot)) {
+            setBetSlip([]);
+            return defaultSlot;
+          }
+          return currentSlot;
+        });
       }
     };
 
@@ -346,16 +355,32 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const todayStr = getLocalDateStr();
         const todayRes = await customerService.getTodayResults(todayStr).catch(() => ({}));
         if (todayRes && Object.keys(todayRes).length > 0) {
-          setGameResults((prev) => ({ ...prev, ...todayRes }));
+          setGameResults((prev) => {
+            let changed = false;
+            for (const k in todayRes) {
+              if (!prev[k] || prev[k].publishedAt !== todayRes[k].publishedAt || prev[k].prize1 !== todayRes[k].prize1) {
+                changed = true;
+                break;
+              }
+            }
+            return changed ? { ...prev, ...todayRes } : prev;
+          });
           setAllPublishedResults((prev) => {
-            const updated: Record<string, GameResult> = { ...prev, ...todayRes };
+            let changed = false;
+            const updated: Record<string, GameResult> = { ...prev };
             Object.values(todayRes).forEach((r: any) => {
               if (r && r.date && r.gameSlot) {
                 const normDate = extractDateStr(r.date);
-                if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
+                if (normDate) {
+                  const key = `${normDate}_${r.gameSlot}`;
+                  if (!prev[key] || prev[key].publishedAt !== r.publishedAt || prev[key].prize1 !== r.prize1) {
+                    updated[key] = r;
+                    changed = true;
+                  }
+                }
               }
             });
-            return updated;
+            return changed ? updated : prev;
           });
         }
       } catch {}
@@ -363,9 +388,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         const lims = await customerService.getLimits().catch(() => null);
         if (lims) {
-          setBlockedNumbers(lims.blockedNumbers || []);
-          setAgencyNumberLimits(lims.agencyLimits || []);
-          setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
+          const newBlks = lims.blockedNumbers || [];
+          setBlockedNumbers((prev) => (JSON.stringify(prev) === JSON.stringify(newBlks) ? prev : newBlks));
+          const newAgencyLimits = lims.agencyLimits || [];
+          setAgencyNumberLimits((prev) => (JSON.stringify(prev) === JSON.stringify(newAgencyLimits) ? prev : newAgencyLimits));
+          const newGlobal = lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' };
+          setGlobalLimitRule((prev) => (JSON.stringify(prev) === JSON.stringify(newGlobal) ? prev : newGlobal));
         }
       } catch {}
 
@@ -375,8 +403,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             adminService.getAllUsers().catch(() => null),
             adminService.getAllTickets().catch(() => null),
           ]);
-          if (users) setRegisteredUsers(users);
-          if (tkts) setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
+          if (users) setRegisteredUsers((prev) => (JSON.stringify(prev) === JSON.stringify(users) ? prev : users));
+          if (tkts) {
+            setPlacedTickets((prev) => {
+              const deduped = dedupeTickets([...tkts, ...prev]);
+              if (deduped.length === prev.length) {
+                let diff = false;
+                for (let i = 0; i < deduped.length; i++) {
+                  if (deduped[i].id !== prev[i].id || deduped[i].status !== prev[i].status) {
+                    diff = true;
+                    break;
+                  }
+                }
+                if (!diff) return prev;
+              }
+              return deduped;
+            });
+          }
         } catch {}
       } else if (currentUser) {
         try {
@@ -388,11 +431,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               addToast('Your account is deactivated. Please contact administrator.', 'error');
               return;
             }
-            setCurrentUser(freshProfile);
+            setCurrentUser((prev) => {
+              if (!prev) return freshProfile;
+              if (
+                prev.id === freshProfile.id &&
+                prev.name === freshProfile.name &&
+                prev.username === freshProfile.username &&
+                prev.mode === freshProfile.mode &&
+                prev.role === freshProfile.role &&
+                prev.isActive === freshProfile.isActive &&
+                prev.agencyName === freshProfile.agencyName
+              ) {
+                return prev;
+              }
+              return freshProfile;
+            });
           }
           const tkts = await customerService.getUserTickets().catch(() => null);
           if (tkts) {
-            setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
+            setPlacedTickets((prev) => {
+              const deduped = dedupeTickets([...tkts, ...prev]);
+              if (deduped.length === prev.length) {
+                let diff = false;
+                for (let i = 0; i < deduped.length; i++) {
+                  if (deduped[i].id !== prev[i].id || deduped[i].status !== prev[i].status) {
+                    diff = true;
+                    break;
+                  }
+                }
+                if (!diff) return prev;
+              }
+              return deduped;
+            });
           }
         } catch (err: any) {
           const errMsg = err?.message || '';
@@ -418,7 +488,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (timer) clearInterval(timer);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [currentUser, isAdminLoggedIn]);
+  }, [currentUser?.id, isAdminLoggedIn]);
 
   // Sync URL route on browser navigation (PopState)
   useEffect(() => {
