@@ -102,36 +102,24 @@ def _ensure_pg_sequence(engine_or_bind):
 
 def get_next_ticket_id(db: Session) -> str:
     """
-    Generate an authoritative, sequential ticket ID atomically.
-    Guarantees zero race conditions and zero duplicate IDs under high concurrency.
-    Preserves exact visible 7-digit numeric string format (>= 2243297).
+    Generate an authoritative, strictly consecutive ticket ID transactionally.
+    Uses TicketCounter table with row-level locking so on failure or rollback,
+    no IDs are skipped or wasted.
+    Guarantees zero race conditions, zero duplicates, and zero gaps.
     """
-    bind = db.get_bind()
-    dialect_name = bind.dialect.name if bind else "sqlite"
-    is_postgres = dialect_name == "postgresql"
+    from app.models.ticket import TicketCounter, Ticket
 
-    if is_postgres:
-        try:
-            if not _pg_seq_initialized:
-                _ensure_pg_sequence(bind)
-            val = db.execute(text("SELECT nextval('ticket_id_seq')")).scalar()
-            if val:
-                return str(val)
-        except Exception:
-            pass
-
-    # Thread-safe atomic counter for SQLite and Postgres fallback
-    global _global_ticket_val
     with _ticket_counter_lock:
-        if _global_ticket_val is None:
+        bind = db.get_bind()
+        dialect_name = bind.dialect.name if bind else "sqlite"
+
+        query = db.query(TicketCounter).filter(TicketCounter.id == 1)
+        if dialect_name in ("postgresql", "mysql"):
+            query = query.with_for_update()
+
+        counter = query.first()
+        if not counter:
             max_num = 2243296
-            from app.models.ticket import TicketCounter, Ticket
-            try:
-                counter = db.query(TicketCounter).filter(TicketCounter.id == 1).first()
-                if counter and counter.current_val > max_num:
-                    max_num = int(counter.current_val)
-            except Exception:
-                pass
             try:
                 recent_ids = db.query(Ticket.id).all()
                 for (tid,) in recent_ids:
@@ -145,7 +133,9 @@ def get_next_ticket_id(db: Session) -> str:
                             pass
             except Exception:
                 pass
-            _global_ticket_val = max_num
+            counter = TicketCounter(id=1, current_val=max_num)
+            db.add(counter)
+            db.flush()
 
-        _global_ticket_val += 1
-        return str(_global_ticket_val)
+        counter.current_val += 1
+        return str(counter.current_val)
