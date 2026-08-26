@@ -30,3 +30,33 @@ def test_unauthenticated_request_rejected(client):
 def test_admin_can_access_admin_endpoints(client, admin_token_headers):
     response = client.get("/api/admin/users", headers=admin_token_headers)
     assert response.status_code == 200
+
+def test_admin_cannot_place_ticket_bets(client, admin_token_headers):
+    response = client.post(
+        "/api/customer/tickets",
+        json={
+            "customerName": "AdminPlayer",
+            "gameSlot": "1 PM Game",
+            "actionType": "PAY",
+            "totalAmount": 10.0,
+            "items": [{"number": "123", "count": 1, "type": "SUPER", "unitPrice": 10.0, "totalAmount": 10.0}],
+        },
+        headers=admin_token_headers,
+    )
+    assert response.status_code == 403
+    assert "System Admin is not permitted to place bets" in response.json()["detail"]
+
+def test_customer_can_place_ticket_bets(client, customer_token_headers):
+    response = client.post(
+        "/api/customer/tickets",
+        json={
+            "customerName": "RealCustomer",
+            "gameSlot": "1 PM Game",
+            "actionType": "PAY",
+            "totalAmount": 10.0,
+            "items": [{"number": "123", "count": 1, "type": "SUPER", "unitPrice": 10.0, "totalAmount": 10.0}],
+        },
+        headers=customer_token_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["id"] is not None

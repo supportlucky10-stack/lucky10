@@ -6,7 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db, get_next_ticket_id
-from app.core.security import get_current_customer
+from app.core.security import get_current_customer, require_customer_for_betting
 from app.models.user import User
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
@@ -175,7 +175,7 @@ def get_previous_results(db: Session = Depends(get_db)):
 _ticket_placement_lock = threading.Lock()
 
 @router.post("/tickets")
-def place_ticket(req: TicketCreateSchema, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
+def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_customer_for_betting), db: Session = Depends(get_db)):
     if not req.items or len(req.items) == 0:
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
 

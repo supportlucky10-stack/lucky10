@@ -163,6 +163,18 @@ def get_current_customer(
 
     return user
 
+def require_customer_for_betting(
+    payload: dict = Depends(get_current_user_token),
+    db: Session = Depends(get_db),
+) -> User:
+    role_str = str(payload.get("role", "")).upper()
+    if role_str == "ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="System Admin is not permitted to place bets. Admin account is for management and reports only.",
+        )
+    return get_current_customer(payload=payload, db=db)
+
 def get_current_admin(
     payload: dict = Depends(get_current_user_token),
     db: Session = Depends(get_db),

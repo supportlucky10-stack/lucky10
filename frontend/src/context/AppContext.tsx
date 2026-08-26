@@ -200,7 +200,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setIsAdminLoggedIn(false);
           } else {
             setCurrentUser(user);
-            setIsAdminLoggedIn(user.role === 'ADMIN');
+            const isAdm = user.role === 'ADMIN';
+            setIsAdminLoggedIn(isAdm);
+            if (isAdm) {
+              setCurrentViewInternal('ADMIN_REPORTS');
+              if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
+                window.history.pushState({}, '', '/admin');
+              }
+            }
           }
         }
       } catch (e) {
@@ -513,8 +520,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setCurrentView = (view: ViewType) => {
-    setViewHistory((prev) => [...prev, view]);
-    setCurrentViewInternal(view);
+    let targetView = view;
+    // Guard: ADMIN users must never be routed to customer betting counter
+    if ((isAdminLoggedIn || currentUser?.role === 'ADMIN') && (targetView === 'GAME_DASHBOARD' || targetView === 'EDIT_DELETE_BILL')) {
+      targetView = 'ADMIN_REPORTS';
+    }
+
+    setViewHistory((prev) => [...prev, targetView]);
+    setCurrentViewInternal(targetView);
 
     try {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -524,7 +537,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.scrollTo(0, 0);
     }
 
-    if (view.startsWith('ADMIN_')) {
+    if (targetView.startsWith('ADMIN_')) {
       if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
         window.history.pushState({}, '', '/admin');
       }
@@ -549,9 +562,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newHistory.pop();
       const prevView = newHistory[newHistory.length - 1];
       setViewHistory(newHistory);
-      setCurrentViewInternal(prevView);
+      if ((isAdminLoggedIn || currentUser?.role === 'ADMIN') && (prevView === 'GAME_DASHBOARD' || prevView === 'EDIT_DELETE_BILL')) {
+        setCurrentViewInternal('ADMIN_REPORTS');
+      } else {
+        setCurrentViewInternal(prevView);
+      }
     } else {
-      setCurrentViewInternal('GAME_DASHBOARD');
+      if (isAdminLoggedIn || currentUser?.role === 'ADMIN') {
+        setCurrentViewInternal('ADMIN_REPORTS');
+      } else {
+        setCurrentViewInternal('GAME_DASHBOARD');
+      }
     }
   };
 
@@ -591,6 +612,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           authService.logout();
           return { success: false, error: 'Your account is deactivated. Please contact administrator.' };
         }
+
+        if (res.user.role === 'ADMIN') {
+          setCurrentUser(res.user);
+          setIsAdminLoggedIn(true);
+          addToast('Admin authenticated successfully', 'success');
+          setCurrentView('ADMIN_REPORTS');
+          return { success: true };
+        }
+
         const finalUser: UserAccount = {
           ...res.user,
           mode: res.user.mode || 'Commission (20%)',
