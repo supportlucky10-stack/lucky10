@@ -101,11 +101,6 @@ const ViewRouter: React.FC = () => {
       return <AdminSignInView />;
     }
 
-    // Auth Guard: Admins cannot access customer betting counter
-    if (isAdminLoggedIn && (currentView === 'GAME_DASHBOARD' || currentView === 'EDIT_DELETE_BILL')) {
-      return <AdminReportsView />;
-    }
-
     switch (currentView) {
       case 'USER_SIGN_IN':
         return <UserSignInView />;

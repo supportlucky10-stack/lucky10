@@ -202,11 +202,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setCurrentUser(user);
             const isAdm = user.role === 'ADMIN';
             setIsAdminLoggedIn(isAdm);
-            if (isAdm) {
+            const isExplicitAdminUrl = typeof window !== 'undefined' && (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin'));
+            if (isAdm && isExplicitAdminUrl) {
               setCurrentViewInternal('ADMIN_REPORTS');
-              if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
-                window.history.pushState({}, '', '/admin');
-              }
             }
           }
         }
@@ -520,14 +518,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const setCurrentView = (view: ViewType) => {
-    let targetView = view;
-    // Guard: ADMIN users must never be routed to customer betting counter
-    if ((isAdminLoggedIn || currentUser?.role === 'ADMIN') && (targetView === 'GAME_DASHBOARD' || targetView === 'EDIT_DELETE_BILL')) {
-      targetView = 'ADMIN_REPORTS';
-    }
-
-    setViewHistory((prev) => [...prev, targetView]);
-    setCurrentViewInternal(targetView);
+    setViewHistory((prev) => [...prev, view]);
+    setCurrentViewInternal(view);
 
     try {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
@@ -537,7 +529,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.scrollTo(0, 0);
     }
 
-    if (targetView.startsWith('ADMIN_')) {
+    if (view.startsWith('ADMIN_')) {
       if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
         window.history.pushState({}, '', '/admin');
       }
@@ -562,17 +554,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newHistory.pop();
       const prevView = newHistory[newHistory.length - 1];
       setViewHistory(newHistory);
-      if ((isAdminLoggedIn || currentUser?.role === 'ADMIN') && (prevView === 'GAME_DASHBOARD' || prevView === 'EDIT_DELETE_BILL')) {
-        setCurrentViewInternal('ADMIN_REPORTS');
-      } else {
-        setCurrentViewInternal(prevView);
-      }
+      setCurrentViewInternal(prevView);
     } else {
-      if (isAdminLoggedIn || currentUser?.role === 'ADMIN') {
-        setCurrentViewInternal('ADMIN_REPORTS');
-      } else {
-        setCurrentViewInternal('GAME_DASHBOARD');
-      }
+      setCurrentViewInternal('GAME_DASHBOARD');
     }
   };
 
