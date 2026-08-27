@@ -497,8 +497,8 @@ def submit_issue(req: IssueCreateSchema, current_user: User = Depends(get_curren
 
 @router.get("/limits")
 def get_customer_limits(db: Session = Depends(get_db)):
-    blocked_rules = db.query(BlockedNumberRule).all()
-    agency_limits = db.query(AgencyNumberLimit).all()
+    blocked_rules = db.query(BlockedNumberRule).order_by(BlockedNumberRule.id.asc()).all()
+    agency_limits = db.query(AgencyNumberLimit).order_by(AgencyNumberLimit.id.asc()).all()
     global_limit = db.query(GlobalLimitRule).first()
     return {
         "blockedNumbers": [

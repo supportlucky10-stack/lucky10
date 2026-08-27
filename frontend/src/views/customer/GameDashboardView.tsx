@@ -521,7 +521,7 @@ export const GameDashboardView: React.FC = () => {
               setIsSaving(false);
             }
           }}
-          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-all tracking-wider ${
+          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-opacity transition-transform duration-150 ${
             isSaving || betSlip.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
           }`}
         >

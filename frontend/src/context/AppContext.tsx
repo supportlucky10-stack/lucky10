@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type {
   ViewType,
   GameSlot,
@@ -72,6 +72,84 @@ interface AppContextType {
 }
 
 
+
+const areBlockedNumbersEqual = (a: BlockedNumberRule[], b: BlockedNumberRule[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  const bSorted = [...b].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  for (let i = 0; i < aSorted.length; i++) {
+    if (
+      aSorted[i].id !== bSorted[i].id ||
+      aSorted[i].number !== bSorted[i].number ||
+      aSorted[i].gameSlot !== bSorted[i].gameSlot ||
+      aSorted[i].reason !== bSorted[i].reason
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const areAgencyLimitsEqual = (a: AgencyNumberLimit[], b: AgencyNumberLimit[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  const bSorted = [...b].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  for (let i = 0; i < aSorted.length; i++) {
+    if (
+      aSorted[i].id !== bSorted[i].id ||
+      aSorted[i].agencyId !== bSorted[i].agencyId ||
+      aSorted[i].number !== bSorted[i].number ||
+      aSorted[i].gameSlot !== bSorted[i].gameSlot ||
+      aSorted[i].maxCount !== bSorted[i].maxCount
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const areGlobalLimitsEqual = (a: GlobalLimitRule, b: GlobalLimitRule): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.isEnabled === b.isEnabled && a.defaultMaxCount === b.defaultMaxCount && a.gameSlot === b.gameSlot;
+};
+
+const arePlacedTicketsEqual = (a: PlacedTicket[], b: PlacedTicket[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (
+      (a[i].ticketId || a[i].id) !== (b[i].ticketId || b[i].id) ||
+      a[i].status !== b[i].status ||
+      a[i].winAmount !== b[i].winAmount
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const areUsersEqual = (a: UserAccount[], b: UserAccount[]): boolean => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const aSorted = [...a].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  const bSorted = [...b].sort((x, y) => (x.id || '').localeCompare(y.id || ''));
+  for (let i = 0; i < aSorted.length; i++) {
+    if (
+      aSorted[i].id !== bSorted[i].id ||
+      aSorted[i].name !== bSorted[i].name ||
+      aSorted[i].username !== bSorted[i].username ||
+      aSorted[i].role !== bSorted[i].role ||
+      aSorted[i].mode !== bSorted[i].mode ||
+      aSorted[i].isActive !== bSorted[i].isActive
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -402,11 +480,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const lims = await customerService.getLimits().catch(() => null);
         if (lims) {
           const newBlks = lims.blockedNumbers || [];
-          setBlockedNumbers((prev) => (JSON.stringify(prev) === JSON.stringify(newBlks) ? prev : newBlks));
+          setBlockedNumbers((prev) => (areBlockedNumbersEqual(prev, newBlks) ? prev : newBlks));
           const newAgencyLimits = lims.agencyLimits || [];
-          setAgencyNumberLimits((prev) => (JSON.stringify(prev) === JSON.stringify(newAgencyLimits) ? prev : newAgencyLimits));
+          setAgencyNumberLimits((prev) => (areAgencyLimitsEqual(prev, newAgencyLimits) ? prev : newAgencyLimits));
           const newGlobal = lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' };
-          setGlobalLimitRule((prev) => (JSON.stringify(prev) === JSON.stringify(newGlobal) ? prev : newGlobal));
+          setGlobalLimitRule((prev) => (areGlobalLimitsEqual(prev, newGlobal) ? prev : newGlobal));
         }
       } catch {}
 
@@ -416,19 +494,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             adminService.getAllUsers().catch(() => null),
             adminService.getAllTickets().catch(() => null),
           ]);
-          if (users) setRegisteredUsers((prev) => (JSON.stringify(prev) === JSON.stringify(users) ? prev : users));
+          if (users) setRegisteredUsers((prev) => (areUsersEqual(prev, users) ? prev : users));
           if (tkts) {
             setPlacedTickets((prev) => {
               const deduped = dedupeTickets([...tkts, ...prev]);
-              if (deduped.length === prev.length) {
-                let diff = false;
-                for (let i = 0; i < deduped.length; i++) {
-                  if (deduped[i].id !== prev[i].id || deduped[i].status !== prev[i].status) {
-                    diff = true;
-                    break;
-                  }
-                }
-                if (!diff) return prev;
+              if (arePlacedTicketsEqual(prev, deduped)) {
+                return prev;
               }
               return deduped;
             });
@@ -464,15 +535,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (tkts) {
             setPlacedTickets((prev) => {
               const deduped = dedupeTickets([...tkts, ...prev]);
-              if (deduped.length === prev.length) {
-                let diff = false;
-                for (let i = 0; i < deduped.length; i++) {
-                  if (deduped[i].id !== prev[i].id || deduped[i].status !== prev[i].status) {
-                    diff = true;
-                    break;
-                  }
-                }
-                if (!diff) return prev;
+              if (arePlacedTicketsEqual(prev, deduped)) {
+                return prev;
               }
               return deduped;
             });
@@ -1454,79 +1518,130 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [currentUser, isAdminLoggedIn]);
 
+  const userTickets = useMemo(() => {
+    if (!currentUser) return placedTickets;
+    if (currentUser.role === 'ADMIN') return placedTickets;
+    const cId = (currentUser.id || '').toLowerCase();
+    const uUsername = (currentUser.username || '').toLowerCase();
+    const uName = (currentUser.name || '').toLowerCase();
+
+    return placedTickets.filter((t) => {
+      if (!t.userId) return true;
+      const tUid = (t.userId || '').toLowerCase();
+      const tAgency = ((t as any).agencyName || '').toLowerCase();
+      const tUser = ((t as any).userName || '').toLowerCase();
+      return (
+        tUid === cId ||
+        tUid === uUsername ||
+        tUid === uName ||
+        (tAgency && (tAgency === uUsername || tAgency === uName)) ||
+        (tUser && (tUser === uUsername || tUser === uName))
+      );
+    });
+  }, [placedTickets, currentUser]);
+
+  const contextValue = useMemo<AppContextType>(() => ({
+    currentView,
+    setCurrentView,
+    currentUser,
+    isAdminLoggedIn,
+    registeredUsers,
+    activeGameSlot,
+    setActiveGameSlot,
+    betSlip,
+    addToBetSlip,
+    addBatchToBetSlip,
+    removeFromBetSlip,
+    clearBetSlip,
+    placedTickets,
+    userTickets,
+    saveTicket,
+    deleteTicket,
+    gameResults,
+    allPublishedResults,
+    getResultForSlotAndDate,
+    refreshResults,
+    fetchDataForDate,
+    publishGameResult,
+    registerUser,
+    createUser,
+    deleteUser,
+    changeUserPassword,
+    updateUserMode,
+    clearAllUsers,
+    toggleUserStatus,
+    toggleAllUsersStatus,
+    loginUser,
+    loginAdmin,
+    logout,
+    toasts,
+    addToast,
+    removeToast,
+    viewHistory,
+    goBack,
+    agencyNumberLimits,
+    blockedNumbers,
+    globalLimitRule,
+    addAgencyLimit,
+    removeAgencyLimit,
+    addBlockedNumber,
+    removeBlockedNumber,
+    updateGlobalLimit,
+    checkBetEligibility,
+    refreshAllData,
+  }), [
+    currentView,
+    setCurrentView,
+    currentUser,
+    isAdminLoggedIn,
+    registeredUsers,
+    activeGameSlot,
+    setActiveGameSlot,
+    betSlip,
+    addToBetSlip,
+    addBatchToBetSlip,
+    removeFromBetSlip,
+    clearBetSlip,
+    placedTickets,
+    userTickets,
+    saveTicket,
+    deleteTicket,
+    gameResults,
+    allPublishedResults,
+    getResultForSlotAndDate,
+    refreshResults,
+    fetchDataForDate,
+    publishGameResult,
+    registerUser,
+    createUser,
+    deleteUser,
+    changeUserPassword,
+    updateUserMode,
+    clearAllUsers,
+    toggleUserStatus,
+    toggleAllUsersStatus,
+    loginUser,
+    loginAdmin,
+    logout,
+    toasts,
+    addToast,
+    removeToast,
+    viewHistory,
+    goBack,
+    agencyNumberLimits,
+    blockedNumbers,
+    globalLimitRule,
+    addAgencyLimit,
+    removeAgencyLimit,
+    addBlockedNumber,
+    removeBlockedNumber,
+    updateGlobalLimit,
+    checkBetEligibility,
+    refreshAllData,
+  ]);
+
   return (
-    <AppContext.Provider
-      value={{
-        currentView,
-        setCurrentView,
-        currentUser,
-        isAdminLoggedIn,
-        registeredUsers,
-        activeGameSlot,
-        setActiveGameSlot,
-        betSlip,
-        addToBetSlip,
-        addBatchToBetSlip,
-        removeFromBetSlip,
-        clearBetSlip,
-        placedTickets,
-        userTickets: currentUser
-          ? (currentUser.role === 'ADMIN'
-              ? placedTickets
-              : placedTickets.filter((t) => {
-                  if (!t.userId) return true;
-                  const tUid = (t.userId || '').toLowerCase();
-                  const cId = (currentUser.id || '').toLowerCase();
-                  const uUsername = (currentUser.username || '').toLowerCase();
-                  const uName = (currentUser.name || '').toLowerCase();
-                  const tAgency = ((t as any).agencyName || '').toLowerCase();
-                  const tUser = ((t as any).userName || '').toLowerCase();
-                  return (
-                    tUid === cId ||
-                    tUid === uUsername ||
-                    tUid === uName ||
-                    (tAgency && (tAgency === uUsername || tAgency === uName)) ||
-                    (tUser && (tUser === uUsername || tUser === uName))
-                  );
-                }))
-          : placedTickets,
-        saveTicket,
-        deleteTicket,
-        gameResults,
-        allPublishedResults,
-        getResultForSlotAndDate,
-        refreshResults,
-        fetchDataForDate,
-        publishGameResult,
-        registerUser,
-        createUser,
-        deleteUser,
-        changeUserPassword,
-        updateUserMode,
-        clearAllUsers,
-        toggleUserStatus,
-        toggleAllUsersStatus,
-        loginUser,
-        loginAdmin,
-        logout,
-        toasts,
-        addToast,
-        removeToast,
-        viewHistory,
-        goBack,
-        // Limit / Block Management
-        agencyNumberLimits,
-        blockedNumbers,
-        globalLimitRule,
-        addAgencyLimit,
-        removeAgencyLimit,
-        addBlockedNumber,
-        removeBlockedNumber,
-        updateGlobalLimit,
-        checkBetEligibility,
-        refreshAllData,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );
