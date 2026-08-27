@@ -1826,8 +1826,9 @@ export const MyPlayReportView: React.FC = () => {
                           <span className="text-neutral-400 font-mono text-xs">{formatPlacedAtDate((tkt as any).placedAt || (tkt as any).createdAt || (tkt as any).timestamp || (tkt as any).date)}</span>
                         </div>
 
-                        <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between">
+                        <div className="text-[11px] text-neutral-400 font-semibold pt-1 border-t border-neutral-850 flex items-center justify-between font-mono">
                           <span>CUSTOMER: <strong className="text-neutral-200 font-bold">{formatCustomerName((tkt as any).customerName)}</strong></span>
+                          <span>SLOT: <strong className="text-white font-bold">{tkt.gameSlot || (tkt as any).slot}</strong></span>
                         </div>
                       </div>
                     );
@@ -1878,6 +1879,7 @@ export const MyPlayReportView: React.FC = () => {
                           </div>
                           <div className="text-[11px] text-neutral-400 font-mono flex items-center justify-between pt-0.5">
                             <span>CUSTOMER: <strong className="text-neutral-200">{formatCustomerName((tkt as any).customerName)}</strong></span>
+                            <span>SLOT: <strong className="text-white font-bold">{tkt.gameSlot || (tkt as any).slot}</strong></span>
                           </div>
                         </div>
 
