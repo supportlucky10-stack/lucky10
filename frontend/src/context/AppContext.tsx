@@ -77,8 +77,12 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const initialRouteView = (): ViewType => {
-    if (typeof window !== 'undefined' && (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin'))) {
-      return 'ADMIN_SIGN_IN';
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      const search = window.location.search.toLowerCase();
+      if (path.includes('/admin') || search.includes('view=admin') || search.includes('admin=true')) {
+        return 'ADMIN_SIGN_IN';
+      }
     }
     return 'USER_SIGN_IN';
   };
@@ -202,9 +206,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setCurrentUser(user);
             const isAdm = user.role === 'ADMIN';
             setIsAdminLoggedIn(isAdm);
-            const isExplicitAdminUrl = typeof window !== 'undefined' && (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin'));
+            const isExplicitAdminUrl = typeof window !== 'undefined' && (window.location.pathname.toLowerCase().includes('/admin') || window.location.search.toLowerCase().includes('view=admin'));
             if (isAdm && isExplicitAdminUrl) {
-              setCurrentViewInternal('ADMIN_REPORTS');
+              setCurrentViewInternal('ADMIN_DRAWER');
             }
           }
         }
@@ -601,7 +605,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUser(res.user);
           setIsAdminLoggedIn(true);
           addToast('Admin authenticated successfully', 'success');
-          setCurrentView('ADMIN_REPORTS');
+          setCurrentView('ADMIN_DRAWER');
           return { success: true };
         }
 
