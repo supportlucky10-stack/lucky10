@@ -1292,7 +1292,7 @@ export const AdminReportsView: React.FC = () => {
                             {copiedBillId === (tkt.ticketId || tkt.id) ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                           </button>
                         </div>
-                        <span className="px-2 py-0.5 text-[10px] font-black rounded bg-blue-950 text-sky-300 border border-sky-800">{tkt.gameSlot}</span>
+                        <span className="px-2 py-0.5 text-[10px] font-black rounded bg-blue-950 text-sky-300 border border-sky-800">{(tkt.gameSlot || '').replace(/\s*Game$/i, '')}</span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
                         <span>COUNT: <strong className="text-white font-bold">{tkt.items.reduce((s, it) => s + (it.count || 1), 0)}</strong></span>
