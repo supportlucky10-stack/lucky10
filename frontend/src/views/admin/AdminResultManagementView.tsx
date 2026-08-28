@@ -367,9 +367,9 @@ export const AdminResultManagementView: React.FC = () => {
 
       {/* ── PREVIEW MODAL BEFORE PUBLISHING ── */}
       {activePreviewTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
-          <div className="bg-neutral-950 border-2 border-gold rounded-2xl p-4 sm:p-5 max-w-lg sm:max-w-xl w-full text-center space-y-3 shadow-2xl animate-scale-up">
-            <div className="flex items-center justify-center gap-2 text-gold font-black text-xs sm:text-sm uppercase tracking-widest border-b border-neutral-800 pb-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="bg-neutral-950 border-2 border-gold rounded-2xl p-3.5 sm:p-4 max-w-sm sm:max-w-md w-full text-center space-y-2 shadow-2xl animate-scale-up">
+            <div className="flex items-center justify-center gap-2 text-gold font-black text-xs sm:text-sm uppercase tracking-widest border-b border-neutral-800 pb-1.5">
               <span>
                 {activePreviewTarget === '1ST' ? '1ST PRIZE PREVIEW' : 'OTHER RESULTS PREVIEW'}
               </span>
@@ -384,50 +384,56 @@ export const AdminResultManagementView: React.FC = () => {
               </div>
             )}
 
-            {/* Other Prizes + Compliments Preview Display (All in one view, no scrolling) */}
+            {/* Other Prizes + Compliments Preview Display (Exact Order, all in one view without scrolling) */}
             {activePreviewTarget === 'OTHER' && (
-              <div className="space-y-2.5 py-0.5 text-left">
-                {/* 2nd, 3rd, 4th, 5th Prizes in a single compact 4-column row */}
-                <div className="grid grid-cols-4 gap-1.5 sm:gap-2 text-xs">
-                  <div className="bg-neutral-900 py-1.5 px-1 sm:py-2 rounded-xl border border-neutral-800 text-center">
-                    <span className="text-[10px] sm:text-xs text-neutral-400 block font-bold">2nd Prize</span>
-                    <span className="font-mono font-black text-base sm:text-lg text-white">{prize2.trim()}</span>
+              <div className="space-y-2 py-0.5 text-left">
+                {/* 2nd, 3rd, 4th, 5th Prizes in exact 2x2 order */}
+                <div className="grid grid-cols-2 gap-1.5 text-xs">
+                  <div className="bg-neutral-900 py-1.5 px-2 rounded-xl border border-neutral-800 text-center">
+                    <span className="text-[10px] text-neutral-400 block font-bold">2nd Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize2.trim()}</span>
                   </div>
-                  <div className="bg-neutral-900 py-1.5 px-1 sm:py-2 rounded-xl border border-neutral-800 text-center">
-                    <span className="text-[10px] sm:text-xs text-neutral-400 block font-bold">3rd Prize</span>
-                    <span className="font-mono font-black text-base sm:text-lg text-white">{prize3.trim()}</span>
+                  <div className="bg-neutral-900 py-1.5 px-2 rounded-xl border border-neutral-800 text-center">
+                    <span className="text-[10px] text-neutral-400 block font-bold">3rd Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize3.trim()}</span>
                   </div>
-                  <div className="bg-neutral-900 py-1.5 px-1 sm:py-2 rounded-xl border border-neutral-800 text-center">
-                    <span className="text-[10px] sm:text-xs text-neutral-400 block font-bold">4th Prize</span>
-                    <span className="font-mono font-black text-base sm:text-lg text-white">{prize4.trim()}</span>
+                  <div className="bg-neutral-900 py-1.5 px-2 rounded-xl border border-neutral-800 text-center">
+                    <span className="text-[10px] text-neutral-400 block font-bold">4th Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize4.trim()}</span>
                   </div>
-                  <div className="bg-neutral-900 py-1.5 px-1 sm:py-2 rounded-xl border border-neutral-800 text-center">
-                    <span className="text-[10px] sm:text-xs text-neutral-400 block font-bold">5th Prize</span>
-                    <span className="font-mono font-black text-base sm:text-lg text-white">{prize5.trim()}</span>
+                  <div className="bg-neutral-900 py-1.5 px-2 rounded-xl border border-neutral-800 text-center">
+                    <span className="text-[10px] text-neutral-400 block font-bold">5th Prize</span>
+                    <span className="font-mono font-black text-base text-white">{prize5.trim()}</span>
                   </div>
                 </div>
 
-                {/* All 30 Compliments displayed in a responsive grid visible at once */}
+                {/* Compliments (30) in exact 3-column vertical order (1-10, 11-20, 21-30) */}
                 <div className="space-y-1 pt-0.5">
-                  <span className="text-[11px] sm:text-xs text-neutral-300 font-bold block text-center uppercase tracking-wider">
+                  <span className="text-[11px] text-neutral-300 font-bold block text-center uppercase tracking-wider">
                     Compliments (30)
                   </span>
-                  <div className="grid grid-cols-5 sm:grid-cols-6 gap-1 sm:gap-1.5 font-mono text-xs text-white text-center">
-                    {complimentBoxes.map((num, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-neutral-900 py-1 sm:py-1.5 px-0.5 rounded-lg border border-neutral-800 font-black tracking-wider text-xs sm:text-sm"
-                      >
-                        {num.trim() || '---'}
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-3 gap-1 font-mono text-xs text-white text-center">
+                    {Array.from({ length: 30 }, (_, cellIndex) => {
+                      const row = Math.floor(cellIndex / 3);
+                      const col = cellIndex % 3;
+                      const compIdx = row + col * 10;
+                      const num = complimentBoxes[compIdx] || '';
+                      return (
+                        <div
+                          key={cellIndex}
+                          className="bg-neutral-900 py-0.5 sm:py-1 px-1 rounded border border-neutral-800 font-black tracking-wider text-xs"
+                        >
+                          {num.trim() || '---'}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </div>
             )}
 
             {/* Preview Action Buttons: EDIT vs CONFIRM & PUBLISH */}
-            <div className="flex items-center justify-center gap-3 pt-1">
+            <div className="flex items-center justify-center gap-2.5 pt-1">
               <button
                 type="button"
                 disabled={isPublishing}
@@ -437,7 +443,7 @@ export const AdminResultManagementView: React.FC = () => {
                   if (target === '1ST') prize1InputRef.current?.focus();
                   else otherPrizeRefs.current[0]?.focus();
                 }}
-                className="flex-1 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white font-black text-xs sm:text-sm rounded-xl uppercase border border-neutral-600 cursor-pointer transition-all active:scale-95 tracking-wider flex items-center justify-center gap-1.5"
+                className="flex-1 py-2 bg-neutral-800 hover:bg-neutral-700 text-white font-black text-xs sm:text-sm rounded-xl uppercase border border-neutral-600 cursor-pointer transition-all active:scale-95 tracking-wider flex items-center justify-center gap-1.5"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 EDIT
@@ -447,7 +453,7 @@ export const AdminResultManagementView: React.FC = () => {
                 type="button"
                 disabled={isPublishing}
                 onClick={handleConfirmAndPublish}
-                className={`flex-1 py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase border border-gold-dark shadow-md transition-all tracking-wider flex items-center justify-center gap-2 ${
+                className={`flex-1 py-2 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase border border-gold-dark shadow-md transition-all tracking-wider flex items-center justify-center gap-2 ${
                   isPublishing ? 'opacity-60 cursor-not-allowed' : 'hover:opacity-95 cursor-pointer active:scale-95'
                 }`}
               >
