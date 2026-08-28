@@ -1761,7 +1761,6 @@ export const MyPlayReportView: React.FC = () => {
             title="SALES REPORT"
             showBack={true}
             onBackClick={() => {
-              resetDatesToCurrent();
               setShowSalesDetails(false);
             }}
             onHomeClick={() => {
@@ -1928,7 +1927,6 @@ export const MyPlayReportView: React.FC = () => {
             title="WINNING REPORT"
             showBack={true}
             onBackClick={() => {
-              resetDatesToCurrent();
               setShowWinningDetails(false);
             }}
             onHomeClick={() => {
@@ -2264,7 +2262,6 @@ export const MyPlayReportView: React.FC = () => {
             title="DAILY REPORT"
             showBack={true}
             onBackClick={() => {
-              resetDatesToCurrent();
               setShowDailyReportOverlay(false);
             }}
             onHomeClick={() => {
