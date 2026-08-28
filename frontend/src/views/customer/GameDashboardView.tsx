@@ -132,7 +132,13 @@ export const GameDashboardView: React.FC = () => {
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
-  const [acknowledgedCutoffSlot, setAcknowledgedCutoffSlot] = useState<string | null>(null);
+  const [acknowledgedCutoffSlot, setAcknowledgedCutoffSlot] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('lucky10_last_ack_cutoff');
+    } catch {
+      return null;
+    }
+  });
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -174,6 +180,10 @@ export const GameDashboardView: React.FC = () => {
   const handleGameOverOk = () => {
     const currentBusinessDate = getBusinessDateIST();
     const currentKey = `${currentBusinessDate}_${activeGameSlot}`;
+    try {
+      sessionStorage.setItem('lucky10_last_ack_cutoff', currentKey);
+      sessionStorage.setItem(`lucky10_ack_cutoff_${currentKey}`, 'true');
+    } catch {}
     setAcknowledgedCutoffSlot(currentKey);
     setIsGameOverModalOpen(false);
     clearTemporaryBillForm();
@@ -198,17 +208,25 @@ export const GameDashboardView: React.FC = () => {
     }
   }, [activeGameSlot]);
 
-  // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle
+  // Live 1-second cutoff monitor: Triggers GAME OVER pop-up immediately when cutoff arrives even while idle (Only once per slot cutoff)
   useEffect(() => {
     const checkCutoff = () => {
       const currentBusinessDate = getBusinessDateIST();
       const currentKey = `${currentBusinessDate}_${activeGameSlot}`;
+      let isAcked = false;
+      try {
+        isAcked =
+          sessionStorage.getItem(`lucky10_ack_cutoff_${currentKey}`) === 'true' ||
+          sessionStorage.getItem('lucky10_last_ack_cutoff') === currentKey;
+      } catch {}
+
       if (!isGameSlotOpen(activeGameSlot)) {
-        if (!isGameOverModalOpen && acknowledgedCutoffSlot !== currentKey) {
+        if (!isGameOverModalOpen && acknowledgedCutoffSlot !== currentKey && !isAcked) {
           setIsGameOverModalOpen(true);
         }
       }
     };
+    checkCutoff();
     const interval = setInterval(checkCutoff, 1000);
     return () => clearInterval(interval);
   }, [activeGameSlot, isGameOverModalOpen, acknowledgedCutoffSlot]);
@@ -490,12 +508,11 @@ export const GameDashboardView: React.FC = () => {
 
         {/* Right: SAVE Button */}
         <button
-          disabled={isSaving || betSlip.length === 0}
+          disabled={isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot)}
           onClick={async () => {
             if (isSaving || betSlip.length === 0) return;
             if (!isGameSlotOpen(activeGameSlot)) {
               addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
-              setIsGameOverModalOpen(true);
               return;
             }
             setIsSaving(true);
@@ -509,7 +526,6 @@ export const GameDashboardView: React.FC = () => {
               const msg = err?.message || '';
               if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('time out') || msg.toLowerCase().includes('cutoff')) {
                 addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
-                setIsGameOverModalOpen(true);
               } else if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
                 setIsOverloadedModalOpen(true);
               } else if (msg.includes('Minimum 5')) {
@@ -522,7 +538,7 @@ export const GameDashboardView: React.FC = () => {
             }
           }}
           className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-opacity transition-transform duration-150 ${
-            isSaving || betSlip.length === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
+            isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
           }`}
         >
           {isSaving ? 'SAVING...' : 'SAVE'}
@@ -587,7 +603,20 @@ export const GameDashboardView: React.FC = () => {
       <div className="w-full px-3 sm:px-8 py-3 max-w-4xl mx-auto flex-1 flex flex-col space-y-3 sm:space-y-4">
         
         {/* TABBED GAME ENTRY CARD */}
-        <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all shrink-0`}>
+        <div className={`bg-neutral-950 text-white rounded-2xl p-3 sm:p-4 ${theme.cardBorder} ${theme.cardShadow} border-2 space-y-3 transition-all shrink-0 ${
+          !isGameSlotOpen(activeGameSlot) ? 'opacity-80' : ''
+        }`}>
+          {!isGameSlotOpen(activeGameSlot) && (
+            <div className="bg-rose-950/40 border border-rose-800/80 rounded-xl px-3 py-2 flex items-center justify-between text-xs font-mono">
+              <span className="text-rose-400 font-bold flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>{activeGameSlot} Billing Closed</span>
+              </span>
+              <span className="text-neutral-400 text-[11px] font-bold">
+                {activeGameSlot === '8 PM Game' ? 'Next Draw: Tomorrow 1:00 PM' : 'Please switch game slot'}
+              </span>
+            </div>
+          )}
           
           {/* Header Row inside Entry Card: Mode Tabs, Customer Box, R & Set Checkboxes */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-900 pb-2.5">
