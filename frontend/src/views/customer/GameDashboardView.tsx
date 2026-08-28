@@ -104,10 +104,10 @@ const slotThemes: Record<string, SlotTheme> = {
 };
 
 const DROPDOWN_SLOT_LABELS: Record<GameSlot, string> = {
-  '1 PM Game': '1 PM Dear',
-  '3 PM Game': '3 PM Kerala',
-  '6 PM Game': '6 PM Dear',
-  '8 PM Game': '8 PM Dear',
+  '1 PM Game': '1 PM DEAR',
+  '3 PM Game': '3 PM KERALA',
+  '6 PM Game': '6 PM DEAR',
+  '8 PM Game': '8 PM DEAR',
 };
 
 export const GameDashboardView: React.FC = () => {
@@ -560,7 +560,7 @@ export const GameDashboardView: React.FC = () => {
             onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)}
             className={`px-3.5 py-1 ${theme.badgeBg} ${theme.badgeText} font-black text-xs sm:text-sm rounded-lg border ${theme.badgeBorder} shadow flex items-center justify-between gap-2 cursor-pointer transition-all hover:brightness-110 active:scale-95`}
           >
-            <span>{activeGameSlot}</span>
+            <span>{DROPDOWN_SLOT_LABELS[activeGameSlot] || activeGameSlot}</span>
             <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSlotDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
