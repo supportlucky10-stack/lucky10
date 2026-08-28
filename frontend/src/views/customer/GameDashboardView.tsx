@@ -781,7 +781,7 @@ export const GameDashboardView: React.FC = () => {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    placeholder="Count"
+                    placeholder={activeMode === 3 ? 'Super Count' : 'Count'}
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value.replace(/\D/g, ''))}
                     className="w-full h-10 sm:h-11 px-0.5 bg-white text-black font-extrabold text-[10px] sm:text-sm rounded-xl placeholder-gray-500 placeholder:text-[10px] sm:placeholder:text-xs text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
@@ -842,7 +842,7 @@ export const GameDashboardView: React.FC = () => {
                     autoCorrect="off"
                     autoCapitalize="off"
                     spellCheck={false}
-                    placeholder="Count"
+                    placeholder={activeMode === 3 ? 'Super Count' : 'Count'}
                     value={inputCount}
                     onChange={(e) => setInputCount(e.target.value.replace(/\D/g, ''))}
                     className="w-full h-10 sm:h-11 px-2 bg-white text-black font-extrabold text-xs sm:text-sm rounded-xl placeholder-gray-500 text-center focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"

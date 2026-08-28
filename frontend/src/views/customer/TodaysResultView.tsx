@@ -173,7 +173,7 @@ export const TodaysResultView: React.FC = () => {
   };
 
   return (
-    <div className="w-full h-[100dvh] h-screen bg-black text-white flex flex-col justify-start overflow-hidden antialiased select-none font-sans">
+    <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col justify-start overflow-y-auto antialiased select-none font-sans">
       {/* Header Banner with WhatsApp Share Button on Right */}
       <HeaderBanner
         title="RESULT"
@@ -193,7 +193,8 @@ export const TodaysResultView: React.FC = () => {
         }
       />
 
-      <div id="result-view-container" className="max-w-md mx-auto w-full px-3.5 sm:px-5 py-1 sm:py-1.5 flex-1 flex flex-col justify-start space-y-1 sm:space-y-1.5 bg-black overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-start w-full px-3.5 sm:px-5 py-1 sm:py-1.5 bg-black">
+        <div id="result-view-container" className="max-w-md mx-auto w-full space-y-1 sm:space-y-1.5 bg-black p-1">
         
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
         <div className="space-y-1 sm:space-y-1.5 shrink-0">
@@ -342,6 +343,7 @@ export const TodaysResultView: React.FC = () => {
           );
         })()}
 
+        </div>
       </div>
     </div>
   );
