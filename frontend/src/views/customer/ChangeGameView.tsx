@@ -17,6 +17,13 @@ export const ChangeGameView: React.FC = () => {
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
+  const SLOT_DISPLAY_NAMES: Record<GameSlot, string> = {
+    '1 PM Game': '1 PM DEAR',
+    '3 PM Game': '3 PM KERALA',
+    '6 PM Game': '6 PM DEAR',
+    '8 PM Game': '8 PM DEAR',
+  };
+
   const slotButtonStyles: Record<GameSlot, { active: string; inactive: string }> = {
     '1 PM Game': {
       active: 'bg-gradient-to-r from-blue-500 via-indigo-600 to-sky-500 text-white border-2 border-sky-300 shadow-[0_0_15px_rgba(59,130,246,0.4)]',
@@ -70,7 +77,7 @@ export const ChangeGameView: React.FC = () => {
               }`}
             >
               <span className="w-full text-center flex items-center justify-center gap-2">
-                <span>{slot}</span>
+                <span>{SLOT_DISPLAY_NAMES[slot]}</span>
                 {!isOpen && <Lock className="w-4 h-4 text-neutral-400 inline" />}
               </span>
             </button>

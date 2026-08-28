@@ -303,6 +303,13 @@ export const AdminResultManagementView: React.FC = () => {
   };
 
   const gameSlots: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
+
+  const SLOT_DISPLAY_NAMES: Record<GameSlot, string> = {
+    '1 PM Game': '1 PM DEAR',
+    '3 PM Game': '3 PM KERALA',
+    '6 PM Game': '6 PM DEAR',
+    '8 PM Game': '8 PM DEAR',
+  };
   const activeSlotTheme = slotThemes[selectedSlot] || slotThemes['1 PM Game'];
   const shortSlot = selectedSlot.replace(' Game', '').replace(' ', '');
 
@@ -491,7 +498,7 @@ export const AdminResultManagementView: React.FC = () => {
                 onClick={() => setIsSlotDropdownOpen(!isSlotDropdownOpen)}
                 className={`w-full py-2.5 px-4 ${activeSlotTheme.badgeBg} ${activeSlotTheme.badgeText} font-black text-xs sm:text-sm rounded-xl border ${activeSlotTheme.badgeBorder} shadow-lg flex items-center justify-between gap-3 cursor-pointer transition-all`}
               >
-                <div className="flex items-center gap-2"><span className="opacity-80 text-[10px] tracking-wider uppercase">SLOT:</span><span>{selectedSlot}</span></div>
+                <div className="flex items-center gap-2"><span className="opacity-80 text-[10px] tracking-wider uppercase">SLOT:</span><span>{SLOT_DISPLAY_NAMES[selectedSlot] || selectedSlot}</span></div>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isSlotDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
               {isSlotDropdownOpen && (
@@ -503,7 +510,7 @@ export const AdminResultManagementView: React.FC = () => {
                       onClick={() => handleSelectSlot(slot)}
                       className={`w-full py-2 px-3 rounded-lg font-black text-xs uppercase tracking-wide flex items-center justify-between ${slot === selectedSlot ? `${slotThemes[slot].badgeBg} text-white` : 'bg-neutral-900 text-neutral-300'}`}
                     >
-                      <span>{slot}</span>
+                      <span>{SLOT_DISPLAY_NAMES[slot] || slot}</span>
                       {slot === selectedSlot && <CheckCircle2 className="w-4 h-4" />}
                     </button>
                   ))}
@@ -743,7 +750,7 @@ export const AdminResultManagementView: React.FC = () => {
               >
                 <div className="flex items-center gap-2">
                   <span className="opacity-85 text-xs font-bold tracking-wider uppercase">TIME:</span>
-                  <span className="font-black tracking-wider text-sm sm:text-base">{previewSlot.replace(' Game', '')}</span>
+                  <span className="font-black tracking-wider text-sm sm:text-base">{SLOT_DISPLAY_NAMES[previewSlot] || previewSlot.replace(' Game', '')}</span>
                 </div>
                 <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isPreviewSlotOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -766,7 +773,7 @@ export const AdminResultManagementView: React.FC = () => {
                             : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                         }`}
                       >
-                        <span>{slot.replace(' Game', '')}</span>
+                        <span>{SLOT_DISPLAY_NAMES[slot] || slot.replace(' Game', '')}</span>
                         {isSel && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                       </button>
                     );

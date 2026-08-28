@@ -102,6 +102,13 @@ export const TodaysResultView: React.FC = () => {
 
   const games: GameSlot[] = ['1 PM Game', '3 PM Game', '6 PM Game', '8 PM Game'];
 
+  const SLOT_DISPLAY_NAMES: Record<GameSlot, string> = {
+    '1 PM Game': '1 PM DEAR',
+    '3 PM Game': '3 PM KERALA',
+    '6 PM Game': '6 PM DEAR',
+    '8 PM Game': '8 PM DEAR',
+  };
+
   // Game slot specific color themes
   const slotThemeStyles: Record<GameSlot, { pillActive: string; cardBorder: string; badgeActive: string; textActive: string }> = {
     '1 PM Game': {
@@ -235,7 +242,7 @@ export const TodaysResultView: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
-                <span className="font-black tracking-wider text-sm sm:text-base">{activeGameSlot.replace(' Game', '')}</span>
+                <span className="font-black tracking-wider text-sm sm:text-base">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
               </div>
               <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
             </button>
@@ -260,7 +267,7 @@ export const TodaysResultView: React.FC = () => {
                           : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
                       }`}
                     >
-                      <span>{slot.replace(' Game', '')}</span>
+                      <span>{SLOT_DISPLAY_NAMES[slot] || slot.replace(' Game', '')}</span>
                       {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
                     </button>
                   );
