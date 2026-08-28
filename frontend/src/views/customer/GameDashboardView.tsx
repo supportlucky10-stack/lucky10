@@ -614,13 +614,10 @@ export const GameDashboardView: React.FC = () => {
           !isGameSlotOpen(activeGameSlot) ? 'opacity-80' : ''
         }`}>
           {!isGameSlotOpen(activeGameSlot) && (
-            <div className="bg-rose-950/40 border border-rose-800/80 rounded-xl px-3 py-2 flex items-center justify-between text-xs font-mono">
-              <span className="text-rose-400 font-bold flex items-center gap-1.5">
+            <div className="bg-rose-950/40 border border-rose-800/80 rounded-xl px-3 py-2 flex items-center justify-center text-xs font-mono">
+              <span className="text-rose-400 font-bold flex items-center gap-1.5 uppercase tracking-wide">
                 <Lock className="w-3.5 h-3.5 shrink-0" />
-                <span>{activeGameSlot} Billing Closed</span>
-              </span>
-              <span className="text-neutral-400 text-[11px] font-bold">
-                {activeGameSlot === '8 PM Game' ? 'Next Draw: Tomorrow 1:00 PM' : 'Please switch game slot'}
+                <span>Today Billing Closed</span>
               </span>
             </div>
           )}
