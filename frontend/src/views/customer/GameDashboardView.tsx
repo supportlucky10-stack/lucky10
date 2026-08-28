@@ -103,6 +103,13 @@ const slotThemes: Record<string, SlotTheme> = {
   },
 };
 
+const DROPDOWN_SLOT_LABELS: Record<GameSlot, string> = {
+  '1 PM Game': '1 PM Dear',
+  '3 PM Game': '3 PM Kerala',
+  '6 PM Game': '6 PM Dear',
+  '8 PM Game': '8 PM Dear',
+};
+
 export const GameDashboardView: React.FC = () => {
   const {
     activeGameSlot,
@@ -587,7 +594,7 @@ export const GameDashboardView: React.FC = () => {
                     }`}
                   >
                     <span className="flex items-center gap-1.5">
-                      <span>{slot}</span>
+                      <span>{DROPDOWN_SLOT_LABELS[slot]}</span>
                       {!isOpen && <Lock className="w-3 h-3 text-neutral-500 inline" />}
                     </span>
                     {isSelected && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
