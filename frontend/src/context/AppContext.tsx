@@ -158,11 +158,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
-      // If someone visits /admin, make it completely dead (NOT_FOUND)
-      if (path === '/admin' || path.startsWith('/admin/')) {
-        return 'NOT_FOUND';
-      }
-
       if (
         path.includes('/master') ||
         search.includes('view=master') ||
@@ -283,12 +278,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     async function loadInitialData() {
-      if (typeof window !== 'undefined') {
-        const path = window.location.pathname.toLowerCase();
-        if (path === '/admin' || path.startsWith('/admin/')) {
-          return; // Abort loading for dead /admin route
-        }
-      }
       // Check auth status
       try {
         const user = await authService.getCurrentUser();
