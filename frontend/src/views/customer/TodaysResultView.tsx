@@ -338,38 +338,39 @@ export const TodaysResultView: React.FC = () => {
         </div>
       </div>
 
-      {/* DEDICATED OFF-SCREEN SHARE CARD (Optimized for WhatsApp In-Chat Uncropped Image Capture) */}
+      {/* DEDICATED OFF-SCREEN SHARE CARD (Exact bold & large proportions matching Image 1) */}
       <div
         id="result-share-container"
-        className="fixed left-0 top-0 -z-50 pointer-events-none w-[460px] bg-black p-2.5 pb-4 space-y-1 select-none"
+        className="fixed left-0 top-0 -z-50 pointer-events-none max-w-md w-full sm:w-[420px] bg-black p-2 pb-5 space-y-1.5 select-none"
         aria-hidden="true"
       >
-        {/* Share Header: Date & Time in 2 Compact Rows */}
-        <div className="space-y-1 shrink-0">
-          <div className="grid grid-cols-2 gap-1.5 items-center">
-            <div className="bg-gold-metallic text-black rounded-lg px-2 py-0.5 flex items-center justify-center shadow-md h-[34px] border-2 border-gold-dark overflow-hidden">
-              <span className="text-black font-black text-xs font-mono tracking-normal whitespace-nowrap leading-none">
+        {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
+        <div className="space-y-1.5 shrink-0">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="bg-gold-metallic text-black rounded-xl px-2 py-1 flex items-center justify-center shadow-lg h-[46px] border-2 border-gold-dark overflow-hidden">
+              <span className="text-black font-black text-sm font-mono tracking-normal whitespace-nowrap leading-none">
                 {displayDateFormatted.replace(/-/g, '\u2011')}
               </span>
             </div>
-            <div className="bg-neutral-900 border border-neutral-700 text-neutral-200 rounded-lg px-2 py-0.5 flex items-center justify-center gap-1.5 shadow-md h-[34px] overflow-hidden">
-              <Calendar className="w-3.5 h-3.5 text-gold shrink-0" />
+            <div className="bg-neutral-900 border border-neutral-700 text-neutral-200 rounded-xl px-2 py-1 flex items-center justify-center gap-1.5 shadow-md h-[46px] overflow-hidden">
+              <Calendar className="w-4 h-4 text-gold shrink-0" />
               <span className="font-bold text-xs tracking-normal whitespace-nowrap leading-none">
                 Change date
               </span>
             </div>
           </div>
 
-          <div className={`w-full h-[34px] px-3 rounded-lg font-black text-xs uppercase flex items-center justify-between shadow-md border ${currentTheme.pillActive}`}>
+          <div className={`w-full h-[46px] px-4 rounded-xl font-black text-sm uppercase flex items-center justify-between shadow-md border ${currentTheme.pillActive}`}>
             <div className="flex items-center gap-2">
-              <span className="opacity-85 text-[11px] font-bold tracking-wider uppercase">TIME:</span>
-              <span className="font-black tracking-wider text-xs">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
+              <span className="opacity-85 text-xs font-bold tracking-wider uppercase">TIME:</span>
+              <span className="font-black tracking-wider text-sm">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
             </div>
+            <ChevronDown className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Share 5 Winning Number Cards */}
-        <div className="space-y-0.5 shrink-0">
+        {/* 5 Winning Number Cards (Big, bold numbers matching Image 1) */}
+        <div className="space-y-1 shrink-0">
           {[
             { id: 1, label: '1', val: currentResult.prize1 || '---' },
             { id: 2, label: '2', val: currentResult.prize2 || '---' },
@@ -379,16 +380,16 @@ export const TodaysResultView: React.FC = () => {
           ].map((item) => (
             <div
               key={`share-prize-${item.id}`}
-              className={`flex items-center justify-start rounded-lg bg-neutral-950 ${currentTheme.cardBorder} py-0.5 px-2.5 shadow-sm`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} py-1 px-3.5 shadow-sm`}
             >
-              <div className="flex items-center gap-2.5 w-full">
+              <div className="flex items-center gap-3.5 w-full">
                 <div
-                  className={`w-5 h-5 rounded-md border shrink-0 font-black text-[11px] flex items-center justify-center ${currentTheme.badgeActive}`}
+                  className={`w-6 h-6 rounded-lg border shrink-0 font-black text-xs flex items-center justify-center ${currentTheme.badgeActive}`}
                 >
                   {item.label}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span className="font-black font-mono tracking-widest block text-white text-base leading-tight">
+                  <span className="font-black font-mono tracking-widest block text-white text-xl leading-none">
                     {item.val}
                   </span>
                 </div>
@@ -397,13 +398,13 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* Share Compliments Table */}
-        <div className="bg-neutral-950 text-white rounded-lg p-1.5 shadow-xl border border-neutral-800 space-y-0.5 shrink-0 mt-0.5">
-          <h3 className="font-black text-[10px] text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
+        {/* COMPLIMENTS Matrix Table (Big, bold numbers matching Image 1) */}
+        <div className="bg-neutral-950 text-white rounded-2xl p-2 shadow-2xl border border-neutral-800 space-y-1 shrink-0 mt-0.5">
+          <h3 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
             COMPLIMENTS
           </h3>
 
-          <div className="grid grid-cols-3 gap-0.5 bg-neutral-900 border border-neutral-800 p-0.5 rounded-md overflow-hidden font-mono">
+          <div className="grid grid-cols-3 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
             {Array.from({ length: 30 }, (_, cellIndex) => {
               const row = Math.floor(cellIndex / 3);
               const col = cellIndex % 3;
@@ -412,7 +413,7 @@ export const TodaysResultView: React.FC = () => {
               return (
                 <div
                   key={`share-comp-${cellIndex}`}
-                  className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-[2px] rounded border border-neutral-850 shadow-inner leading-tight"
+                  className="bg-black text-center text-xl font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 rounded-lg border border-neutral-850 shadow-inner leading-none"
                 >
                   {val}
                 </div>
