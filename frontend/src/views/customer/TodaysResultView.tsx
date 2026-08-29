@@ -219,18 +219,6 @@ export const TodaysResultView: React.FC = () => {
               <span className="font-bold text-xs tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
                 Change date
               </span>
-              <input
-                ref={dateInputRef}
-                type="date"
-                value={selectedDate}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setSelectedDate(e.target.value);
-                    isManualDateRef.current = e.target.value !== getBusinessDateIST();
-                  }
-                }}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 full-date-input"
-              />
             </div>
           </div>
 
@@ -345,6 +333,22 @@ export const TodaysResultView: React.FC = () => {
 
         </div>
       </div>
+
+      {/* Hidden Date Input (Outside captured screenshot container to prevent browser rendering artifacts) */}
+      <input
+        ref={dateInputRef}
+        type="date"
+        value={selectedDate}
+        onChange={(e) => {
+          if (e.target.value) {
+            setSelectedDate(e.target.value);
+            isManualDateRef.current = e.target.value !== getBusinessDateIST();
+          }
+        }}
+        className="hidden pointer-events-none"
+        tabIndex={-1}
+        aria-hidden="true"
+      />
     </div>
   );
 };

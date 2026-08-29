@@ -117,9 +117,8 @@ export const captureAndShareElement = async ({
       quality: 0.95,
       backgroundColor: '#000000',
       pixelRatio: 2,
-      // Embed all fonts as data URIs so iOS doesn't try to re-fetch them
-      // inside the SVG foreignObject (where CORS / local-url resolution fails)
       includeQueryParams: true,
+      filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
     });
 
     const res = await fetch(dataUrl);
