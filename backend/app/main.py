@@ -29,23 +29,13 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"detail": "An internal server error occurred."}
     )
 
-# Configure CORS based on environment
+# Configure CORS to permit all frontend origins (Vercel, custom domains, localhost)
 raw_origins = [o.strip().rstrip('/') for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()]
-
-is_prod = (
-    os.getenv("ENVIRONMENT", "").lower() in ("production", "prod")
-    or os.getenv("RAILWAY_ENVIRONMENT") is not None
-)
-
-if is_prod and "*" in raw_origins:
-    logger.warning("[Lucky10 CORS Warning] Wildcard '*' removed from ALLOWED_ORIGINS in production")
-    raw_origins = [o for o in raw_origins if o != "*"]
-
-origins = raw_origins if raw_origins else ["http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origin_regex=r"^https?://.*",
+    allow_origins=raw_origins if raw_origins and "*" not in raw_origins else [],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
