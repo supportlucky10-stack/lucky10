@@ -13,7 +13,6 @@ export const TodaysResultView: React.FC = () => {
   const [activeGameSlot, setActiveGameSlot] = useState<GameSlot>(() => getResultPageActiveSlot());
   const [selectedDate, setSelectedDate] = useState<string>(initialToday);
   const [isGameDropdownOpen, setIsGameDropdownOpen] = useState(false);
-  const dateInputRef = useRef<HTMLInputElement>(null);
 
   const isManualDateRef = useRef<boolean>(false);
   const isManualSlotRef = useRef<boolean>(false);
@@ -137,20 +136,6 @@ export const TodaysResultView: React.FC = () => {
     },
   };
 
-  const triggerDatePicker = () => {
-    if (dateInputRef.current) {
-      if ('showPicker' in dateInputRef.current && typeof (dateInputRef.current as any).showPicker === 'function') {
-        try {
-          (dateInputRef.current as any).showPicker();
-        } catch (err) {
-          dateInputRef.current.click();
-        }
-      } else {
-        dateInputRef.current.click();
-      }
-    }
-  };
-
   const activeDate = selectedDate;
   const currentResult = getResultForSlotAndDate(activeGameSlot, activeDate);
 
@@ -165,12 +150,19 @@ export const TodaysResultView: React.FC = () => {
   const handleShareToWhatsApp = () => {
     const formattedDate = displayDateFormatted;
     captureAndShareElement({
-      elementId: 'result-view-container',
+      elementId: 'result-share-container',
       fileName: `result_${activeGameSlot.replace(/\s+/g, '_')}_${formattedDate}.jpg`,
       title: `Result - ${activeGameSlot}`,
       textSummary: '',
     });
   };
+
+  const compliments30 = (() => {
+    const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
+    return Array.from({ length: 30 }, (_, index) => {
+      return rawList[index] ? String(rawList[index]).padStart(3, '0') : '---';
+    });
+  })();
 
   return (
     <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col justify-start overflow-y-auto antialiased select-none font-sans">
@@ -193,80 +185,190 @@ export const TodaysResultView: React.FC = () => {
         }
       />
 
-      <div className="flex-1 flex flex-col items-center justify-start w-full px-2 sm:px-4 py-1 bg-black">
-        <div id="result-view-container" className="max-w-[460px] mx-auto w-full space-y-1 bg-black p-2.5 pb-4 rounded-2xl">
+      {/* ON-SCREEN VIEW: 100% Original Spacious & Comfortable UI */}
+      <div className="flex-1 flex flex-col items-center justify-start w-full px-3.5 sm:px-5 py-1 sm:py-1.5 bg-black">
+        <div id="result-view-container" className="max-w-md mx-auto w-full space-y-1 sm:space-y-1.5 bg-black p-1">
         
-        {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
+          {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
+          <div className="space-y-1 sm:space-y-1.5 shrink-0">
+            {/* Row 1: Date Pill & Change Date Button */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5 items-center">
+              {/* Left: Date Display Pill */}
+              <div
+                className="relative bg-gold-metallic text-black rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark overflow-hidden select-none"
+              >
+                <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none pointer-events-none">
+                  {displayDateFormatted.replace(/-/g, '\u2011')}
+                </span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedDate(e.target.value);
+                      isManualDateRef.current = e.target.value !== getBusinessDateIST();
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+              </div>
+
+              {/* Right: Change Date Button */}
+              <div
+                className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] overflow-hidden select-none"
+              >
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0 pointer-events-none" />
+                <span className="font-bold text-xs sm:text-sm tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none pointer-events-none">
+                  Change date
+                </span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setSelectedDate(e.target.value);
+                      isManualDateRef.current = e.target.value !== getBusinessDateIST();
+                    }
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+              </div>
+            </div>
+
+            {/* Row 2: TIME Dropdown Selector */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
+                className={`w-full h-[46px] sm:h-[48px] px-4 rounded-xl font-black text-sm sm:text-base uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="opacity-85 text-xs sm:text-sm font-bold tracking-wider uppercase">TIME:</span>
+                  <span className="font-black tracking-wider text-sm sm:text-base">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
+                </div>
+                <ChevronDown className={`w-5 h-5 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isGameDropdownOpen && (
+                <div className="absolute left-0 right-0 top-11 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
+                  {games.map((slot) => {
+                    const theme = slotThemeStyles[slot];
+                    const isSelected = slot === activeGameSlot;
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => {
+                          setActiveGameSlot(slot);
+                          setIsGameDropdownOpen(false);
+                          isManualSlotRef.current = true;
+                        }}
+                        className={`w-full py-1.5 px-3.5 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between cursor-pointer transition-all ${
+                          isSelected
+                            ? theme.pillActive
+                            : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
+                        }`}
+                      >
+                        <span>{SLOT_DISPLAY_NAMES[slot] || slot.replace(' Game', '')}</span>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 5 Winning Number Cards (Original Size) */}
+          <div className="space-y-0.5 sm:space-y-1 shrink-0">
+            {[
+              { id: 1, label: '1', val: currentResult.prize1 || '---' },
+              { id: 2, label: '2', val: currentResult.prize2 || '---' },
+              { id: 3, label: '3', val: currentResult.prize3 || '---' },
+              { id: 4, label: '4', val: currentResult.prize4 || '---' },
+              { id: 5, label: '5', val: currentResult.prize5 || '---' },
+            ].map((item) => (
+              <div
+                key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
+                className={`flex items-center justify-start rounded-xl bg-neutral-950 ${currentTheme.cardBorder} transition-all py-1 sm:py-1.5 px-3.5 shadow-sm`}
+              >
+                <div className="flex items-center gap-3.5 w-full">
+                  <div
+                    className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center ${currentTheme.badgeActive}`}
+                  >
+                    {item.label}
+                  </div>
+                  <div className="flex items-center flex-1">
+                    <span className="font-black font-mono tracking-widest block text-white text-xl sm:text-2xl leading-none">
+                      {item.val}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* COMPLIMENTS Matrix Table (Original Size) */}
+          <div
+            key={`compliments-${activeDate}-${activeGameSlot}`}
+            className="bg-neutral-950 text-white rounded-2xl p-1.5 sm:p-2 shadow-2xl border border-neutral-800 space-y-1 shrink-0 mt-0.5"
+          >
+            <h3 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
+              COMPLIMENTS
+            </h3>
+
+            <div className="grid grid-cols-3 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
+              {Array.from({ length: 30 }, (_, cellIndex) => {
+                const row = Math.floor(cellIndex / 3);
+                const col = cellIndex % 3;
+                const compIdx = row + col * 10;
+                const val = compliments30[compIdx] || '---';
+                return (
+                  <div
+                    key={cellIndex}
+                    className="bg-black text-center text-xl sm:text-2xl font-black text-neutral-100 tracking-wider flex items-center justify-center py-0.5 sm:py-1 rounded-lg border border-neutral-850 shadow-inner leading-none"
+                  >
+                    {val}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* DEDICATED OFF-SCREEN SHARE CARD (Optimized for WhatsApp In-Chat Uncropped Image Capture) */}
+      <div
+        id="result-share-container"
+        className="fixed -left-[9999px] top-0 pointer-events-none w-[460px] bg-black p-2.5 pb-4 space-y-1 select-none"
+        aria-hidden="true"
+      >
+        {/* Share Header: Date & Time in 2 Compact Rows */}
         <div className="space-y-1 shrink-0">
-          {/* Row 1: Date Pill & Change Date Button */}
           <div className="grid grid-cols-2 gap-1.5 items-center">
-            {/* Left: Date Display Pill */}
-            <div
-              onClick={triggerDatePicker}
-              className="bg-gold-metallic text-black rounded-lg px-2 py-0.5 cursor-pointer flex items-center justify-center shadow-md h-[34px] sm:h-[36px] border-2 border-gold-dark overflow-hidden select-none"
-            >
-              <span className="text-black font-black text-xs sm:text-sm tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+            <div className="bg-gold-metallic text-black rounded-lg px-2 py-0.5 flex items-center justify-center shadow-md h-[34px] border-2 border-gold-dark overflow-hidden">
+              <span className="text-black font-black text-xs font-mono tracking-normal whitespace-nowrap leading-none">
                 {displayDateFormatted.replace(/-/g, '\u2011')}
               </span>
             </div>
-
-            {/* Right: Change Date Button */}
-            <div
-              onClick={triggerDatePicker}
-              className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-lg px-2 py-0.5 cursor-pointer flex items-center justify-center gap-1.5 shadow-md h-[34px] sm:h-[36px] overflow-hidden select-none"
-            >
+            <div className="bg-neutral-900 border border-neutral-700 text-neutral-200 rounded-lg px-2 py-0.5 flex items-center justify-center gap-1.5 shadow-md h-[34px] overflow-hidden">
               <Calendar className="w-3.5 h-3.5 text-gold shrink-0" />
-              <span className="font-bold text-xs tracking-normal whitespace-nowrap [word-break:keep-all] shrink-0 leading-none">
+              <span className="font-bold text-xs tracking-normal whitespace-nowrap leading-none">
                 Change date
               </span>
             </div>
           </div>
 
-          {/* Row 2: TIME Dropdown Selector */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsGameDropdownOpen(!isGameDropdownOpen)}
-              className={`w-full h-[34px] sm:h-[36px] px-3 rounded-lg font-black text-xs sm:text-sm uppercase flex items-center justify-between transition-all cursor-pointer shadow-md border ${currentTheme.pillActive}`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="opacity-85 text-[11px] font-bold tracking-wider uppercase">TIME:</span>
-                <span className="font-black tracking-wider text-xs sm:text-sm">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
-              </div>
-              <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isGameDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isGameDropdownOpen && (
-              <div className="absolute left-0 right-0 top-9 p-1.5 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1 shadow-2xl animate-drop-in z-30">
-                {games.map((slot) => {
-                  const theme = slotThemeStyles[slot];
-                  const isSelected = slot === activeGameSlot;
-                  return (
-                    <button
-                      key={slot}
-                      type="button"
-                      onClick={() => {
-                        setActiveGameSlot(slot);
-                        setIsGameDropdownOpen(false);
-                        isManualSlotRef.current = true;
-                      }}
-                      className={`w-full py-1.5 px-3 rounded-lg font-black text-xs uppercase flex items-center justify-between cursor-pointer transition-all ${
-                        isSelected
-                          ? theme.pillActive
-                          : 'bg-neutral-900 text-neutral-300 hover:text-white border border-neutral-800 hover:border-neutral-700'
-                      }`}
-                    >
-                      <span>{SLOT_DISPLAY_NAMES[slot] || slot.replace(' Game', '')}</span>
-                      {isSelected && <CheckCircle2 className="w-4 h-4 shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+          <div className={`w-full h-[34px] px-3 rounded-lg font-black text-xs uppercase flex items-center justify-between shadow-md border ${currentTheme.pillActive}`}>
+            <div className="flex items-center gap-2">
+              <span className="opacity-85 text-[11px] font-bold tracking-wider uppercase">TIME:</span>
+              <span className="font-black tracking-wider text-xs">{SLOT_DISPLAY_NAMES[activeGameSlot] || activeGameSlot.replace(' Game', '')}</span>
+            </div>
           </div>
         </div>
 
-        {/* 5 Winning Number Cards */}
+        {/* Share 5 Winning Number Cards */}
         <div className="space-y-0.5 shrink-0">
           {[
             { id: 1, label: '1', val: currentResult.prize1 || '---' },
@@ -276,8 +378,8 @@ export const TodaysResultView: React.FC = () => {
             { id: 5, label: '5', val: currentResult.prize5 || '---' },
           ].map((item) => (
             <div
-              key={`prize-${item.id}-${activeDate}-${activeGameSlot}`}
-              className={`flex items-center justify-start rounded-lg bg-neutral-950 ${currentTheme.cardBorder} transition-all py-0.5 px-2.5 shadow-sm`}
+              key={`share-prize-${item.id}`}
+              className={`flex items-center justify-start rounded-lg bg-neutral-950 ${currentTheme.cardBorder} py-0.5 px-2.5 shadow-sm`}
             >
               <div className="flex items-center gap-2.5 w-full">
                 <div
@@ -286,7 +388,7 @@ export const TodaysResultView: React.FC = () => {
                   {item.label}
                 </div>
                 <div className="flex items-center flex-1">
-                  <span className="font-black font-mono tracking-widest block text-white text-base sm:text-lg leading-tight">
+                  <span className="font-black font-mono tracking-widest block text-white text-base leading-tight">
                     {item.val}
                   </span>
                 </div>
@@ -295,60 +397,31 @@ export const TodaysResultView: React.FC = () => {
           ))}
         </div>
 
-        {/* COMPLIMENTS Matrix Table */}
-        {(() => {
-          const rawList = currentResult.compliments ? currentResult.compliments.flat() : [];
-          const compliments30 = Array.from({ length: 30 }, (_, index) => {
-            return rawList[index] ? String(rawList[index]).padStart(3, '0') : '---';
-          });
+        {/* Share Compliments Table */}
+        <div className="bg-neutral-950 text-white rounded-lg p-1.5 shadow-xl border border-neutral-800 space-y-0.5 shrink-0 mt-0.5">
+          <h3 className="font-black text-[10px] text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
+            COMPLIMENTS
+          </h3>
 
-          return (
-            <div
-              key={`compliments-${activeDate}-${activeGameSlot}`}
-              className="bg-neutral-950 text-white rounded-lg p-1.5 shadow-xl border border-neutral-800 space-y-0.5 shrink-0 mt-0.5"
-            >
-              <h3 className="font-black text-[10px] sm:text-[11px] text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
-                COMPLIMENTS
-              </h3>
-
-              <div className="grid grid-cols-3 gap-0.5 bg-neutral-900 border border-neutral-800 p-0.5 rounded-md overflow-hidden font-mono">
-                {Array.from({ length: 30 }, (_, cellIndex) => {
-                  const row = Math.floor(cellIndex / 3);
-                  const col = cellIndex % 3;
-                  const compIdx = row + col * 10;
-                  const val = compliments30[compIdx] || '---';
-                  return (
-                    <div
-                      key={cellIndex}
-                      className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-[2px] sm:py-[3px] rounded border border-neutral-850 shadow-inner leading-tight"
-                    >
-                      {val}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
+          <div className="grid grid-cols-3 gap-0.5 bg-neutral-900 border border-neutral-800 p-0.5 rounded-md overflow-hidden font-mono">
+            {Array.from({ length: 30 }, (_, cellIndex) => {
+              const row = Math.floor(cellIndex / 3);
+              const col = cellIndex % 3;
+              const compIdx = row + col * 10;
+              const val = compliments30[compIdx] || '---';
+              return (
+                <div
+                  key={`share-comp-${cellIndex}`}
+                  className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-[2px] rounded border border-neutral-850 shadow-inner leading-tight"
+                >
+                  {val}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Hidden Date Input (Outside captured screenshot container to prevent browser rendering artifacts) */}
-      <input
-        ref={dateInputRef}
-        type="date"
-        value={selectedDate}
-        onChange={(e) => {
-          if (e.target.value) {
-            setSelectedDate(e.target.value);
-            isManualDateRef.current = e.target.value !== getBusinessDateIST();
-          }
-        }}
-        className="hidden pointer-events-none"
-        tabIndex={-1}
-        aria-hidden="true"
-      />
     </div>
   );
 };
