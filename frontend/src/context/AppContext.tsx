@@ -15,7 +15,7 @@ import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
 import { evaluateTicket } from '../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
+import { extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
 
 
 
@@ -230,34 +230,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const getResultForSlotAndDate = useCallback((slot: GameSlot, dateStr: string): GameResult => {
-    const rawKey = `${dateStr}_${slot}`;
-    if (allPublishedResults[rawKey] && allPublishedResults[rawKey].gameSlot === slot) {
-      const resDate = extractDateStr(allPublishedResults[rawKey].date);
-      const targetDate = extractDateStr(dateStr);
-      if (resDate === targetDate) {
-        return allPublishedResults[rawKey];
-      }
-    }
-    const normDate = dateStr ? extractDateStr(dateStr) : getLocalDateStr();
-    const normKey = `${normDate}_${slot}`;
-    if (allPublishedResults[normKey] && allPublishedResults[normKey].gameSlot === slot) {
-      const resDate = extractDateStr(allPublishedResults[normKey].date);
-      if (resDate === normDate) {
-        return allPublishedResults[normKey];
+    const targetDate = dateStr && dateStr.trim() ? dateStr.trim() : getBusinessDateIST();
+    const normDate = extractDateStr(targetDate);
+    const todayStr = getBusinessDateIST();
+
+    const keysToTry = [
+      `${targetDate}_${slot}`,
+      `${normDate}_${slot}`,
+      `${todayStr}_${slot}`,
+    ];
+
+    for (const key of keysToTry) {
+      if (allPublishedResults[key] && allPublishedResults[key].gameSlot === slot) {
+        const res = allPublishedResults[key];
+        const resDate = extractDateStr(res.date);
+        if (resDate === normDate || resDate === extractDateStr(targetDate)) {
+          return res;
+        }
       }
     }
 
-    const todayStr = getLocalDateStr();
     if (gameResults[slot] && gameResults[slot].gameSlot === slot) {
-      const gResDate = gameResults[slot].date ? extractDateStr(gameResults[slot].date) : '';
-      if (normDate === todayStr && gResDate === todayStr) {
-        return gameResults[slot];
+      const gRes = gameResults[slot];
+      const gResDate = gRes.date ? extractDateStr(gRes.date) : '';
+      if ((normDate === todayStr || !gResDate) && (gResDate === todayStr || !gResDate)) {
+        return gRes;
       }
     }
 
     return {
-      id: `res-${dateStr}-${slot}`,
-      date: dateStr,
+      id: `res-${targetDate}-${slot}`,
+      date: targetDate,
       gameSlot: slot,
       prize1: '',
       prize2: '',
@@ -297,7 +300,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Fetch today's results and all historical results
       try {
-        const todayStr = getLocalDateStr();
+        const todayStr = getBusinessDateIST();
         const [todayRes, allRes] = await Promise.allSettled([
           customerService.getTodayResults(todayStr),
           customerService.getAllResults(),
@@ -342,7 +345,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const loadInitialData = async () => {
       try {
-        const todayStr = getLocalDateStr();
+        const todayStr = getBusinessDateIST();
         const todayRes = await customerService.getTodayResults(todayStr);
         if (todayRes && Object.keys(todayRes).length > 0) {
           setGameResults((prev) => ({ ...prev, ...todayRes }));
@@ -425,7 +428,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (document.visibilityState !== 'visible') return;
 
       try {
-        const todayStr = getLocalDateStr();
+        const todayStr = getBusinessDateIST();
         const todayRes = await customerService.getTodayResults(todayStr).catch(() => ({}));
         if (todayRes && Object.keys(todayRes).length > 0) {
           const isResultDifferent = (a?: any, b?: any): boolean => {
@@ -755,7 +758,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const rawNum = number.includes(':') ? number.split(':')[1] : number;
     const cleanNum = rawNum.trim();
     const fullNum = number.trim();
-    const todayStr = getLocalDateStr();
+    const todayStr = getBusinessDateIST();
 
     const normType = (t?: string) => {
       if (!t) return '';
@@ -1102,27 +1105,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     prize5?: string,
     date?: string
   ) => {
-    const todayStr = getLocalDateStr();
+    const todayStr = getBusinessDateIST();
     const targetDate = date && date.trim() ? date.trim() : todayStr;
-
-    const fallbackResult: GameResult = {
-      id: `res_${Date.now()}`,
-      date: targetDate,
-      gameSlot: slot,
-      prize1,
-      prize2,
-      prize3,
-      prize4,
-      prize5: prize5 || '',
-      compliments,
-      publishedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    };
-
-    let resultToApply = fallbackResult;
 
     try {
       const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate);
-      resultToApply = newRes || fallbackResult;
+      const resultToApply = newRes || {
+        id: `res_${Date.now()}`,
+        date: targetDate,
+        gameSlot: slot,
+        prize1,
+        prize2,
+        prize3,
+        prize4,
+        prize5: prize5 || '',
+        compliments,
+        publishedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      };
       const normDate = extractDateStr(targetDate);
       
       setAllPublishedResults((prev) => ({
@@ -1137,44 +1136,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         window.dispatchEvent(new Event('lucky10_results_updated'));
       }
       addToast(`Winning numbers published for ${slot} (${targetDate})!`, 'success');
-    } catch (err: any) {
-      // Local fallback in case backend is offline
-      const normDate = extractDateStr(targetDate);
-      setAllPublishedResults((prev) => ({
-        ...prev,
-        [`${targetDate}_${slot}`]: fallbackResult,
-        [`${normDate}_${slot}`]: fallbackResult,
-        [slot]: fallbackResult,
-      }));
-      setGameResults((prev) => ({ ...prev, [slot]: fallbackResult }));
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('lucky10_results_updated'));
-      }
-      addToast(`Published for ${slot} (${targetDate})`, 'success');
-    }
 
-    // Immediately evaluate and update local placed tickets for this slot and date
-    setPlacedTickets((prev) =>
-      prev.map((t) => {
-        const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
-        if (t.gameSlot === slot && tDate === targetDate) {
-          if (!resultToApply.prize1 || !resultToApply.prize1.trim()) {
+      // Immediately evaluate and update local placed tickets for this slot and date
+      setPlacedTickets((prev) =>
+        prev.map((t) => {
+          const tDate = extractDateStr(t.placedAt || (t as any).createdAt);
+          if (t.gameSlot === slot && tDate === targetDate) {
+            if (!resultToApply.prize1 || !resultToApply.prize1.trim()) {
+              return {
+                ...t,
+                winAmount: 0.0,
+                status: 'PENDING',
+              };
+            }
+            const evalRes = evaluateTicket(t, resultToApply);
             return {
               ...t,
-              winAmount: 0.0,
-              status: 'PENDING',
+              winAmount: evalRes.totalWinAmount,
+              status: evalRes.isWinner ? 'WON' : 'LOST',
             };
           }
-          const evalRes = evaluateTicket(t, resultToApply);
-          return {
-            ...t,
-            winAmount: evalRes.totalWinAmount,
-            status: evalRes.isWinner ? 'WON' : 'LOST',
-          };
-        }
-        return t;
-      })
-    );
+          return t;
+        })
+      );
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to publish result. Please try again.';
+      addToast(msg, 'error');
+      throw err;
+    }
 
     // Also pull latest calculated records directly from server
     if (isAdminLoggedIn) {
@@ -1367,7 +1356,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const refreshAllData = useCallback(async () => {
     try {
-      const todayStr = getLocalDateStr();
+      const todayStr = getBusinessDateIST();
       const [todayRes, allRes, lims] = await Promise.all([
         customerService.getTodayResults(todayStr).catch(() => ({})),
         customerService.getAllResults().catch(() => ({})),

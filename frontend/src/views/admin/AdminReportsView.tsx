@@ -3,7 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot, PlacedTicket, UserAccount } from '../../types';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
+import { getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import {
   Users,
   Calendar,
@@ -215,7 +215,7 @@ type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
   const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData, fetchDataForDate } = useApp();
-  const todayStr = getLocalDateStr();
+  const todayStr = getBusinessDateIST();
 
   // Auto-sync fresh tickets and results whenever Admin opens Reports or live updates occur
   useEffect(() => {

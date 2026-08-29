@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
-import { getLocalDateStr, extractDateStr } from '../../utils/dateUtils';
+import { getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import {
   ClipboardList,
@@ -174,7 +174,7 @@ export const MyPlayReportView: React.FC = () => {
   }, [refreshAllData]);
 
   // Dates & Form State for Sales Report Form
-  const todayStr = getLocalDateStr();
+  const todayStr = getBusinessDateIST();
 
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
@@ -318,7 +318,7 @@ export const MyPlayReportView: React.FC = () => {
   };
 
   const resetDatesToCurrent = () => {
-    const currentToday = getLocalDateStr();
+    const currentToday = getBusinessDateIST();
     setFromDate(currentToday);
     setToDate(currentToday);
     setWinningFromDate(currentToday);

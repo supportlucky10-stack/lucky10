@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Download } from 'lucide-react';
-import { extractDateStr, getLocalDateStr } from '../../utils/dateUtils';
+import { extractDateStr, getBusinessDateIST } from '../../utils/dateUtils';
 
 interface CountRowItem {
   id: string;
@@ -17,7 +17,7 @@ interface CountRowItem {
 export const TotalCountView: React.FC = () => {
   const { placedTickets, userTickets, setCurrentView } = useApp();
 
-  const todayStr = getLocalDateStr();
+  const todayStr = getBusinessDateIST();
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
   const [isFullView, setIsFullView] = useState<boolean>(false);

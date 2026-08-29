@@ -215,14 +215,6 @@ def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
 @router.post("/results")
 def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     target_date = req.date.strip() if req.date and req.date.strip() else get_business_date()
-    now_ist = get_ist_now()
-
-    # Verify billing for that game slot has closed before allowing publishing
-    if not is_game_result_publishable(req.gameSlot, target_date, now_ist):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Cannot publish result for {req.gameSlot} on {target_date} before game billing is closed."
-        )
 
     compliments_json = json.dumps(req.compliments or [])
 
@@ -231,10 +223,10 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
         norm_target_slot = normalize_slot_name(req.gameSlot)
         existing = db.query(GameResult).filter(
             GameResult.date == target_date,
-            GameResult.game_slot == req.gameSlot
+            (GameResult.game_slot == req.gameSlot) | (GameResult.game_slot == norm_target_slot)
         ).first()
 
-        p1 = req.prize1.strip()
+        p1 = (req.prize1 or "").strip()
         p2 = (req.prize2 or "").strip()
         p3 = (req.prize3 or "").strip()
         p4 = (req.prize4 or "").strip()
@@ -242,20 +234,28 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
         p6 = (req.prize6 or "").strip()
 
         if existing:
-            existing.prize1 = p1
-            existing.prize2 = p2
-            existing.prize3 = p3
-            existing.prize4 = p4
-            existing.prize5 = p5
-            existing.prize6 = p6
-            existing.compliments_json = compliments_json
+            existing.game_slot = norm_target_slot
+            if p1:
+                existing.prize1 = p1
+            if p2:
+                existing.prize2 = p2
+            if p3:
+                existing.prize3 = p3
+            if p4:
+                existing.prize4 = p4
+            if p5:
+                existing.prize5 = p5
+            if p6:
+                existing.prize6 = p6
+            if req.compliments and len(req.compliments) > 0:
+                existing.compliments_json = compliments_json
             existing.published_at = datetime.now(timezone.utc)
             target_res = existing
         else:
             target_res = GameResult(
                 id=f"res_{int(datetime.now().timestamp() * 1000)}",
                 date=target_date,
-                game_slot=req.gameSlot,
+                game_slot=norm_target_slot,
                 prize1=p1,
                 prize2=p2,
                 prize3=p3,

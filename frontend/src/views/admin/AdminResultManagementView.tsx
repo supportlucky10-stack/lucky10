@@ -3,7 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
 import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil } from 'lucide-react';
-import { getLocalDateStr, getDefaultPublishSlot } from '../../utils/dateUtils';
+import { getBusinessDateIST, getDefaultPublishSlot } from '../../utils/dateUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -65,13 +65,13 @@ const slotThemes: Record<string, {
 type PreviewTarget = '1ST' | 'OTHER' | null;
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, refreshAllData } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults } = useApp();
 
   useEffect(() => {
     refreshAllData();
-  }, []);
+  }, [refreshAllData]);
 
-  const todayStr = getLocalDateStr();
+  const todayStr = getBusinessDateIST();
 
   const [selectedSlot, setSelectedSlot] = useState<GameSlot>(() => getDefaultPublishSlot());
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
@@ -116,24 +116,18 @@ export const AdminResultManagementView: React.FC = () => {
 
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    setActivePreviewTarget(null);
-    if (existing && existing.prize1) {
+    if (existing && existing.prize1 && existing.prize1.trim()) {
       setPrize1(existing.prize1);
-      setPrize2(existing.prize2 || '');
-      setPrize3(existing.prize3 || '');
-      setPrize4(existing.prize4 || '');
-      setPrize5(existing.prize5 || '');
-      const comps = existing.compliments ? existing.compliments.flat() : [];
-      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-    } else {
-      setPrize1('');
-      setPrize2('');
-      setPrize3('');
-      setPrize4('');
-      setPrize5('');
-      setComplimentBoxes(Array(30).fill(''));
+      if (existing.prize2 && existing.prize2.trim()) {
+        setPrize2(existing.prize2);
+        setPrize3(existing.prize3 || '');
+        setPrize4(existing.prize4 || '');
+        setPrize5(existing.prize5 || '');
+        const comps = existing.compliments ? existing.compliments.flat() : [];
+        setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+      }
     }
-  }, [selectedSlot, todayStr]);
+  }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate]);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
@@ -141,7 +135,7 @@ export const AdminResultManagementView: React.FC = () => {
     setActivePreviewTarget(null);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
-    if (existing && existing.prize1) {
+    if (existing && existing.prize1 && existing.prize1.trim()) {
       setPrize1(existing.prize1);
       setPrize2(existing.prize2 || '');
       setPrize3(existing.prize3 || '');
@@ -227,9 +221,9 @@ export const AdminResultManagementView: React.FC = () => {
 
   // Trigger Other Prizes (2nd to 5th) + Compliments Preview
   const handleTriggerOtherPrizesPreview = () => {
-    const p1 = prize1.trim() || currentSlotResult?.prize1 || '';
-    if (!p1) {
-      setErrorMessage('Please publish 1st Prize Number first before publishing other prizes.');
+    const p1 = (prize1 || currentSlotResult?.prize1 || '').trim();
+    if (!p1 || p1.length !== 3) {
+      setErrorMessage('Please enter and publish 1st Prize Number first before publishing other prizes.');
       setShowErrorModal(true);
       return;
     }
@@ -270,8 +264,13 @@ export const AdminResultManagementView: React.FC = () => {
 
     if (activePreviewTarget === '1ST') {
       p1 = prize1.trim();
+      p2 = existing?.prize2 || '';
+      p3 = existing?.prize3 || '';
+      p4 = existing?.prize4 || '';
+      p5 = existing?.prize5 || '';
+      compSets = existing?.compliments ? existing.compliments : [];
     } else if (activePreviewTarget === 'OTHER') {
-      p1 = prize1.trim() || existing?.prize1 || '';
+      p1 = existing?.prize1 || prize1.trim();
       p2 = prize2.trim();
       p3 = prize3.trim();
       p4 = prize4.trim();

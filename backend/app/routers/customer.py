@@ -139,8 +139,12 @@ def get_today_results(date: Optional[str] = None, db: Session = Depends(get_db))
     results = db.query(GameResult).filter(GameResult.date == today_str).all()
     out = {}
     for r in results:
-        out[r.game_slot] = format_result(r)
-        out[f"{r.date}_{r.game_slot}"] = format_result(r)
+        norm_slot = normalize_slot_name(r.game_slot)
+        formatted = format_result(r)
+        out[r.game_slot] = formatted
+        out[norm_slot] = formatted
+        out[f"{r.date}_{r.game_slot}"] = formatted
+        out[f"{r.date}_{norm_slot}"] = formatted
     return out
 
 @router.get("/results/by-date")
@@ -149,8 +153,12 @@ def get_results_by_date(date: Optional[str] = None, db: Session = Depends(get_db
     results = db.query(GameResult).filter(GameResult.date == target_date).all()
     out = {}
     for r in results:
-        out[r.game_slot] = format_result(r)
-        out[f"{r.date}_{r.game_slot}"] = format_result(r)
+        norm_slot = normalize_slot_name(r.game_slot)
+        formatted = format_result(r)
+        out[r.game_slot] = formatted
+        out[norm_slot] = formatted
+        out[f"{r.date}_{r.game_slot}"] = formatted
+        out[f"{r.date}_{norm_slot}"] = formatted
     return out
 
 @router.get("/results/all")
@@ -158,12 +166,18 @@ def get_all_results(db: Session = Depends(get_db)):
     results = db.query(GameResult).order_by(GameResult.published_at.desc()).all()
     out = {}
     for r in results:
+        norm_slot = normalize_slot_name(r.game_slot)
         key = f"{r.date}_{r.game_slot}"
+        norm_key = f"{r.date}_{norm_slot}"
         formatted = format_result(r)
         if key not in out:
             out[key] = formatted
+        if norm_key not in out:
+            out[norm_key] = formatted
         if r.game_slot not in out:
             out[r.game_slot] = formatted
+        if norm_slot not in out:
+            out[norm_slot] = formatted
     return out
 
 @router.get("/results/previous")
