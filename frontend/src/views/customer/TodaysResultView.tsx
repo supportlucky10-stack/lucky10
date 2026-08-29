@@ -341,7 +341,7 @@ export const TodaysResultView: React.FC = () => {
       {/* DEDICATED OFF-SCREEN SHARE CARD (Optimized for WhatsApp In-Chat Uncropped Image Capture) */}
       <div
         id="result-share-container"
-        className="fixed -left-[9999px] top-0 pointer-events-none w-[460px] bg-black p-2.5 pb-4 space-y-1 select-none"
+        className="fixed left-0 top-0 -z-50 pointer-events-none w-[460px] bg-black p-2.5 pb-4 space-y-1 select-none"
         aria-hidden="true"
       >
         {/* Share Header: Date & Time in 2 Compact Rows */}
