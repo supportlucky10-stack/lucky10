@@ -158,7 +158,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
-      if (path.includes('/admin') || search.includes('view=admin') || search.includes('admin=true')) {
+      if (
+        path.includes('/master') ||
+        path.includes('/admin') ||
+        search.includes('view=master') ||
+        search.includes('view=admin') ||
+        search.includes('master=true') ||
+        search.includes('admin=true')
+      ) {
         return 'ADMIN_SIGN_IN';
       }
     }
@@ -287,7 +294,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setCurrentUser(user);
             const isAdm = user.role === 'ADMIN';
             setIsAdminLoggedIn(isAdm);
-            const isExplicitAdminUrl = typeof window !== 'undefined' && (window.location.pathname.toLowerCase().includes('/admin') || window.location.search.toLowerCase().includes('view=admin'));
+            const isExplicitAdminUrl =
+              typeof window !== 'undefined' &&
+              (window.location.pathname.toLowerCase().includes('/master') ||
+                window.location.pathname.toLowerCase().includes('/admin') ||
+                window.location.search.toLowerCase().includes('view=master') ||
+                window.location.search.toLowerCase().includes('view=admin'));
             if (isAdm && isExplicitAdminUrl) {
               setCurrentViewInternal('ADMIN_DRAWER');
             }
@@ -601,11 +613,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (view.startsWith('ADMIN_')) {
-      if (!window.location.pathname.toLowerCase().startsWith('/admin')) {
-        window.history.pushState({}, '', '/admin');
+      if (!window.location.pathname.toLowerCase().startsWith('/master') && !window.location.pathname.toLowerCase().startsWith('/admin')) {
+        window.history.pushState({}, '', '/master');
       }
     } else {
-      if (window.location.pathname.toLowerCase().startsWith('/admin') || window.location.search.includes('view=admin')) {
+      if (
+        window.location.pathname.toLowerCase().startsWith('/master') ||
+        window.location.pathname.toLowerCase().startsWith('/admin') ||
+        window.location.search.includes('view=master') ||
+        window.location.search.includes('view=admin')
+      ) {
         window.history.pushState({}, '', '/');
       }
     }
