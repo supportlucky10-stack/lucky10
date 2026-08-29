@@ -17,7 +17,8 @@ export type ViewType =
   | 'ADMIN_RESULT_MANAGEMENT'
   | 'ADMIN_REPORTS'
   | 'ADMIN_ISSUES'
-  | 'ADMIN_LIMIT_BLOCK';
+  | 'ADMIN_LIMIT_BLOCK'
+  | 'NOT_FOUND';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 

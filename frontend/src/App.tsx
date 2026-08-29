@@ -143,6 +143,17 @@ const ViewRouter: React.FC = () => {
     }
   };
 
+  if (currentView === 'NOT_FOUND') {
+    return (
+      <div className="w-full min-h-screen bg-black text-neutral-400 flex flex-col items-center justify-center p-6 text-center font-sans select-none">
+        <div className="flex items-center gap-4 border-b border-neutral-800 pb-4 mb-4">
+          <span className="text-2xl font-bold text-white tracking-wider font-mono">404</span>
+          <span className="text-sm text-neutral-400">This page could not be found.</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MobileContainer>
       {/* Toast Notification Container */}

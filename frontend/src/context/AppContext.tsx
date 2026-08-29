@@ -158,13 +158,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (typeof window !== 'undefined') {
       const path = window.location.pathname.toLowerCase();
       const search = window.location.search.toLowerCase();
+      // If someone visits /admin, make it completely dead (NOT_FOUND)
+      if (path === '/admin' || path.startsWith('/admin/')) {
+        return 'NOT_FOUND';
+      }
+
       if (
         path.includes('/master') ||
-        path.includes('/admin') ||
         search.includes('view=master') ||
-        search.includes('view=admin') ||
-        search.includes('master=true') ||
-        search.includes('admin=true')
+        search.includes('master=true')
       ) {
         return 'ADMIN_SIGN_IN';
       }
@@ -279,9 +281,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [allPublishedResults, gameResults]);
 
-  // 1. Initial Load from Backend API
   useEffect(() => {
     async function loadInitialData() {
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname.toLowerCase();
+        if (path === '/admin' || path.startsWith('/admin/')) {
+          return; // Abort loading for dead /admin route
+        }
+      }
       // Check auth status
       try {
         const user = await authService.getCurrentUser();
@@ -297,9 +304,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const isExplicitAdminUrl =
               typeof window !== 'undefined' &&
               (window.location.pathname.toLowerCase().includes('/master') ||
-                window.location.pathname.toLowerCase().includes('/admin') ||
-                window.location.search.toLowerCase().includes('view=master') ||
-                window.location.search.toLowerCase().includes('view=admin'));
+                window.location.search.toLowerCase().includes('view=master'));
             if (isAdm && isExplicitAdminUrl) {
               setCurrentViewInternal('ADMIN_DRAWER');
             }
@@ -613,7 +618,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (view.startsWith('ADMIN_')) {
-      if (!window.location.pathname.toLowerCase().startsWith('/master') && !window.location.pathname.toLowerCase().startsWith('/admin')) {
+      if (!window.location.pathname.toLowerCase().startsWith('/master')) {
         window.history.pushState({}, '', '/master');
       }
     } else {
