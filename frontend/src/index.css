@@ -376,10 +376,9 @@ input.text-white, textarea.text-white, input.text-gold, textarea.text-gold, inpu
   caret-color: #ffffff !important;
 }
 
-/* Prevent Caret / Cursor blinking and long-press menus on static non-input text elements */
+/* Prevent Caret / Cursor blinking on static non-input text elements */
 *:not(input):not(textarea) {
   caret-color: transparent !important;
-  -webkit-touch-callout: none !important;
 }
 
 .select-none, .pointer-events-none {
