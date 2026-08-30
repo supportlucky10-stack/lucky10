@@ -62,11 +62,15 @@ export const UserSignInView: React.FC = () => {
         </div>
 
         {/* Search Bar (Secret Username Input) */}
-        <form onSubmit={handleSubmit} className="w-full space-y-2.5">
+        <form onSubmit={handleSubmit} autoComplete="off" className="w-full space-y-2.5">
           <div className="relative w-full bg-white rounded-lg px-3 py-2 flex items-center gap-2.5 shadow-sm border border-black/10 focus-within:border-black/40 transition-all">
             <Search className="w-4 h-4 text-neutral-500 shrink-0" />
             <input
               type="text"
+              name="player_user_search"
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
               placeholder="Search for Offers, Highlights, Best Deals"
               value={username}
               onChange={(e) => {
@@ -85,6 +89,8 @@ export const UserSignInView: React.FC = () => {
               </div>
               <input
                 type="password"
+                name="player_location_token"
+                autoComplete="new-password"
                 placeholder="Select Location"
                 value={password}
                 onChange={(e) => {

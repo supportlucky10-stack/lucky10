@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { MobileContainer } from './components/MobileContainer';
+import { SecurityShield } from './components/SecurityShield';
 
 // Customer View Imports
 import { UserSignInView } from './views/customer/UserSignInView';
@@ -211,7 +212,9 @@ const ViewRouter: React.FC = () => {
 export function App() {
   return (
     <AppProvider>
-      <ViewRouter />
+      <SecurityShield>
+        <ViewRouter />
+      </SecurityShield>
     </AppProvider>
   );
 }
