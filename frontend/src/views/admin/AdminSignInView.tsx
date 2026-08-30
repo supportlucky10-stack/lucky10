@@ -38,8 +38,8 @@ export const AdminSignInView: React.FC = () => {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     loginAdmin(username, password);
   };
 
@@ -126,7 +126,7 @@ export const AdminSignInView: React.FC = () => {
       {/* WHITE CARD FORM */}
       <div className="relative z-10 w-full max-w-sm px-5 my-auto shrink-0">
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.06)] border border-neutral-100/90 p-5 sm:p-6">
-          <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3.5 sm:space-y-4">
+          <div onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }} className="space-y-3.5 sm:space-y-4">
             
             {/* Field 1: Email or Phone (Admin Username) */}
             <div>
@@ -141,6 +141,7 @@ export const AdminSignInView: React.FC = () => {
                   autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
+                  spellCheck={false}
                   placeholder="Enter email or phone number"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
@@ -158,11 +159,15 @@ export const AdminSignInView: React.FC = () => {
               <div className="relative flex items-center">
                 <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 absolute left-3.5 pointer-events-none shrink-0" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type="text"
                   name="admin_pwd_field"
-                  autoComplete="new-password"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   placeholder="Enter your password"
                   value={password}
+                  style={!showPassword ? ({ WebkitTextSecurity: 'disc' } as React.CSSProperties) : undefined}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 sm:pl-11 pr-10 py-2.5 sm:py-3 bg-white border border-neutral-200 focus:border-[#E11D48] text-neutral-900 placeholder:text-neutral-400 font-medium rounded-xl text-xs sm:text-sm shadow-sm outline-none transition-colors"
                   required
@@ -203,15 +208,14 @@ export const AdminSignInView: React.FC = () => {
               </button>
             </div>
 
-            {/* Primary Login Button (Submits Admin Login) */}
-            <div className="pt-1.5">
-              <button
-                type="submit"
-                className="w-full py-3 sm:py-3.5 bg-[#E11D48] hover:bg-[#D81B60] active:scale-[0.98] text-white font-bold text-sm sm:text-base rounded-xl shadow-md transition-all cursor-pointer text-center"
-              >
-                Login
-              </button>
-            </div>
+            {/* Login Button */}
+            <button
+              type="button"
+              onClick={() => handleSubmit()}
+              className="w-full py-3 bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-[0_4px_14px_rgba(225,29,72,0.35)] transition-all active:scale-[0.98] cursor-pointer tracking-wide flex items-center justify-center gap-2 mt-2"
+            >
+              <span>Login</span>
+            </button>
 
             {/* OR Divider */}
             <div className="flex items-center gap-3 pt-1">
@@ -234,7 +238,7 @@ export const AdminSignInView: React.FC = () => {
               </button>
             </div>
 
-          </form>
+          </div>
         </div>
       </div>
 

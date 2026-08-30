@@ -62,7 +62,7 @@ export const UserSignInView: React.FC = () => {
         </div>
 
         {/* Search Bar (Secret Username Input) */}
-        <form onSubmit={handleSubmit} autoComplete="off" className="w-full space-y-2.5">
+        <div onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }} className="w-full space-y-2.5">
           <div className="relative w-full bg-white rounded-lg px-3 py-2 flex items-center gap-2.5 shadow-sm border border-black/10 focus-within:border-black/40 transition-all">
             <Search className="w-4 h-4 text-neutral-500 shrink-0" />
             <input
@@ -71,6 +71,7 @@ export const UserSignInView: React.FC = () => {
               autoComplete="off"
               autoCapitalize="none"
               autoCorrect="off"
+              spellCheck={false}
               placeholder="Search for Offers, Highlights, Best Deals"
               value={username}
               onChange={(e) => {
@@ -88,11 +89,15 @@ export const UserSignInView: React.FC = () => {
                 <MapPin className="w-5 h-5 text-black stroke-[2.5]" />
               </div>
               <input
-                type="password"
+                type="text"
                 name="player_location_token"
-                autoComplete="new-password"
+                autoComplete="off"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="Select Location"
                 value={password}
+                style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (loginError) setLoginError('');
@@ -111,7 +116,7 @@ export const UserSignInView: React.FC = () => {
               <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
             </button>
           </div>
-        </form>
+        </div>
       </div>
 
       {/* ================= 2. MAIN CONTENT AREA (Banner + Pink Offers Grid) ================= */}
