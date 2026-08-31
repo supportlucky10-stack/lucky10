@@ -153,6 +153,7 @@ export const GameDashboardView: React.FC = () => {
   const [pastedText, setPastedText] = useState('');
   const [pasteError, setPasteError] = useState<string | null>(null);
   const [isProcessingPaste, setIsProcessingPaste] = useState(false);
+  const lastGeneratedPasteRef = useRef<string>('');
 
   // Common Input State
   const [inputNum, setInputNum] = useState('');
@@ -516,8 +517,11 @@ export const GameDashboardView: React.FC = () => {
       // Permission denied or clipboard reading unavailable - gracefully fallback to empty/manual
     }
 
-    if (clipText && typeof clipText === 'string' && clipText.trim().length > 0) {
-      setPastedText(clipText.trim());
+    const trimmedClip = typeof clipText === 'string' ? clipText.trim() : '';
+    // If the clipboard has new/different text from what was last generated, populate it.
+    // If it's the exact same text already generated once, open fresh as new (empty).
+    if (trimmedClip.length > 0 && trimmedClip !== lastGeneratedPasteRef.current) {
+      setPastedText(trimmedClip);
     } else {
       setPastedText('');
     }
@@ -563,6 +567,7 @@ export const GameDashboardView: React.FC = () => {
 
       if (res.addedCount > 0) {
         addToast(`Added ${res.addedCount} pasted bet(s) to slip`, 'success');
+        lastGeneratedPasteRef.current = pastedText.trim();
         handleClosePasteModal();
       } else {
         setPasteError('Selected numbers could not be added due to limit or block rules.');
