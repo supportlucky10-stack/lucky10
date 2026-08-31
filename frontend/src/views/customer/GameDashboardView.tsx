@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock, ClipboardList } from 'lucide-react';
 import type { GameSlot, BetSlipItem } from '../../types';
 import { isGameSlotOpen, getBusinessDateIST } from '../../utils/dateUtils';
+import { parsePastedBillText } from '../../utils/pasteBillParser';
 
 interface SlotTheme {
   name: string;
@@ -147,6 +148,12 @@ export const GameDashboardView: React.FC = () => {
     }
   });
 
+  // Paste Bill State
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pastedText, setPastedText] = useState('');
+  const [pasteError, setPasteError] = useState<string | null>(null);
+  const [isProcessingPaste, setIsProcessingPaste] = useState(false);
+
   // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');
@@ -182,6 +189,10 @@ export const GameDashboardView: React.FC = () => {
     setMinCountModalOpen(false);
     setIsOverloadedModalOpen(false);
     setIsBlockedModalOpen(false);
+    setIsPasteModalOpen(false);
+    setPastedText('');
+    setPasteError(null);
+    setIsProcessingPaste(false);
   };
 
   const handleGameOverOk = () => {
@@ -494,6 +505,56 @@ export const GameDashboardView: React.FC = () => {
     }
   };
 
+  const handleClosePasteModal = () => {
+    setIsPasteModalOpen(false);
+    setPastedText('');
+    setPasteError(null);
+    setIsProcessingPaste(false);
+  };
+
+  const handleGeneratePastedBill = () => {
+    if (isProcessingPaste) return;
+    if (!isGameSlotOpen(activeGameSlot)) {
+      addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
+      return;
+    }
+
+    setPasteError(null);
+    setIsProcessingPaste(true);
+
+    try {
+      const parseRes = parsePastedBillText(pastedText);
+      if (!parseRes.success) {
+        setPasteError(parseRes.errorMessage || 'Invalid bill text.');
+        setIsProcessingPaste(false);
+        return;
+      }
+
+      if (parseRes.items.length === 0) {
+        setPasteError('No valid bill lines found.');
+        setIsProcessingPaste(false);
+        return;
+      }
+
+      const res = addBatchToBetSlip(parseRes.items, customerName);
+
+      if (res.blockedCount > 0 || res.overloadedCount > 0) {
+        setIsOverloadedModalOpen(true);
+      }
+
+      if (res.addedCount > 0) {
+        addToast(`Added ${res.addedCount} pasted bet(s) to slip`, 'success');
+        handleClosePasteModal();
+      } else {
+        setPasteError('Selected numbers could not be added due to limit or block rules.');
+      }
+    } catch (err: any) {
+      setPasteError(err?.message || 'Error processing pasted bill.');
+    } finally {
+      setIsProcessingPaste(false);
+    }
+  };
+
   const totalCount = betSlip.reduce((sum, item) => sum + item.count, 0);
   const totalAmount = betSlip.reduce((sum, item) => sum + item.totalAmount, 0);
 
@@ -513,43 +574,57 @@ export const GameDashboardView: React.FC = () => {
           <Menu className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
         </button>
 
-        {/* Right: SAVE Button */}
-        <button
-          disabled={isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot)}
-          onClick={async () => {
-            if (isSaving || betSlip.length === 0) return;
-            if (!isGameSlotOpen(activeGameSlot)) {
-              addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
-              return;
-            }
-            setIsSaving(true);
-            try {
-              const billId = await saveTicket(customerName);
-              if (billId) {
-                setSavedBillId(billId);
-                setCustomerName('');
-              }
-            } catch (err: any) {
-              const msg = err?.message || '';
-              if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('time out') || msg.toLowerCase().includes('cutoff')) {
+        {/* Right: Paste Button & SAVE Button */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setPasteError(null);
+              setIsPasteModalOpen(true);
+            }}
+            className={`p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border border-neutral-800 ${theme.menuIconText} cursor-pointer flex items-center justify-center`}
+            title="Paste Bill"
+          >
+            <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          </button>
+
+          <button
+            disabled={isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot)}
+            onClick={async () => {
+              if (isSaving || betSlip.length === 0) return;
+              if (!isGameSlotOpen(activeGameSlot)) {
                 addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
-              } else if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
-                setIsOverloadedModalOpen(true);
-              } else if (msg.includes('Minimum 5')) {
-                setMinCountModalOpen(true);
-              } else {
-                addToast(msg || 'Failed to save bill. Billing may be closed for this game slot.', 'error');
+                return;
               }
-            } finally {
-              setIsSaving(false);
-            }
-          }}
-          className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-opacity transition-transform duration-150 ${
-            isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
-          }`}
-        >
-          {isSaving ? 'SAVING...' : 'SAVE'}
-        </button>
+              setIsSaving(true);
+              try {
+                const billId = await saveTicket(customerName);
+                if (billId) {
+                  setSavedBillId(billId);
+                  setCustomerName('');
+                }
+              } catch (err: any) {
+                const msg = err?.message || '';
+                if (!isGameSlotOpen(activeGameSlot) || msg.toLowerCase().includes('closed') || msg.toLowerCase().includes('time out') || msg.toLowerCase().includes('cutoff')) {
+                  addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
+                } else if (msg.includes('cant be played') || msg.includes('Overloaded') || msg.includes('Blocked')) {
+                  setIsOverloadedModalOpen(true);
+                } else if (msg.includes('Minimum 5')) {
+                  setMinCountModalOpen(true);
+                } else {
+                  addToast(msg || 'Failed to save bill. Billing may be closed for this game slot.', 'error');
+                }
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+            className={`px-5 py-1.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs sm:text-sm tracking-wider rounded-lg shadow uppercase transition-opacity transition-transform duration-150 ${
+              isSaving || betSlip.length === 0 || !isGameSlotOpen(activeGameSlot) ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-95 active:scale-95 cursor-pointer'
+            }`}
+          >
+            {isSaving ? 'SAVING...' : 'SAVE'}
+          </button>
+        </div>
       </div>
 
       {/* Sub-Header Ribbon: Interactive Game Slot Switcher Dropdown */}
@@ -1026,6 +1101,73 @@ export const GameDashboardView: React.FC = () => {
             </div>
           </div>
         </div>
+
+      {/* PASTE BILL POP-UP MODAL */}
+      {isPasteModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-sm sm:max-w-md w-full p-5 shadow-2xl space-y-4 text-left">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-gold" />
+                <h4 className="font-black text-white text-sm sm:text-base uppercase tracking-wider font-mono">
+                  Paste Bill
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={handleClosePasteModal}
+                className="text-neutral-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer text-sm font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider font-mono">
+                Paste / Enter Bill Lines:
+              </label>
+              <textarea
+                rows={7}
+                value={pastedText}
+                onChange={(e) => {
+                  setPastedText(e.target.value);
+                  if (pasteError) setPasteError(null);
+                }}
+                placeholder="e.g.&#10;638*3+2&#10;928=1=1&#10;A*6*50&#10;ABC*8*15&#10;AB*45*10"
+                className="w-full bg-black border border-neutral-800 focus:border-gold rounded-xl p-3 text-white font-mono text-xs sm:text-sm focus:outline-none resize-none leading-relaxed"
+                autoFocus
+                spellCheck={false}
+              />
+            </div>
+
+            {pasteError && (
+              <div className="p-2.5 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 font-mono text-xs whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto">
+                {pasteError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={handleClosePasteModal}
+                className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-300 font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-neutral-800 font-mono"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isProcessingPaste || !pastedText.trim()}
+                onClick={handleGeneratePastedBill}
+                className={`w-full py-2.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs uppercase tracking-wider rounded-xl shadow transition-all font-mono ${
+                  isProcessingPaste || !pastedText.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95 cursor-pointer'
+                }`}
+              >
+                {isProcessingPaste ? 'Processing...' : 'OK / Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SAVED SUCCESS CONFIRMATION POP-UP MODAL */}
       {savedBillId && (
