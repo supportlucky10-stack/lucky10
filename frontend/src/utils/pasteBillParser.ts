@@ -124,8 +124,8 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format B: ABC / ALL 1-Digit Positions: ABC*8*15 or ALL*8*15
-    const abcMatch = trimmed.match(/^(ABC|abc|ALL|all)\s*[\*:=]\s*(\d{1})\s*[\*:=]\s*(\d+)$/);
+    // Format B: ABC / ALL 1-Digit Positions: ABC*8*15 or ALL*8*15 or ABC 8 15
+    const abcMatch = trimmed.match(/^(ABC|abc|ALL|all)\s*[\*:=\s]\s*(\d{1})\s*[\*:=\s]\s*(\d+)$/);
     if (abcMatch) {
       const digit = abcMatch[2];
       const count = parseInt(abcMatch[3], 10);
@@ -154,8 +154,8 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format C: Single 1-Digit Position: A*6*50, B*3*30, C*7*30
-    const singlePosMatch = trimmed.match(/^([A-Ca-c])\s*[\*:=]\s*(\d{1})\s*[\*:=]\s*(\d+)$/);
+    // Format C: Single 1-Digit Position: A*6*50, B*3*30, C*7*30, A 6 50
+    const singlePosMatch = trimmed.match(/^([A-Ca-c])\s*[\*:=\s]\s*(\d{1})\s*[\*:=\s]\s*(\d+)$/);
     if (singlePosMatch) {
       const pos = singlePosMatch[1].toUpperCase();
       const digit = singlePosMatch[2];
@@ -183,8 +183,8 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format D: 2-Digit Pairs: AB*45*10, BC*23*10, AC*89*10
-    const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])\s*[\*:=]\s*(\d{2})\s*[\*:=]\s*(\d+)$/);
+    // Format D: 2-Digit Pairs: AB*45*10, BC*23*10, AC*89*10, AB 45 10
+    const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])\s*[\*:=\s]\s*(\d{2})\s*[\*:=\s]\s*(\d+)$/);
     if (pairMatch) {
       const pair = pairMatch[1].toUpperCase();
       const digits = pairMatch[2];

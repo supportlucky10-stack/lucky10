@@ -601,7 +601,7 @@ export const GameDashboardView: React.FC = () => {
             className={`p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border border-neutral-800 ${theme.menuIconText} cursor-pointer flex items-center justify-center`}
             title="Paste Bill"
           >
-            <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+            <Copy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
 
           <button
