@@ -568,7 +568,7 @@ export const GameDashboardView: React.FC = () => {
         </button>
 
         {/* Right: Paste Button & SAVE Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             type="button"
             onClick={handleDirectClipboardImport}
