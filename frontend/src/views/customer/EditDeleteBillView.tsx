@@ -242,7 +242,7 @@ export const EditDeleteBillView: React.FC = () => {
                 </div>
 
                 {/* Table Column Headers Bar */}
-                <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-4 py-2.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+                <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-3 sm:px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
                   <span className="text-left">GAME</span>
                   <span>NUM</span>
                   <span>COUNT</span>
@@ -254,21 +254,21 @@ export const EditDeleteBillView: React.FC = () => {
                   {searchedBill.items.map((item: any, idx: number) => (
                     <div
                       key={idx}
-                      className="grid grid-cols-4 px-4 py-3 bg-white text-center items-center font-mono"
+                      className="grid grid-cols-4 px-3 sm:px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
                     >
                       <span className="text-left uppercase text-black font-black">{getDisplayGame(item)}</span>
-                      <span className="text-black font-black tracking-wider text-sm">{getDisplayNumber(item)}</span>
-                      <span className="text-black font-black text-sm">{item.count}</span>
+                      <span className="text-black font-black tracking-wider text-xs sm:text-sm">{getDisplayNumber(item)}</span>
+                      <span className="text-black font-black text-xs sm:text-sm">{item.count}</span>
                       <span className="text-right text-black font-mono font-bold">₹{item.totalAmount}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Bill Total Footer Bar with ONLY Bottom DELETE Button */}
-                <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-3.5 flex items-center justify-between font-mono gap-2">
+                <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap">TOTAL AMOUNT</span>
-                    <span className="text-white font-black text-lg whitespace-nowrap">₹{searchedBill.totalAmount}</span>
+                    <span className="text-white font-black text-base sm:text-lg whitespace-nowrap">₹{searchedBill.totalAmount}</span>
                   </div>
 
                   <button
