@@ -505,6 +505,25 @@ export const GameDashboardView: React.FC = () => {
     }
   };
 
+  const handleOpenPasteModal = async () => {
+    setPasteError(null);
+    let clipText = '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+        clipText = await navigator.clipboard.readText();
+      }
+    } catch {
+      // Permission denied or clipboard reading unavailable - gracefully fallback to empty/manual
+    }
+
+    if (clipText && typeof clipText === 'string' && clipText.trim().length > 0) {
+      setPastedText(clipText.trim());
+    } else {
+      setPastedText('');
+    }
+    setIsPasteModalOpen(true);
+  };
+
   const handleClosePasteModal = () => {
     setIsPasteModalOpen(false);
     setPastedText('');
@@ -578,10 +597,7 @@ export const GameDashboardView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => {
-              setPasteError(null);
-              setIsPasteModalOpen(true);
-            }}
+            onClick={handleOpenPasteModal}
             className={`p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border border-neutral-800 ${theme.menuIconText} cursor-pointer flex items-center justify-center`}
             title="Paste Bill"
           >
