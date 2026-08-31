@@ -240,11 +240,8 @@ export function parsePastedBillText(text: string): ParseResult {
     }
 
     // =========================================================================
-    // 2. Generic 3-Group Symbol Separator Format:
-    //    NUMBER [ANY SYMBOLS] NUMBER [ANY SYMBOLS] NUMBER
-    //    - Separator is ANY non-alphabetic, non-numeric character ([^0-9a-zA-Z]+)
-    //    - Exactly THREE numeric groups (3-digit number, Super count, Box count)
-    //    - Rejects any alphabetic characters in separators (e.g. 638ABC1ABC1)
+    // 2. Generic 3-Group Symbol Separator Format (3-Digit Number + Super + Box):
+    //    NUMBER [ANY SYMBOLS] SUPER [ANY SYMBOLS] BOX
     // =========================================================================
     const generic3GroupMatch = trimmed.match(/^(\d{3})([^0-9a-zA-Z]+)(\d+)([^0-9a-zA-Z]+)(\d+)$/);
     if (generic3GroupMatch) {
@@ -287,6 +284,39 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
+    // =========================================================================
+    // 3. Generic 2-Group Symbol Separator Format (3-Digit Number + Super):
+    //    NUMBER [ANY NON-ALPHANUMERIC SEPARATOR / SPACE] SUPER_COUNT
+    //    Examples: 455-10, 455=10, 455/10, 455:10, 455_10, 455@10, 455#10,
+    //              455$10, 455%10, 455&10, 455|10, 455~10, 455 10, 455 - 10,
+    //              455 @@@ 10, 455-=10, 455/@10, 455# 10, 455 @ 10, 928=2, 638*3
+    // =========================================================================
+    const generic2GroupMatch = trimmed.match(/^(\d{3})([^0-9a-zA-Z]+)(\d+)$/);
+    if (generic2GroupMatch) {
+      const num = generic2GroupMatch[1];
+      const count = parseInt(generic2GroupMatch[3], 10);
+      if (count <= 0) {
+        return {
+          success: false,
+          items: [],
+          totalCount: 0,
+          totalAmount: 0,
+          errorLine: trimmed,
+          lineNumber: lineNum,
+          errorMessage: `Line ${lineNum}: "${trimmed}" has invalid count. Count must be at least 1.`,
+        };
+      }
+      items.push({
+        number: num,
+        count,
+        type: 'Direct',
+        playMode: 'DIRECT',
+        unitPrice: 10,
+        totalAmount: count * 10,
+      });
+      continue;
+    }
+
     // If line didn't match any supported pattern, fail validation atomically
     return {
       success: false,
@@ -295,7 +325,7 @@ export function parsePastedBillText(text: string): ParseResult {
       totalAmount: 0,
       errorLine: trimmed,
       lineNumber: lineNum,
-      errorMessage: `Line ${lineNum}: "${trimmed}" is invalid.\n\nSupported Formats:\n• 638-1-1   (Number - Super - Box: supports any symbols as separators)\n• 638*3+2   (3-Digit Number * Super + Box)\n• A*6*50    (1-Digit Position * Digit * Count)\n• ABC*8*15  (All Positions * Digit * Count)\n• AB*45*10  (2-Digit Pair * Digits * Count)`,
+      errorMessage: `Line ${lineNum}: "${trimmed}" is invalid.\n\nSupported Formats (accepts any symbols or spaces as separators):\n• 455-10 / 455=10 / 455 10      (3-Digit Number - Super)\n• 638-3-2 / 638*3+2 / 638 3 2  (3-Digit Number - Super - Box)\n• A*6*50 / A-6-50 / A 6 50     (1-Digit Position - Digit - Count)\n• ABC*8*15 / ABC+9-15          (All Positions - Digit - Count)\n• AB*45*10 / AB-45-10          (2-Digit Pair - Digits - Count)`,
     };
   }
 
