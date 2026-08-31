@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock, ClipboardList } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem } from '../../types';
 import { isGameSlotOpen, getBusinessDateIST } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
@@ -148,13 +148,6 @@ export const GameDashboardView: React.FC = () => {
     }
   });
 
-  // Paste Bill State
-  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
-  const [pastedText, setPastedText] = useState('');
-  const [pasteError, setPasteError] = useState<string | null>(null);
-  const [isProcessingPaste, setIsProcessingPaste] = useState(false);
-  const lastGeneratedPasteRef = useRef<string>('');
-
   // Common Input State
   const [inputNum, setInputNum] = useState('');
   const [inputCount, setInputCount] = useState('');
@@ -190,10 +183,6 @@ export const GameDashboardView: React.FC = () => {
     setMinCountModalOpen(false);
     setIsOverloadedModalOpen(false);
     setIsBlockedModalOpen(false);
-    setIsPasteModalOpen(false);
-    setPastedText('');
-    setPasteError(null);
-    setIsProcessingPaste(false);
   };
 
   const handleGameOverOk = () => {
@@ -506,56 +495,40 @@ export const GameDashboardView: React.FC = () => {
     }
   };
 
-  const handleOpenPasteModal = async () => {
-    setPasteError(null);
-    let clipText = '';
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
-        clipText = await navigator.clipboard.readText();
-      }
-    } catch {
-      // Permission denied or clipboard reading unavailable - gracefully fallback to empty/manual
-    }
-
-    const trimmedClip = typeof clipText === 'string' ? clipText.trim() : '';
-    // If the clipboard has new/different text from what was last generated, populate it.
-    // If it's the exact same text already generated once, open fresh as new (empty).
-    if (trimmedClip.length > 0 && trimmedClip !== lastGeneratedPasteRef.current) {
-      setPastedText(trimmedClip);
-    } else {
-      setPastedText('');
-    }
-    setIsPasteModalOpen(true);
-  };
-
-  const handleClosePasteModal = () => {
-    setIsPasteModalOpen(false);
-    setPastedText('');
-    setPasteError(null);
-    setIsProcessingPaste(false);
-  };
-
-  const handleGeneratePastedBill = () => {
-    if (isProcessingPaste) return;
+  const handleDirectClipboardImport = async () => {
     if (!isGameSlotOpen(activeGameSlot)) {
       addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
       return;
     }
 
-    setPasteError(null);
-    setIsProcessingPaste(true);
+    let clipText = '';
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.readText) {
+        clipText = await navigator.clipboard.readText();
+      } else {
+        addToast('Unable to read clipboard. Please copy the bill text and try again.', 'error');
+        return;
+      }
+    } catch {
+      addToast('Unable to read clipboard. Please copy the bill text and try again.', 'error');
+      return;
+    }
+
+    const trimmedClip = typeof clipText === 'string' ? clipText.trim() : '';
+    if (!trimmedClip) {
+      addToast('Clipboard is empty.', 'info');
+      return;
+    }
 
     try {
-      const parseRes = parsePastedBillText(pastedText);
+      const parseRes = parsePastedBillText(trimmedClip);
       if (!parseRes.success) {
-        setPasteError(parseRes.errorMessage || 'Invalid bill text.');
-        setIsProcessingPaste(false);
+        addToast(parseRes.errorMessage || 'Invalid bill text in clipboard.', 'error');
         return;
       }
 
       if (parseRes.items.length === 0) {
-        setPasteError('No valid bill lines found.');
-        setIsProcessingPaste(false);
+        addToast('No valid bill lines found in clipboard.', 'error');
         return;
       }
 
@@ -566,16 +539,12 @@ export const GameDashboardView: React.FC = () => {
       }
 
       if (res.addedCount > 0) {
-        addToast(`Added ${res.addedCount} pasted bet(s) to slip`, 'success');
-        lastGeneratedPasteRef.current = pastedText.trim();
-        handleClosePasteModal();
+        addToast(`Imported ${res.addedCount} bill item(s) from clipboard`, 'success');
       } else {
-        setPasteError('Selected numbers could not be added due to limit or block rules.');
+        addToast('Selected numbers could not be added due to limit or block rules.', 'error');
       }
     } catch (err: any) {
-      setPasteError(err?.message || 'Error processing pasted bill.');
-    } finally {
-      setIsProcessingPaste(false);
+      addToast(err?.message || 'Error processing clipboard bill.', 'error');
     }
   };
 
@@ -602,9 +571,9 @@ export const GameDashboardView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={handleOpenPasteModal}
+            onClick={handleDirectClipboardImport}
             className={`p-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 transition-colors border border-neutral-800 ${theme.menuIconText} cursor-pointer flex items-center justify-center`}
-            title="Paste Bill"
+            title="Import from Clipboard"
           >
             <Copy className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
@@ -1123,93 +1092,7 @@ export const GameDashboardView: React.FC = () => {
           </div>
         </div>
 
-      {/* PASTE BILL POP-UP MODAL */}
-      {isPasteModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
-          <div className="bg-neutral-950 border border-neutral-800 rounded-2xl max-w-sm sm:max-w-md w-full p-5 shadow-2xl space-y-4 text-left">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-2.5">
-              <div className="flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-gold" />
-                <h4 className="font-black text-white text-sm sm:text-base uppercase tracking-wider font-mono">
-                  Paste Bill
-                </h4>
-              </div>
-              <button
-                type="button"
-                onClick={handleClosePasteModal}
-                className="text-neutral-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer text-sm font-bold"
-              >
-                ✕
-              </button>
-            </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider font-mono">
-                  Paste / Enter Bill Lines:
-                </label>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      if (navigator.clipboard?.readText) {
-                        const txt = await navigator.clipboard.readText();
-                        if (txt && txt.trim()) {
-                          setPastedText(txt.trim());
-                          setPasteError(null);
-                        }
-                      }
-                    } catch {
-                      setPasteError('Clipboard permission blocked by browser. Please paste manually into the box.');
-                    }
-                  }}
-                  className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 active:scale-95 text-gold text-[10px] font-bold rounded border border-neutral-700 cursor-pointer flex items-center gap-1"
-                >
-                  <ClipboardList className="w-3 h-3" /> Paste
-                </button>
-              </div>
-              <textarea
-                rows={7}
-                value={pastedText}
-                onChange={(e) => {
-                  setPastedText(e.target.value);
-                  if (pasteError) setPasteError(null);
-                }}
-                placeholder="e.g.&#10;638*3+2&#10;928=1=1&#10;A*6*50&#10;ABC*8*15&#10;AB*45*10"
-                className="w-full bg-black border border-neutral-800 focus:border-gold rounded-xl p-3 text-white font-mono text-xs sm:text-sm focus:outline-none resize-none leading-relaxed"
-                autoFocus
-                spellCheck={false}
-              />
-            </div>
-
-            {pasteError && (
-              <div className="p-2.5 bg-rose-950/60 border border-rose-800 rounded-xl text-rose-300 font-mono text-xs whitespace-pre-line leading-relaxed max-h-36 overflow-y-auto">
-                {pasteError}
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-2.5 pt-1">
-              <button
-                type="button"
-                onClick={handleClosePasteModal}
-                className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-300 font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-neutral-800 font-mono"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isProcessingPaste || !pastedText.trim()}
-                onClick={handleGeneratePastedBill}
-                className={`w-full py-2.5 ${theme.saveBtnBg} ${theme.saveBtnText} font-black text-xs uppercase tracking-wider rounded-xl shadow transition-all font-mono ${
-                  isProcessingPaste || !pastedText.trim() ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110 active:scale-95 cursor-pointer'
-                }`}
-              >
-                {isProcessingPaste ? 'Processing...' : 'OK / Generate'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* SAVED SUCCESS CONFIRMATION POP-UP MODAL */}
       {savedBillId && (
