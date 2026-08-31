@@ -124,11 +124,11 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format B: ABC / ALL 1-Digit Positions: ABC*8*15 or ALL*8*15 or ABC 8 15
-    const abcMatch = trimmed.match(/^(ABC|abc|ALL|all)\s*[\*:=\s]\s*(\d{1})\s*[\*:=\s]\s*(\d+)$/);
+    // Format B: ABC / ALL 1-Digit Positions: ABC*8*15, ABC-8-15, ABC+8-15, ABC=8=15, ABC/8:15, ABC 8 15, ABC+9-15, ABC @ 8 # 15
+    const abcMatch = trimmed.match(/^(ABC|abc|ALL|all)([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
     if (abcMatch) {
-      const digit = abcMatch[2];
-      const count = parseInt(abcMatch[3], 10);
+      const digit = abcMatch[3];
+      const count = parseInt(abcMatch[5], 10);
       if (count <= 0) {
         return {
           success: false,
@@ -154,12 +154,12 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format C: Single 1-Digit Position: A*6*50, B*3*30, C*7*30, A 6 50
-    const singlePosMatch = trimmed.match(/^([A-Ca-c])\s*[\*:=\s]\s*(\d{1})\s*[\*:=\s]\s*(\d+)$/);
+    // Format C: Single 1-Digit Position: A*6*50, A-6-50, A=6=50, A/6/50, A 6 50, A @ 6 # 50, A+6-50, B*3*30, B-3-30, B 3 30, C*7*30, C-7-30, C 7 30
+    const singlePosMatch = trimmed.match(/^([A-Ca-c])([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
     if (singlePosMatch) {
       const pos = singlePosMatch[1].toUpperCase();
-      const digit = singlePosMatch[2];
-      const count = parseInt(singlePosMatch[3], 10);
+      const digit = singlePosMatch[3];
+      const count = parseInt(singlePosMatch[5], 10);
       if (count <= 0) {
         return {
           success: false,
@@ -183,12 +183,12 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format D: 2-Digit Pairs: AB*45*10, BC*23*10, AC*89*10, AB 45 10
-    const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])\s*[\*:=\s]\s*(\d{2})\s*[\*:=\s]\s*(\d+)$/);
+    // Format D: 2-Digit Pairs: AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10, AC-89-10, AC 89 10, BC+23-10, AB/45:10
+    const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])([^0-9a-zA-Z]+)(\d{2})([^0-9a-zA-Z]+)(\d+)$/);
     if (pairMatch) {
       const pair = pairMatch[1].toUpperCase();
-      const digits = pairMatch[2];
-      const count = parseInt(pairMatch[3], 10);
+      const digits = pairMatch[3];
+      const count = parseInt(pairMatch[5], 10);
       if (count <= 0) {
         return {
           success: false,
@@ -212,11 +212,11 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format E: Specific 3-Digit Single Super (e.g. 928=2)
-    const singleSuperEqMatch = trimmed.match(/^(\d{3})\s*=\s*(\d+)$/);
-    if (singleSuperEqMatch) {
-      const num = singleSuperEqMatch[1];
-      const count = parseInt(singleSuperEqMatch[2], 10);
+    // Format E: Specific 3-Digit Single Super (e.g. 928=2 or 638*3)
+    const singleSuperMatch = trimmed.match(/^(\d{3})\s*[\*:=]\s*(\d+)$/);
+    if (singleSuperMatch) {
+      const num = singleSuperMatch[1];
+      const count = parseInt(singleSuperMatch[2], 10);
       if (count <= 0) {
         return {
           success: false,
