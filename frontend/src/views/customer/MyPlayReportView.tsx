@@ -245,7 +245,7 @@ export const MyPlayReportView: React.FC = () => {
   const startDetailLongPress = (tkt: any) => {
     detailLongPressTimerRef.current = setTimeout(() => {
       setDeleteSingleTicketTarget(tkt);
-    }, 750);
+    }, 1200);
   };
 
   const cancelDetailLongPress = () => {
