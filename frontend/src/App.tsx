@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { MobileContainer } from './components/MobileContainer';
+import { InstallPromptModal } from './components/InstallPromptModal';
 
 // Customer View Imports
 import { UserSignInView } from './views/customer/UserSignInView';
@@ -200,6 +201,9 @@ const ViewRouter: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Leora Fashions PWA Install Modal */}
+      <InstallPromptModal />
 
       <React.Suspense fallback={<div className="p-8 text-center text-gold/60 text-xs font-mono">Loading...</div>}>
         {renderView()}

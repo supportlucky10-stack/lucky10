@@ -20,9 +20,9 @@ export default defineConfig({
         'assets/*.png',
       ],
       manifest: {
-        name: 'Lucky10',
-        short_name: 'Lucky10',
-        description: 'Lucky10 Live Billing and Game Management Platform',
+        name: 'Leora Fashions',
+        short_name: 'Leora Fashions',
+        description: 'Leora Fashions Official App',
         theme_color: '#000000',
         background_color: '#000000',
         display: 'standalone',
