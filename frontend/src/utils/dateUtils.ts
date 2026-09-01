@@ -109,16 +109,16 @@ export const isGameSlotOpen = (slotName: string): boolean => {
 
     const s = (slotName || '').toUpperCase();
     if (s.includes('1') && s.includes('PM')) {
-      return totalSeconds < 12 * 3600 + 59 * 60; // 12:59:00
+      return totalSeconds < 12 * 3600 + 59 * 60; // 12:59:00 (12:59 PM)
     }
     if (s.includes('3') && s.includes('PM')) {
-      return totalSeconds < 14 * 3600 + 59 * 60; // 14:59:00
+      return totalSeconds < 15 * 3600 + 3 * 60; // 15:03:00 (3:03 PM)
     }
     if (s.includes('6') && s.includes('PM')) {
-      return totalSeconds < 17 * 3600 + 59 * 60; // 17:59:00
+      return totalSeconds < 17 * 3600 + 59 * 60; // 17:59:00 (5:59 PM)
     }
     if (s.includes('8') && s.includes('PM')) {
-      return totalSeconds < 19 * 3600 + 59 * 60; // 19:59:00
+      return totalSeconds < 19 * 3600 + 59 * 60; // 19:59:00 (7:59 PM)
     }
     return true;
   } catch (e) {
@@ -129,8 +129,8 @@ export const isGameSlotOpen = (slotName: string): boolean => {
 /**
  * Returns the default Game Slot for Homepage / Customer Billing based on current IST (Asia/Kolkata) time:
  * - 00:00:00 - 12:59:59 => "1 PM Game"
- * - 13:00:00 - 14:59:59 => "3 PM Game"
- * - 15:00:00 - 17:59:59 => "6 PM Game"
+ * - 13:00:00 - 15:02:59 => "3 PM Game" (Until 3:03 PM)
+ * - 15:03:00 - 17:59:59 => "6 PM Game"
  * - 18:00:00 - 23:59:59 => "8 PM Game"
  * At midnight (00:00:00 next day) => resets to "1 PM Game"
  */
@@ -139,13 +139,17 @@ export const getDefaultBillingSlot = (): '1 PM Game' | '3 PM Game' | '6 PM Game'
     const formatter = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
       hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
     });
     const parts = formatter.formatToParts(new Date());
     const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-    if (hour < 13) return '1 PM Game';
-    if (hour < 15) return '3 PM Game';
-    if (hour < 18) return '6 PM Game';
+    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+    const totalMinutes = hour * 60 + minute;
+
+    if (totalMinutes < 12 * 60 + 59) return '1 PM Game';
+    if (totalMinutes < 15 * 60 + 3) return '3 PM Game';
+    if (totalMinutes < 17 * 60 + 59) return '6 PM Game';
     return '8 PM Game';
   } catch (e) {
     return '1 PM Game';

@@ -1017,7 +1017,7 @@ export const GameDashboardView: React.FC = () => {
 
         {/* Slip Table Placed Down Below Subtotal Bar (Increased length, clean internal scroll) */}
         <div className="w-full flex-1 min-h-[260px] sm:min-h-[320px] max-h-[420px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
-          <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-2 px-1 text-center shrink-0">
+          <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-1.5 px-1 text-center shrink-0">
             <span className="border-r border-gray-300">Type</span>
             <span className="border-r border-gray-300">Number</span>
             <span className="border-r border-gray-300">Count</span>
@@ -1062,7 +1062,7 @@ export const GameDashboardView: React.FC = () => {
                   }
 
                   return (
-                    <div key={item.id} className="grid grid-cols-5 py-2 px-1 items-center text-center bg-white">
+                    <div key={item.id} className="grid grid-cols-5 py-1 px-1 items-center text-center bg-white hover:bg-neutral-50 transition-colors">
                       <span className={`font-black text-xs sm:text-sm uppercase border-r border-gray-200 truncate px-0.5 ${typeTextColor}`}>
                         {displayType}
                       </span>

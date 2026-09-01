@@ -8,8 +8,19 @@ IST_TZ = timezone(IST_OFFSET, name="IST")
 SLOT_CUTOFF_TIMES = {
     "1 PM": time(12, 59, 0),
     "1 PM Game": time(12, 59, 0),
-    "3 PM": time(14, 59, 0),
-    "3 PM Game": time(14, 59, 0),
+    "3 PM": time(15, 3, 0),
+    "3 PM Game": time(15, 3, 0),
+    "6 PM": time(17, 59, 0),
+    "6 PM Game": time(17, 59, 0),
+    "8 PM": time(19, 59, 0),
+    "8 PM Game": time(19, 59, 0),
+}
+
+SLOT_PUBLISH_TIMES = {
+    "1 PM": time(12, 59, 0),
+    "1 PM Game": time(12, 59, 0),
+    "3 PM": time(15, 0, 0),
+    "3 PM Game": time(15, 0, 0),
     "6 PM": time(17, 59, 0),
     "6 PM Game": time(17, 59, 0),
     "8 PM": time(19, 59, 0),
@@ -62,7 +73,7 @@ def is_game_slot_open(game_slot: str, now_ist: Optional[datetime] = None) -> boo
     All 4 games are available from 12:00:00 AM.
     Cutoff Rules in Asia/Kolkata (IST):
       - 1 PM Game: OPEN 00:00:00 to 12:58:59; LOCKED at/after 12:59:00 (12:59:00 PM)
-      - 3 PM Game: OPEN 00:00:00 to 14:58:59; LOCKED at/after 14:59:00 (2:59:00 PM)
+      - 3 PM Game: OPEN 00:00:00 to 15:02:59; LOCKED at/after 15:03:00 (3:03:00 PM)
       - 6 PM Game: OPEN 00:00:00 to 17:58:59; LOCKED at/after 17:59:00 (5:59:00 PM)
       - 8 PM Game: OPEN 00:00:00 to 19:58:59; LOCKED at/after 19:59:00 (7:59:00 PM)
     """
@@ -83,7 +94,7 @@ def is_game_result_publishable(game_slot: str, target_date: str, now_ist: Option
     Determines if Admin can publish results for a given slot and date.
     - Past dates: Always publishable.
     - Future dates: Not publishable.
-    - Today's date: Publishable only at/after game billing lock time.
+    - Today's date: Publishable at/after scheduled publish time (3:00 PM for 3 PM Game).
     """
     if now_ist is None:
         now_ist = get_ist_now()
@@ -94,8 +105,9 @@ def is_game_result_publishable(game_slot: str, target_date: str, now_ist: Option
     if target_date > today_str:
         return False
 
-    # For today, result is publishable when billing is locked (at or after cutoff)
-    return not is_game_slot_open(game_slot, now_ist)
+    norm_slot = normalize_slot_name(game_slot)
+    pub_time = SLOT_PUBLISH_TIMES.get(norm_slot, time(15, 0, 0))
+    return now_ist.time() >= pub_time
 
 def get_all_game_slot_statuses(now_ist: Optional[datetime] = None) -> Dict:
     """Returns a dictionary of all 4 slots and their open/locked status with business date."""
