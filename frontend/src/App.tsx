@@ -44,14 +44,18 @@ const ViewRouter: React.FC = () => {
   // 30-Minute Inactivity Session Monitor
   useEffect(() => {
     if (!isUserInSession) {
-      localStorage.setItem('lucky10_last_active', String(Date.now()));
+      try {
+        sessionStorage.setItem('lucky10_last_active', String(Date.now()));
+      } catch {}
       return;
     }
 
     const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // 30 minutes
 
     const updateActivity = () => {
-      localStorage.setItem('lucky10_last_active', String(Date.now()));
+      try {
+        sessionStorage.setItem('lucky10_last_active', String(Date.now()));
+      } catch {}
     };
 
     let lastRecorded = 0;
@@ -70,7 +74,10 @@ const ViewRouter: React.FC = () => {
 
     const checkInactivity = () => {
       const now = Date.now();
-      const lastActiveStr = localStorage.getItem('lucky10_last_active');
+      let lastActiveStr: string | null = null;
+      try {
+        lastActiveStr = sessionStorage.getItem('lucky10_last_active');
+      } catch {}
       const lastActive = lastActiveStr ? parseInt(lastActiveStr, 10) : now;
       if (now - lastActive >= INACTIVITY_LIMIT_MS) {
         setShowTimeoutModal(true);
@@ -100,7 +107,9 @@ const ViewRouter: React.FC = () => {
 
   const handleTimeoutOk = () => {
     setShowTimeoutModal(false);
-    localStorage.setItem('lucky10_last_active', String(Date.now()));
+    try {
+      sessionStorage.setItem('lucky10_last_active', String(Date.now()));
+    } catch {}
     logout();
   };
 
@@ -108,6 +117,11 @@ const ViewRouter: React.FC = () => {
     // Auth Guard for Admin Routes
     if (currentView.startsWith('ADMIN_') && currentView !== 'ADMIN_SIGN_IN' && !isAdminLoggedIn) {
       return <AdminSignInView />;
+    }
+
+    // Auth Guard for Customer Routes
+    if (currentView !== 'USER_SIGN_IN' && !currentView.startsWith('ADMIN_') && !currentUser) {
+      return <UserSignInView />;
     }
 
     switch (currentView) {

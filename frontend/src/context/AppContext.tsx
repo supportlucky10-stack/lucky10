@@ -21,7 +21,7 @@ import { extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../ut
 
 interface AppContextType {
   currentView: ViewType;
-  setCurrentView: (view: ViewType) => void;
+  setCurrentView: (view: ViewType, options?: { replace?: boolean }) => void;
   currentUser: UserAccount | null;
   isAdminLoggedIn: boolean;
   registeredUsers: UserAccount[];
@@ -165,6 +165,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ) {
         return 'ADMIN_SIGN_IN';
       }
+      if (window.history.state && window.history.state.view) {
+        return window.history.state.view as ViewType;
+      }
     }
     return 'USER_SIGN_IN';
   };
@@ -286,6 +289,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             authService.logout();
             setCurrentUser(null);
             setIsAdminLoggedIn(false);
+            setCurrentViewInternal('USER_SIGN_IN');
           } else {
             setCurrentUser(user);
             const isAdm = user.role === 'ADMIN';
@@ -294,14 +298,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               typeof window !== 'undefined' &&
               (window.location.pathname.toLowerCase().includes('/master') ||
                 window.location.search.toLowerCase().includes('view=master'));
-            if (isAdm && isExplicitAdminUrl) {
-              setCurrentViewInternal('ADMIN_DRAWER');
+            if (isAdm) {
+              if (isExplicitAdminUrl || currentView === 'ADMIN_SIGN_IN') {
+                setCurrentViewInternal('ADMIN_DRAWER');
+              }
+            } else {
+              if (currentView === 'USER_SIGN_IN') {
+                setCurrentViewInternal('GAME_DASHBOARD');
+              }
             }
+          }
+        } else {
+          authService.logout();
+          setCurrentUser(null);
+          setIsAdminLoggedIn(false);
+          if (currentView.startsWith('ADMIN_')) {
+            setCurrentViewInternal('ADMIN_SIGN_IN');
+          } else {
+            setCurrentViewInternal('USER_SIGN_IN');
           }
         }
       } catch (e) {
         authService.logout();
         setCurrentUser(null);
+        setIsAdminLoggedIn(false);
+        setCurrentViewInternal('USER_SIGN_IN');
       }
 
       // Fetch today's results and all historical results
@@ -576,10 +597,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [currentUser?.id, isAdminLoggedIn]);
 
-  // Sync URL route on browser navigation (PopState)
+  // Synchronize initial browser history entry with currentView
   useEffect(() => {
-    const handlePopState = () => {
-      setCurrentViewInternal('USER_SIGN_IN');
+    if (typeof window !== 'undefined') {
+      const url = currentView.startsWith('ADMIN_') ? '/master' : '/';
+      if (!window.history.state || window.history.state.view !== currentView) {
+        window.history.replaceState({ view: currentView }, '', url);
+      }
+    }
+  }, []);
+
+  // Sync URL route and views on browser navigation (Phone Hardware Back Button / Swipe Gesture / PopState)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const targetView = event.state?.view as ViewType | undefined;
+      if (targetView) {
+        setCurrentViewInternal(targetView);
+        setViewHistory((prev) => {
+          if (prev.length > 1 && prev[prev.length - 2] === targetView) {
+            return prev.slice(0, -1);
+          }
+          return [...prev, targetView];
+        });
+        try {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          document.documentElement.scrollTop = 0;
+          document.body.scrollTop = 0;
+        } catch (e) {
+          window.scrollTo(0, 0);
+        }
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -594,7 +641,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const setCurrentView = (view: ViewType) => {
+  const setCurrentView = (view: ViewType, options?: { replace?: boolean }) => {
+    if (view === currentView) return;
+
+    const url = view.startsWith('ADMIN_') ? '/master' : '/';
+
+    if (typeof window !== 'undefined') {
+      if (options?.replace) {
+        window.history.replaceState({ view }, '', url);
+      } else {
+        window.history.pushState({ view }, '', url);
+      }
+    }
+
     setViewHistory((prev) => [...prev, view]);
     setCurrentViewInternal(view);
 
@@ -604,21 +663,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       document.body.scrollTop = 0;
     } catch (e) {
       window.scrollTo(0, 0);
-    }
-
-    if (view.startsWith('ADMIN_')) {
-      if (!window.location.pathname.toLowerCase().startsWith('/master')) {
-        window.history.pushState({}, '', '/master');
-      }
-    } else {
-      if (
-        window.location.pathname.toLowerCase().startsWith('/master') ||
-        window.location.pathname.toLowerCase().startsWith('/admin') ||
-        window.location.search.includes('view=master') ||
-        window.location.search.includes('view=admin')
-      ) {
-        window.history.pushState({}, '', '/');
-      }
     }
   };
 
@@ -631,14 +675,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.scrollTo(0, 0);
     }
 
-    if (viewHistory.length > 1) {
-      const newHistory = [...viewHistory];
-      newHistory.pop();
-      const prevView = newHistory[newHistory.length - 1];
-      setViewHistory(newHistory);
-      setCurrentViewInternal(prevView);
+    if (typeof window !== 'undefined' && window.history.state && viewHistory.length > 1) {
+      window.history.back();
     } else {
-      setCurrentViewInternal('GAME_DASHBOARD');
+      const fallbackView = currentUser?.role === 'ADMIN' ? 'ADMIN_DRAWER' : 'GAME_DASHBOARD';
+      setCurrentView(fallbackView, { replace: true });
     }
   };
 
@@ -648,7 +689,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCurrentUser(res.user);
       setIsAdminLoggedIn(false);
       addToast(`Account created! Welcome, ${res.user.name}! ₹1,000 added.`, 'success');
-      setCurrentView('GAME_DASHBOARD');
+      setCurrentView('GAME_DASHBOARD', { replace: true });
       return true;
     } catch (err: any) {
       addToast(err.message || 'Registration failed', 'error');
@@ -683,7 +724,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setCurrentUser(res.user);
           setIsAdminLoggedIn(true);
           addToast('Admin authenticated successfully', 'success');
-          setCurrentView('ADMIN_DRAWER');
+          setCurrentView('ADMIN_DRAWER', { replace: true });
           return { success: true };
         }
 
@@ -696,7 +737,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setPlacedTickets([]);
         setActiveGameSlot(getDefaultBillingSlot());
         addToast(`Welcome back, ${res.user.name}!`, 'success');
-        setCurrentView('GAME_DASHBOARD');
+        setCurrentView('GAME_DASHBOARD', { replace: true });
         return { success: true };
       }
     } catch (err: any) {
@@ -725,7 +766,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setCurrentUser(res.user);
         setIsAdminLoggedIn(true);
         addToast('Admin authenticated successfully', 'success');
-        setCurrentView('ADMIN_DRAWER');
+        setCurrentView('ADMIN_DRAWER', { replace: true });
         return true;
       }
       addToast('Invalid admin credentials', 'error');
@@ -750,9 +791,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveGameSlot(getDefaultBillingSlot());
     addToast('Logged out successfully', 'info');
     if (currentView.startsWith('ADMIN_')) {
-      setCurrentView('ADMIN_SIGN_IN');
+      setCurrentView('ADMIN_SIGN_IN', { replace: true });
     } else {
-      setCurrentView('USER_SIGN_IN');
+      setCurrentView('USER_SIGN_IN', { replace: true });
     }
   };
 

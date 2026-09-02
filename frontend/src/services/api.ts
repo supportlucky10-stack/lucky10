@@ -9,15 +9,25 @@ const base = rawApiUrl || (isProd ? '' : 'http://localhost:8000');
 const API_BASE_URL = base.endsWith('/') ? base.slice(0, -1) : base;
 
 export function getAuthToken(): string | null {
-  return localStorage.getItem('lucky10_jwt_token');
+  if (typeof window === 'undefined') return null;
+  try {
+    return sessionStorage.getItem('lucky10_jwt_token');
+  } catch {
+    return null;
+  }
 }
 
 export function setAuthToken(token: string | null) {
-  if (token) {
-    localStorage.setItem('lucky10_jwt_token', token);
-  } else {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      sessionStorage.setItem('lucky10_jwt_token', token);
+    } else {
+      sessionStorage.removeItem('lucky10_jwt_token');
+    }
+    // Clean up any legacy permanent token so no 30-day/permanent login persists
     localStorage.removeItem('lucky10_jwt_token');
-  }
+  } catch {}
 }
 
 const inFlightGetRequests = new Map<string, Promise<any>>();
