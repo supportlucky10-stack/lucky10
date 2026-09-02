@@ -1010,14 +1010,14 @@ export const GameDashboardView: React.FC = () => {
           </div>
 
         {/* Subtotal Summary Bar (COUNT & TOTAL) Placed Down Below Entry Card */}
-        <div className="bg-neutral-950 text-white px-3.5 py-1.5 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm font-black tracking-wider uppercase shadow-md shrink-0">
+        <div className="bg-neutral-950 text-white px-4 py-2.5 rounded-xl border border-neutral-800 flex items-center justify-between text-xs sm:text-sm md:text-base font-black tracking-wider uppercase shadow-md shrink-0">
           <span>COUNT: {totalCount}</span>
           <span>TOTAL: {totalAmount}</span>
         </div>
 
-        {/* Slip Table Placed Down Below Subtotal Bar (Compact high-density rows to show more bills) */}
-        <div className="w-full flex-1 min-h-[280px] sm:min-h-[340px] max-h-[480px] sm:max-h-[540px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
-          <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-bold text-[11px] sm:text-xs py-1 px-1 text-center shrink-0">
+        {/* Slip Table Placed Down Below Subtotal Bar (Increased length, clean internal scroll) */}
+        <div className="w-full flex-1 min-h-[260px] sm:min-h-[320px] max-h-[420px] border border-neutral-700 rounded-xl overflow-hidden bg-white text-black shadow-lg flex flex-col">
+          <div className="grid grid-cols-5 bg-gray-100 border-b border-gray-300 font-black text-xs sm:text-sm py-1.5 px-1 text-center shrink-0">
             <span className="border-r border-gray-300">Type</span>
             <span className="border-r border-gray-300">Number</span>
             <span className="border-r border-gray-300">Count</span>
@@ -1025,7 +1025,7 @@ export const GameDashboardView: React.FC = () => {
             <span>Action</span>
           </div>
 
-          <div className="divide-y divide-gray-200 flex-1 min-h-0 overflow-y-auto text-[11px] sm:text-xs">
+          <div className="divide-y divide-gray-200 flex-1 min-h-0 overflow-y-auto text-xs sm:text-sm font-bold">
               {betSlip.length === 0 ? null : (
                 betSlip.map((item) => {
                   const displayType = (item.number.includes(':')
@@ -1062,17 +1062,17 @@ export const GameDashboardView: React.FC = () => {
                   }
 
                   return (
-                    <div key={item.id} className="grid grid-cols-5 py-0.5 px-1 items-center text-center bg-white hover:bg-neutral-50 transition-colors">
-                      <span className={`font-normal text-[11px] sm:text-xs uppercase border-r border-gray-200 truncate px-0.5 ${typeTextColor}`}>
+                    <div key={item.id} className="grid grid-cols-5 py-1 px-1 items-center text-center bg-white hover:bg-neutral-50 transition-colors">
+                      <span className={`font-black text-xs sm:text-sm uppercase border-r border-gray-200 truncate px-0.5 ${typeTextColor}`}>
                         {displayType}
                       </span>
-                      <span className={`font-mono font-normal text-[11px] sm:text-xs border-r border-gray-200 truncate px-0.5 ${textColor}`}>
+                      <span className={`font-mono font-bold text-xs sm:text-sm border-r border-gray-200 truncate px-0.5 ${textColor}`}>
                         {displayNumber}
                       </span>
-                      <span className={`font-mono font-normal text-[11px] sm:text-xs border-r border-gray-200 truncate px-0.5 ${textColor}`}>
+                      <span className={`font-mono font-bold text-xs sm:text-sm border-r border-gray-200 truncate px-0.5 ${textColor}`}>
                         {item.count}
                       </span>
-                      <span className={`font-mono font-normal text-[11px] sm:text-xs border-r border-gray-200 truncate px-0.5 ${textColor}`}>
+                      <span className={`font-mono font-bold text-xs sm:text-sm border-r border-gray-200 truncate px-0.5 ${textColor}`}>
                         {item.totalAmount ?? (item.count * (item.unitPrice || 10))}
                       </span>
                       <div className="flex items-center justify-center">
@@ -1081,7 +1081,7 @@ export const GameDashboardView: React.FC = () => {
                           className="text-neutral-700 hover:text-red-600 p-0.5 cursor-pointer transition-colors"
                           title="Remove item"
                         >
-                          <CheckSquare className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-800 hover:text-red-600" />
+                          <CheckSquare className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-neutral-800 hover:text-red-600" />
                         </button>
                       </div>
                     </div>
