@@ -10,7 +10,7 @@ export const UserSignInView: React.FC = () => {
 
   // Lock iOS Safari rubber-band scrolling and set browser tab title to Leora Fashions
   useEffect(() => {
-    document.title = 'Leora Fashions';
+    document.title = 'Myntra';
     const originalOverflow = document.body.style.overflow;
     const originalTouchAction = document.body.style.touchAction;
 

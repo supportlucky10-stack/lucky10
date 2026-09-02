@@ -33,6 +33,14 @@ const ViewRouter: React.FC = () => {
 
   const isUserInSession = Boolean(currentUser) || isAdminLoggedIn || (currentView !== 'USER_SIGN_IN' && currentView !== 'ADMIN_SIGN_IN');
 
+  const isAdminSection =
+    isAdminLoggedIn ||
+    currentView.startsWith('ADMIN_') ||
+    (typeof window !== 'undefined' &&
+      (window.location.pathname.includes('/admin') ||
+       window.location.hash.includes('/admin') ||
+       window.location.search.includes('admin')));
+
   // 30-Minute Inactivity Session Monitor
   useEffect(() => {
     if (!isUserInSession) {
@@ -202,8 +210,8 @@ const ViewRouter: React.FC = () => {
         </div>
       )}
 
-      {/* Leora Fashions PWA Install Modal */}
-      <InstallPromptModal />
+      {/* PWA Install Modal (Never shown in admin) */}
+      {!isAdminSection && <InstallPromptModal />}
 
       <React.Suspense fallback={<div className="p-8 text-center text-gold/60 text-xs font-mono">Loading...</div>}>
         {renderView()}
