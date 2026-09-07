@@ -1749,7 +1749,7 @@ export const AdminReportsView: React.FC = () => {
             {activeDailyOverlayTab === 'DAY' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                 <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                  <span className="text-center">NAME</span>
+                  <span className="text-center">DATE</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
                   <span className="text-center">COMM</span>
@@ -1762,7 +1762,7 @@ export const AdminReportsView: React.FC = () => {
                     return (
                       <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
                         <div className="flex items-center justify-center text-[10px] sm:text-xs">
-                          <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] truncate max-w-[80px]">{row.userDisplayName}</span>
+                          <span className="font-black tracking-tight text-gold text-[10px] sm:text-[11px] truncate max-w-[80px] font-mono">{row.date}</span>
                         </div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
@@ -1916,7 +1916,7 @@ export const AdminReportsView: React.FC = () => {
               {activeUserDailyOverlayTab === 'DAY' && (
                 <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                   <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                    <span className="text-center">NAME</span>
+                    <span className="text-center">DATE</span>
                     <span className="text-center">SALE</span>
                     <span className="text-center">PRIZE</span>
                     <span className="text-center">COMM</span>
@@ -1929,7 +1929,7 @@ export const AdminReportsView: React.FC = () => {
                       return (
                         <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
                           <div className="flex items-center justify-center text-[10px] sm:text-xs">
-                            <span className="font-black uppercase tracking-wider text-gold text-[10px] sm:text-[11px] truncate max-w-[80px]">{selectedDailyUser.name}</span>
+                            <span className="font-black tracking-tight text-gold text-[10px] sm:text-[11px] truncate max-w-[80px] font-mono">{row.date}</span>
                           </div>
                           <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                           <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
