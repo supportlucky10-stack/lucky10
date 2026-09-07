@@ -871,11 +871,11 @@ export const AdminResultManagementView: React.FC = () => {
               const display30 = Array.from({ length: 30 }, (_, i) => comps[i] || '—');
               return (
                 <>
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     {prizes.map((item) => (
                       <div
                         key={item.id}
-                        className={`flex items-center rounded-xl bg-neutral-950 ${previewSlotTheme.cardBorder} transition-all py-1.5 sm:py-2 px-3.5 shadow-sm`}
+                        className={`flex items-center rounded-xl bg-neutral-950 ${previewSlotTheme.cardBorder} transition-all py-2 sm:py-2.5 px-3.5 shadow-sm`}
                       >
                         <div
                           className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg border shrink-0 font-black text-xs sm:text-sm flex items-center justify-center mr-3 ${previewSlotTheme.badgeActive}`}
@@ -890,8 +890,8 @@ export const AdminResultManagementView: React.FC = () => {
                   </div>
 
                   {/* Compliments Grid */}
-                  <div className="bg-neutral-950 rounded-xl border border-neutral-800 p-2 space-y-1">
-                    <h4 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-1 uppercase tracking-wider">
+                  <div className="bg-neutral-950 rounded-xl border border-neutral-800 p-2.5 sm:p-3 space-y-1.5">
+                    <h4 className="font-black text-xs sm:text-sm text-gold text-center border-b border-neutral-800 pb-1.5 uppercase tracking-wider">
                       Compliments
                     </h4>
                     <div className="grid grid-cols-3 gap-px bg-neutral-800 border border-neutral-800 rounded-lg overflow-hidden font-mono">
@@ -903,7 +903,7 @@ export const AdminResultManagementView: React.FC = () => {
                         return (
                           <div
                             key={cellIndex}
-                            className="bg-black text-center text-xs font-black text-neutral-100 tracking-wider flex items-center justify-center py-1.5"
+                            className="bg-black text-center text-xs sm:text-sm font-black text-neutral-100 tracking-wider flex items-center justify-center py-2 sm:py-2.5"
                           >
                             {val}
                           </div>
