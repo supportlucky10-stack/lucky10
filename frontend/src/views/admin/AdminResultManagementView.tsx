@@ -911,35 +911,6 @@ export const AdminResultManagementView: React.FC = () => {
                       })}
                     </div>
                   </div>
-
-                  {/* WhatsApp Share */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const slotTimeMap: Record<string, string> = {
-                        '1 PM Game': '01:00 PM',
-                        '3 PM Game': '03:00 PM',
-                        '6 PM Game': '06:00 PM',
-                        '8 PM Game': '08:00 PM',
-                      };
-                      const dateStr = previewDate.split('-').reverse().join('-');
-                      const rows: string[] = [];
-                      for (let i = 0; i < 30; i += 5) {
-                        rows.push(display30.slice(i, i + 5).join(' | ') + ' |');
-                      }
-                      const text = `${dateStr}\n${slotTimeMap[previewSlot] || previewSlot}\n\n1 - ${prizes[0].val}\n2 - ${prizes[1].val}\n3 - ${prizes[2].val}\n4 - ${prizes[3].val}\n5 - ${prizes[4].val}\n6 - ${prizes[5].val}\n\nOthers:-\n${rows.join('\n')}`;
-                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                    }}
-                    className="w-full py-2.5 sm:py-3 px-4 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:brightness-110 active:scale-[0.98] text-white font-black text-xs sm:text-sm tracking-wider uppercase rounded-xl shadow-[0_4px_15px_rgba(16,185,129,0.3)] border border-emerald-400 flex items-center justify-center gap-2 transition-all cursor-pointer group"
-                  >
-                    <svg
-                      className="w-4 h-4 fill-white shrink-0 group-hover:rotate-6 transition-transform"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
-                    </svg>
-                    <span>SHARE RESULT TO WHATSAPP</span>
-                  </button>
                 </>
               );
             })()}
