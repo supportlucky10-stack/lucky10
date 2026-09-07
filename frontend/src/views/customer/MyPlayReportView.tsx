@@ -2348,7 +2348,7 @@ export const MyPlayReportView: React.FC = () => {
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                 {/* Table Header Bar */}
                 <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                  <span className="text-center">DATE</span>
+                  <span className="text-center">DATE / NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
                   <span className="text-center">COMM</span>
@@ -2360,16 +2360,20 @@ export const MyPlayReportView: React.FC = () => {
                   {filteredDailyRows.map((row, idx) => {
                     const comm = Math.round(row.sale * userCommissionPercent);
                     const rowTotal = row.sale - row.prize - comm;
+                    const customerDisplayName = currentUser?.name || currentUser?.username || 'PLAYER';
                     const isNegative = rowTotal < 0;
                     return (
                       <div
                         key={idx}
                         className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors"
                       >
-                        {/* DATE Column: Day formatted */}
-                        <div className="flex items-center justify-center text-[10px] sm:text-xs">
-                          <span className="font-black tracking-tight text-gold text-[10px] sm:text-[11px] truncate max-w-[80px] font-mono">
+                        {/* DATE / NAME Column: Day and customer name */}
+                        <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
+                          <span className="font-black tracking-tight text-white text-[10px] sm:text-[11px] font-mono">
                             {row.date}
+                          </span>
+                          <span className="font-black text-gold text-[9px] sm:text-[10px] uppercase tracking-wider truncate max-w-[80px]">
+                            {customerDisplayName}
                           </span>
                         </div>
 

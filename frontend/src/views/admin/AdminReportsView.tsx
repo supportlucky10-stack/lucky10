@@ -615,7 +615,8 @@ export const AdminReportsView: React.FC = () => {
 
   // ── DAILY REPORT COMPUTATIONS ──────────────────────────────────────────────
   const computeDailyReportData = (tickets: PlacedTicket[], fromDateStr: string, toDateStr: string, slotF: string, userDisplayName?: string) => {
-    const dateMap = new Map<string, { date: string; sale: number; prize: number; comm: number; userDisplayName: string }>();
+    const isAllUsers = !userDisplayName || userDisplayName === 'ALL USERS';
+    const groupMap = new Map<string, { date: string; dateRaw: string; sale: number; prize: number; comm: number; userDisplayName: string }>();
 
     tickets.forEach((t) => {
       const tDate = extractDateStr(t.placedAt);
@@ -624,12 +625,16 @@ export const AdminReportsView: React.FC = () => {
 
       if (slotF === 'ALL' || t.gameSlot.toUpperCase().startsWith(slotF.toUpperCase())) {
         const displayD = formatDateDisplay(tDate);
-        const uName = (userDisplayName && userDisplayName !== 'ALL USERS') ? userDisplayName : ((t as any).userName || (t as any).agencyName || userDisplayName || 'ALL USERS');
-        const existing = dateMap.get(tDate) || { date: displayD, sale: 0, prize: 0, comm: 0, userDisplayName: uName };
+        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
+        const uName = (userDisplayName && userDisplayName !== 'ALL USERS')
+          ? userDisplayName
+          : (matchedUser?.name || (t as any).userName || (t as any).agencyName || 'ALL USERS');
+
+        const groupKey = isAllUsers ? `${tDate}___${matchedUser?.id || t.userId || uName}` : tDate;
+        const existing = groupMap.get(groupKey) || { date: displayD, dateRaw: tDate, sale: 0, prize: 0, comm: 0, userDisplayName: uName };
         const tAmt = t.totalAmount || 0;
         existing.sale += tAmt;
 
-        const matchedUser = registeredUsers.find((u) => isTicketForUser(t, u));
         const commRate = getCommissionPercent(matchedUser?.mode);
         existing.comm += Math.round(tAmt * commRate);
 
@@ -642,13 +647,14 @@ export const AdminReportsView: React.FC = () => {
             }
           });
         }
-        dateMap.set(tDate, existing);
+        groupMap.set(groupKey, existing);
       }
     });
 
-    if (dateMap.size === 0 && fromDateStr && toDateStr) {
-      dateMap.set(fromDateStr, {
+    if (groupMap.size === 0 && fromDateStr && toDateStr) {
+      groupMap.set(fromDateStr, {
         date: formatDateDisplay(fromDateStr),
+        dateRaw: fromDateStr,
         sale: 0,
         prize: 0,
         comm: 0,
@@ -656,7 +662,9 @@ export const AdminReportsView: React.FC = () => {
       });
     }
 
-    const rows = Array.from(dateMap.entries()).sort((a, b) => a[0].localeCompare(b[0])).map(([_, val]) => val);
+    const rows = Array.from(groupMap.entries())
+      .sort((a, b) => a[1].dateRaw.localeCompare(b[1].dateRaw) || a[1].userDisplayName.localeCompare(b[1].userDisplayName))
+      .map(([_, val]) => val);
     const totalSale = rows.reduce((acc, r) => acc + r.sale, 0);
     const totalPrize = rows.reduce((acc, r) => acc + r.prize, 0);
     const totalComm = rows.reduce((acc, r) => acc + (r.comm || 0), 0);
@@ -1749,7 +1757,7 @@ export const AdminReportsView: React.FC = () => {
             {activeDailyOverlayTab === 'DAY' && (
               <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                 <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                  <span className="text-center">DATE</span>
+                  <span className="text-center">DATE / NAME</span>
                   <span className="text-center">SALE</span>
                   <span className="text-center">PRIZE</span>
                   <span className="text-center">COMM</span>
@@ -1761,8 +1769,9 @@ export const AdminReportsView: React.FC = () => {
                     const isNegative = rowTotal < 0;
                     return (
                       <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                        <div className="flex items-center justify-center text-[10px] sm:text-xs">
-                          <span className="font-black tracking-tight text-gold text-[10px] sm:text-[11px] truncate max-w-[80px] font-mono">{row.date}</span>
+                        <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
+                          <span className="font-black tracking-tight text-white text-[10px] sm:text-[11px] font-mono">{row.date}</span>
+                          <span className="font-black text-gold text-[9px] sm:text-[10px] uppercase tracking-wider truncate max-w-[80px]">{row.userDisplayName}</span>
                         </div>
                         <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                         <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
@@ -1916,7 +1925,7 @@ export const AdminReportsView: React.FC = () => {
               {activeUserDailyOverlayTab === 'DAY' && (
                 <div className="w-full border-2 border-gold/60 rounded-2xl overflow-hidden bg-neutral-950 text-white shadow-[0_0_25px_rgba(212,175,55,0.12)] font-mono">
                   <div className="grid grid-cols-5 bg-gradient-to-r from-neutral-900 via-[#3a2a07] to-neutral-900 border-b border-gold/40 font-black py-3 px-2 text-center uppercase tracking-wider text-gold text-xs sm:text-sm shadow-inner">
-                    <span className="text-center">DATE</span>
+                    <span className="text-center">DATE / NAME</span>
                     <span className="text-center">SALE</span>
                     <span className="text-center">PRIZE</span>
                     <span className="text-center">COMM</span>
@@ -1928,8 +1937,9 @@ export const AdminReportsView: React.FC = () => {
                       const isNegative = rowTotal < 0;
                       return (
                         <div key={idx} className="grid grid-cols-5 items-center px-2 py-3 text-center even:bg-neutral-900/40 odd:bg-black hover:bg-neutral-850/80 transition-colors">
-                          <div className="flex items-center justify-center text-[10px] sm:text-xs">
-                            <span className="font-black tracking-tight text-gold text-[10px] sm:text-[11px] truncate max-w-[80px] font-mono">{row.date}</span>
+                          <div className="flex flex-col items-center justify-center text-[10px] sm:text-xs leading-tight">
+                            <span className="font-black tracking-tight text-white text-[10px] sm:text-[11px] font-mono">{row.date}</span>
+                            <span className="font-black text-gold text-[9px] sm:text-[10px] uppercase tracking-wider truncate max-w-[80px]">{selectedDailyUser.name}</span>
                           </div>
                           <div className="text-xs sm:text-sm font-black text-neutral-100 font-mono flex items-center justify-center">{row.sale}</div>
                           <div className="text-xs sm:text-sm font-black text-rose-400 font-mono flex items-center justify-center">{row.prize}</div>
