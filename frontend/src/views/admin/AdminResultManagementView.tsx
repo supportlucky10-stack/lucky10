@@ -99,6 +99,14 @@ export const AdminResultManagementView: React.FC = () => {
 
   const [isEditing1st, setIsEditing1st] = useState(false);
   const [isEditingOther, setIsEditingOther] = useState(false);
+  const [, setTimerTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimerTick((t) => t + 1);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);

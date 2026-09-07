@@ -240,14 +240,10 @@ export const getLatestPublishedOrCycleSlot = (
 
 /**
  * Checks if the 30-minute editing window is active for a given game slot:
- * - 1 PM Game: 1:00:00 PM (13:00) -> 1:30:00 PM (13:30)
- * - 3 PM Game: 3:00:00 PM (15:00) -> 3:30:00 PM (15:30)
- * - 6 PM Game: 6:00:00 PM (18:00) -> 6:30:00 PM (18:30)
- * - 8 PM Game: 8:00:00 PM (20:00) -> 8:30:00 PM (20:30)
- * Also if publishedAt exists on the result object, it can be edited within 30 minutes of publishedAt.
+ * Strictly editable for 30 minutes from the time the result was published (publishedAt).
  */
 export const isResultEditWindowOpen = (
-  slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game',
+  _slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game',
   targetDateStr: string,
   publishedAt?: string
 ): boolean => {
@@ -257,42 +253,24 @@ export const isResultEditWindowOpen = (
       return false; // Can only edit today's results
     }
 
-    // Check slot-based 30-minute window in IST
-    const formatter = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
-    const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
-    const totalSeconds = hour * 3600 + minute * 60 + second;
-
-    const slotWindows: Record<string, { startSec: number; endSec: number }> = {
-      '1 PM Game': { startSec: 13 * 3600, endSec: 13 * 3600 + 30 * 60 },
-      '3 PM Game': { startSec: 15 * 3600, endSec: 15 * 3600 + 30 * 60 },
-      '6 PM Game': { startSec: 18 * 3600, endSec: 18 * 3600 + 30 * 60 },
-      '8 PM Game': { startSec: 20 * 3600, endSec: 20 * 3600 + 30 * 60 },
-    };
-
-    const window = slotWindows[slot];
-    if (window && totalSeconds >= window.startSec && totalSeconds <= window.endSec) {
-      return true;
+    if (!publishedAt || !publishedAt.trim()) {
+      return false;
     }
 
-    // Fallback: If publishedAt is present, allow editing within 30 minutes of publishedAt
-    if (publishedAt) {
-      const pubTime = new Date(publishedAt).getTime();
-      const now = Date.now();
-      if (!isNaN(pubTime) && now >= pubTime && now - pubTime <= 30 * 60 * 1000) {
-        return true;
-      }
+    let pubTime = new Date(publishedAt).getTime();
+    if (isNaN(pubTime)) {
+      // If time-only string like "13:30" or "01:30 PM", construct date with targetDateStr
+      pubTime = new Date(`${targetDateStr}T${publishedAt}`).getTime();
     }
 
-    return false;
+    if (isNaN(pubTime)) {
+      return false;
+    }
+
+    const now = Date.now();
+    const thirtyMinutesMs = 30 * 60 * 1000;
+
+    return now >= pubTime && now <= pubTime + thirtyMinutesMs;
   } catch (e) {
     return false;
   }

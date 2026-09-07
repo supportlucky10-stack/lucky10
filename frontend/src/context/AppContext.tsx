@@ -1172,7 +1172,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prize4,
         prize5: prize5 || '',
         compliments,
-        publishedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        publishedAt: new Date().toISOString(),
       };
       const normDate = extractDateStr(targetDate);
       
