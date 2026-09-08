@@ -55,6 +55,24 @@ if db_url.startswith("sqlite"):
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, expire_on_commit=False, bind=engine)
 Base = declarative_base()
 
+def ensure_schema_compatibility():
+    try:
+        with engine.begin() as conn:
+            if engine.dialect.name == "sqlite":
+                cols = [row[1] for row in conn.execute(text("PRAGMA table_info(game_results)")).fetchall()]
+                if cols:
+                    if "published_at_1st" not in cols:
+                        conn.execute(text("ALTER TABLE game_results ADD COLUMN published_at_1st DATETIME"))
+                    if "published_at_other" not in cols:
+                        conn.execute(text("ALTER TABLE game_results ADD COLUMN published_at_other DATETIME"))
+            elif engine.dialect.name == "postgresql":
+                conn.execute(text("ALTER TABLE game_results ADD COLUMN IF NOT EXISTS published_at_1st TIMESTAMP WITH TIME ZONE"))
+                conn.execute(text("ALTER TABLE game_results ADD COLUMN IF NOT EXISTS published_at_other TIMESTAMP WITH TIME ZONE"))
+    except Exception:
+        pass
+
+ensure_schema_compatibility()
+
 def get_db():
     db = SessionLocal()
     try:

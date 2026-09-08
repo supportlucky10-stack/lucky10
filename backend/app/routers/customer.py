@@ -89,6 +89,8 @@ def format_result(res: GameResult) -> dict:
         "prize6": res.prize6 or "",
         "compliments": compliments,
         "publishedAt": safe_format_dt(res.published_at, "%Y-%m-%d %H:%M:%S"),
+        "publishedAt1st": res.published_at_1st.isoformat() if getattr(res, "published_at_1st", None) and hasattr(res.published_at_1st, "isoformat") else (str(res.published_at_1st) if getattr(res, "published_at_1st", None) else None),
+        "publishedAtOther": res.published_at_other.isoformat() if getattr(res, "published_at_other", None) and hasattr(res.published_at_other, "isoformat") else (str(res.published_at_other) if getattr(res, "published_at_other", None) else None),
     }
 
 def safe_format_dt(val, fmt="%Y-%m-%d") -> str:

@@ -23,6 +23,8 @@ class GameResult(Base):
     prize6 = Column(String, nullable=True, default="")   # 6th Prize / Compliment Prize (single 3-digit number)
     compliments_json = Column(Text, nullable=False, default="[]")
     published_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    published_at_1st = Column(DateTime, nullable=True)
+    published_at_other = Column(DateTime, nullable=True)
 
     __table_args__ = (
         Index("ix_game_results_date_slot", "date", "game_slot"),

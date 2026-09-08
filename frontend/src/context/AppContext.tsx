@@ -41,7 +41,7 @@ interface AppContextType {
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
   refreshResults: (dateStr?: string) => Promise<void>;
   fetchDataForDate: (date: string) => Promise<void>;
-  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string) => Promise<void>;
+  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string, targetSection?: '1ST' | 'OTHER') => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
@@ -1155,15 +1155,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     prize4: string,
     compliments: string[][],
     prize5?: string,
-    date?: string
+    date?: string,
+    targetSection?: '1ST' | 'OTHER'
   ) => {
     const todayStr = getBusinessDateIST();
     const targetDate = date && date.trim() ? date.trim() : todayStr;
 
     try {
-      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate);
-      const resultToApply = newRes || {
-        id: `res_${Date.now()}`,
+      const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate, targetSection);
+
+      const existingRes = allPublishedResults[`${targetDate}_${slot}`] || allPublishedResults[slot];
+      const nowIso = new Date().toISOString();
+
+      let pubAt1st = newRes?.publishedAt1st || existingRes?.publishedAt1st;
+      let pubAtOther = newRes?.publishedAtOther || existingRes?.publishedAtOther;
+
+      if (targetSection === '1ST') {
+        pubAt1st = nowIso;
+      } else if (targetSection === 'OTHER') {
+        pubAtOther = nowIso;
+      } else {
+        if (prize1 && prize1.trim() && !pubAt1st) pubAt1st = nowIso;
+        if ((prize2 || prize3 || prize4 || (compliments && compliments.length > 0)) && !pubAtOther) pubAtOther = nowIso;
+      }
+
+      const resultToApply: GameResult = {
+        ...(newRes || {}),
+        id: newRes?.id || existingRes?.id || `res_${Date.now()}`,
         date: targetDate,
         gameSlot: slot,
         prize1,
@@ -1172,7 +1190,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         prize4,
         prize5: prize5 || '',
         compliments,
-        publishedAt: new Date().toISOString(),
+        publishedAt: newRes?.publishedAt || nowIso,
+        publishedAt1st: pubAt1st,
+        publishedAtOther: pubAtOther,
       };
       const normDate = extractDateStr(targetDate);
       

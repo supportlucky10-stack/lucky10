@@ -232,6 +232,8 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
         p4 = (req.prize4 or "").strip()
         p5 = (req.prize5 or "").strip()
         p6 = (req.prize6 or "").strip()
+        now_utc = datetime.now(timezone.utc)
+        target_section = (req.targetSection or "").strip().upper()
 
         if existing:
             existing.game_slot = norm_target_slot
@@ -249,9 +251,24 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
                 existing.prize6 = p6
             if req.compliments and len(req.compliments) > 0:
                 existing.compliments_json = compliments_json
-            existing.published_at = datetime.now(timezone.utc)
+
+            existing.published_at = now_utc
+
+            if target_section == "1ST":
+                existing.published_at_1st = now_utc
+            elif target_section == "OTHER":
+                existing.published_at_other = now_utc
+            else:
+                if p1 and not existing.published_at_1st:
+                    existing.published_at_1st = now_utc
+                if (p2 or p3 or p4 or p5 or (req.compliments and len(req.compliments) > 0)) and not existing.published_at_other:
+                    existing.published_at_other = now_utc
+
             target_res = existing
         else:
+            pub_1st = now_utc if (target_section == "1ST" or p1) else None
+            pub_other = now_utc if (target_section == "OTHER" or p2 or p3 or p4 or p5 or (req.compliments and len(req.compliments) > 0)) else None
+
             target_res = GameResult(
                 id=f"res_{int(datetime.now().timestamp() * 1000)}",
                 date=target_date,
@@ -263,7 +280,9 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
                 prize5=p5,
                 prize6=p6,
                 compliments_json=compliments_json,
-                published_at=datetime.now(timezone.utc),
+                published_at=now_utc,
+                published_at_1st=pub_1st,
+                published_at_other=pub_other,
             )
             db.add(target_res)
 
@@ -314,6 +333,8 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
             "prize6": target_res.prize6 or "",
             "compliments": parsed_compliments,
             "publishedAt": target_res.published_at.isoformat() if target_res.published_at else datetime.now(timezone.utc).isoformat(),
+            "publishedAt1st": target_res.published_at_1st.isoformat() if target_res.published_at_1st else None,
+            "publishedAtOther": target_res.published_at_other.isoformat() if target_res.published_at_other else None,
         }
     except Exception as exc:
         db.rollback()

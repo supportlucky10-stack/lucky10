@@ -13,6 +13,7 @@ class GameResultPublishSchema(BaseModel):
     prize6: Optional[str] = Field(default="", max_length=10)
     compliments: Optional[Union[List[List[str]], List[str], List[Any]]] = []
     date: Optional[str] = None
+    targetSection: Optional[str] = None
 
 class GameResultResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -28,3 +29,5 @@ class GameResultResponse(BaseModel):
     prize6: Optional[str] = ""
     compliments: List[List[str]] = []
     publishedAt: str
+    publishedAt1st: Optional[str] = None
+    publishedAtOther: Optional[str] = None

@@ -97,6 +97,8 @@ export interface GameResult {
   prize5?: string;
   compliments: string[][];
   publishedAt: string;
+  publishedAt1st?: string;
+  publishedAtOther?: string;
 }
 
 export interface ToastMessage {

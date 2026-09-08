@@ -122,8 +122,8 @@ export const AdminResultManagementView: React.FC = () => {
     currentSlotResult.prize5.trim().length > 0
   );
 
-  const canEdit1st = is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt);
-  const canEditOther = isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt);
+  const canEdit1st = is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt1st || currentSlotResult?.publishedAt);
+  const canEditOther = isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAtOther || currentSlotResult?.publishedAt);
 
   const prize1InputRef = useRef<HTMLInputElement | null>(null);
   const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -298,7 +298,8 @@ export const AdminResultManagementView: React.FC = () => {
     }
 
     try {
-      await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr);
+      const targetSection = activePreviewTarget === '1ST' ? '1ST' : activePreviewTarget === 'OTHER' ? 'OTHER' : undefined;
+      await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
       const isFirst = activePreviewTarget === '1ST';
       setActivePreviewTarget(null);
       setIsEditing1st(false);
