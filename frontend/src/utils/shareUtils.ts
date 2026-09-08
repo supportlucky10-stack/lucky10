@@ -14,77 +14,107 @@ const isIOS = (): boolean =>
   // iPad on iOS 13+ reports as MacIntel
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+let fontsPreloadPromise: Promise<void> | null = null;
+
 /**
- * Pre-load critical bold font weights so that iOS WebKit has them
- * available before the html-to-image canvas pass runs.
- * iOS Safari does NOT reliably resolve @font-face url() references
- * inside the foreignObject SVG used by html-to-image, so we force-load
- * the exact TTF files as FontFace objects and add them to the document's
- * font set.
+ * Pre-load critical bold font weights in the background so they are
+ * immediately ready when the user clicks share, avoiding on-click network latency.
  */
-const ensureBoldFontsLoaded = async (): Promise<void> => {
-  // Font weights needed by the result share card:
-  //   700 = Montserrat-Bold  (font-bold)
-  //   800 = Montserrat-ExtraBold
-  //   900 = Montserrat-Black (font-black — the main weight used for numbers)
-  const weights: Array<{ weight: string; url: string }> = [
-    { weight: '700', url: '/fonts/Montserrat-Bold.ttf' },
-    { weight: '800', url: '/fonts/Montserrat-ExtraBold.ttf' },
-    { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
-  ];
+const ensureBoldFontsLoaded = (): Promise<void> => {
+  if (fontsPreloadPromise) return fontsPreloadPromise;
+  if (typeof document === 'undefined') return Promise.resolve();
 
-  const loadPromises = weights.map(async ({ weight, url }) => {
+  fontsPreloadPromise = (async () => {
+    const weights: Array<{ weight: string; url: string }> = [
+      { weight: '700', url: '/fonts/Montserrat-Bold.ttf' },
+      { weight: '800', url: '/fonts/Montserrat-ExtraBold.ttf' },
+      { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
+    ];
+
+    const loadPromises = weights.map(async ({ weight, url }) => {
+      try {
+        const existing = [...document.fonts].find(
+          (f) => f.family === 'Montserrat' && f.weight === weight && f.status === 'loaded'
+        );
+        if (existing) return;
+
+        const font = new FontFace('Montserrat', `url(${url}) format('truetype')`, {
+          weight,
+          style: 'normal',
+          display: 'block',
+        });
+
+        const loaded = await font.load();
+        document.fonts.add(loaded);
+      } catch {
+        // non-fatal
+      }
+    });
+
+    await Promise.all(loadPromises);
+
     try {
-      // Skip if already loaded
-      const existing = [...document.fonts].find(
-        (f) => f.family === 'Montserrat' && f.weight === weight && f.status === 'loaded'
-      );
-      if (existing) return;
+      await document.fonts.ready;
+    } catch {}
+  })();
 
-      const font = new FontFace('Montserrat', `url(${url}) format('truetype')`, {
-        weight,
-        style: 'normal',
-        display: 'block', // block instead of swap to guarantee font is used immediately
-      });
-
-      const loaded = await font.load();
-      document.fonts.add(loaded);
-    } catch {
-      // non-fatal — proceed with whatever is available
-    }
-  });
-
-  await Promise.all(loadPromises);
-
-  // Final wait for the document FontFaceSet to settle
-  try {
-    await document.fonts.ready;
-  } catch {
-    // ignore
-  }
+  return fontsPreloadPromise;
 };
 
+// Immediately initialize font preloading in background upon module load
+if (typeof window !== 'undefined') {
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(() => ensureBoldFontsLoaded());
+  } else {
+    setTimeout(() => ensureBoldFontsLoaded(), 150);
+  }
+}
+
+let isSvgWarmedUp = false;
+
 /**
- * On iOS, html-to-image needs two rendering passes to pick up the
- * loaded fonts correctly.  The first pass warms up the SVG renderer;
- * the second pass produces the correct result.
+ * Fast capture: warms up SVG font rasterization once per session on iOS,
+ * without artificial timeouts or cache-busting re-downloads.
  */
 const captureWithFontFix = async (
   elem: HTMLElement,
   options: Parameters<typeof toJpeg>[1]
 ): Promise<string> => {
-  if (isIOS()) {
-    // Warm-up pass — discard result
+  if (isIOS() && !isSvgWarmedUp) {
     try {
-      await toJpeg(elem, { ...options, cacheBust: true });
-    } catch {
-      // ignore warm-up errors
-    }
-    // Small delay so WebKit fully rasterises the fonts
-    await new Promise((r) => setTimeout(r, 120));
+      await toJpeg(elem, options);
+      isSvgWarmedUp = true;
+    } catch {}
   }
-  // Real capture
-  return toJpeg(elem, { ...options, cacheBust: true });
+  return toJpeg(elem, options);
+};
+
+/**
+ * High-speed synchronous base64 dataURL to Blob conversion.
+ * Avoids asynchronous browser HTTP fetch state machine overhead.
+ */
+const dataUriToBlob = (dataURI: string): Blob => {
+  try {
+    const parts = dataURI.split(',');
+    const header = parts[0] || '';
+    const base64Data = parts[1] || '';
+    const mimeMatch = header.match(/:(.*?);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+    const byteString = atob(base64Data);
+    const buffer = new ArrayBuffer(byteString.length);
+    const byteArray = new Uint8Array(buffer);
+    for (let i = 0; i < byteString.length; i++) {
+      byteArray[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([byteArray], { type: mimeType });
+  } catch {
+    const byteCharacters = atob(dataURI.split(',')[1]);
+    const byteNumbers = new Uint8Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    return new Blob([byteNumbers], { type: 'image/jpeg' });
+  }
 };
 
 /**
@@ -108,21 +138,18 @@ export const captureAndShareElement = async ({
   }
 
   try {
-    // Step 1: Ensure the bold/black font weights are fully loaded before capture.
-    // This is critical on iOS where @font-face swap fonts may not be ready.
+    // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
     await ensureBoldFontsLoaded();
 
-    // Step 2: Capture the element (with double-pass on iOS for correct font rendering)
+    // Step 2: Instant capture with optimized encoding
     const dataUrl = await captureWithFontFix(targetElem, {
-      quality: 0.95,
+      quality: 0.92,
       backgroundColor: '#000000',
       pixelRatio: 2,
-      includeQueryParams: true,
       filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
     });
 
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
+    const blob = dataUriToBlob(dataUrl);
 
     const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
       ? fileName
