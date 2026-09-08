@@ -3,7 +3,7 @@ import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
 import { getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
-import { captureAndShareElement } from '../../utils/shareUtils';
+import { shareBill } from '../../utils/billShareUtils';
 import {
   ClipboardList,
   Trophy,
@@ -224,13 +224,11 @@ export const MyPlayReportView: React.FC = () => {
 
   const handleShareBillToWhatsApp = () => {
     if (!selectedSingleTicket) return;
-    const ticketId = selectedSingleTicket.id;
-    captureAndShareElement({
-      elementId: 'bill-details-card-container',
-      fileName: `bill_${ticketId}.jpg`,
-      title: `Bill Details - ${ticketId}`,
-      textSummary: '',
-    });
+    shareBill(
+      selectedSingleTicket,
+      'bill-details-card-container',
+      (selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'
+    );
   };
 
   const handleCopyBillId = (id: string, e?: React.MouseEvent) => {

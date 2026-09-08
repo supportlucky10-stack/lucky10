@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Search, Trash2, Copy, Check, CheckCircle2 } from 'lucide-react';
-import { captureAndShareElement } from '../../utils/shareUtils';
+import { shareBill } from '../../utils/billShareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -116,13 +116,11 @@ export const EditDeleteBillView: React.FC = () => {
 
   const handleShareBillToWhatsApp = () => {
     if (!searchedBill) return;
-    const ticketId = searchedBill.id;
-    captureAndShareElement({
-      elementId: 'edit-bill-card-container',
-      fileName: `bill_${ticketId}.jpg`,
-      title: `Bill Details - ${ticketId}`,
-      textSummary: '',
-    });
+    shareBill(
+      searchedBill,
+      'edit-bill-card-container',
+      (searchedBill as any).agencyName || (searchedBill as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'
+    );
   };
 
   return (
