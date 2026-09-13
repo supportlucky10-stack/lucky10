@@ -2038,7 +2038,21 @@ export const MyPlayReportView: React.FC = () => {
 
                           {/* Bill ID & Slot Info Bar */}
                           <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
-                            <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopyBillId(card.ticketId, e)}
+                                className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                                title="Copy Bill ID"
+                              >
+                                {copiedBillId === card.ticketId ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
                             <span>Slot: <strong className="text-gold font-bold">{(card.slot || '').replace(/\s*Game$/i, '')}</strong></span>
                           </div>
 
@@ -2111,18 +2125,6 @@ export const MyPlayReportView: React.FC = () => {
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
                     <span className="text-gold font-black text-base">{selectedSingleTicket.id}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleCopyBillId(selectedSingleTicket.id, e)}
-                      className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
-                      title="Copy Bill ID"
-                    >
-                      {copiedBillId === selectedSingleTicket.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
                   </div>
                 </div>
 
@@ -2201,18 +2203,6 @@ export const MyPlayReportView: React.FC = () => {
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
                     <span className="text-gold font-black text-base">{deleteSingleTicketTarget.id}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleCopyBillId(deleteSingleTicketTarget.id, e)}
-                      className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
-                      title="Copy Bill ID"
-                    >
-                      {copiedBillId === deleteSingleTicketTarget.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
                   </div>
                 </div>
 

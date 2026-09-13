@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Search, Trash2, Copy, Check, CheckCircle2 } from 'lucide-react';
+import { Search, Trash2, CheckCircle2 } from 'lucide-react';
 import { shareBill } from '../../utils/billShareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
@@ -81,17 +81,6 @@ export const EditDeleteBillView: React.FC = () => {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletedSuccessBillId, setDeletedSuccessBillId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
-
-  const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    setCopiedBillId(id);
-    addToast(`Copied Bill ID ${id}`, 'success');
-    setTimeout(() => {
-      setCopiedBillId((prev) => (prev === id ? null : prev));
-    }, 2000);
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -211,18 +200,6 @@ export const EditDeleteBillView: React.FC = () => {
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                     <div className="flex items-center gap-2">
                       <span className="text-gold font-black text-base">{searchedBill.id}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleCopyBillId(searchedBill.id, e)}
-                        className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
-                        title="Copy Bill ID"
-                      >
-                        {copiedBillId === searchedBill.id ? (
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3.5 h-3.5" />
-                        )}
-                      </button>
                     </div>
                   </div>
 

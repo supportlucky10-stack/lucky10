@@ -323,8 +323,8 @@ export const shareBill = async (
     return captureAndShareElement({
       elementId,
       fileName: `bill_${ticket.id}.jpg`,
-      title: `Bill Details - ${ticket.id}`,
-      textSummary: '',
+      title: `Bill ID - ${ticket.id}`,
+      textSummary: `Bill ID - ${ticket.id}`,
     });
   }
 
@@ -354,13 +354,13 @@ export const shareBill = async (
         try {
           await navigator.share({
             files: [pdfFile],
+            text: `Bill ID - ${ticket.id}`,
           });
           return;
         } catch (shareErr: any) {
           if (shareErr?.name === 'AbortError') return;
           try {
             await navigator.share({
-              title: ' ',
               files: [pdfFile],
             });
             return;
@@ -382,7 +382,8 @@ export const shareBill = async (
     setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
 
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const waUrl = isMobile ? 'whatsapp://send' : 'https://web.whatsapp.com';
+    const textParam = `?text=${encodeURIComponent(`Bill ID - ${ticket.id}`)}`;
+    const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com/send${textParam}`;
     window.open(waUrl, '_blank');
   } catch (pdfErr) {
     console.error('Failed to generate or share bill PDF:', pdfErr);

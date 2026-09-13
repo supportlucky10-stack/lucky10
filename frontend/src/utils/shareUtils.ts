@@ -124,6 +124,7 @@ export const captureAndShareElement = async ({
   elementId,
   element,
   fileName = 'share_image.jpg',
+  title = '',
   textSummary = '',
 }: ShareElementOptions): Promise<void> => {
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
@@ -174,13 +175,13 @@ export const captureAndShareElement = async ({
         try {
           await navigator.share({
             files: [file],
+            text: textSummary || title || undefined,
           });
           return;
         } catch (shareErr: any) {
           if (shareErr?.name === 'AbortError') return;
           try {
             await navigator.share({
-              title: ' ',
               files: [file],
             });
             return;
@@ -233,12 +234,14 @@ export const captureAndShareElement = async ({
 
     // Open WhatsApp
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const waUrl = isMobile ? `whatsapp://send` : `https://web.whatsapp.com`;
+    const textParam = (textSummary || title) ? `?text=${encodeURIComponent(textSummary || title)}` : '';
+    const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
     window.open(waUrl, '_blank');
   } catch (err) {
     console.error('Failed to capture screen element image:', err);
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const fallbackUrl = isMobile ? `whatsapp://send` : `https://web.whatsapp.com`;
+    const textParam = (textSummary || title) ? `?text=${encodeURIComponent(textSummary || title)}` : '';
+    const fallbackUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
     window.open(fallbackUrl, '_blank');
   }
 };
