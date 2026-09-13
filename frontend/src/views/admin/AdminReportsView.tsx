@@ -214,7 +214,7 @@ const getCategoryHeaderTheme = (_category?: string) => {
 type ReportTab = 'USERS' | 'SALES' | 'WINNING' | 'DAILY';
 
 export const AdminReportsView: React.FC = () => {
-  const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData, fetchDataForDate } = useApp();
+  const { registeredUsers, placedTickets, getResultForSlotAndDate, refreshAllData, fetchDataForDate, addToast } = useApp();
   const todayStr = getBusinessDateIST();
 
   // Auto-sync fresh tickets and results whenever Admin opens Reports or live updates occur
@@ -262,7 +262,7 @@ export const AdminReportsView: React.FC = () => {
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
+  const [copiedWinningCardId, setCopiedWinningCardId] = useState<string | null>(null);
 
   // Tab 1 & Tab 2 Overlays
   const [selectedReportUser, setSelectedReportUser] = useState<UserAccount | null>(null);
@@ -323,11 +323,14 @@ export const AdminReportsView: React.FC = () => {
   const [showUserDailyOverlay, setShowUserDailyOverlay] = useState<boolean>(false);
   const [activeUserDailyOverlayTab, setActiveUserDailyOverlayTab] = useState<'DAY' | 'GAME'>('DAY');
 
-  const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
+  const handleCopyWinningCard = (ticketId: string, cardId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    setCopiedBillId(id);
-    setTimeout(() => setCopiedBillId((prev) => (prev === id ? null : prev)), 2000);
+    navigator.clipboard.writeText(ticketId);
+    setCopiedWinningCardId(cardId);
+    addToast(`Copied Bill ID ${ticketId}`, 'success');
+    setTimeout(() => {
+      setCopiedWinningCardId((prev) => (prev === cardId ? null : prev));
+    }, 2000);
   };
 
   // ── Historical Date Fetch ────────────────────────────────────────────────
@@ -517,7 +520,7 @@ export const AdminReportsView: React.FC = () => {
 
       const res = getResultForSlotAndDate(ticket.gameSlot, tDate);
 
-      ticket.items.forEach((item: any) => {
+      ticket.items.forEach((item: any, itemIdx: number) => {
         const num = getDisplayNumber(item);
         const count = item.count || 1;
 
@@ -536,7 +539,7 @@ export const AdminReportsView: React.FC = () => {
           const catName = gameTitle;
           const existing = catMap.get(catName) || [];
           existing.push({
-            id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
+            id: item.id ? `w_${ticket.id}_${item.id}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeTitle}`,
             ticketId: ticket.ticketId || ticket.id,
             userName: (ticket as any).userName || (ticket as any).agencyName || ticket.userId,
             agencyName: (ticket as any).agencyName || (ticket as any).userName || 'Agency',
@@ -1294,12 +1297,7 @@ export const AdminReportsView: React.FC = () => {
                   <div key={tkt.id} className="bg-neutral-950 rounded-2xl overflow-hidden shadow-xl border-2 border-white/90 font-mono space-y-0">
                     <div className="bg-[#1e1e1e] p-3 text-xs border-b border-neutral-800 space-y-1">
                       <div className="flex items-center justify-between font-mono">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.ticketId || tkt.id}</strong></span>
-                          <button type="button" onClick={(e) => handleCopyBillId(tkt.ticketId || tkt.id, e)} className="text-gold hover:text-white cursor-pointer" title="Copy Bill ID">
-                            {copiedBillId === (tkt.ticketId || tkt.id) ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                          </button>
-                        </div>
+                        <span className="font-black text-white text-sm">BILL ID: <strong className="text-gold font-bold">{tkt.ticketId || tkt.id}</strong></span>
                         <span className="px-2 py-0.5 text-[10px] font-black rounded bg-blue-950 text-sky-300 border border-sky-800">{(tkt.gameSlot || '').replace(/\s*Game$/i, '')}</span>
                       </div>
                       <div className="flex items-center justify-between text-[11px] text-neutral-400 font-mono">
@@ -1495,7 +1493,21 @@ export const AdminReportsView: React.FC = () => {
 
                           {/* Bill ID & Slot Info Bar */}
                           <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
-                            <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopyWinningCard(card.ticketId, card.id, e)}
+                                className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                                title="Copy Bill ID"
+                              >
+                                {copiedWinningCardId === card.id ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
                             <span>Slot: <strong className="text-gold font-bold">{(card.slot || '').replace(/\s*Game$/i, '')}</strong></span>
                           </div>
 
@@ -1700,7 +1712,21 @@ export const AdminReportsView: React.FC = () => {
 
                               {/* Bill ID & Slot Info Bar */}
                               <div className="bg-neutral-950/90 px-4 py-1.5 flex flex-wrap items-center justify-between text-[11px] font-mono border-t border-neutral-900 text-neutral-400 gap-1">
-                                <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                                <div className="flex items-center gap-1.5">
+                                  <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleCopyWinningCard(card.ticketId, card.id, e)}
+                                    className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
+                                    title="Copy Bill ID"
+                                  >
+                                    {copiedWinningCardId === card.id ? (
+                                      <Check className="w-3 h-3 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="w-3 h-3" />
+                                    )}
+                                  </button>
+                                </div>
                                 <span>Slot: <strong className="text-gold font-bold">{(card.slot || '').replace(/\s*Game$/i, '')}</strong></span>
                               </div>
 

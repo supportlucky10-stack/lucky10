@@ -194,7 +194,7 @@ export const MyPlayReportView: React.FC = () => {
   const [deletedTicketIds, setDeletedTicketIds] = useState<string[]>([]);
   const [deletedSuccessBillId, setDeletedSuccessBillId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
+  const [copiedWinningCardId, setCopiedWinningCardId] = useState<string | null>(null);
   const detailLongPressTimerRef = React.useRef<any>(null);
 
   // Strictly isolate tickets for the logged-in user / agency
@@ -243,12 +243,13 @@ export const MyPlayReportView: React.FC = () => {
     });
   };
 
-  const handleCopyBillId = (id: string, e?: React.MouseEvent) => {
+  const handleCopyWinningCard = (ticketId: string, cardId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    navigator.clipboard.writeText(id);
-    setCopiedBillId(id);
+    navigator.clipboard.writeText(ticketId);
+    setCopiedWinningCardId(cardId);
+    addToast(`Copied Bill ID ${ticketId}`, 'success');
     setTimeout(() => {
-      setCopiedBillId((prev) => (prev === id ? null : prev));
+      setCopiedWinningCardId((prev) => (prev === cardId ? null : prev));
     }, 2000);
   };
 
@@ -753,7 +754,7 @@ export const MyPlayReportView: React.FC = () => {
 
       const res = getResultForSlotAndDate(ticket.gameSlot, tDate);
 
-      ticket.items.forEach((item: any) => {
+      ticket.items.forEach((item: any, itemIdx: number) => {
         const num = getDisplayNumber(item);
         const count = item.count || 1;
 
@@ -772,7 +773,7 @@ export const MyPlayReportView: React.FC = () => {
           const catName = gameTitle;
           const existing = catMap.get(catName) || [];
           existing.push({
-            id: item.id || `w_${ticket.id}_${num}_${Math.random()}`,
+            id: item.id ? `w_${ticket.id}_${item.id}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeTitle}`,
             ticketId: ticket.ticketId || ticket.id,
             userName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
             agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
@@ -2042,11 +2043,11 @@ export const MyPlayReportView: React.FC = () => {
                               <span>Bill: <strong className="text-neutral-300 font-bold">{card.ticketId}</strong></span>
                               <button
                                 type="button"
-                                onClick={(e) => handleCopyBillId(card.ticketId, e)}
+                                onClick={(e) => handleCopyWinningCard(card.ticketId, card.id, e)}
                                 className="p-1 rounded bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700 hover:border-gold/50"
                                 title="Copy Bill ID"
                               >
-                                {copiedBillId === card.ticketId ? (
+                                {copiedWinningCardId === card.id ? (
                                   <Check className="w-3 h-3 text-emerald-400" />
                                 ) : (
                                   <Copy className="w-3 h-3" />
