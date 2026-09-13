@@ -102,18 +102,14 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
   // A4 geometry (points): 595.28 x 841.89
   const pageWidth = 595.28;
   const pageHeight = 841.89;
-  const leftX = 36;
-  const rightX = 559;
-  const contentWidth = rightX - leftX; // 523 pt
-  const rowHeight = 18;
+  const leftX = 18;
+  const rightX = 577;
+  const contentWidth = rightX - leftX; // 559.28 pt
+  const rowHeight = 22;
 
   // Pagination bounds:
-  // Page 1 header box (75 pt) + info bar (24 pt) + gap + table header (22 pt) = ~135 pt
-  // Maximum rows on Page 1 = 30 rows
-  const p1MaxItems = 30;
-  // Subsequent pages running header (24 pt) + table header (22 pt) = ~55 pt
-  // Maximum rows on subsequent pages = 34 rows
-  const subPageMaxItems = 34;
+  const p1MaxItems = 27;
+  const subPageMaxItems = 31;
 
   const pagesItems: (typeof items)[] = [];
   if (items.length <= p1MaxItems) {
@@ -139,7 +135,7 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
     // Page Background (White)
     stream += '1 1 1 rg 0 0 595.28 841.89 re f\n';
 
-    let currentY = 806;
+    let currentY = 816;
 
     if (isFirstPage) {
       // ── Page 1 Main Header Box ──
@@ -151,56 +147,56 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
       stream += `0.85 0.70 0.20 rg ${leftX} ${currentY - 4} ${contentWidth} 4 re f\n`;
 
       // Title: BILL RECEIPT
-      stream += `BT /F2 14 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 48} Td (BILL RECEIPT) Tj ET\n`;
+      stream += `BT /F2 16 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 46} Td (BILL RECEIPT) Tj ET\n`;
 
       // Bill ID
-      stream += `BT /F2 11 Tf 1 1 1 rg ${leftX + 14} ${headerY + 28} Td (BILL ID: ) Tj ET\n`;
-      stream += `BT /F3 13 Tf 0.95 0.80 0.30 rg ${leftX + 70} ${headerY + 27} Td (${escapePdfText(ticketId)}) Tj ET\n`;
+      stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 14} ${headerY + 24} Td (BILL ID: ) Tj ET\n`;
+      stream += `BT /F3 14 Tf 0.95 0.80 0.30 rg ${leftX + 75} ${headerY + 23} Td (${escapePdfText(ticketId)}) Tj ET\n`;
 
-      // Date & Time
-      stream += `BT /F1 9 Tf 0.8 0.8 0.8 rg ${leftX + 300} ${headerY + 48} Td (DATE & TIME: ${escapePdfText(placedAtStr)}) Tj ET\n`;
+      // Date & Time for bill receipt
+      stream += `BT /F1 9.5 Tf 0.8 0.8 0.8 rg ${leftX + 310} ${headerY + 46} Td (DATE & TIME: ${escapePdfText(placedAtStr)}) Tj ET\n`;
 
       currentY = headerY - 6;
 
       // ── Info Bar (Agency / Customer / Slot) ──
-      const infoH = 24;
+      const infoH = 26;
       const infoY = currentY - infoH;
       stream += `0.94 0.94 0.94 rg ${leftX} ${infoY} ${contentWidth} ${infoH} re f\n`;
       stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} ${infoY} ${contentWidth} ${infoH} re S\n`;
 
-      stream += `BT /F2 9 Tf 0.2 0.2 0.2 rg ${leftX + 10} ${infoY + 7} Td (Agency: ) Tj ET\n`;
-      stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 55} ${infoY + 7} Td (${escapePdfText(agency)}) Tj ET\n`;
+      stream += `BT /F2 10 Tf 0.2 0.2 0.2 rg ${leftX + 12} ${infoY + 8} Td (Agency: ) Tj ET\n`;
+      stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 62} ${infoY + 8} Td (${escapePdfText(agency)}) Tj ET\n`;
 
       if (customer) {
-        stream += `BT /F2 9 Tf 0.2 0.2 0.2 rg ${leftX + 200} ${infoY + 7} Td (Customer: ) Tj ET\n`;
-        stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 252} ${infoY + 7} Td (${escapePdfText(customer)}) Tj ET\n`;
-        stream += `BT /F2 9 Tf 0.2 0.2 0.2 rg ${leftX + 400} ${infoY + 7} Td (Slot: ) Tj ET\n`;
-        stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 430} ${infoY + 7} Td (${escapePdfText(slot)}) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0.2 0.2 0.2 rg ${leftX + 220} ${infoY + 8} Td (Customer: ) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 280} ${infoY + 8} Td (${escapePdfText(customer)}) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0.2 0.2 0.2 rg ${leftX + 430} ${infoY + 8} Td (Slot: ) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 465} ${infoY + 8} Td (${escapePdfText(slot)}) Tj ET\n`;
       } else {
-        stream += `BT /F2 9 Tf 0.2 0.2 0.2 rg ${leftX + 360} ${infoY + 7} Td (Slot: ) Tj ET\n`;
-        stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 390} ${infoY + 7} Td (${escapePdfText(slot)}) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0.2 0.2 0.2 rg ${leftX + 390} ${infoY + 8} Td (Slot: ) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 425} ${infoY + 8} Td (${escapePdfText(slot)}) Tj ET\n`;
       }
 
       currentY = infoY - 8;
     } else {
       // ── Subsequent Pages Running Header ──
-      const runH = 24;
+      const runH = 26;
       const runY = currentY - runH;
       stream += `0.1 0.1 0.1 rg ${leftX} ${runY} ${contentWidth} ${runH} re f\n`;
-      stream += `BT /F2 9.5 Tf 1 1 1 rg ${leftX + 10} ${runY + 7} Td (BILL ID: ${escapePdfText(ticketId)}  |  Agency: ${escapePdfText(agency)}  |  Slot: ${escapePdfText(slot)}) Tj ET\n`;
+      stream += `BT /F2 10.5 Tf 1 1 1 rg ${leftX + 10} ${runY + 8} Td (BILL ID: ${escapePdfText(ticketId)}  |  Agency: ${escapePdfText(agency)}  |  Slot: ${escapePdfText(slot)}) Tj ET\n`;
       currentY = runY - 6;
     }
 
     // ── Table Column Headers Bar ──
-    const tblHdrH = 22;
+    const tblHdrH = 24;
     const tblHdrY = currentY - tblHdrH;
     stream += `0.92 0.88 0.92 rg ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re f\n`;
     stream += `0.8 0.75 0.8 RG 0.5 w ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re S\n`;
 
-    stream += `BT /F2 9 Tf 0.1 0.1 0.1 rg ${leftX + 15} ${tblHdrY + 6} Td (GAME) Tj ET\n`;
-    stream += `BT /F2 9 Tf 0.1 0.1 0.1 rg ${leftX + 160} ${tblHdrY + 6} Td (NUMBER) Tj ET\n`;
-    stream += `BT /F2 9 Tf 0.1 0.1 0.1 rg ${leftX + 310} ${tblHdrY + 6} Td (COUNT) Tj ET\n`;
-    stream += `BT /F2 9 Tf 0.1 0.1 0.1 rg ${leftX + 450} ${tblHdrY + 6} Td (AMOUNT) Tj ET\n`;
+    stream += `BT /F2 10 Tf 0.1 0.1 0.1 rg ${leftX + 20} ${tblHdrY + 7} Td (GAME) Tj ET\n`;
+    stream += `BT /F2 10 Tf 0.1 0.1 0.1 rg ${leftX + 175} ${tblHdrY + 7} Td (NUMBER) Tj ET\n`;
+    stream += `BT /F2 10 Tf 0.1 0.1 0.1 rg ${leftX + 335} ${tblHdrY + 7} Td (COUNT) Tj ET\n`;
+    stream += `BT /F2 10 Tf 0.1 0.1 0.1 rg ${leftX + 475} ${tblHdrY + 7} Td (AMOUNT) Tj ET\n`;
 
     currentY = tblHdrY;
 
@@ -222,10 +218,10 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
       const cntStr = String(item.count || '');
       const amtStr = `Rs. ${item.totalAmount || 0}`;
 
-      stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 15} ${rowY + 5} Td (${escapePdfText(gType)}) Tj ET\n`;
-      stream += `BT /F3 9.5 Tf 0 0 0 rg ${leftX + 160} ${rowY + 5} Td (${escapePdfText(numStr)}) Tj ET\n`;
-      stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 310} ${rowY + 5} Td (${escapePdfText(cntStr)}) Tj ET\n`;
-      stream += `BT /F2 9 Tf 0 0 0 rg ${leftX + 450} ${rowY + 5} Td (${escapePdfText(amtStr)}) Tj ET\n`;
+      stream += `BT /F2 10 Tf 0.1 0.1 0.1 rg ${leftX + 20} ${rowY + 6} Td (${escapePdfText(gType)}) Tj ET\n`;
+      stream += `BT /F3 11.5 Tf 0 0 0 rg ${leftX + 175} ${rowY + 6} Td (${escapePdfText(numStr)}) Tj ET\n`;
+      stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 335} ${rowY + 6} Td (${escapePdfText(cntStr)}) Tj ET\n`;
+      stream += `BT /F2 10.5 Tf 0 0 0 rg ${leftX + 475} ${rowY + 6} Td (${escapePdfText(amtStr)}) Tj ET\n`;
 
       currentY = rowY;
     });
@@ -233,19 +229,19 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
     // ── Total Amount Box (on final page) ──
     if (isLastPage) {
       currentY -= 6;
-      const totH = 28;
+      const totH = 30;
       const totY = currentY - totH;
       stream += `0.08 0.08 0.08 rg ${leftX} ${totY} ${contentWidth} ${totH} re f\n`;
       stream += `0.85 0.70 0.20 RG 1 w ${leftX} ${totY} ${contentWidth} ${totH} re S\n`;
 
-      stream += `BT /F2 10.5 Tf 1 1 1 rg ${leftX + 14} ${totY + 9} Td (TOTAL AMOUNT) Tj ET\n`;
-      stream += `BT /F2 12 Tf 0.95 0.80 0.20 rg ${leftX + 420} ${totY + 8} Td (Rs. ${escapePdfText(String(totalAmount))}) Tj ET\n`;
+      stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 14} ${totY + 9} Td (TOTAL AMOUNT) Tj ET\n`;
+      stream += `BT /F2 14 Tf 0.95 0.80 0.20 rg ${leftX + 440} ${totY + 8} Td (Rs. ${escapePdfText(String(totalAmount))}) Tj ET\n`;
     }
 
     // ── Footer (Page X of Y) ──
-    stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} 45 ${contentWidth} 0 re S\n`;
+    stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} 40 ${contentWidth} 0 re S\n`;
     const footerText = `Page ${pageNum} of ${totalPages}`;
-    stream += `BT /F1 8 Tf 0.5 0.5 0.5 rg 270 32 Td (${escapePdfText(footerText)}) Tj ET\n`;
+    stream += `BT /F1 8.5 Tf 0.5 0.5 0.5 rg 270 26 Td (${escapePdfText(footerText)}) Tj ET\n`;
 
     pageStreams.push(stream);
   });
@@ -428,7 +424,6 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
   const toDate = data.toDate || '';
   const dateRangeStr = fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`;
   const agencyName = data.agencyName || 'Agency';
-  const nowStr = formatPlacedAtDate(new Date().toISOString()) || new Date().toLocaleString();
   const totalWinnersCount = data.winningTotalCount || 0;
   const grandTotalAmount = data.winningGrandTotal || 0;
 
@@ -439,7 +434,6 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
     number: string;
     count: number;
     total: number;
-    ticketId: string;
     customerName: string;
     slot: string;
   }> = [];
@@ -452,8 +446,7 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
         number: card.number || '',
         count: card.count || 1,
         total: card.total || 0,
-        ticketId: card.ticketId || '',
-        customerName: card.customerName || '',
+        customerName: card.customerName && card.customerName.toLowerCase() !== 'customer' ? card.customerName.trim() : '-',
         slot: (card.slot || '').replace(/\s*Game$/i, ''),
       });
     });
@@ -462,13 +455,13 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
   // A4 geometry: 595.28 x 841.89 pt
   const pageWidth = 595.28;
   const pageHeight = 841.89;
-  const leftX = 36;
-  const rightX = 559;
-  const contentWidth = rightX - leftX; // 523 pt
-  const rowHeight = 18;
+  const leftX = 18;
+  const rightX = 577;
+  const contentWidth = rightX - leftX; // 559.28 pt
+  const rowHeight = 22;
 
-  const p1MaxItems = 28;
-  const subPageMaxItems = 34;
+  const p1MaxItems = 26;
+  const subPageMaxItems = 30;
 
   const pagesItems: (typeof items)[] = [];
   if (items.length <= p1MaxItems) {
@@ -494,11 +487,11 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
     // Page Background (White)
     stream += '1 1 1 rg 0 0 595.28 841.89 re f\n';
 
-    let currentY = 806;
+    let currentY = 816;
 
     if (isFirstPage) {
       // ── Page 1 Header Box ──
-      const headerH = 68;
+      const headerH = 65;
       const headerY = currentY - headerH;
       // Dark Header Box
       stream += `0.05 0.05 0.05 rg ${leftX} ${headerY} ${contentWidth} ${headerH} re f\n`;
@@ -506,55 +499,53 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
       stream += `0.85 0.70 0.20 rg ${leftX} ${currentY - 4} ${contentWidth} 4 re f\n`;
 
       // Title: WINNING REPORT
-      stream += `BT /F2 15 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 44} Td (WINNING REPORT) Tj ET\n`;
+      stream += `BT /F2 17 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 40} Td (WINNING REPORT) Tj ET\n`;
       // Filters
-      stream += `BT /F1 9 Tf 0.85 0.85 0.85 rg ${leftX + 14} ${headerY + 26} Td (SLOT: ${escapePdfText(slotFilter)}   |   DATE: ${escapePdfText(dateRangeStr)}) Tj ET\n`;
+      stream += `BT /F1 10.5 Tf 0.9 0.9 0.9 rg ${leftX + 14} ${headerY + 23} Td (SLOT: ${escapePdfText(slotFilter)}   |   DATE: ${escapePdfText(dateRangeStr)}) Tj ET\n`;
       // Agency
-      stream += `BT /F1 8.5 Tf 0.7 0.7 0.7 rg ${leftX + 14} ${headerY + 11} Td (AGENCY: ${escapePdfText(agencyName)}) Tj ET\n`;
-      // Timestamp
-      stream += `BT /F1 8.5 Tf 0.8 0.8 0.8 rg ${leftX + 310} ${headerY + 44} Td (DATE & TIME: ${escapePdfText(nowStr)}) Tj ET\n`;
+      stream += `BT /F2 10 Tf 0.8 0.8 0.8 rg ${leftX + 14} ${headerY + 8} Td (AGENCY: ${escapePdfText(agencyName)}) Tj ET\n`;
 
       currentY = headerY - 5;
 
       // ── Metric Summary Bar ──
-      const metricH = 26;
+      const metricH = 28;
       const metricY = currentY - metricH;
       stream += `0.85 0.70 0.20 rg ${leftX} ${metricY} ${contentWidth} ${metricH} re f\n`;
       stream += `0.65 0.50 0.10 RG 1 w ${leftX} ${metricY} ${contentWidth} ${metricH} re S\n`;
 
-      stream += `BT /F2 10 Tf 0 0 0 rg ${leftX + 12} ${metricY + 8} Td (TOTAL WINNERS: ${escapePdfText(String(totalWinnersCount))}) Tj ET\n`;
-      stream += `BT /F2 11 Tf 0 0 0 rg ${leftX + 320} ${metricY + 8} Td (GRAND TOTAL: Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
+      stream += `BT /F2 11.5 Tf 0 0 0 rg ${leftX + 14} ${metricY + 8} Td (TOTAL WINNERS: ${escapePdfText(String(totalWinnersCount))}) Tj ET\n`;
+      stream += `BT /F2 12.5 Tf 0 0 0 rg ${leftX + 340} ${metricY + 8} Td (GRAND TOTAL: Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
 
       currentY = metricY - 6;
     } else {
       // ── Subsequent Pages Running Header ──
-      const runH = 24;
+      const runH = 26;
       const runY = currentY - runH;
       stream += `0.1 0.1 0.1 rg ${leftX} ${runY} ${contentWidth} ${runH} re f\n`;
-      stream += `BT /F2 9.5 Tf 1 1 1 rg ${leftX + 10} ${runY + 7} Td (WINNING REPORT  |  Slot: ${escapePdfText(slotFilter)}  |  Agency: ${escapePdfText(agencyName)}) Tj ET\n`;
+      stream += `BT /F2 10.5 Tf 1 1 1 rg ${leftX + 10} ${runY + 8} Td (WINNING REPORT  |  Slot: ${escapePdfText(slotFilter)}  |  Agency: ${escapePdfText(agencyName)}) Tj ET\n`;
       currentY = runY - 6;
     }
 
     // ── Table Column Headers Bar ──
-    const tblHdrH = 22;
+    const tblHdrH = 24;
     const tblHdrY = currentY - tblHdrH;
     stream += `0.92 0.88 0.92 rg ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re f\n`;
     stream += `0.8 0.75 0.8 RG 0.5 w ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re S\n`;
 
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${tblHdrY + 6} Td (GAME) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 65} ${tblHdrY + 6} Td (PRIZE) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 150} ${tblHdrY + 6} Td (NUM) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 205} ${tblHdrY + 6} Td (CNT) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 250} ${tblHdrY + 6} Td (WIN AMOUNT) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 350} ${tblHdrY + 6} Td (BILL ID) Tj ET\n`;
-    stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 440} ${tblHdrY + 6} Td (CUSTOMER / SLOT) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${tblHdrY + 7} Td (GAME) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 70} ${tblHdrY + 7} Td (PRIZE) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 190} ${tblHdrY + 7} Td (NUM) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 242} ${tblHdrY + 7} Td (CNT) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 290} ${tblHdrY + 7} Td (WIN AMOUNT) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 395} ${tblHdrY + 7} Td (CUSTOMER) Tj ET\n`;
+    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 500} ${tblHdrY + 7} Td (SLOT) Tj ET\n`;
 
     currentY = tblHdrY;
 
     // ── Rows ──
     if (pItems.length === 0) {
       const emptyY = currentY - 26;
-      stream += `BT /F1 9.5 Tf 0.4 0.4 0.4 rg ${leftX + 170} ${emptyY + 8} Td (No winning tickets found.) Tj ET\n`;
+      stream += `BT /F1 10 Tf 0.4 0.4 0.4 rg ${leftX + 180} ${emptyY + 8} Td (No winning tickets found.) Tj ET\n`;
       currentY = emptyY;
     } else {
       pItems.forEach((item, rIdx) => {
@@ -573,16 +564,16 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
         const numStr = item.number;
         const cntStr = String(item.count);
         const amtStr = `Rs. ${item.total}`;
-        const billStr = item.ticketId;
-        const custSlot = item.customerName ? `${item.customerName} (${item.slot})` : item.slot;
+        const custName = item.customerName || '-';
+        const slotStr = item.slot || '';
 
-        stream += `BT /F2 8.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${rowY + 5} Td (${escapePdfText(gType)}) Tj ET\n`;
-        stream += `BT /F2 7.5 Tf 0.2 0.5 0.2 rg ${leftX + 65} ${rowY + 5} Td (${escapePdfText(prizeStr)}) Tj ET\n`;
-        stream += `BT /F3 9.5 Tf 0 0 0 rg ${leftX + 150} ${rowY + 5} Td (${escapePdfText(numStr)}) Tj ET\n`;
-        stream += `BT /F2 8.5 Tf 0 0 0 rg ${leftX + 205} ${rowY + 5} Td (${escapePdfText(cntStr)}) Tj ET\n`;
-        stream += `BT /F2 8.5 Tf 0.1 0.4 0.1 rg ${leftX + 250} ${rowY + 5} Td (${escapePdfText(amtStr)}) Tj ET\n`;
-        stream += `BT /F3 8 Tf 0.2 0.2 0.2 rg ${leftX + 350} ${rowY + 5} Td (${escapePdfText(billStr)}) Tj ET\n`;
-        stream += `BT /F1 7.5 Tf 0.3 0.3 0.3 rg ${leftX + 440} ${rowY + 5} Td (${escapePdfText(custSlot)}) Tj ET\n`;
+        stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${rowY + 6} Td (${escapePdfText(gType)}) Tj ET\n`;
+        stream += `BT /F2 8.5 Tf 0.15 0.55 0.2 rg ${leftX + 70} ${rowY + 6} Td (${escapePdfText(prizeStr)}) Tj ET\n`;
+        stream += `BT /F3 11 Tf 0 0 0 rg ${leftX + 190} ${rowY + 6} Td (${escapePdfText(numStr)}) Tj ET\n`;
+        stream += `BT /F2 9.5 Tf 0 0 0 rg ${leftX + 242} ${rowY + 6} Td (${escapePdfText(cntStr)}) Tj ET\n`;
+        stream += `BT /F2 10 Tf 0.1 0.45 0.1 rg ${leftX + 290} ${rowY + 6} Td (${escapePdfText(amtStr)}) Tj ET\n`;
+        stream += `BT /F2 9.5 Tf 0.15 0.15 0.15 rg ${leftX + 395} ${rowY + 6} Td (${escapePdfText(custName)}) Tj ET\n`;
+        stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 500} ${rowY + 6} Td (${escapePdfText(slotStr)}) Tj ET\n`;
 
         currentY = rowY;
       });
@@ -591,19 +582,19 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
     // ── Total Winning Payout Box (on final page) ──
     if (isLastPage) {
       currentY -= 6;
-      const totH = 26;
+      const totH = 30;
       const totY = currentY - totH;
       stream += `0.08 0.08 0.08 rg ${leftX} ${totY} ${contentWidth} ${totH} re f\n`;
       stream += `0.85 0.70 0.20 RG 1 w ${leftX} ${totY} ${contentWidth} ${totH} re S\n`;
 
-      stream += `BT /F2 10.5 Tf 1 1 1 rg ${leftX + 14} ${totY + 8} Td (TOTAL WINNING PAYOUT) Tj ET\n`;
-      stream += `BT /F2 12 Tf 0.95 0.80 0.20 rg ${leftX + 380} ${totY + 7} Td (Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
+      stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 14} ${totY + 9} Td (TOTAL WINNING PAYOUT) Tj ET\n`;
+      stream += `BT /F2 14 Tf 0.95 0.80 0.20 rg ${leftX + 400} ${totY + 8} Td (Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
     }
 
     // ── Footer (Page X of Y) ──
-    stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} 40 ${contentWidth} 0 re S\n`;
+    stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} 35 ${contentWidth} 0 re S\n`;
     const footerText = `Page ${pageNum} of ${totalPages}`;
-    stream += `BT /F1 8 Tf 0.5 0.5 0.5 rg 270 28 Td (${escapePdfText(footerText)}) Tj ET\n`;
+    stream += `BT /F1 8.5 Tf 0.5 0.5 0.5 rg 270 23 Td (${escapePdfText(footerText)}) Tj ET\n`;
 
     pageStreams.push(stream);
   });
