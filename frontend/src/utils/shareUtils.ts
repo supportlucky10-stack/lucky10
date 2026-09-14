@@ -158,6 +158,8 @@ export const captureAndShareElement = async ({
 
     const file = new File([blob], jpgFileName, { type: 'image/jpeg', lastModified: Date.now() });
 
+    const shareText = (textSummary || title || '').trim();
+
     // 1. Try mobile Web Share API for direct WhatsApp / Image Sharing
     if (typeof navigator !== 'undefined' && navigator.share) {
       let canShareFiles = false;
@@ -173,10 +175,13 @@ export const captureAndShareElement = async ({
 
       if (canShareFiles) {
         try {
-          await navigator.share({
+          const shareData: { files: File[]; text?: string } = {
             files: [file],
-            text: textSummary || title || undefined,
-          });
+          };
+          if (shareText) {
+            shareData.text = shareText;
+          }
+          await navigator.share(shareData);
           return;
         } catch (shareErr: any) {
           if (shareErr?.name === 'AbortError') return;
@@ -234,13 +239,14 @@ export const captureAndShareElement = async ({
 
     // Open WhatsApp
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const textParam = (textSummary || title) ? `?text=${encodeURIComponent(textSummary || title)}` : '';
+    const textParam = shareText ? `?text=${encodeURIComponent(shareText)}` : '';
     const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
     window.open(waUrl, '_blank');
   } catch (err) {
     console.error('Failed to capture screen element image:', err);
+    const shareText = (textSummary || title || '').trim();
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const textParam = (textSummary || title) ? `?text=${encodeURIComponent(textSummary || title)}` : '';
+    const textParam = shareText ? `?text=${encodeURIComponent(shareText)}` : '';
     const fallbackUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
     window.open(fallbackUrl, '_blank');
   }

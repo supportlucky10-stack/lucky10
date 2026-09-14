@@ -144,7 +144,7 @@ export const TodaysResultView: React.FC = () => {
     captureAndShareElement({
       elementId: 'result-share-container',
       fileName: `result_${activeGameSlot.replace(/\s+/g, '_')}_${formattedDate}.jpg`,
-      title: `Result - ${activeGameSlot}`,
+      title: '',
       textSummary: '',
     });
   };
