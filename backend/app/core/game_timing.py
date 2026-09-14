@@ -127,3 +127,21 @@ def get_all_game_slot_statuses(now_ist: Optional[datetime] = None) -> Dict:
         }
     }
     return statuses
+
+def get_ist_day_utc_bounds(target_date: Optional[str] = None):
+    """
+    Given an IST date string 'YYYY-MM-DD', returns (start_utc, end_utc) naive datetimes
+    representing the UTC timestamp bounds for that full IST calendar day.
+    IST is UTC + 5:30, so:
+      IST 00:00:00 = UTC 18:30:00 of the previous day
+      IST 24:00:00 = UTC 18:30:00 of the target day
+    """
+    clean_date = (target_date or "").strip()
+    if not clean_date:
+        clean_date = get_business_date()
+    parts = [int(p) for p in clean_date.split("-")]
+    start_ist = datetime(parts[0], parts[1], parts[2], 0, 0, 0, tzinfo=IST_TZ)
+    start_utc = start_ist.astimezone(timezone.utc).replace(tzinfo=None)
+    end_utc = start_utc + timedelta(days=1)
+    return start_utc, end_utc
+

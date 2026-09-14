@@ -423,45 +423,42 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
 @router.get("/tickets/by-date")
 def get_user_tickets_by_date(date: Optional[str] = None, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     """Return the authenticated user's tickets for the requested IST business date only.
-    Uses IST conversion of placed_at (UTC) to determine business date, matching the same
-    logic used in winning calculation and admin reports."""
-    from app.core.game_timing import IST_TZ
+    Uses SQL-level date boundary filtering with get_ist_day_utc_bounds() for optimal performance."""
     target_date = date.strip() if date and date.strip() else get_business_date()
+    from app.core.game_timing import get_ist_day_utc_bounds
+    start_utc, end_utc = get_ist_day_utc_bounds(target_date)
 
-    # Fetch all of this user's tickets and filter by IST business date server-side
-    all_tickets = (
-        db.query(Ticket)
-        .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .filter(Ticket.user_id == current_user.id)
-        .order_by(Ticket.placed_at.desc())
-        .all()
-    )
-
-    result = []
-    for t in all_tickets:
-        # Convert placed_at UTC → IST → extract YYYY-MM-DD
-        if t.placed_at:
-            dt = t.placed_at
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-            t_ist_date = dt.astimezone(IST_TZ).strftime("%Y-%m-%d")
-        else:
-            t_ist_date = ""
-        if t_ist_date == target_date:
-            result.append(format_ticket(t))
-    return result
-
-@router.get("/tickets")
-def get_user_tickets(current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
     tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .filter(Ticket.user_id == current_user.id)
+        .filter(
+            Ticket.user_id == current_user.id,
+            Ticket.placed_at >= start_utc,
+            Ticket.placed_at < end_utc,
+        )
         .order_by(Ticket.placed_at.desc())
-        .limit(200)
         .all()
     )
     return [format_ticket(t) for t in tickets]
+
+@router.get("/tickets")
+def get_user_tickets(date: Optional[str] = None, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
+    from app.core.game_timing import get_ist_day_utc_bounds, get_business_date
+    query = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.user), selectinload(Ticket.items))
+        .filter(Ticket.user_id == current_user.id)
+    )
+    if date and date.strip() and date.strip().lower() != "all":
+        start_utc, end_utc = get_ist_day_utc_bounds(date.strip())
+        query = query.filter(Ticket.placed_at >= start_utc, Ticket.placed_at < end_utc)
+    elif not date:
+        start_utc, end_utc = get_ist_day_utc_bounds(get_business_date())
+        query = query.filter(Ticket.placed_at >= start_utc, Ticket.placed_at < end_utc)
+
+    tickets = query.order_by(Ticket.placed_at.desc()).limit(200).all()
+    return [format_ticket(t) for t in tickets]
+
 
 @router.delete("/tickets/{ticket_id}")
 def delete_user_ticket(ticket_id: str, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):

@@ -45,7 +45,7 @@ export const TodaysResultView: React.FC = () => {
     }
   }, [selectedDate, activeGameSlot]);
 
-  // 2. Realtime results polling & event listeners
+  // 2. Realtime results schedule tick & event listeners
   useEffect(() => {
     syncResultSchedule();
     if (refreshResults) {
@@ -56,13 +56,6 @@ export const TodaysResultView: React.FC = () => {
     const scheduleTimer = setInterval(() => {
       syncResultSchedule();
     }, 1000);
-
-    // Live result polling every 2 seconds for active tab
-    const livePollTimer = setInterval(() => {
-      if (document.visibilityState === 'visible' && refreshResults) {
-        refreshResults(selectedDate);
-      }
-    }, 2000);
 
     const handleResultUpdate = () => {
       if (refreshResults) {
@@ -85,7 +78,6 @@ export const TodaysResultView: React.FC = () => {
 
     return () => {
       clearInterval(scheduleTimer);
-      clearInterval(livePollTimer);
       window.removeEventListener('lucky10_results_updated', handleResultUpdate);
       window.removeEventListener('visibilitychange', handleVisibilityOrFocus);
       window.removeEventListener('focus', handleVisibilityOrFocus);

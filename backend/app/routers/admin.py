@@ -374,13 +374,18 @@ def update_issue_status(issue_id: str, admin_user: User = Depends(get_current_ad
     }
 
 @router.get("/tickets")
-def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    tickets = (
-        db.query(Ticket)
-        .options(joinedload(Ticket.user), selectinload(Ticket.items))
-        .order_by(Ticket.placed_at.desc())
-        .all()
-    )
+def get_all_admin_tickets(date: Optional[str] = None, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    from app.core.game_timing import get_ist_day_utc_bounds, IST_TZ, get_business_date
+    query = db.query(Ticket).options(joinedload(Ticket.user), selectinload(Ticket.items))
+    if date and date.strip() and date.strip().lower() != "all":
+        start_utc, end_utc = get_ist_day_utc_bounds(date.strip())
+        query = query.filter(Ticket.placed_at >= start_utc, Ticket.placed_at < end_utc)
+    elif not date:
+        # Default to today's business date to prevent unbounded full table scans
+        start_utc, end_utc = get_ist_day_utc_bounds(get_business_date())
+        query = query.filter(Ticket.placed_at >= start_utc, Ticket.placed_at < end_utc)
+
+    tickets = query.order_by(Ticket.placed_at.desc()).all()
     out = []
     for t in tickets:
         agency_name = (t.user.name or t.user.username) if t.user else ""
@@ -390,7 +395,6 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
             dt = t.placed_at
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            from app.core.game_timing import IST_TZ
             ist_dt_str = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
         out.append({
             "id": t.id,
@@ -424,22 +428,21 @@ def get_all_admin_tickets(admin_user: User = Depends(get_current_admin), db: Ses
 @router.get("/tickets/by-date")
 def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
     """Return ALL users' tickets for the requested IST business date only.
-    Uses get_ticket_business_date() for correct UTC→IST conversion — same as the winning
-    evaluation logic in publish_results(). This makes admin date-scoped queries authoritative."""
+    Uses SQL-level date boundary filtering with get_ist_day_utc_bounds() for optimal performance."""
     target_date = date.strip() if date and date.strip() else get_business_date()
+    from app.core.game_timing import get_ist_day_utc_bounds, IST_TZ
+    start_utc, end_utc = get_ist_day_utc_bounds(target_date)
 
-    all_tickets = (
+    tickets = (
         db.query(Ticket)
         .options(joinedload(Ticket.user), selectinload(Ticket.items))
+        .filter(Ticket.placed_at >= start_utc, Ticket.placed_at < end_utc)
         .order_by(Ticket.placed_at.desc())
         .all()
     )
 
     out = []
-    for t in all_tickets:
-        t_date = get_ticket_business_date(t)
-        if t_date != target_date:
-            continue
+    for t in tickets:
         agency_name = (t.user.name or t.user.username) if t.user else ""
         user_name = agency_name
         ist_dt_str = ""
@@ -447,7 +450,6 @@ def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Dep
             dt = t.placed_at
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            from app.core.game_timing import IST_TZ
             ist_dt_str = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
         out.append({
             "id": t.id,
@@ -477,6 +479,7 @@ def get_admin_tickets_by_date(date: Optional[str] = None, admin_user: User = Dep
             "createdAt": ist_dt_str,
         })
     return out
+
 
 @router.delete("/tickets/{ticket_id}")
 def delete_admin_ticket(ticket_id: str, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):

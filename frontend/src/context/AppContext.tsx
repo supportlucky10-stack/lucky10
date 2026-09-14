@@ -520,9 +520,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (isAdminLoggedIn) {
         try {
+          const todayStr = getBusinessDateIST();
           const [users, tkts] = await Promise.all([
             adminService.getAllUsers().catch(() => null),
-            adminService.getAllTickets().catch(() => null),
+            adminService.getTicketsByDate(todayStr).catch(() => null),
           ]);
           if (users) setRegisteredUsers((prev) => (areUsersEqual(prev, users) ? prev : users));
           if (tkts) {
@@ -537,6 +538,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch {}
       } else if (currentUser) {
         try {
+          const todayStr = getBusinessDateIST();
           // Authoritatively verify currentUser status from backend database
           const freshProfile = await authService.getCurrentUser().catch(() => null);
           if (freshProfile) {
@@ -561,7 +563,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return freshProfile;
             });
           }
-          const tkts = await customerService.getUserTickets().catch(() => null);
+          const tkts = await customerService.getTicketsByDate(todayStr).catch(() => null);
           if (tkts) {
             setPlacedTickets((prev) => {
               const deduped = dedupeTickets([...tkts, ...prev]);
@@ -1429,9 +1431,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshAllData = useCallback(async () => {
     try {
       const todayStr = getBusinessDateIST();
-      const [todayRes, allRes, lims] = await Promise.all([
+      const [todayRes, lims] = await Promise.all([
         customerService.getTodayResults(todayStr).catch(() => ({})),
-        customerService.getAllResults().catch(() => ({})),
         customerService.getLimits().catch(() => null),
       ]);
 
@@ -1440,20 +1441,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setAllPublishedResults((prev) => {
           const updated: Record<string, GameResult> = { ...prev, ...todayRes };
           Object.values(todayRes).forEach((r: any) => {
-            if (r && r.date && r.gameSlot) {
-              const normDate = extractDateStr(r.date);
-              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
-              updated[`${r.date}_${r.gameSlot}`] = r;
-            }
-          });
-          return updated;
-        });
-      }
-
-      if (allRes && Object.keys(allRes).length > 0) {
-        setAllPublishedResults((prev) => {
-          const updated: Record<string, GameResult> = { ...prev, ...allRes };
-          Object.values(allRes).forEach((r: any) => {
             if (r && r.date && r.gameSlot) {
               const normDate = extractDateStr(r.date);
               if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
@@ -1473,12 +1460,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (isAdminLoggedIn) {
         const [users, tkts] = await Promise.all([
           adminService.getAllUsers().catch(() => null),
-          adminService.getAllTickets().catch(() => null),
+          adminService.getTicketsByDate(todayStr).catch(() => null),
         ]);
         if (users) setRegisteredUsers(users);
         if (tkts) setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
       } else if (currentUser) {
-        const tkts = await customerService.getUserTickets().catch(() => null);
+        const tkts = await customerService.getTicketsByDate(todayStr).catch(() => null);
         if (tkts) {
           setPlacedTickets((prev) => dedupeTickets([...tkts, ...prev]));
         }
@@ -1489,30 +1476,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshResults = useCallback(async (dateStr?: string) => {
     try {
       const targetDate = dateStr && dateStr.trim() ? dateStr.trim() : getBusinessDateIST();
-      const [byDateRes, allRes] = await Promise.all([
-        customerService.getResultsByDate(targetDate).catch(() => ({})),
-        customerService.getAllResults().catch(() => ({})),
-      ]);
+      const byDateRes = await customerService.getResultsByDate(targetDate).catch(() => ({}));
 
       if (byDateRes && Object.keys(byDateRes).length > 0) {
         setGameResults((prev) => ({ ...prev, ...byDateRes }));
         setAllPublishedResults((prev) => {
           const updated: Record<string, GameResult> = { ...prev, ...byDateRes };
           Object.values(byDateRes).forEach((r: any) => {
-            if (r && r.date && r.gameSlot) {
-              const normDate = extractDateStr(r.date);
-              if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
-              updated[`${r.date}_${r.gameSlot}`] = r;
-            }
-          });
-          return updated;
-        });
-      }
-
-      if (allRes && Object.keys(allRes).length > 0) {
-        setAllPublishedResults((prev) => {
-          const updated: Record<string, GameResult> = { ...prev, ...allRes };
-          Object.values(allRes).forEach((r: any) => {
             if (r && r.date && r.gameSlot) {
               const normDate = extractDateStr(r.date);
               if (normDate) updated[`${normDate}_${r.gameSlot}`] = r;
