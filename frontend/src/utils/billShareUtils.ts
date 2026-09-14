@@ -458,10 +458,10 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
   const leftX = 18;
   const rightX = 577;
   const contentWidth = rightX - leftX; // 559.28 pt
-  const rowHeight = 22;
+  const rowHeight = 28;
 
-  const p1MaxItems = 26;
-  const subPageMaxItems = 30;
+  const p1MaxItems = 20;
+  const subPageMaxItems = 24;
 
   const pagesItems: (typeof items)[] = [];
   if (items.length <= p1MaxItems) {
@@ -491,7 +491,7 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
 
     if (isFirstPage) {
       // ── Page 1 Header Box ──
-      const headerH = 65;
+      const headerH = 72;
       const headerY = currentY - headerH;
       // Dark Header Box
       stream += `0.05 0.05 0.05 rg ${leftX} ${headerY} ${contentWidth} ${headerH} re f\n`;
@@ -499,53 +499,53 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
       stream += `0.85 0.70 0.20 rg ${leftX} ${currentY - 4} ${contentWidth} 4 re f\n`;
 
       // Title: WINNING REPORT
-      stream += `BT /F2 17 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 40} Td (WINNING REPORT) Tj ET\n`;
+      stream += `BT /F2 20 Tf 0.85 0.70 0.20 rg ${leftX + 14} ${headerY + 44} Td (WINNING REPORT) Tj ET\n`;
       // Filters
-      stream += `BT /F1 10.5 Tf 0.9 0.9 0.9 rg ${leftX + 14} ${headerY + 23} Td (SLOT: ${escapePdfText(slotFilter)}   |   DATE: ${escapePdfText(dateRangeStr)}) Tj ET\n`;
+      stream += `BT /F1 12 Tf 0.9 0.9 0.9 rg ${leftX + 14} ${headerY + 25} Td (SLOT: ${escapePdfText(slotFilter)}   |   DATE: ${escapePdfText(dateRangeStr)}) Tj ET\n`;
       // Agency
-      stream += `BT /F2 10 Tf 0.8 0.8 0.8 rg ${leftX + 14} ${headerY + 8} Td (AGENCY: ${escapePdfText(agencyName)}) Tj ET\n`;
+      stream += `BT /F2 11.5 Tf 0.8 0.8 0.8 rg ${leftX + 14} ${headerY + 9} Td (AGENCY: ${escapePdfText(agencyName)}) Tj ET\n`;
 
-      currentY = headerY - 5;
+      currentY = headerY - 6;
 
       // ── Metric Summary Bar ──
-      const metricH = 28;
+      const metricH = 34;
       const metricY = currentY - metricH;
       stream += `0.85 0.70 0.20 rg ${leftX} ${metricY} ${contentWidth} ${metricH} re f\n`;
-      stream += `0.65 0.50 0.10 RG 1 w ${leftX} ${metricY} ${contentWidth} ${metricH} re S\n`;
+      stream += `0.65 0.50 0.10 RG 1.2 w ${leftX} ${metricY} ${contentWidth} ${metricH} re S\n`;
 
-      stream += `BT /F2 11.5 Tf 0 0 0 rg ${leftX + 14} ${metricY + 8} Td (TOTAL WINNERS: ${escapePdfText(String(totalWinnersCount))}) Tj ET\n`;
-      stream += `BT /F2 12.5 Tf 0 0 0 rg ${leftX + 340} ${metricY + 8} Td (GRAND TOTAL: Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
+      stream += `BT /F2 13 Tf 0 0 0 rg ${leftX + 14} ${metricY + 11} Td (TOTAL WINNERS: ${escapePdfText(String(totalWinnersCount))}) Tj ET\n`;
+      stream += `BT /F2 14 Tf 0 0 0 rg ${leftX + 320} ${metricY + 11} Td (GRAND TOTAL: Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
 
-      currentY = metricY - 6;
+      currentY = metricY - 7;
     } else {
       // ── Subsequent Pages Running Header ──
-      const runH = 26;
+      const runH = 30;
       const runY = currentY - runH;
       stream += `0.1 0.1 0.1 rg ${leftX} ${runY} ${contentWidth} ${runH} re f\n`;
-      stream += `BT /F2 10.5 Tf 1 1 1 rg ${leftX + 10} ${runY + 8} Td (WINNING REPORT  |  Slot: ${escapePdfText(slotFilter)}  |  Agency: ${escapePdfText(agencyName)}) Tj ET\n`;
-      currentY = runY - 6;
+      stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 10} ${runY + 9} Td (WINNING REPORT  |  Slot: ${escapePdfText(slotFilter)}  |  Agency: ${escapePdfText(agencyName)}) Tj ET\n`;
+      currentY = runY - 7;
     }
 
     // ── Table Column Headers Bar ──
-    const tblHdrH = 24;
+    const tblHdrH = 30;
     const tblHdrY = currentY - tblHdrH;
     stream += `0.92 0.88 0.92 rg ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re f\n`;
-    stream += `0.8 0.75 0.8 RG 0.5 w ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re S\n`;
+    stream += `0.8 0.75 0.8 RG 0.6 w ${leftX} ${tblHdrY} ${contentWidth} ${tblHdrH} re S\n`;
 
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${tblHdrY + 7} Td (GAME) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 70} ${tblHdrY + 7} Td (PRIZE) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 190} ${tblHdrY + 7} Td (NUM) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 242} ${tblHdrY + 7} Td (CNT) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 290} ${tblHdrY + 7} Td (WIN AMOUNT) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 395} ${tblHdrY + 7} Td (CUSTOMER) Tj ET\n`;
-    stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 500} ${tblHdrY + 7} Td (SLOT) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${tblHdrY + 9} Td (GAME) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 68} ${tblHdrY + 9} Td (PRIZE) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 192} ${tblHdrY + 9} Td (NUM) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 242} ${tblHdrY + 9} Td (CNT) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 288} ${tblHdrY + 9} Td (WIN AMOUNT) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 395} ${tblHdrY + 9} Td (CUSTOMER) Tj ET\n`;
+    stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 495} ${tblHdrY + 9} Td (SLOT) Tj ET\n`;
 
     currentY = tblHdrY;
 
     // ── Rows ──
     if (pItems.length === 0) {
-      const emptyY = currentY - 26;
-      stream += `BT /F1 10 Tf 0.4 0.4 0.4 rg ${leftX + 180} ${emptyY + 8} Td (No winning tickets found.) Tj ET\n`;
+      const emptyY = currentY - 30;
+      stream += `BT /F1 12 Tf 0.4 0.4 0.4 rg ${leftX + 180} ${emptyY + 9} Td (No winning tickets found.) Tj ET\n`;
       currentY = emptyY;
     } else {
       pItems.forEach((item, rIdx) => {
@@ -553,11 +553,11 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
         const isAlt = rIdx % 2 === 1;
 
         if (isAlt) {
-          stream += `0.97 0.97 0.97 rg ${leftX} ${rowY} ${contentWidth} ${rowHeight} re f\n`;
+          stream += `0.96 0.96 0.96 rg ${leftX} ${rowY} ${contentWidth} ${rowHeight} re f\n`;
         } else {
           stream += `1 1 1 rg ${leftX} ${rowY} ${contentWidth} ${rowHeight} re f\n`;
         }
-        stream += `0.88 0.88 0.88 RG 0.4 w ${leftX} ${rowY} ${contentWidth} 0 re S\n`;
+        stream += `0.85 0.85 0.85 RG 0.5 w ${leftX} ${rowY} ${contentWidth} 0 re S\n`;
 
         const gType = item.category;
         const prizeStr = item.prize;
@@ -567,13 +567,13 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
         const custName = item.customerName || '-';
         const slotStr = item.slot || '';
 
-        stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${rowY + 6} Td (${escapePdfText(gType)}) Tj ET\n`;
-        stream += `BT /F2 8.5 Tf 0.15 0.55 0.2 rg ${leftX + 70} ${rowY + 6} Td (${escapePdfText(prizeStr)}) Tj ET\n`;
-        stream += `BT /F3 11 Tf 0 0 0 rg ${leftX + 190} ${rowY + 6} Td (${escapePdfText(numStr)}) Tj ET\n`;
-        stream += `BT /F2 9.5 Tf 0 0 0 rg ${leftX + 242} ${rowY + 6} Td (${escapePdfText(cntStr)}) Tj ET\n`;
-        stream += `BT /F2 10 Tf 0.1 0.45 0.1 rg ${leftX + 290} ${rowY + 6} Td (${escapePdfText(amtStr)}) Tj ET\n`;
-        stream += `BT /F2 9.5 Tf 0.15 0.15 0.15 rg ${leftX + 395} ${rowY + 6} Td (${escapePdfText(custName)}) Tj ET\n`;
-        stream += `BT /F2 9.5 Tf 0.1 0.1 0.1 rg ${leftX + 500} ${rowY + 6} Td (${escapePdfText(slotStr)}) Tj ET\n`;
+        stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 8} ${rowY + 8} Td (${escapePdfText(gType)}) Tj ET\n`;
+        stream += `BT /F2 10.5 Tf 0.15 0.55 0.2 rg ${leftX + 68} ${rowY + 8} Td (${escapePdfText(prizeStr)}) Tj ET\n`;
+        stream += `BT /F3 14 Tf 0 0 0 rg ${leftX + 192} ${rowY + 8} Td (${escapePdfText(numStr)}) Tj ET\n`;
+        stream += `BT /F2 11.5 Tf 0 0 0 rg ${leftX + 242} ${rowY + 8} Td (${escapePdfText(cntStr)}) Tj ET\n`;
+        stream += `BT /F2 12 Tf 0.1 0.45 0.1 rg ${leftX + 288} ${rowY + 8} Td (${escapePdfText(amtStr)}) Tj ET\n`;
+        stream += `BT /F2 11.5 Tf 0.15 0.15 0.15 rg ${leftX + 395} ${rowY + 8} Td (${escapePdfText(custName)}) Tj ET\n`;
+        stream += `BT /F2 11.5 Tf 0.1 0.1 0.1 rg ${leftX + 495} ${rowY + 8} Td (${escapePdfText(slotStr)}) Tj ET\n`;
 
         currentY = rowY;
       });
@@ -581,20 +581,20 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
 
     // ── Total Winning Payout Box (on final page) ──
     if (isLastPage) {
-      currentY -= 6;
-      const totH = 30;
+      currentY -= 8;
+      const totH = 36;
       const totY = currentY - totH;
       stream += `0.08 0.08 0.08 rg ${leftX} ${totY} ${contentWidth} ${totH} re f\n`;
-      stream += `0.85 0.70 0.20 RG 1 w ${leftX} ${totY} ${contentWidth} ${totH} re S\n`;
+      stream += `0.85 0.70 0.20 RG 1.2 w ${leftX} ${totY} ${contentWidth} ${totH} re S\n`;
 
-      stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 14} ${totY + 9} Td (TOTAL WINNING PAYOUT) Tj ET\n`;
-      stream += `BT /F2 14 Tf 0.95 0.80 0.20 rg ${leftX + 400} ${totY + 8} Td (Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
+      stream += `BT /F2 14 Tf 1 1 1 rg ${leftX + 14} ${totY + 11} Td (TOTAL WINNING PAYOUT) Tj ET\n`;
+      stream += `BT /F2 16 Tf 0.95 0.80 0.20 rg ${leftX + 390} ${totY + 10} Td (Rs. ${escapePdfText(String(grandTotalAmount))}) Tj ET\n`;
     }
 
     // ── Footer (Page X of Y) ──
     stream += `0.8 0.8 0.8 RG 0.5 w ${leftX} 35 ${contentWidth} 0 re S\n`;
     const footerText = `Page ${pageNum} of ${totalPages}`;
-    stream += `BT /F1 8.5 Tf 0.5 0.5 0.5 rg 270 23 Td (${escapePdfText(footerText)}) Tj ET\n`;
+    stream += `BT /F1 9.5 Tf 0.5 0.5 0.5 rg 265 22 Td (${escapePdfText(footerText)}) Tj ET\n`;
 
     pageStreams.push(stream);
   });
