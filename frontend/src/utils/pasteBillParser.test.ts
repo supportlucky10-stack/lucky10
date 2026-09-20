@@ -349,30 +349,47 @@ console.log('--- Starting Clipboard Bill Parser Tests ---');
   console.log('✓ Test 21 Passed: Single dot and multiple dots (. and ..) handled seamlessly');
 }
 
-// TEST 22: ABC Super + Box format (case-insensitive)
+// TEST 22: ABC Number + Count format (A, B, C positions, NOT Super & Box)
 {
-  const abc55Cases = ['ABC=5=5', 'Abc=5=5', 'aBc=5=5', 'abc=5=5'];
-  for (const inp of abc55Cases) {
+  const cases = [
+    'ABC 5 10',
+    'Abc 5 10',
+    'abc 5 10',
+    'aBc 5 10',
+    'ABc 5 10',
+    'ABC-5-10',
+    'ABC=5=10',
+    'ABC+5+10',
+    'ABC/5/10',
+    'ABC:5:10',
+    'ABC_5_10',
+    'ABC@5@10',
+    'ABC#5#10',
+    'ABC$5$10',
+    'ABC%5%10',
+    'ABC&5&10',
+    'ABC|5|10',
+    'ABC~5~10',
+    'ABC.5.10',
+    'ABC..5..10',
+    'aBc..5..10',
+    'ABC  5  10',
+    'ABC - 5 - 10',
+    'Abc . 5 . 10',
+  ];
+  for (const inp of cases) {
     const res = parsePastedBillText(inp);
     assert(res.success === true, `Test 22 [${inp}]: should succeed`);
-    assert(res.items.length === 2, `Test 22 [${inp}]: expected 2 items (Super + Box)`);
-    assert(res.items[0].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
-    assert(res.items[0].type === 'Direct' && res.items[0].count === 5, `Test 22 [${inp}]: Super 5`);
-    assert(res.items[1].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
-    assert(res.items[1].type === 'Shuffle' && res.items[1].count === 5, `Test 22 [${inp}]: Box 5`);
+    assert(res.items.length === 3, `Test 22 [${inp}]: expected 3 items (A, B, C positions), got ${res.items.length}`);
+    assert(res.items[0].number === 'A:5' && res.items[0].count === 10 && res.items[0].type === 'Position', `Test 22 [${inp}]: A:5`);
+    assert(res.items[1].number === 'B:5' && res.items[1].count === 10 && res.items[1].type === 'Position', `Test 22 [${inp}]: B:5`);
+    assert(res.items[2].number === 'C:5' && res.items[2].count === 10 && res.items[2].type === 'Position', `Test 22 [${inp}]: C:5`);
+    // Specifically verify ABC 5 10 does NOT create Super = 5, Box = 10
+    const hasSuper = res.items.some((it) => it.type === 'Direct');
+    const hasBox = res.items.some((it) => it.type === 'Shuffle');
+    assert(!hasSuper && !hasBox, `Test 22 [${inp}]: must NOT create Super or Box`);
   }
-
-  const abc35Cases = ['ABC=3=5', 'Abc=3=5', 'aBc=3=5', 'abc=3=5'];
-  for (const inp of abc35Cases) {
-    const res = parsePastedBillText(inp);
-    assert(res.success === true, `Test 22 [${inp}]: should succeed`);
-    assert(res.items.length === 2, `Test 22 [${inp}]: expected 2 items (Super + Box)`);
-    assert(res.items[0].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
-    assert(res.items[0].type === 'Direct' && res.items[0].count === 3, `Test 22 [${inp}]: Super 3`);
-    assert(res.items[1].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
-    assert(res.items[1].type === 'Shuffle' && res.items[1].count === 5, `Test 22 [${inp}]: Box 5`);
-  }
-  console.log('✓ Test 22 Passed: ABC=5=5 and ABC=3=5 case-insensitive Super + Box recognized');
+  console.log('✓ Test 22 Passed: ABC Number + Count with flexible separators correctly maps to A, B, C positions (NOT Super & Box)');
 }
 
 // TEST 23: AB + AC + BC Combined format
@@ -473,7 +490,7 @@ Hello
 029=2box
 305=2=2
 random text
-Abc=3=5
+Abc 5 10
 074..10box
 Ab. Ac. Bc.. 79..2
 Kerala
@@ -492,7 +509,7 @@ some random sentence
   // 2. 029=2box -> 1 item (029 Box 2)
   // 3. 305=2=2 -> 2 items (305 Super 2, 305 Box 2)
   // [random text ignored]
-  // 4. Abc=3=5 -> 2 items (ABC Super 3, ABC Box 5)
+  // 4. Abc 5 10 -> 3 items (A:5 10, B:5 10, C:5 10)
   // 5. 074..10box -> 1 item (074 Box 10)
   // 6. Ab. Ac. Bc.. 79..2 -> 3 items (AB:79 2, AC:79 2, BC:79 2)
   // [Kerala ignored]
@@ -501,8 +518,8 @@ some random sentence
   // 9. AB. AC. BC.. 97..2 -> 3 items (AB:97 2, AC:97 2, BC:97 2)
   // [some random sentence ignored]
   // 10. 579 - 30 box -> 1 item (579 Box 30)
-  // Total expected = 1 + 1 + 2 + 2 + 1 + 3 + 2 + 1 + 3 + 1 = 17 items
-  assert(res.items.length === 17, `Test 26: expected 17 items, got ${res.items.length}`);
+  // Total expected = 1 + 1 + 2 + 3 + 1 + 3 + 2 + 1 + 3 + 1 = 18 items
+  assert(res.items.length === 18, `Test 26: expected 18 items, got ${res.items.length}`);
 
   // Check items in order:
   // 1: 024-1box
@@ -512,28 +529,29 @@ some random sentence
   // 3: 305=2=2
   assert(res.items[2].number === '305' && res.items[2].count === 2 && res.items[2].type === 'Direct', 'Item 2: 305 Super 2');
   assert(res.items[3].number === '305' && res.items[3].count === 2 && res.items[3].type === 'Shuffle', 'Item 3: 305 Box 2');
-  // 4: Abc=3=5
-  assert(res.items[4].number === 'ABC' && res.items[4].count === 3 && res.items[4].type === 'Direct', 'Item 4: ABC Super 3');
-  assert(res.items[5].number === 'ABC' && res.items[5].count === 5 && res.items[5].type === 'Shuffle', 'Item 5: ABC Box 5');
+  // 4: Abc 5 10
+  assert(res.items[4].number === 'A:5' && res.items[4].count === 10 && res.items[4].type === 'Position', 'Item 4: A:5 10');
+  assert(res.items[5].number === 'B:5' && res.items[5].count === 10 && res.items[5].type === 'Position', 'Item 5: B:5 10');
+  assert(res.items[6].number === 'C:5' && res.items[6].count === 10 && res.items[6].type === 'Position', 'Item 6: C:5 10');
   // 5: 074..10box
-  assert(res.items[6].number === '074' && res.items[6].count === 10 && res.items[6].type === 'Shuffle', 'Item 6: 074 Box 10');
+  assert(res.items[7].number === '074' && res.items[7].count === 10 && res.items[7].type === 'Shuffle', 'Item 7: 074 Box 10');
   // 6: Ab. Ac. Bc.. 79..2
-  assert(res.items[7].number === 'AB:79' && res.items[7].count === 2 && res.items[7].type === 'Pair', 'Item 7: AB:79 2');
-  assert(res.items[8].number === 'AC:79' && res.items[8].count === 2 && res.items[8].type === 'Pair', 'Item 8: AC:79 2');
-  assert(res.items[9].number === 'BC:79' && res.items[9].count === 2 && res.items[9].type === 'Pair', 'Item 9: BC:79 2');
+  assert(res.items[8].number === 'AB:79' && res.items[8].count === 2 && res.items[8].type === 'Pair', 'Item 8: AB:79 2');
+  assert(res.items[9].number === 'AC:79' && res.items[9].count === 2 && res.items[9].type === 'Pair', 'Item 9: AC:79 2');
+  assert(res.items[10].number === 'BC:79' && res.items[10].count === 2 && res.items[10].type === 'Pair', 'Item 10: BC:79 2');
   // 7: 638*3+2
-  assert(res.items[10].number === '638' && res.items[10].count === 3 && res.items[10].type === 'Direct', 'Item 10: 638 Super 3');
-  assert(res.items[11].number === '638' && res.items[11].count === 2 && res.items[11].type === 'Shuffle', 'Item 11: 638 Box 2');
+  assert(res.items[11].number === '638' && res.items[11].count === 3 && res.items[11].type === 'Direct', 'Item 11: 638 Super 3');
+  assert(res.items[12].number === '638' && res.items[12].count === 2 && res.items[12].type === 'Shuffle', 'Item 12: 638 Box 2');
   // 8: 634..1BOX
-  assert(res.items[12].number === '634' && res.items[12].count === 1 && res.items[12].type === 'Shuffle', 'Item 12: 634 Box 1');
+  assert(res.items[13].number === '634' && res.items[13].count === 1 && res.items[13].type === 'Shuffle', 'Item 13: 634 Box 1');
   // 9: AB. AC. BC.. 97..2
-  assert(res.items[13].number === 'AB:97' && res.items[13].count === 2 && res.items[13].type === 'Pair', 'Item 13: AB:97 2');
-  assert(res.items[14].number === 'AC:97' && res.items[14].count === 2 && res.items[14].type === 'Pair', 'Item 14: AC:97 2');
-  assert(res.items[15].number === 'BC:97' && res.items[15].count === 2 && res.items[15].type === 'Pair', 'Item 15: BC:97 2');
+  assert(res.items[14].number === 'AB:97' && res.items[14].count === 2 && res.items[14].type === 'Pair', 'Item 14: AB:97 2');
+  assert(res.items[15].number === 'AC:97' && res.items[15].count === 2 && res.items[15].type === 'Pair', 'Item 15: AC:97 2');
+  assert(res.items[16].number === 'BC:97' && res.items[16].count === 2 && res.items[16].type === 'Pair', 'Item 16: BC:97 2');
   // 10: 579 - 30 box
-  assert(res.items[16].number === '579' && res.items[16].count === 30 && res.items[16].type === 'Shuffle', 'Item 16: 579 Box 30');
+  assert(res.items[17].number === '579' && res.items[17].count === 30 && res.items[17].type === 'Shuffle', 'Item 17: 579 Box 30');
 
-  console.log('✓ Test 26 Passed: Complete Section 24 mixed clipboard parsed with 100% precision (17 items, 5 unrelated lines ignored, leading zeros preserved)');
+  console.log('✓ Test 26 Passed: Complete Section 24 mixed clipboard parsed with 100% precision (18 items, 5 unrelated lines ignored, leading zeros preserved)');
 }
 
 console.log('\n========================================');

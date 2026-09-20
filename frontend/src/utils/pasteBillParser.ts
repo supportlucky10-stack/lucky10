@@ -115,13 +115,17 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format B: 1-Digit Positions: ABC*8*15, ALL*8*15, ALL-8-15, ALL 8 15, etc.
-    const allPosMatch = trimmed.match(/^([Aa][Ll][Ll])([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
-    const abcStarMatch = !allPosMatch ? trimmed.match(/^([Aa][Bb][Cc])\s*\*\s*(\d{1})\s*\*\s*(\d+)$/) : null;
-    const posAllMatch = allPosMatch || abcStarMatch;
-    if (posAllMatch) {
-      const digit = allPosMatch ? allPosMatch[3] : abcStarMatch![2];
-      const count = parseInt(allPosMatch ? allPosMatch[5] : abcStarMatch![3], 10);
+    // Format B: ABC / ALL 1-Digit Positions with flexible separators:
+    // ABC 5 10, ABC-5-10, ABC=5=10, ABC+5+10, ABC/5/10, ABC:5:10, ABC_5_10, ABC@5@10,
+    // ABC#5#10, ABC$5$10, ABC%5%10, ABC&5&10, ABC|5|10, ABC~5~10, ABC.5.10, ABC..5..10,
+    // Abc 5 10, abc 5 10, aBc 5 10, ABc 5 10, ABC  5  10, ABC - 5 - 10, Abc . 5 . 10,
+    // ABC*8*15, ALL*8*15, ALL-8-15, ALL 8 15, etc.
+    // Meaning: The same 1-digit number and count are applied to positions A, B, and C.
+    // (Does NOT mean Super & Box!)
+    const abcMatch = trimmed.match(/^([Aa][Bb][Cc]|[Aa][Ll][Ll])([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
+    if (abcMatch) {
+      const digit = abcMatch[3];
+      const count = parseInt(abcMatch[5], 10);
       if (count > 0) {
         const unitPrice1Digit = 12;
         ['A', 'B', 'C'].forEach((pos) => {
@@ -134,37 +138,6 @@ export function parsePastedBillText(text: string): ParseResult {
             totalAmount: count * unitPrice1Digit,
           });
         });
-        continue;
-      }
-    }
-
-    // Format B2: ABC Super + Box Format (case-insensitive: ABC=5=5, Abc=5=5, aBc=5=5, abc=5=5, ABC=3=5, Abc=3=5, abc=3=5)
-    // Produces: Number = "ABC", Super = count1 (Direct), Box = count2 (Shuffle)
-    const abcSuperBoxMatch = trimmed.match(/^([Aa][Bb][Cc])([^0-9a-zA-Z]+)(\d+)([^0-9a-zA-Z]+)(\d+)$/);
-    if (abcSuperBoxMatch) {
-      const count1 = parseInt(abcSuperBoxMatch[3], 10);
-      const count2 = parseInt(abcSuperBoxMatch[5], 10);
-      if (count1 > 0 || count2 > 0) {
-        if (count1 > 0) {
-          items.push({
-            number: 'ABC',
-            count: count1,
-            type: 'Direct',
-            playMode: 'DIRECT',
-            unitPrice: 10,
-            totalAmount: count1 * 10,
-          });
-        }
-        if (count2 > 0) {
-          items.push({
-            number: 'ABC',
-            count: count2,
-            type: 'Shuffle',
-            playMode: 'DIRECT',
-            unitPrice: 10,
-            totalAmount: count2 * 10,
-          });
-        }
         continue;
       }
     }
