@@ -193,6 +193,350 @@ console.log('--- Starting Clipboard Bill Parser Tests ---');
   console.log('✓ Test 14 Passed: Empty clipboard handled');
 }
 
+// TEST 15: NUMBER + BOX standard 3-digit bills
+{
+  const lines = [
+    '024-1box',
+    '029-1box',
+    '074-1box',
+    '079-1box',
+    '524-1box',
+    '529-1box',
+    '574-1box',
+    '579-1box',
+  ];
+  const input = lines.join('\n');
+  const res = parsePastedBillText(input);
+  assert(res.success === true, 'Test 15: should succeed');
+  assert(res.items.length === 8, `Test 15: expected 8 items, got ${res.items.length}`);
+  const expectedNums = ['024', '029', '074', '079', '524', '529', '574', '579'];
+  res.items.forEach((it, idx) => {
+    assert(it.number === expectedNums[idx], `Test 15 [${idx}]: expected number ${expectedNums[idx]}, got ${it.number}`);
+    assert(it.type === 'Shuffle', `Test 15 [${idx}]: expected type Shuffle (Box), got ${it.type}`);
+    assert(it.count === 1, `Test 15 [${idx}]: expected count 1, got ${it.count}`);
+    assert(it.totalAmount === 10, `Test 15 [${idx}]: expected amount 10, got ${it.totalAmount}`);
+  });
+  console.log('✓ Test 15 Passed: 8 Number + Box bills parsed, leading zeros preserved');
+}
+
+// TEST 16: Different Box counts and separators
+{
+  const cases: [string, string, number][] = [
+    ['024-2box', '024', 2],
+    ['024-10box', '024', 10],
+    ['024-25box', '024', 25],
+    ['024-100box', '024', 100],
+    ['024=2box', '024', 2],
+    ['024+10box', '024', 10],
+    ['024/25box', '024', 25],
+    ['024:100box', '024', 100],
+    ['024..10box', '024', 10],
+    ['024 25 box', '024', 25],
+  ];
+  for (const [inp, expNum, expCount] of cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 16 [${inp}]: should succeed`);
+    assert(res.items.length === 1, `Test 16 [${inp}]: expected 1 item`);
+    assert(res.items[0].number === expNum, `Test 16 [${inp}]: expected number ${expNum}, got ${res.items[0].number}`);
+    assert(res.items[0].type === 'Shuffle', `Test 16 [${inp}]: expected Shuffle`);
+    assert(res.items[0].count === expCount, `Test 16 [${inp}]: expected count ${expCount}, got ${res.items[0].count}`);
+    assert(res.items[0].totalAmount === expCount * 10, `Test 16 [${inp}]: expected amount ${expCount * 10}`);
+  }
+  console.log('✓ Test 16 Passed: Variable Box counts (2, 10, 25, 100) and various separators parsed correctly');
+}
+
+// TEST 17: Case-insensitivity of "box"
+{
+  const cases = [
+    '024-1box',
+    '024-1Box',
+    '024-1BOX',
+    '024=1BOX',
+    '024+2Box',
+    '024..10BOX',
+    '024 25 box',
+  ];
+  for (const inp of cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 17 [${inp}]: should succeed`);
+    assert(res.items.length === 1, `Test 17 [${inp}]: expected 1 item`);
+    assert(res.items[0].number === '024', `Test 17 [${inp}]: expected 024`);
+    assert(res.items[0].type === 'Shuffle', `Test 17 [${inp}]: expected Shuffle`);
+  }
+  console.log('✓ Test 17 Passed: "box", "Box", "BOX" are fully case-insensitive');
+}
+
+// TEST 18: Flexible separators for Number + Box
+{
+  const separators = ['-', '=', '+', '/', ':', '_', '@', '#', '$', '%', '&', '|', '~', '.', '..'];
+  for (const sep of separators) {
+    const inp = `024${sep}1box`;
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 18 [sep '${sep}']: should succeed`);
+    assert(res.items.length === 1, `Test 18 [sep '${sep}']: expected 1 item`);
+    assert(res.items[0].number === '024', `Test 18 [sep '${sep}']: expected number 024`);
+    assert(res.items[0].type === 'Shuffle', `Test 18 [sep '${sep}']: expected Shuffle`);
+    assert(res.items[0].count === 1, `Test 18 [sep '${sep}']: expected count 1`);
+  }
+  console.log('✓ Test 18 Passed: Flexible separators (-, =, +, /, :, _, @, #, $, %, &, |, ~, ., ..) all work');
+}
+
+// TEST 19: Whitespace variations for Number + Box
+{
+  const whitespaceCases = [
+    '024 1box',
+    '024 1 box',
+    '024 - 1box',
+    '024 -1box',
+    '024- 1box',
+    '024 - 1 box',
+  ];
+  for (const inp of whitespaceCases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 19 [${inp}]: should succeed`);
+    assert(res.items.length === 1, `Test 19 [${inp}]: expected 1 item`);
+    assert(res.items[0].number === '024', `Test 19 [${inp}]: expected number 024`);
+    assert(res.items[0].type === 'Shuffle', `Test 19 [${inp}]: expected Shuffle`);
+    assert(res.items[0].count === 1, `Test 19 [${inp}]: expected count 1`);
+  }
+  console.log('✓ Test 19 Passed: Whitespace variations between number, count, and box supported');
+}
+
+// TEST 20: Preservation of leading zeros
+{
+  const res1 = parsePastedBillText('024-1box');
+  assert(res1.items[0].number === '024', 'Test 20: 024 preserved as string "024"');
+  const res2 = parsePastedBillText('029-1box');
+  assert(res2.items[0].number === '029', 'Test 20: 029 preserved as string "029"');
+  const res3 = parsePastedBillText('074-1box');
+  assert(res3.items[0].number === '074', 'Test 20: 074 preserved as string "074"');
+  const res4 = parsePastedBillText('079-1box');
+  assert(res4.items[0].number === '079', 'Test 20: 079 preserved as string "079"');
+  console.log('✓ Test 20 Passed: Leading zeros strictly preserved as strings');
+}
+
+// TEST 21: Single and multiple dot separators
+{
+  const dotCases: [string, string, number][] = [
+    ['134.1box', '134', 1],
+    ['134..1box', '134', 1],
+    ['139.1box', '139', 1],
+    ['139..1box', '139', 1],
+    ['184.1box', '184', 1],
+    ['184..1box', '184', 1],
+    ['189.1box', '189', 1],
+    ['189..1box', '189', 1],
+    ['634.1box', '634', 1],
+    ['634..1box', '634', 1],
+    ['639.1box', '639', 1],
+    ['639..1box', '639', 1],
+    ['684.1box', '684', 1],
+    ['684..1box', '684', 1],
+    ['689.1box', '689', 1],
+    ['689..1box', '689', 1],
+    ['134..2box', '134', 2],
+    ['134..10box', '134', 10],
+    ['134..25box', '134', 25],
+  ];
+  for (const [inp, expNum, expCount] of dotCases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 21 [${inp}]: should succeed`);
+    assert(res.items.length === 1, `Test 21 [${inp}]: expected 1 item`);
+    assert(res.items[0].number === expNum, `Test 21 [${inp}]: expected number ${expNum}, got ${res.items[0].number}`);
+    assert(res.items[0].type === 'Shuffle', `Test 21 [${inp}]: expected Shuffle`);
+    assert(res.items[0].count === expCount, `Test 21 [${inp}]: expected count ${expCount}`);
+  }
+  console.log('✓ Test 21 Passed: Single dot and multiple dots (. and ..) handled seamlessly');
+}
+
+// TEST 22: ABC Super + Box format (case-insensitive)
+{
+  const abc55Cases = ['ABC=5=5', 'Abc=5=5', 'aBc=5=5', 'abc=5=5'];
+  for (const inp of abc55Cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 22 [${inp}]: should succeed`);
+    assert(res.items.length === 2, `Test 22 [${inp}]: expected 2 items (Super + Box)`);
+    assert(res.items[0].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
+    assert(res.items[0].type === 'Direct' && res.items[0].count === 5, `Test 22 [${inp}]: Super 5`);
+    assert(res.items[1].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
+    assert(res.items[1].type === 'Shuffle' && res.items[1].count === 5, `Test 22 [${inp}]: Box 5`);
+  }
+
+  const abc35Cases = ['ABC=3=5', 'Abc=3=5', 'aBc=3=5', 'abc=3=5'];
+  for (const inp of abc35Cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 22 [${inp}]: should succeed`);
+    assert(res.items.length === 2, `Test 22 [${inp}]: expected 2 items (Super + Box)`);
+    assert(res.items[0].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
+    assert(res.items[0].type === 'Direct' && res.items[0].count === 3, `Test 22 [${inp}]: Super 3`);
+    assert(res.items[1].number === 'ABC', `Test 22 [${inp}]: normalized to ABC`);
+    assert(res.items[1].type === 'Shuffle' && res.items[1].count === 5, `Test 22 [${inp}]: Box 5`);
+  }
+  console.log('✓ Test 22 Passed: ABC=5=5 and ABC=3=5 case-insensitive Super + Box recognized');
+}
+
+// TEST 23: AB + AC + BC Combined format
+{
+  const combined79Cases = [
+    'AB. AC. BC.. 79..2',
+    'Ab. Ac. Bc.. 79..2',
+    'ab. ac. bc.. 79..2',
+    'aB. aC. bC.. 79..2',
+    'ab..ac..bc..79..2',
+    'AB . AC . BC .. 79 .. 2',
+  ];
+  for (const inp of combined79Cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 23 [${inp}]: should succeed`);
+    assert(res.items.length === 3, `Test 23 [${inp}]: expected 3 items (AB, AC, BC)`);
+    assert(res.items[0].number === 'AB:79' && res.items[0].count === 2 && res.items[0].type === 'Pair', `Test 23 [${inp}]: AB:79`);
+    assert(res.items[1].number === 'AC:79' && res.items[1].count === 2 && res.items[1].type === 'Pair', `Test 23 [${inp}]: AC:79`);
+    assert(res.items[2].number === 'BC:79' && res.items[2].count === 2 && res.items[2].type === 'Pair', `Test 23 [${inp}]: BC:79`);
+  }
+
+  const combined97Cases = [
+    'AB. AC. BC.. 97..2',
+    'Ab. Ac. Bc.. 97..2',
+    'ab. ac. bc.. 97..2',
+    'AB..AC..BC..97..2',
+  ];
+  for (const inp of combined97Cases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 23 [${inp}]: should succeed`);
+    assert(res.items.length === 3, `Test 23 [${inp}]: expected 3 items (AB, AC, BC)`);
+    assert(res.items[0].number === 'AB:97' && res.items[0].count === 2 && res.items[0].type === 'Pair', `Test 23 [${inp}]: AB:97`);
+    assert(res.items[1].number === 'AC:97' && res.items[1].count === 2 && res.items[1].type === 'Pair', `Test 23 [${inp}]: AC:97`);
+    assert(res.items[2].number === 'BC:97' && res.items[2].count === 2 && res.items[2].type === 'Pair', `Test 23 [${inp}]: BC:97`);
+  }
+  console.log('✓ Test 23 Passed: Combined AB + AC + BC with single/multiple dots and case variations parsed correctly');
+}
+
+// TEST 24: Existing numeric and special formats continue working
+{
+  const existingCases: [string, { num: string; count: number; type: string }[]][] = [
+    ['305=2=2', [{ num: '305', count: 2, type: 'Direct' }, { num: '305', count: 2, type: 'Shuffle' }]],
+    ['536=2=2', [{ num: '536', count: 2, type: 'Direct' }, { num: '536', count: 2, type: 'Shuffle' }]],
+    ['638*3+2', [{ num: '638', count: 3, type: 'Direct' }, { num: '638', count: 2, type: 'Shuffle' }]],
+    ['638*3', [{ num: '638', count: 3, type: 'Direct' }]],
+    ['ABC*8*15', [{ num: 'A:8', count: 15, type: 'Position' }, { num: 'B:8', count: 15, type: 'Position' }, { num: 'C:8', count: 15, type: 'Position' }]],
+    ['ALL*8*15', [{ num: 'A:8', count: 15, type: 'Position' }, { num: 'B:8', count: 15, type: 'Position' }, { num: 'C:8', count: 15, type: 'Position' }]],
+    ['A*6*50', [{ num: 'A:6', count: 50, type: 'Position' }]],
+    ['B*3*30', [{ num: 'B:3', count: 30, type: 'Position' }]],
+    ['C*7*30', [{ num: 'C:7', count: 30, type: 'Position' }]],
+    ['AB*45*10', [{ num: 'AB:45', count: 10, type: 'Pair' }]],
+    ['BC*23*10', [{ num: 'BC:23', count: 10, type: 'Pair' }]],
+    ['AC*89*10', [{ num: 'AC:89', count: 10, type: 'Pair' }]],
+    ['928=2', [{ num: '928', count: 2, type: 'Direct' }]],
+    ['546+15b', [{ num: '546', count: 15, type: 'Shuffle' }]],
+    ['546+15B', [{ num: '546', count: 15, type: 'Shuffle' }]],
+    ['546 10 B', [{ num: '546', count: 10, type: 'Shuffle' }]],
+    ['546 10 b', [{ num: '546', count: 10, type: 'Shuffle' }]],
+  ];
+  for (const [inp, expItems] of existingCases) {
+    const res = parsePastedBillText(inp);
+    assert(res.success === true, `Test 24 [${inp}]: should succeed`);
+    assert(res.items.length === expItems.length, `Test 24 [${inp}]: expected ${expItems.length} items, got ${res.items.length}`);
+    expItems.forEach((exp, idx) => {
+      assert(res.items[idx].number === exp.num, `Test 24 [${inp}][${idx}]: expected num ${exp.num}, got ${res.items[idx].number}`);
+      assert(res.items[idx].count === exp.count, `Test 24 [${inp}][${idx}]: expected count ${exp.count}, got ${res.items[idx].count}`);
+      assert(res.items[idx].type === exp.type, `Test 24 [${inp}][${idx}]: expected type ${exp.type}, got ${res.items[idx].type}`);
+    });
+  }
+  console.log('✓ Test 24 Passed: All 17 existing numeric and special formats continue working identically');
+}
+
+// TEST 25: Strict Number-Box validation (invalid inputs ignored / rejected)
+{
+  const invalidInputs = [
+    'Hello',
+    'Hello B',
+    'Random B',
+    'random 1box',
+    'abc 1box',
+    '123abc',
+    '1box',
+    '12-1box',
+    '1234-1box',
+  ];
+  for (const inv of invalidInputs) {
+    const res = parsePastedBillText(inv);
+    assert(res.success === false, `Test 25: "${inv}" must NOT be recognized as a valid bill`);
+    assert(res.items.length === 0, `Test 25: items must be empty for "${inv}"`);
+  }
+  console.log('✓ Test 25 Passed: Strict validation rejects 1box, 12-1box, 1234-1box, abc 1box, random 1box, etc.');
+}
+
+// TEST 26: Complete Section 24 Mixed Clipboard Test
+{
+  const mixedInput = `024-1box
+Hello
+029=2box
+305=2=2
+random text
+Abc=3=5
+074..10box
+Ab. Ac. Bc.. 79..2
+Kerala
+638*3+2
+634..1BOX
+AB. AC. BC.. 97..2
+some random sentence
+579 - 30 box`;
+
+  const res = parsePastedBillText(mixedInput);
+  assert(res.success === true, 'Test 26: Mixed clipboard parsing should succeed');
+
+  // Breakdown of expected items:
+  // 1. 024-1box -> 1 item (024 Box 1)
+  // [Hello ignored]
+  // 2. 029=2box -> 1 item (029 Box 2)
+  // 3. 305=2=2 -> 2 items (305 Super 2, 305 Box 2)
+  // [random text ignored]
+  // 4. Abc=3=5 -> 2 items (ABC Super 3, ABC Box 5)
+  // 5. 074..10box -> 1 item (074 Box 10)
+  // 6. Ab. Ac. Bc.. 79..2 -> 3 items (AB:79 2, AC:79 2, BC:79 2)
+  // [Kerala ignored]
+  // 7. 638*3+2 -> 2 items (638 Super 3, 638 Box 2)
+  // 8. 634..1BOX -> 1 item (634 Box 1)
+  // 9. AB. AC. BC.. 97..2 -> 3 items (AB:97 2, AC:97 2, BC:97 2)
+  // [some random sentence ignored]
+  // 10. 579 - 30 box -> 1 item (579 Box 30)
+  // Total expected = 1 + 1 + 2 + 2 + 1 + 3 + 2 + 1 + 3 + 1 = 17 items
+  assert(res.items.length === 17, `Test 26: expected 17 items, got ${res.items.length}`);
+
+  // Check items in order:
+  // 1: 024-1box
+  assert(res.items[0].number === '024' && res.items[0].count === 1 && res.items[0].type === 'Shuffle', 'Item 0: 024 Box 1');
+  // 2: 029=2box
+  assert(res.items[1].number === '029' && res.items[1].count === 2 && res.items[1].type === 'Shuffle', 'Item 1: 029 Box 2');
+  // 3: 305=2=2
+  assert(res.items[2].number === '305' && res.items[2].count === 2 && res.items[2].type === 'Direct', 'Item 2: 305 Super 2');
+  assert(res.items[3].number === '305' && res.items[3].count === 2 && res.items[3].type === 'Shuffle', 'Item 3: 305 Box 2');
+  // 4: Abc=3=5
+  assert(res.items[4].number === 'ABC' && res.items[4].count === 3 && res.items[4].type === 'Direct', 'Item 4: ABC Super 3');
+  assert(res.items[5].number === 'ABC' && res.items[5].count === 5 && res.items[5].type === 'Shuffle', 'Item 5: ABC Box 5');
+  // 5: 074..10box
+  assert(res.items[6].number === '074' && res.items[6].count === 10 && res.items[6].type === 'Shuffle', 'Item 6: 074 Box 10');
+  // 6: Ab. Ac. Bc.. 79..2
+  assert(res.items[7].number === 'AB:79' && res.items[7].count === 2 && res.items[7].type === 'Pair', 'Item 7: AB:79 2');
+  assert(res.items[8].number === 'AC:79' && res.items[8].count === 2 && res.items[8].type === 'Pair', 'Item 8: AC:79 2');
+  assert(res.items[9].number === 'BC:79' && res.items[9].count === 2 && res.items[9].type === 'Pair', 'Item 9: BC:79 2');
+  // 7: 638*3+2
+  assert(res.items[10].number === '638' && res.items[10].count === 3 && res.items[10].type === 'Direct', 'Item 10: 638 Super 3');
+  assert(res.items[11].number === '638' && res.items[11].count === 2 && res.items[11].type === 'Shuffle', 'Item 11: 638 Box 2');
+  // 8: 634..1BOX
+  assert(res.items[12].number === '634' && res.items[12].count === 1 && res.items[12].type === 'Shuffle', 'Item 12: 634 Box 1');
+  // 9: AB. AC. BC.. 97..2
+  assert(res.items[13].number === 'AB:97' && res.items[13].count === 2 && res.items[13].type === 'Pair', 'Item 13: AB:97 2');
+  assert(res.items[14].number === 'AC:97' && res.items[14].count === 2 && res.items[14].type === 'Pair', 'Item 14: AC:97 2');
+  assert(res.items[15].number === 'BC:97' && res.items[15].count === 2 && res.items[15].type === 'Pair', 'Item 15: BC:97 2');
+  // 10: 579 - 30 box
+  assert(res.items[16].number === '579' && res.items[16].count === 30 && res.items[16].type === 'Shuffle', 'Item 16: 579 Box 30');
+
+  console.log('✓ Test 26 Passed: Complete Section 24 mixed clipboard parsed with 100% precision (17 items, 5 unrelated lines ignored, leading zeros preserved)');
+}
+
 console.log('\n========================================');
-console.log('ALL 14 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 26 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
+

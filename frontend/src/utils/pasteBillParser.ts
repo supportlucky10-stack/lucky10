@@ -115,11 +115,13 @@ export function parsePastedBillText(text: string): ParseResult {
       continue;
     }
 
-    // Format B: ABC / ALL 1-Digit Positions: ABC*8*15, ABC-8-15, ABC+8-15, ABC=8=15, ABC/8:15, ABC 8 15, ABC+9-15, ABC @ 8 # 15
-    const abcMatch = trimmed.match(/^(ABC|abc|ALL|all)([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
-    if (abcMatch) {
-      const digit = abcMatch[3];
-      const count = parseInt(abcMatch[5], 10);
+    // Format B: 1-Digit Positions: ABC*8*15, ALL*8*15, ALL-8-15, ALL 8 15, etc.
+    const allPosMatch = trimmed.match(/^([Aa][Ll][Ll])([^0-9a-zA-Z]+)(\d{1})([^0-9a-zA-Z]+)(\d+)$/);
+    const abcStarMatch = !allPosMatch ? trimmed.match(/^([Aa][Bb][Cc])\s*\*\s*(\d{1})\s*\*\s*(\d+)$/) : null;
+    const posAllMatch = allPosMatch || abcStarMatch;
+    if (posAllMatch) {
+      const digit = allPosMatch ? allPosMatch[3] : abcStarMatch![2];
+      const count = parseInt(allPosMatch ? allPosMatch[5] : abcStarMatch![3], 10);
       if (count > 0) {
         const unitPrice1Digit = 12;
         ['A', 'B', 'C'].forEach((pos) => {
@@ -132,6 +134,37 @@ export function parsePastedBillText(text: string): ParseResult {
             totalAmount: count * unitPrice1Digit,
           });
         });
+        continue;
+      }
+    }
+
+    // Format B2: ABC Super + Box Format (case-insensitive: ABC=5=5, Abc=5=5, aBc=5=5, abc=5=5, ABC=3=5, Abc=3=5, abc=3=5)
+    // Produces: Number = "ABC", Super = count1 (Direct), Box = count2 (Shuffle)
+    const abcSuperBoxMatch = trimmed.match(/^([Aa][Bb][Cc])([^0-9a-zA-Z]+)(\d+)([^0-9a-zA-Z]+)(\d+)$/);
+    if (abcSuperBoxMatch) {
+      const count1 = parseInt(abcSuperBoxMatch[3], 10);
+      const count2 = parseInt(abcSuperBoxMatch[5], 10);
+      if (count1 > 0 || count2 > 0) {
+        if (count1 > 0) {
+          items.push({
+            number: 'ABC',
+            count: count1,
+            type: 'Direct',
+            playMode: 'DIRECT',
+            unitPrice: 10,
+            totalAmount: count1 * 10,
+          });
+        }
+        if (count2 > 0) {
+          items.push({
+            number: 'ABC',
+            count: count2,
+            type: 'Shuffle',
+            playMode: 'DIRECT',
+            unitPrice: 10,
+            totalAmount: count2 * 10,
+          });
+        }
         continue;
       }
     }
@@ -156,7 +189,33 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
-    // Format D: 2-Digit Pairs: AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10, AC-89-10, AC 89 10, BC+23-10, AB/45:10
+    // Format D1: Combined 2-Digit Pairs: Ab. Ac. Bc.. 79..2, AB. AC. BC.. 79..2, ab..ac..bc..79..2, AB..AC..BC..97..2, AB . AC . BC .. 79 .. 2, etc.
+    const multiPairMatch = trimmed.match(
+      /^((?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc])(?:[^0-9a-zA-Z]+(?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc]))+)([^0-9a-zA-Z]+)(\d{2})([^0-9a-zA-Z]+)(\d+)$/
+    );
+    if (multiPairMatch) {
+      const pairGroup = multiPairMatch[1];
+      const digits = multiPairMatch[3];
+      const count = parseInt(multiPairMatch[5], 10);
+      if (count > 0) {
+        const pairTokens = [...pairGroup.matchAll(/[Aa][Bb]|[Bb][Cc]|[Aa][Cc]/gi)].map((m) => m[0].toUpperCase());
+        const uniquePairs = Array.from(new Set(pairTokens));
+        const unitPrice2Digit = 10;
+        uniquePairs.forEach((pair) => {
+          items.push({
+            number: `${pair}:${digits}`,
+            count,
+            type: 'Pair',
+            playMode: 'DIRECT',
+            unitPrice: unitPrice2Digit,
+            totalAmount: count * unitPrice2Digit,
+          });
+        });
+        continue;
+      }
+    }
+
+    // Format D2: Single 2-Digit Pair: AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10, AC-89-10, AC 89 10, BC+23-10, AB/45:10
     const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])([^0-9a-zA-Z]+)(\d{2})([^0-9a-zA-Z]+)(\d+)$/);
     if (pairMatch) {
       const pair = pairMatch[1].toUpperCase();
@@ -231,16 +290,19 @@ export function parsePastedBillText(text: string): ParseResult {
     }
 
     // =========================================================================
-    // 3. Box Shorthand Format using B/b (case-insensitive):
-    //    NUMBER [SEPARATORS / SPACES] COUNT [optional separator/space] B/b
-    //    or NUMBER [SEPARATORS / SPACES] B/b [SEPARATORS / SPACES] COUNT
-    //    Examples: 546+15b, 546+15B, 546 10 B, 546 10 b, 546-15-b, 546=15B,
-    //              546*15b, 546:15b, 546_15b, 546 15B, 546 B 10, 546+B+10
-    //    Meaning: Number: 546, Box (Shuffle): 15 / 10
+    // 3. Number + Box Format (case-insensitive "box" or shorthand "b"):
+    //    NUMBER [FLEXIBLE SEPARATORS / SPACES] COUNT [optional separator/space] BOX/B
+    //    or NUMBER [FLEXIBLE SEPARATORS / SPACES] BOX/B [FLEXIBLE SEPARATORS / SPACES] COUNT
+    //    Examples: 024-1box, 024=1box, 024+1box, 024/1box, 024:1box, 024_1box,
+    //              024@1box, 024#1box, 024$1box, 024%1box, 024&1box, 024|1box,
+    //              024~1box, 024.1box, 024..1box, 024 1box, 024 1 box, 024 - 1box,
+    //              024 - 1 box, 024-1Box, 024-1BOX, 024-2box, 024-10box, 024-25box,
+    //              024-100box, 579 - 30 box, 546+15b, 546+15B, 546 10 B, 546 10 b, 546 B 10
+    //    Meaning: 3-digit number with Box count (Shuffle), leading zeros preserved ("024", "029", "074", "079")
     // =========================================================================
-    const boxSuffixMatch = trimmed.match(/^(\d{3})([^0-9a-zA-Z]+)(\d+)(?:[^0-9a-zA-Z]+|\s*)([Bb])$/);
+    const boxSuffixMatch = trimmed.match(/^(\d{3})([^0-9a-zA-Z]+)(\d+)(?:[^0-9a-zA-Z]*|\s*)(box|b)$/i);
     const boxPrefixMatch = !boxSuffixMatch
-      ? trimmed.match(/^(\d{3})(?:[^0-9a-zA-Z]+|\s+)([Bb])(?:[^0-9a-zA-Z]+|\s+)(\d+)$/)
+      ? trimmed.match(/^(\d{3})(?:[^0-9a-zA-Z]+|\s+)(box|b)(?:[^0-9a-zA-Z]+|\s+)(\d+)$/i)
       : null;
     const boxMatch = boxSuffixMatch || boxPrefixMatch;
     if (boxMatch) {
