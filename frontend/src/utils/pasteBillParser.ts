@@ -69,8 +69,8 @@ export function parsePastedBillText(text: string): ParseResult {
     // 1. Check existing specific/special formats
     // ==========================================
 
-    // Format A: Star / Plus format: 638*3+2 or 638*3
-    const starPlusMatch = trimmed.match(/^(\d{3})\s*\*\s*(\d+)(?:\s*[\*+]\s*(\d+))?$/);
+    // Format A: Star / Plus / 'x' format: 638*3+2, 638*3, 513*10*2, 513x10x2, 513X10X2, 513x10X2, 513X10x2
+    const starPlusMatch = trimmed.match(/^(\d{3})\s*[\*xX]\s*(\d+)(?:\s*[\*+xX]\s*(\d+))?$/);
     if (starPlusMatch) {
       const num = starPlusMatch[1];
       const count1 = parseInt(starPlusMatch[2], 10);
@@ -188,21 +188,31 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
-    // Format D2: Single 2-Digit Pair: AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10, AC-89-10, AC 89 10, BC+23-10, AB/45:10
-    const pairMatch = trimmed.match(/^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])([^0-9a-zA-Z]+)(\d{2})([^0-9a-zA-Z]+)(\d+)$/);
+    // Format D2: Single 2-Digit Pair with single or multiple numbers (AB, AC, BC):
+    // Examples:
+    //   AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10
+    //   AB.79..89.73.37.1, AC.79.89.73.37.1., BC..79..89.73.37.1, AB.79.89.1, AB.79.1
+    //   AB-79-89-73-37-1, AB=79=89=73=37=1, AB+79+89+73+37+1, AC-79-89-73-37-1, BC-79-89-73-37-1
+    //   Case-insensitive: AB/Ab/aB/ab, AC/Ac/aC/ac, BC/Bc/bC/bc
+    const pairMatch = trimmed.match(
+      /^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])([^0-9a-zA-Z]+)((?:\d{2}[^0-9a-zA-Z]+)+)(\d+)[^0-9a-zA-Z]*$/
+    );
     if (pairMatch) {
       const pair = pairMatch[1].toUpperCase();
-      const digits = pairMatch[3];
-      const count = parseInt(pairMatch[5], 10);
+      const numbersGroup = pairMatch[3];
+      const count = parseInt(pairMatch[4], 10);
       if (count > 0) {
+        const nums = [...numbersGroup.matchAll(/\d{2}/g)].map((m) => m[0]);
         const unitPrice2Digit = 10;
-        items.push({
-          number: `${pair}:${digits}`,
-          count,
-          type: 'Pair',
-          playMode: 'DIRECT',
-          unitPrice: unitPrice2Digit,
-          totalAmount: count * unitPrice2Digit,
+        nums.forEach((digits) => {
+          items.push({
+            number: `${pair}:${digits}`,
+            count,
+            type: 'Pair',
+            playMode: 'DIRECT',
+            unitPrice: unitPrice2Digit,
+            totalAmount: count * unitPrice2Digit,
+          });
         });
         continue;
       }
@@ -226,12 +236,40 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
+    // Format F: Multiple 3-Digit Numbers + One Super Count:
+    //    NUMBER [SEPARATOR] NUMBER [SEPARATOR] ... NUMBER [SEPARATOR] SUPER_COUNT
+    //    Examples: 088.789.432.687.819-1, 088=789=432=687=819=1, 088+789+432+687+819+1,
+    //              088/789/432/687/819/1, 088:789:432:687:819:1, 088_789_432_687_819_1,
+    //              088.789-1, 088.789.432-1
+    //    Meaning: Every preceding 3-digit number gets its own Direct (Super) entry with the final count.
+    //    Leading zeros ("088", "001", "007", "012", "099") are strictly preserved as strings.
+    const multi3DigitSuperMatch = trimmed.match(/^((?:\d{3}[^0-9a-zA-Z]+){2,})(\d+)$/);
+    if (multi3DigitSuperMatch) {
+      const prefix = multi3DigitSuperMatch[1];
+      const count = parseInt(multi3DigitSuperMatch[2], 10);
+      if (count > 0) {
+        const nums = [...prefix.matchAll(/\d{3}/g)].map((m) => m[0]);
+        nums.forEach((num) => {
+          items.push({
+            number: num,
+            count,
+            type: 'Direct',
+            playMode: 'DIRECT',
+            unitPrice: 10,
+            totalAmount: count * 10,
+          });
+        });
+        continue;
+      }
+    }
+
     // =========================================================================
-    // 2. Generic 3-Group Symbol Separator Format (3-Digit Number + Super + Box):
-    //    NUMBER [ANY NON-ALPHANUMERIC SEPARATORS / SPACES] SUPER [ANY NON-ALPHANUMERIC SEPARATORS / SPACES] BOX
-    //    Examples: 638=1=1, 638-1-1, 638/1/1, 638:1:1, 638_1_1, 638@1@1, 638#1#1, 638 1 1, 147+3+2
+    // 2. Generic 3-Group Symbol / 'x' Separator Format (3-Digit Number + Super + Box):
+    //    NUMBER [SEPARATORS / SPACES / x / X] SUPER [SEPARATORS / SPACES / x / X] BOX
+    //    Examples: 638=1=1, 638-1-1, 638/1/1, 638:1:1, 638_1_1, 638@1@1, 638#1#1, 638 1 1, 147+3+2,
+    //              513=10x2
     // =========================================================================
-    const generic3GroupMatch = trimmed.match(/^(\d{3})([^0-9a-zA-Z]+)(\d+)([^0-9a-zA-Z]+)(\d+)$/);
+    const generic3GroupMatch = trimmed.match(/^(\d{3})((?:[^0-9a-zA-Z]|[xX])+)(\d+)((?:[^0-9a-zA-Z]|[xX])+)(\d+)$/);
     if (generic3GroupMatch) {
       const num = generic3GroupMatch[1];
       const count1 = parseInt(generic3GroupMatch[3], 10);

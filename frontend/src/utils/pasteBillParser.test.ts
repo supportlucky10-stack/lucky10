@@ -554,7 +554,203 @@ some random sentence
   console.log('✓ Test 26 Passed: Complete Section 24 mixed clipboard parsed with 100% precision (18 items, 5 unrelated lines ignored, leading zeros preserved)');
 }
 
+// TEST 27: The 5 New Clipboard Formats
+{
+  // --- FORMAT 1: AB MULTIPLE NUMBERS ---
+  {
+    const res = parsePastedBillText('AB.79..89.73.37.1');
+    assert(res.success === true, 'Format 1: AB.79..89.73.37.1 should succeed');
+    assert(res.items.length === 4, `Format 1: expected 4 items, got ${res.items.length}`);
+    const expected = ['AB:79', 'AB:89', 'AB:73', 'AB:37'];
+    for (let i = 0; i < 4; i++) {
+      assert(res.items[i].number === expected[i], `Format 1 item ${i} number ${expected[i]}`);
+      assert(res.items[i].count === 1, `Format 1 item ${i} count 1`);
+      assert(res.items[i].type === 'Pair', `Format 1 item ${i} type Pair`);
+    }
+
+    // Repeated and flexible separators
+    const abSeparators = [
+      'AB.79.89.1',
+      'AB.79..89.1',
+      'AB..79..89..73..37..1',
+      'AB-79-89-73-37-1',
+      'AB=79=89=73=37=1',
+      'AB+79+89+73+37+1',
+    ];
+    for (const inp of abSeparators) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true, `Format 1 separator: "${inp}" should succeed`);
+    }
+
+    // Case-insensitivity: AB, Ab, aB, ab
+    for (const inp of ['AB.79..89.73.37.1', 'Ab.79..89.73.37.1', 'aB.79..89.73.37.1', 'ab.79..89.73.37.1']) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true && r.items.every((it) => it.number.startsWith('AB:')), `Format 1 case: "${inp}"`);
+    }
+  }
+
+  // --- FORMAT 2: AC MULTIPLE NUMBERS ---
+  {
+    // Trailing separator allowed: AC.79.89.73.37.1.
+    const res = parsePastedBillText('AC.79.89.73.37.1.');
+    assert(res.success === true, 'Format 2: AC.79.89.73.37.1. should succeed');
+    assert(res.items.length === 4, `Format 2: expected 4 items, got ${res.items.length}`);
+    const expected = ['AC:79', 'AC:89', 'AC:73', 'AC:37'];
+    for (let i = 0; i < 4; i++) {
+      assert(res.items[i].number === expected[i], `Format 2 item ${i} number ${expected[i]}`);
+      assert(res.items[i].count === 1, `Format 2 item ${i} count 1`);
+      assert(res.items[i].type === 'Pair', `Format 2 item ${i} type Pair`);
+    }
+
+    // Case-insensitivity: AC, Ac, aC, ac
+    for (const inp of ['AC.79.89.73.37.1', 'Ac.79.89.73.37.1', 'aC.79.89.73.37.1', 'ac.79.89.73.37.1']) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true && r.items.every((it) => it.number.startsWith('AC:')), `Format 2 case: "${inp}"`);
+    }
+
+    // Flexible separators
+    for (const inp of ['AC.79.89.73.37.1', 'AC.79..89..73..37..1.', 'AC-79-89-73-37-1', 'AC=79=89=73=37=1']) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true, `Format 2 separator: "${inp}" should succeed`);
+    }
+  }
+
+  // --- FORMAT 3: BC MULTIPLE NUMBERS ---
+  {
+    const res = parsePastedBillText('BC..79..89.73.37.1');
+    assert(res.success === true, 'Format 3: BC..79..89.73.37.1 should succeed');
+    assert(res.items.length === 4, `Format 3: expected 4 items, got ${res.items.length}`);
+    const expected = ['BC:79', 'BC:89', 'BC:73', 'BC:37'];
+    for (let i = 0; i < 4; i++) {
+      assert(res.items[i].number === expected[i], `Format 3 item ${i} number ${expected[i]}`);
+      assert(res.items[i].count === 1, `Format 3 item ${i} count 1`);
+      assert(res.items[i].type === 'Pair', `Format 3 item ${i} type Pair`);
+    }
+
+    // Case-insensitivity: BC, Bc, bC, bc
+    for (const inp of ['BC..79..89.73.37.1', 'Bc..79..89.73.37.1', 'bC..79..89.73.37.1', 'bc..79..89.73.37.1']) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true && r.items.every((it) => it.number.startsWith('BC:')), `Format 3 case: "${inp}"`);
+    }
+
+    // Flexible separators
+    for (const inp of ['BC.79.89.1', 'BC..79..89..73..37..1', 'BC-79-89-73-37-1', 'BC=79=89=73=37=1']) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true, `Format 3 separator: "${inp}" should succeed`);
+    }
+  }
+
+  // --- FORMAT 4: SUPER + BOX USING x/X ---
+  {
+    const xInputs = [
+      '513*10*2',
+      '513x10x2',
+      '513X10X2',
+      '513x10X2',
+      '513X10x2',
+      '513=10x2',
+    ];
+    for (const inp of xInputs) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true, `Format 4: "${inp}" should succeed`);
+      assert(res.items.length === 2, `Format 4: "${inp}" expected 2 items, got ${res.items.length}`);
+      assert(res.items[0].number === '513' && res.items[0].type === 'Direct' && res.items[0].count === 10, `Format 4: "${inp}" Direct 10`);
+      assert(res.items[1].number === '513' && res.items[1].type === 'Shuffle' && res.items[1].count === 2, `Format 4: "${inp}" Shuffle 2`);
+    }
+
+    // Normal text containing x/X must NOT become bill entries
+    for (const inv of ['Hello x', 'example', 'text x 10']) {
+      const res = parsePastedBillText(inv);
+      assert(res.success === false && res.items.length === 0, `Format 4: "${inv}" must NOT become a bill`);
+    }
+  }
+
+  // --- FORMAT 5: MULTIPLE NUMBERS + SUPER ---
+  {
+    const res = parsePastedBillText('088.789.432.687.819-1');
+    assert(res.success === true, 'Format 5: 088.789.432.687.819-1 should succeed');
+    assert(res.items.length === 5, `Format 5: expected 5 items, got ${res.items.length}`);
+    const expected = ['088', '789', '432', '687', '819'];
+    for (let i = 0; i < 5; i++) {
+      assert(res.items[i].number === expected[i], `Format 5 item ${i} number ${expected[i]}`);
+      assert(res.items[i].type === 'Direct', `Format 5 item ${i} type Direct`);
+      assert(res.items[i].count === 1, `Format 5 item ${i} count 1`);
+    }
+    // Verify leading zero preserved: "088"
+    assert(res.items[0].number === '088', 'Format 5: leading zero must be preserved as "088"');
+
+    // Variable number of numbers
+    const varInputs = [
+      { text: '088-1', count: 1 },
+      { text: '088.789-1', count: 2 },
+      { text: '088.789.432-1', count: 3 },
+      { text: '088.789.432.687.819-1', count: 5 },
+    ];
+    for (const v of varInputs) {
+      const r = parsePastedBillText(v.text);
+      assert(r.success === true && r.items.length === v.count, `Format 5 variable: "${v.text}"`);
+    }
+
+    // Separator variations
+    const sepInputs = [
+      '088=789=432=687=819=1',
+      '088+789+432+687+819+1',
+      '088/789/432/687/819/1',
+      '088:789:432:687:819:1',
+      '088_789_432_687_819_1',
+    ];
+    for (const inp of sepInputs) {
+      const r = parsePastedBillText(inp);
+      assert(r.success === true && r.items.length === 5, `Format 5 separator: "${inp}"`);
+    }
+  }
+
+  // --- MIXED CLIPBOARD TEST WITH UNRELATED TEXT ---
+  {
+    const mixedInput = `Hello
+AB.79..89.73.37.1
+Random text
+513=10x2
+Dear
+088.789.432.687.819-1`;
+
+    const res = parsePastedBillText(mixedInput);
+    assert(res.success === true, 'Mixed clipboard parsing should succeed');
+    // 4 items (AB) + 2 items (513) + 5 items (088...819) = 11 items
+    assert(res.items.length === 11, `Expected 11 items, got ${res.items.length}`);
+    assert(res.items[0].number === 'AB:79', 'Item 0: AB:79');
+    assert(res.items[1].number === 'AB:89', 'Item 1: AB:89');
+    assert(res.items[2].number === 'AB:73', 'Item 2: AB:73');
+    assert(res.items[3].number === 'AB:37', 'Item 3: AB:37');
+    assert(res.items[4].number === '513' && res.items[4].count === 10 && res.items[4].type === 'Direct', 'Item 4: 513 Direct 10');
+    assert(res.items[5].number === '513' && res.items[5].count === 2 && res.items[5].type === 'Shuffle', 'Item 5: 513 Shuffle 2');
+    assert(res.items[6].number === '088', 'Item 6: 088 Direct 1');
+    assert(res.items[7].number === '789', 'Item 7: 789 Direct 1');
+    assert(res.items[8].number === '432', 'Item 8: 432 Direct 1');
+    assert(res.items[9].number === '687', 'Item 9: 687 Direct 1');
+    assert(res.items[10].number === '819', 'Item 10: 819 Direct 1');
+  }
+
+  // --- PRESERVATION OF EXISTING FORMATS ---
+  {
+    assert(parsePastedBillText('638*3+2').items.length === 2, '638*3+2 preserved');
+    assert(parsePastedBillText('638*3').items.length === 1, '638*3 preserved');
+    assert(parsePastedBillText('ABC*8*15').items.length === 3, 'ABC*8*15 preserved');
+    assert(parsePastedBillText('ALL*8*15').items.length === 3, 'ALL*8*15 preserved');
+    assert(parsePastedBillText('A*6*50').items.length === 1, 'A*6*50 preserved');
+    assert(parsePastedBillText('B*3*30').items.length === 1, 'B*3*30 preserved');
+    assert(parsePastedBillText('C*7*30').items.length === 1, 'C*7*30 preserved');
+    assert(parsePastedBillText('AB*45*10').items.length === 1, 'AB*45*10 preserved');
+    assert(parsePastedBillText('BC*23*10').items.length === 1, 'BC*23*10 preserved');
+    assert(parsePastedBillText('AC*89*10').items.length === 1, 'AC*89*10 preserved');
+    assert(parsePastedBillText('928=2').items.length === 1, '928=2 preserved');
+  }
+
+  console.log('✓ Test 27 Passed: All 5 new formats, case-insensitivity, trailing dots, flexible separators, and existing formats verified');
+}
+
 console.log('\n========================================');
-console.log('ALL 26 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 27 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
+
 
