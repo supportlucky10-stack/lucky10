@@ -749,8 +749,235 @@ Dear
   console.log('✓ Test 27 Passed: All 5 new formats, case-insensitivity, trailing dots, flexible separators, and existing formats verified');
 }
 
+// TEST 28: Multiple 3-Digit Numbers + Super + Box (e.g. 088.789.432.687.819-3+2)
+{
+  // 1. Primary case: 088.789.432.687.819-3+2
+  {
+    const res = parsePastedBillText('088.789.432.687.819-3+2');
+    assert(res.success === true, 'Test 28: 088.789.432.687.819-3+2 should succeed');
+    // 5 numbers * 2 items (Super 3, Box 2) = 10 items
+    assert(res.items.length === 10, `Test 28: expected 10 items, got ${res.items.length}`);
+    const expectedNums = ['088', '789', '432', '687', '819'];
+    for (let i = 0; i < 5; i++) {
+      const directItem = res.items[i * 2];
+      const shuffleItem = res.items[i * 2 + 1];
+      assert(directItem.number === expectedNums[i], `Direct item ${i} number ${expectedNums[i]}`);
+      assert(directItem.type === 'Direct' && directItem.count === 3 && directItem.totalAmount === 30, `Direct item ${i} Super 3`);
+      assert(shuffleItem.number === expectedNums[i], `Shuffle item ${i} number ${expectedNums[i]}`);
+      assert(shuffleItem.type === 'Shuffle' && shuffleItem.count === 2 && shuffleItem.totalAmount === 20, `Shuffle item ${i} Box 2`);
+    }
+    // Verify leading zeroes strictly preserved
+    assert(res.items[0].number === '088', 'Test 28: leading zero preserved as "088"');
+  }
+
+  // 2. Flexible separators between 3-digit numbers
+  {
+    const numSeparators = [
+      '088.789.432.687.819-3+2',
+      '088+789+432+687+819-3+2',
+      '088=789=432=687=819-3+2',
+      '088/789/432/687/819-3+2',
+      '088:789:432:687:819-3+2',
+      '088_789_432_687_819-3+2',
+      '088@789@432@687@819-3+2',
+      '088#789#432#687#819-3+2',
+    ];
+    for (const inp of numSeparators) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true, `Test 28 separator: "${inp}" should succeed`);
+      assert(res.items.length === 10, `Test 28 separator: "${inp}" expected 10 items, got ${res.items.length}`);
+    }
+  }
+
+  // 3. Flexible separators between Super and Box
+  {
+    const superBoxSeparators = [
+      '088.789.432.687.819-3+2',
+      '088.789.432.687.819-3=2',
+      '088.789.432.687.819-3/2',
+      '088.789.432.687.819-3:2',
+      '088.789.432.687.819-3_2',
+      '088.789.432.687.819-3@2',
+      '088.789.432.687.819-3#2',
+      '088.789.432.687.819-3$2',
+      '088.789.432.687.819-3%2',
+      '088.789.432.687.819-3&2',
+      '088.789.432.687.819-3|2',
+      '088.789.432.687.819-3~2',
+      '088.789.432.687.819-3 2',
+      '088.789.432.687.819-3x2',
+      '088.789.432.687.819-3X2',
+    ];
+    for (const inp of superBoxSeparators) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true, `Test 28 Super-Box separator: "${inp}" should succeed`);
+      assert(res.items.length === 10, `Test 28 Super-Box separator: "${inp}" expected 10 items, got ${res.items.length}`);
+    }
+  }
+
+  // 4. Negative test: Hyphen '-' between numbers is FORBIDDEN
+  {
+    const invalidHyphenInput = '088-789-432-687-819-3+2';
+    const res = parsePastedBillText(invalidHyphenInput);
+    // Must NOT be parsed as the new multiple-number format (should not produce 10 items)
+    assert(
+      res.success === false || res.items.length !== 10,
+      'Test 28 negative: "088-789-432-687-819-3+2" must NOT be interpreted as multiple-number Super+Box'
+    );
+  }
+
+  // 5. Variable count of numbers (e.g. 2 numbers: 088.789-3+2)
+  {
+    const res2 = parsePastedBillText('088.789-3+2');
+    assert(res2.success === true && res2.items.length === 4, 'Test 28 2 numbers: 088.789-3+2 should produce 4 items');
+    assert(res2.items[0].number === '088' && res2.items[0].count === 3 && res2.items[0].type === 'Direct', '088 Super 3');
+    assert(res2.items[1].number === '088' && res2.items[1].count === 2 && res2.items[1].type === 'Shuffle', '088 Box 2');
+    assert(res2.items[2].number === '789' && res2.items[2].count === 3 && res2.items[2].type === 'Direct', '789 Super 3');
+    assert(res2.items[3].number === '789' && res2.items[3].count === 2 && res2.items[3].type === 'Shuffle', '789 Box 2');
+  }
+
+  console.log('✓ Test 28 Passed: Multiple 3-digit numbers + Super + Box format verified across flexible separators and hyphen restriction');
+}
+
+// TEST 29: Multiple 3-Digit Numbers + Box (b / B / box / Box / BOX)
+{
+  // 1. Exact original examples
+  {
+    // Format 1: 453-457+765 543x654-2b
+    const res1 = parsePastedBillText('453-457+765 543x654-2b');
+    assert(res1.success === true, 'Test 29: 453-457+765 543x654-2b should succeed');
+    assert(res1.items.length === 5, `Test 29: expected 5 items, got ${res1.items.length}`);
+    const expected1 = ['453', '457', '765', '543', '654'];
+    for (let i = 0; i < 5; i++) {
+      assert(res1.items[i].number === expected1[i], `Item ${i} number ${expected1[i]}`);
+      assert(res1.items[i].type === 'Shuffle' && res1.items[i].count === 2 && res1.items[i].totalAmount === 20, `Item ${i} Box 2`);
+    }
+
+    // Format 2: 765 543 786-342,675-1box
+    const res2 = parsePastedBillText('765 543 786-342,675-1box');
+    assert(res2.success === true, 'Test 29: 765 543 786-342,675-1box should succeed');
+    assert(res2.items.length === 5, `Test 29: expected 5 items, got ${res2.items.length}`);
+    const expected2 = ['765', '543', '786', '342', '675'];
+    for (let i = 0; i < 5; i++) {
+      assert(res2.items[i].number === expected2[i], `Item ${i} number ${expected2[i]}`);
+      assert(res2.items[i].type === 'Shuffle' && res2.items[i].count === 1 && res2.items[i].totalAmount === 10, `Item ${i} Box 1`);
+    }
+
+    // Format 3: 654..656.876,765-1B
+    const res3 = parsePastedBillText('654..656.876,765-1B');
+    assert(res3.success === true, 'Test 29: 654..656.876,765-1B should succeed');
+    assert(res3.items.length === 4, `Test 29: expected 4 items, got ${res3.items.length}`);
+    const expected3 = ['654', '656', '876', '765'];
+    for (let i = 0; i < 4; i++) {
+      assert(res3.items[i].number === expected3[i], `Item ${i} number ${expected3[i]}`);
+      assert(res3.items[i].type === 'Shuffle' && res3.items[i].count === 1 && res3.items[i].totalAmount === 10, `Item ${i} Box 1`);
+    }
+  }
+
+  // 2. Flexible and mixed separators between numbers
+  {
+    const sepInputs = [
+      '453-457+765 543x654-2b',
+      '453.457.765.543.654-2b',
+      '453/457/765/543/654-2b',
+      '453:457:765:543:654-2b',
+      '453_457_765_543_654-2b',
+      '453@457@765@543@654-2b',
+      '453#457#765#543#654-2b',
+      '453$457$765$543$654-2b',
+      '453%457%765%543%654-2b',
+      '453&457&765&543&654-2b',
+      '453|457|765|543|654-2b',
+      '453~457~765~543~654-2b',
+      '453..457+765/543x654-2b',
+      '765@543..786/342+675-1box',
+      '654#656/876..765-1B',
+    ];
+    for (const inp of sepInputs) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true, `Test 29 separator: "${inp}" should succeed`);
+      assert(res.items.every((it) => it.type === 'Shuffle'), `Test 29: all items must be Shuffle`);
+    }
+  }
+
+  // 3. Case-insensitivity of b / B / box / Box / bOx / boX / BOX
+  {
+    const case2Inputs = [
+      '453-457-2b',
+      '453-457-2B',
+      '453-457-2box',
+      '453-457-2Box',
+      '453-457-2bOx',
+      '453-457-2boX',
+      '453-457-2BOX',
+    ];
+    for (const inp of case2Inputs) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true && res.items.length === 2, `Test 29 case "${inp}" should succeed with 2 items`);
+      assert(res.items[0].count === 2 && res.items[1].count === 2, `Test 29 case "${inp}" counts must be 2`);
+    }
+
+    const case1Inputs = [
+      '453-457-1b',
+      '453-457-1B',
+      '453-457-1box',
+      '453-457-1Box',
+      '453-457-1bOx',
+      '453-457-1BOX',
+    ];
+    for (const inp of case1Inputs) {
+      const res = parsePastedBillText(inp);
+      assert(res.success === true && res.items.length === 2, `Test 29 case "${inp}" should succeed with 2 items`);
+      assert(res.items[0].count === 1 && res.items[1].count === 1, `Test 29 case "${inp}" counts must be 1`);
+    }
+  }
+
+  // 4. Leading zeroes preservation
+  {
+    const res = parsePastedBillText('088.007.012-2box');
+    assert(res.success === true && res.items.length === 3, 'Test 29 leading zeroes: should produce 3 items');
+    assert(res.items[0].number === '088', '088 preserved');
+    assert(res.items[1].number === '007', '007 preserved');
+    assert(res.items[2].number === '012', '012 preserved');
+  }
+
+  // 5. Variable number of entries (e.g. 2 numbers: 453-457-2b)
+  {
+    const res = parsePastedBillText('453-457-2b');
+    assert(res.success === true && res.items.length === 2, 'Test 29 2 numbers: should produce 2 items');
+    assert(res.items[0].number === '453' && res.items[0].count === 2, '453 Box 2');
+    assert(res.items[1].number === '457' && res.items[1].count === 2, '457 Box 2');
+  }
+
+  // 6. Invalid / unrelated text rejected
+  {
+    const invalidInputs = [
+      'Hello',
+      'Dear',
+      'Kerala',
+      'Random text',
+      'Test',
+      'Example',
+      'Box',
+      'Hello B',
+      '1box',
+      '12-1box',
+      '1234-1box',
+      'abc 1box',
+      'random 1box',
+    ];
+    for (const inv of invalidInputs) {
+      const res = parsePastedBillText(inv);
+      assert(res.success === false && res.items.length === 0, `Test 29 invalid: "${inv}" must NOT produce bills`);
+    }
+  }
+
+  console.log('✓ Test 29 Passed: All 3 multiple 3-digit numbers + Box formats verified across flexible separators, case-insensitivity, and leading zeroes');
+}
+
 console.log('\n========================================');
-console.log('ALL 27 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 29 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
+
 
 

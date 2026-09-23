@@ -236,6 +236,55 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
+    // Format G: Multiple 3-Digit Numbers + Super + Box:
+    //    <num3> [SEP_NOT_DASH] <num3> ... <num3> [SEP_BEFORE_SUPER] <superCount> [SEP_SUPER_BOX] <boxCount>
+    //    Examples:
+    //      088.789.432.687.819-3+2
+    //      088+789+432+687+819-3+2
+    //      088=789=432=687=819-3+2
+    //      088/789/432/687/819-3+2
+    //      088:789:432:687:819-3+2
+    //      088_789_432_687_819-3+2
+    //      088@789@432@687@819-3+2
+    //      088#789#432#687#819-3+2
+    //      088.789.432.687.819-3=2, 088.789.432.687.819-3/2, 088.789.432.687.819-3:2, etc.
+    //    Note: Hyphen '-' is strictly forbidden between the individual 3-digit numbers.
+    //          Leading zeroes ("088") are strictly preserved.
+    const multi3DigitSuperBoxMatch = trimmed.match(
+      /^((?:\d{3}[^0-9a-zA-Z\-]+)+\d{3})\s*\-+\s*(\d+)((?:[^0-9a-zA-Z\-]|[xX])+)(\d+)$/
+    );
+    if (multi3DigitSuperBoxMatch) {
+      const numbersGroup = multi3DigitSuperBoxMatch[1];
+      const superCount = parseInt(multi3DigitSuperBoxMatch[2], 10);
+      const boxCount = parseInt(multi3DigitSuperBoxMatch[4], 10);
+      if (superCount > 0 || boxCount > 0) {
+        const nums = [...numbersGroup.matchAll(/\d{3}/g)].map((m) => m[0]);
+        nums.forEach((num) => {
+          if (superCount > 0) {
+            items.push({
+              number: num,
+              count: superCount,
+              type: 'Direct',
+              playMode: 'DIRECT',
+              unitPrice: 10,
+              totalAmount: superCount * 10,
+            });
+          }
+          if (boxCount > 0) {
+            items.push({
+              number: num,
+              count: boxCount,
+              type: 'Shuffle',
+              playMode: 'DIRECT',
+              unitPrice: 10,
+              totalAmount: boxCount * 10,
+            });
+          }
+        });
+        continue;
+      }
+    }
+
     // Format F: Multiple 3-Digit Numbers + One Super Count:
     //    NUMBER [SEPARATOR] NUMBER [SEPARATOR] ... NUMBER [SEPARATOR] SUPER_COUNT
     //    Examples: 088.789.432.687.819-1, 088=789=432=687=819=1, 088+789+432+687+819+1,
@@ -257,6 +306,40 @@ export function parsePastedBillText(text: string): ParseResult {
             playMode: 'DIRECT',
             unitPrice: 10,
             totalAmount: count * 10,
+          });
+        });
+        continue;
+      }
+    }
+
+    // Format H: Multiple 3-Digit Numbers + Box (b / B / box / Box / BOX):
+    //    <num3> [SEP] <num3> ... <num3> [SEP] <boxCount> [optional space/sep] (b|box)
+    //    Examples:
+    //      453-457+765 543x654-2b
+    //      765 543 786-342,675-1box
+    //      654..656.876,765-1B
+    //      453..457+765/543x654-2b
+    //      765@543..786/342+675-1box
+    //      654#656/876..765-1B
+    //    Meaning: Every preceding 3-digit number gets Box count (Shuffle), leading zeroes preserved.
+    //    Case-insensitive: b, B, box, Box, bOx, boX, BOX.
+    //    Separators between numbers: any non-alphanumeric symbol, whitespace, or x/X.
+    const multi3DigitBoxMatch = trimmed.match(
+      /^((?:\d{3}(?:[^0-9a-zA-Z]|[xX])+)+\d{3})([^0-9a-zA-Z]+)(\d+)(?:[^0-9a-zA-Z]*|\s*)(box|b)$/i
+    );
+    if (multi3DigitBoxMatch) {
+      const numbersGroup = multi3DigitBoxMatch[1];
+      const boxCount = parseInt(multi3DigitBoxMatch[3], 10);
+      if (boxCount > 0) {
+        const nums = [...numbersGroup.matchAll(/\d{3}/g)].map((m) => m[0]);
+        nums.forEach((num) => {
+          items.push({
+            number: num,
+            count: boxCount,
+            type: 'Shuffle',
+            playMode: 'DIRECT',
+            unitPrice: 10,
+            totalAmount: boxCount * 10,
           });
         });
         continue;
