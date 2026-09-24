@@ -272,14 +272,18 @@ def evaluate_bet_item(
                 "rate_multiplier": 5.0,
                 "matched_position": "5th Prize",
             }
-        if (p6 and target_3digit == p6) or (target_3digit in compliments):
+        num_comp_matches = compliments.count(target_3digit) if compliments else 0
+        has_p6 = bool(p6 and target_3digit == p6 and target_3digit not in (compliments or []))
+        total_occurrences = num_comp_matches + (1 if has_p6 else 0)
+        if total_occurrences > 0:
             return {
                 "is_winner": True,
                 "prize_title": "6TH / COMPLIMENT PRIZE" if (p6 and target_3digit == p6) else "COMPLIMENT PRIZE",
-                "win_amount": count * 20.0,
+                "win_amount": count * 20.0 * total_occurrences,
                 "matched_number": num_str,
                 "rate_multiplier": 2.0,
                 "matched_position": "6th Prize" if (p6 and target_3digit == p6) else "Compliment Prize",
+                "compliment_occurrences": total_occurrences,
             }
 
     return not_won
@@ -320,10 +324,22 @@ def evaluate_ticket_items(
 
         if eval_res["is_winner"]:
             total_win += eval_res["win_amount"]
-            winning_items.append({
-                "item": item,
-                "eval": eval_res,
-            })
+            occ = eval_res.get("compliment_occurrences", 1)
+            if occ and occ > 1:
+                per_occ_win = cnt * 20.0
+                for _ in range(occ):
+                    winning_items.append({
+                        "item": item,
+                        "eval": {
+                            **eval_res,
+                            "win_amount": per_occ_win,
+                        },
+                    })
+            else:
+                winning_items.append({
+                    "item": item,
+                    "eval": eval_res,
+                })
 
     return {
         "is_winner": total_win > 0,

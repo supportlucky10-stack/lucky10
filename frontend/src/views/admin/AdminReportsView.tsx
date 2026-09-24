@@ -531,22 +531,27 @@ export const AdminReportsView: React.FC = () => {
           const playModeTitle = getDisplayPlayMode(item);
           const catName = gameTitle;
           const existing = catMap.get(catName) || [];
-          existing.push({
-            id: item.id ? `w_${ticket.id}_${item.id}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeTitle}`,
-            ticketId: ticket.ticketId || ticket.id,
-            userName: (ticket as any).userName || (ticket as any).agencyName || ticket.userId,
-            agencyName: (ticket as any).agencyName || (ticket as any).userName || 'Agency',
-            customerName: formatCustomerName((ticket as any).customerName),
-            prize: prizeTitle,
-            number: num,
-            count: count,
-            total: winAmt,
-            slot: ticket.gameSlot,
-            type: gameTitle,
-            gameMode: gameTitle,
-            playMode: playModeTitle,
-            placedAt: ticket.placedAt,
-          });
+          const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
+          const perOccWinAmt = occurrences > 1 ? count * 20 : winAmt;
+          for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
+            const occSuffix = occurrences > 1 ? `_occ_${occIdx}` : '';
+            existing.push({
+              id: item.id ? `w_${ticket.id}_${item.id}${occSuffix}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeTitle}${occSuffix}`,
+              ticketId: ticket.ticketId || ticket.id,
+              userName: (ticket as any).userName || (ticket as any).agencyName || ticket.userId,
+              agencyName: (ticket as any).agencyName || (ticket as any).userName || 'Agency',
+              customerName: formatCustomerName((ticket as any).customerName),
+              prize: prizeTitle,
+              number: num,
+              count: count,
+              total: perOccWinAmt,
+              slot: ticket.gameSlot,
+              type: gameTitle,
+              gameMode: gameTitle,
+              playMode: playModeTitle,
+              placedAt: ticket.placedAt,
+            });
+          }
           catMap.set(catName, existing);
         }
       });

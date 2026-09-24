@@ -20,6 +20,7 @@ export interface EvaluationResult {
   matchedNumber: string;
   rateMultiplier: number;
   matchedPrizePosition?: string;
+  complimentOccurrences?: number;
 }
 
 /**
@@ -310,15 +311,17 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
         matchedPrizePosition: '5th Prize',
       };
     }
-    if (comps.includes(target3Digit)) {
+    const matchingOccurrences = comps.filter((c) => c === target3Digit).length;
+    if (matchingOccurrences > 0) {
       return {
         isWinner: true,
         prizeTitle: 'COMPLIMENT PRIZE',
         prizeCategory: '6TH',
-        winAmount: count * 20,
+        winAmount: count * 20 * matchingOccurrences,
         matchedNumber: numStr,
         rateMultiplier: 2,
         matchedPrizePosition: 'Compliment Prize',
+        complimentOccurrences: matchingOccurrences,
       };
     }
   }
@@ -350,7 +353,20 @@ export function evaluateTicket(ticket: PlacedTicket, result?: GameResultData | n
     const res = evaluateBetItem(item, result);
     if (res.isWinner) {
       totalWinAmount += res.winAmount;
-      winningItems.push({ item, eval: res });
+      if (res.complimentOccurrences && res.complimentOccurrences > 1) {
+        const perOccWin = (item.count || 1) * 20;
+        for (let occ = 1; occ <= res.complimentOccurrences; occ++) {
+          winningItems.push({
+            item,
+            eval: {
+              ...res,
+              winAmount: perOccWin,
+            },
+          });
+        }
+      } else {
+        winningItems.push({ item, eval: res });
+      }
     }
   }
 

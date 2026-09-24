@@ -42,14 +42,19 @@ export const TodaysWinningNumbersView: React.FC = () => {
         tkt.items.forEach((item) => {
           const evalRes = evaluateBetItem(item, res);
           if (evalRes.isWinner) {
-            winnersList.push({
-              id: `TW-${tkt.id}-${item.id || item.number}`,
-              user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
-              slot: slot,
-              prize: `${evalRes.prizeTitle} (${evalRes.matchedNumber})`,
-              winAmount: `₹${evalRes.winAmount.toLocaleString()}`,
-              time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
-            });
+            const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
+            const perOccWinAmt = occurrences > 1 ? (item.count || 1) * 20 : evalRes.winAmount;
+            for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
+              const occSuffix = occurrences > 1 ? `-occ-${occIdx}` : '';
+              winnersList.push({
+                id: `TW-${tkt.id}-${item.id || item.number}${occSuffix}`,
+                user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
+                slot: slot,
+                prize: `${evalRes.prizeTitle} (${evalRes.matchedNumber})`,
+                winAmount: `₹${perOccWinAmt.toLocaleString()}`,
+                time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
+              });
+            }
           }
         });
       });
@@ -97,16 +102,21 @@ export const TodaysWinningNumbersView: React.FC = () => {
         tkt.items.forEach((item) => {
           const evalRes = evaluateBetItem(item, res);
           if (evalRes.isWinner) {
-            winnersList.push({
-              id: `PW-${tkt.id}-${item.id || item.number}`,
-              user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
-              date: selectedDate,
-              slot: slot,
-              prize: evalRes.prizeTitle,
-              winAmount: `₹${evalRes.winAmount.toLocaleString()}`,
-              number: evalRes.matchedNumber,
-              time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
-            });
+            const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
+            const perOccWinAmt = occurrences > 1 ? (item.count || 1) * 20 : evalRes.winAmount;
+            for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
+              const occSuffix = occurrences > 1 ? `-occ-${occIdx}` : '';
+              winnersList.push({
+                id: `PW-${tkt.id}-${item.id || item.number}${occSuffix}`,
+                user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
+                date: selectedDate,
+                slot: slot,
+                prize: evalRes.prizeTitle,
+                winAmount: `₹${perOccWinAmt.toLocaleString()}`,
+                number: evalRes.matchedNumber,
+                time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
+              });
+            }
           }
         });
       });
