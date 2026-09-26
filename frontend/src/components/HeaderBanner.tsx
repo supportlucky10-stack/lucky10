@@ -46,7 +46,7 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
       className="relative w-full bg-gold-banner px-3.5 sm:px-6 pb-2 sm:pb-3 min-h-[56px] sm:min-h-[64px] flex items-center justify-between shadow-md select-none border-b border-[#aa771c] shrink-0"
       style={{ paddingTop: 'max(8px, env(safe-area-inset-top, 0px))' }}
     >
-      <div className="flex items-center gap-2 sm:gap-3 max-w-[78%]">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 mr-2">
         {showBack && (
           <button
             onClick={handleBack}
@@ -61,17 +61,18 @@ export const HeaderBanner: React.FC<HeaderBannerProps> = ({
         </h1>
       </div>
 
-      {rightElement ? (
-        <div className="shrink-0 z-10 flex items-center">{rightElement}</div>
-      ) : showHome ? (
-        <button
-          onClick={handleHome}
-          className="p-1.5 sm:p-2 text-black hover:bg-black/15 active:scale-90 rounded-xl transition-all shrink-0 cursor-pointer z-10 flex items-center justify-center border border-black/25 hover:border-black/50 shadow-sm"
-          title="Go to Home"
-        >
-          <Home className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-        </button>
-      ) : null}
+      <div className="shrink-0 z-10 flex items-center gap-1.5 sm:gap-2">
+        {showHome && (
+          <button
+            onClick={handleHome}
+            className="p-1.5 sm:p-2 text-black hover:bg-black/15 active:scale-90 rounded-xl transition-all shrink-0 cursor-pointer z-10 flex items-center justify-center border border-black/25 hover:border-black/50 shadow-sm"
+            title="Go to Home"
+          >
+            <Home className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+          </button>
+        )}
+        {rightElement}
+      </div>
     </div>
   );
 };
