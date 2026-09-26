@@ -975,8 +975,57 @@ Dear
   console.log('✓ Test 29 Passed: All 3 multiple 3-digit numbers + Box formats verified across flexible separators, case-insensitivity, and leading zeroes');
 }
 
+// TEST 30: Input Order Preservation (Exact customer pasted order preserved)
+{
+  // CASE 1:
+  const input1 = `981.2.2\n742.2.2\n942.2.2\n986.2.2`;
+  const res1 = parsePastedBillText(input1);
+  assert(res1.success === true, 'Case 1 should succeed');
+  assert(res1.items.length === 8, 'Case 1 expected 8 items');
+  assert(res1.items[0].number === '981' && res1.items[0].type === 'Direct', 'Item 0: SUPER 981');
+  assert(res1.items[1].number === '981' && res1.items[1].type === 'Shuffle', 'Item 1: BOX 981');
+  assert(res1.items[2].number === '742' && res1.items[2].type === 'Direct', 'Item 2: SUPER 742');
+  assert(res1.items[3].number === '742' && res1.items[3].type === 'Shuffle', 'Item 3: BOX 742');
+  assert(res1.items[4].number === '942' && res1.items[4].type === 'Direct', 'Item 4: SUPER 942');
+  assert(res1.items[5].number === '942' && res1.items[5].type === 'Shuffle', 'Item 5: BOX 942');
+  assert(res1.items[6].number === '986' && res1.items[6].type === 'Direct', 'Item 6: SUPER 986');
+  assert(res1.items[7].number === '986' && res1.items[7].type === 'Shuffle', 'Item 7: BOX 986');
+
+  // CASE 2: Arbitrary customer order (must not be sorted numerically)
+  const input2 = `986.2.2\n742.2.2\n981.2.2\n942.2.2`;
+  const res2 = parsePastedBillText(input2);
+  assert(res2.success === true, 'Case 2 should succeed');
+  assert(res2.items[0].number === '986', 'Item 0: 986');
+  assert(res2.items[1].number === '986', 'Item 1: 986');
+  assert(res2.items[2].number === '742', 'Item 2: 742');
+  assert(res2.items[3].number === '742', 'Item 3: 742');
+  assert(res2.items[4].number === '981', 'Item 4: 981');
+  assert(res2.items[5].number === '981', 'Item 5: 981');
+  assert(res2.items[6].number === '942', 'Item 6: 942');
+  assert(res2.items[7].number === '942', 'Item 7: 942');
+
+  // CASE 3: 999, 111, 555
+  const input3 = `999.1.1\n111.2.2\n555.3.3`;
+  const res3 = parsePastedBillText(input3);
+  assert(res3.success === true, 'Case 3 should succeed');
+  assert(res3.items[0].number === '999', 'Item 0: 999');
+  assert(res3.items[2].number === '111', 'Item 2: 111');
+  assert(res3.items[4].number === '555', 'Item 4: 555');
+
+  // CASE 4: Duplicate entries preserved in place without merging
+  const input4 = `981.2.2\n981.2.2\n742.2.2`;
+  const res4 = parsePastedBillText(input4);
+  assert(res4.success === true, 'Case 4 should succeed');
+  assert(res4.items.length === 6, 'Case 4 expected 6 items');
+  assert(res4.items[0].number === '981' && res4.items[1].number === '981', 'First 981 preserved');
+  assert(res4.items[2].number === '981' && res4.items[3].number === '981', 'Second 981 duplicate preserved');
+  assert(res4.items[4].number === '742' && res4.items[5].number === '742', '742 preserved');
+
+  console.log('✓ Test 30 Passed: Customer pasted entry order and grouping strictly preserved');
+}
+
 console.log('\n========================================');
-console.log('ALL 29 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 30 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
 
 

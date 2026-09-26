@@ -16,7 +16,7 @@ class Ticket(Base):
     win_amount = Column(Float, default=0.0)
 
     user = relationship("User", back_populates="tickets")
-    items = relationship("BetItem", back_populates="ticket", cascade="all, delete-orphan")
+    items = relationship("BetItem", back_populates="ticket", cascade="all, delete-orphan", order_by="BetItem.id")
 
     __table_args__ = (
         Index("ix_tickets_user_slot_placed", "user_id", "game_slot", "placed_at"),

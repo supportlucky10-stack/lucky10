@@ -398,7 +398,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
 
                 bet_objs = [
                     BetItem(
-                        id=f"bet_{uuid.uuid4().hex}",
+                        id=f"bet_{ticket_id}_{idx:05d}",
                         ticket_id=ticket_id,
                         number=item_data["number"],
                         count=item_data["count"],
@@ -406,7 +406,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                         unit_price=item_data["unit_price"],
                         total_amount=item_data["total_amount"],
                     )
-                    for item_data in calculated_items
+                    for idx, item_data in enumerate(calculated_items)
                 ]
                 db.add_all(bet_objs)
 
