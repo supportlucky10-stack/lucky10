@@ -344,28 +344,18 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    let targetNums = isReverse ? getRangeNumbers(2) : [inputNum.trim()];
+    const targetNums = isReverse ? getRangeNumbers(2) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 2 || isNaN(Number(n)))) {
       addToast('Please enter a valid 2-digit number or range', 'error');
       return;
     }
 
-    const currentPlayMode = isSet ? 'SET' : (isReverse ? 'R' : 'DIRECT');
-
-    // Expand into rotational permutations if Set is checked
-    if (isSet) {
-      const setPerms = new Set<string>();
-      targetNums.forEach((n) => {
-        getPermutations(n).forEach((p) => setPerms.add(p));
-      });
-      targetNums = Array.from(setPerms);
-    }
-
+    const currentPlayMode = isReverse ? 'R' : 'DIRECT';
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
     const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
-    pairs.forEach((pr) => {
-      targetNums.forEach((n) => {
+    targetNums.forEach((n) => {
+      pairs.forEach((pr) => {
         itemsToAdd.push({
           number: `${pr}:${n}`,
           count: cnt,
@@ -740,7 +730,7 @@ export const GameDashboardView: React.FC = () => {
               />
             </div>
 
-            {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (For 2 and 3 Digit Modes) */}
+            {/* Checkboxes: R (Range Mode) for 1, 2, 3 Digit & Set (Only for 3 Digit Mode) */}
             <div className="flex items-center gap-2 pl-1">
               <label className={`flex items-center gap-1 text-xs font-black ${isReverse ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                 <input
@@ -759,7 +749,7 @@ export const GameDashboardView: React.FC = () => {
                 <span>R</span>
               </label>
 
-              {(activeMode === 2 || activeMode === 3) && (
+              {activeMode === 3 && (
                 <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
