@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
 import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil } from 'lucide-react';
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
+import { captureAndShareElement } from '../../utils/shareUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -65,7 +66,7 @@ const slotThemes: Record<string, {
 type PreviewTarget = '1ST' | 'OTHER' | null;
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults, fetchDataForDate } = useApp();
 
   useEffect(() => {
     refreshAllData();
@@ -338,9 +339,55 @@ export const AdminResultManagementView: React.FC = () => {
   const previewDateRef = useRef<HTMLInputElement>(null);
   const previewSlotTheme = slotThemes[previewSlot] || slotThemes['1 PM Game'];
 
+  // Fetch historical date data when admin changes preview date
+  useEffect(() => {
+    if (fetchDataForDate && previewDate) {
+      fetchDataForDate(previewDate);
+    }
+  }, [previewDate, fetchDataForDate]);
+
+  const previewResult = getResultForSlotAndDate(previewSlot, previewDate);
+  const previewDateParts = previewDate.split('-');
+  const displayPreviewDateFormatted = previewDateParts.length === 3
+    ? `${previewDateParts[2]}-${previewDateParts[1]}-${previewDateParts[0]}`
+    : previewDate;
+
+  const previewCompliments30 = (() => {
+    const rawList = previewResult?.compliments ? previewResult.compliments.flat() : [];
+    return Array.from({ length: 30 }, (_, index) => {
+      return rawList[index] ? String(rawList[index]).padStart(3, '0') : '---';
+    });
+  })();
+
+  const handleShareToWhatsApp = () => {
+    captureAndShareElement({
+      elementId: 'admin-result-share-container',
+      fileName: `result_${previewSlot.replace(/\s+/g, '_')}_${displayPreviewDateFormatted}.jpg`,
+      title: '',
+      textSummary: '',
+    });
+  };
+
   return (
     <div className="w-full min-h-screen bg-black text-white flex flex-col justify-start overflow-y-auto pb-16 select-none font-sans relative">
-      <HeaderBanner title="Result Management" />
+      <HeaderBanner
+        title="Result Management"
+        rightElement={
+          activeTab === 'preview' ? (
+            <button
+              type="button"
+              onClick={handleShareToWhatsApp}
+              className="px-3 sm:px-3.5 py-1.5 bg-[#075e54] hover:bg-[#128c7e] active:scale-90 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-1.5 transition-all cursor-pointer border border-[#25d366]/40"
+              title="Share to WhatsApp"
+            >
+              <svg className="w-4 h-4 fill-white shrink-0" viewBox="0 0 24 24">
+                <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
+              </svg>
+              <span>Share</span>
+            </button>
+          ) : undefined
+        }
+      />
 
       {/* ── SUCCESS MODAL ── */}
       {showSuccessModal && (
@@ -920,11 +967,111 @@ export const AdminResultManagementView: React.FC = () => {
                       })}
                     </div>
                   </div>
+
+                  {/* Share to WhatsApp Button at bottom of preview */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleShareToWhatsApp}
+                      className="w-full py-2.5 sm:py-3 bg-[#075e54] hover:bg-[#128c7e] active:scale-95 text-white font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer border border-[#25d366]/40 uppercase tracking-wider"
+                      title="Share to WhatsApp"
+                    >
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 fill-white shrink-0" viewBox="0 0 24 24">
+                        <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
+                      </svg>
+                      <span>Share to WhatsApp</span>
+                    </button>
+                  </div>
                 </>
               );
             })()}
           </div>
         )}
+      </div>
+
+      {/* DEDICATED OFF-SCREEN SHARE CARD (Exact same styling and proportions as Customer TodaysResultView) */}
+      <div
+        id="admin-result-share-container"
+        className="fixed left-0 top-0 -z-50 pointer-events-none max-w-md w-full sm:w-[420px] bg-black p-2 pb-5 space-y-1.5 select-none"
+        aria-hidden="true"
+      >
+        {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
+        <div className="space-y-1.5 shrink-0">
+          <div className="grid grid-cols-2 gap-2 items-center">
+            <div className="bg-gold-metallic text-black rounded-xl px-2 py-1 flex items-center justify-center shadow-lg h-[46px] border-2 border-gold-dark overflow-hidden">
+              <span className="text-black font-black text-sm font-mono tracking-normal whitespace-nowrap leading-none">
+                {displayPreviewDateFormatted.replace(/-/g, '\u2011')}
+              </span>
+            </div>
+            <div className="bg-neutral-900 border border-neutral-700 text-neutral-200 rounded-xl px-2 py-1 flex items-center justify-center gap-1.5 shadow-md h-[46px] overflow-hidden">
+              <Calendar className="w-4 h-4 text-gold shrink-0" />
+              <span className="font-bold text-xs tracking-normal whitespace-nowrap leading-none">
+                Change date
+              </span>
+            </div>
+          </div>
+
+          <div className={`w-full h-[46px] px-4 rounded-xl font-black text-sm uppercase flex items-center justify-between shadow-md border ${previewSlotTheme.pillActive}`}>
+            <div className="flex items-center gap-2">
+              <span className="opacity-85 text-xs font-bold tracking-wider uppercase">TIME:</span>
+              <span className="font-black tracking-wider text-sm">{SLOT_DISPLAY_NAMES[previewSlot] || previewSlot.replace(' Game', '')}</span>
+            </div>
+            <ChevronDown className="w-5 h-5" />
+          </div>
+        </div>
+
+        {/* 5 Winning Number Cards (Big, bold numbers matching Customer View) */}
+        <div className="space-y-1 shrink-0">
+          {[
+            { id: 1, label: '1', val: previewResult?.prize1 || '---' },
+            { id: 2, label: '2', val: previewResult?.prize2 || '---' },
+            { id: 3, label: '3', val: previewResult?.prize3 || '---' },
+            { id: 4, label: '4', val: previewResult?.prize4 || '---' },
+            { id: 5, label: '5', val: previewResult?.prize5 || '---' },
+          ].map((item) => (
+            <div
+              key={`admin-share-prize-${item.id}`}
+              className={`flex items-center justify-start rounded-xl bg-neutral-950 ${previewSlotTheme.cardBorder} py-1 px-3.5 shadow-sm`}
+            >
+              <div className="flex items-center gap-3.5 w-full">
+                <div
+                  className={`w-6 h-6 rounded-lg border shrink-0 font-black text-xs flex items-center justify-center ${previewSlotTheme.badgeActive}`}
+                >
+                  {item.label}
+                </div>
+                <div className="flex items-center flex-1">
+                  <span className="font-black font-mono tracking-widest block text-white text-xl leading-none">
+                    {item.val}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* COMPLIMENTS Matrix Table (Big, bold numbers matching Customer View) */}
+        <div className="bg-neutral-950 text-white rounded-2xl p-2 shadow-2xl border border-neutral-800 space-y-1 shrink-0 mt-0.5">
+          <h3 className="font-black text-xs text-gold text-center border-b border-neutral-800 pb-0.5 uppercase tracking-widest shrink-0 leading-tight">
+            COMPLIMENTS
+          </h3>
+
+          <div className="grid grid-cols-3 gap-1 bg-neutral-900 border border-neutral-800 p-1 rounded-xl overflow-hidden font-mono">
+            {Array.from({ length: 30 }, (_, cellIndex) => {
+              const row = Math.floor(cellIndex / 3);
+              const col = cellIndex % 3;
+              const compIdx = row + col * 10;
+              const val = previewCompliments30[compIdx] || '---';
+              return (
+                <div
+                  key={`admin-share-comp-${cellIndex}`}
+                  className="bg-black text-center text-xl font-black text-neutral-100 tracking-wider flex items-center justify-center py-1 rounded-lg border border-neutral-850 shadow-inner leading-none"
+                >
+                  {val}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
