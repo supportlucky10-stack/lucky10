@@ -560,7 +560,14 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
         stream += `0.85 0.85 0.85 RG 0.5 w ${leftX} ${rowY} ${contentWidth} 0 re S\n`;
 
         const gType = item.category;
-        const prizeStr = item.prize;
+        let prizeStr = item.prize;
+        if (gType === 'BOX') {
+          const p = (prizeStr || '').toUpperCase();
+          if (p.includes('DOUBLE DIRECT')) prizeStr = 'BOX - Double Direct';
+          else if (p.includes('DOUBLE TURN')) prizeStr = 'BOX - Double Turn';
+          else if (p.includes('ULTA')) prizeStr = 'BOX - Ulta Turn';
+          else if (p.includes('STRAIGHT')) prizeStr = 'BOX - Straight';
+        }
         const numStr = item.number;
         const cntStr = String(item.count);
         const amtStr = `Rs. ${item.total}`;

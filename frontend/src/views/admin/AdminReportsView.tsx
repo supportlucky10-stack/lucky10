@@ -55,7 +55,17 @@ const getCategoryOrderRank = (category: string): number => {
 const getPrizePositionDisplay = (card: any, category?: string): string => {
   const catUpper = (category || card.gameMode || card.type || '').toUpperCase().trim();
   
-  // For all non-SUPER sections (BOX, AB, BC, AC, A, B, C), badge must display WINNER
+  // Specific winning type for BOX category
+  if (catUpper === 'BOX') {
+    const p = (card.prize || '').toUpperCase();
+    if (p.includes('DOUBLE DIRECT')) return 'BOX - DOUBLE DIRECT';
+    if (p.includes('DOUBLE TURN')) return 'BOX - DOUBLE TURN';
+    if (p.includes('ULTA')) return 'BOX - ULTA TURN';
+    if (p.includes('STRAIGHT')) return 'BOX - STRAIGHT';
+    return 'BOX - WINNER';
+  }
+
+  // For all other non-SUPER sections (AB, BC, AC, A, B, C), badge must display WINNER
   if (catUpper && catUpper !== 'SUPER') {
     return 'WINNER';
   }
@@ -73,6 +83,10 @@ const getPrizePositionDisplay = (card: any, category?: string): string => {
 
 const getPrizeRank = (prizeStr: string): number => {
   const p = (prizeStr || '').toUpperCase();
+  if (p.includes('STRAIGHT')) return 1;
+  if (p.includes('DOUBLE DIRECT')) return 2;
+  if (p.includes('DOUBLE TURN')) return 3;
+  if (p.includes('ULTA')) return 4;
   if (p.includes('1ST') || p.includes('1 DIGIT') || p.includes('2 DIGIT') || p.includes('BOX')) return 1;
   if (p.includes('2ND')) return 2;
   if (p.includes('3RD')) return 3;
