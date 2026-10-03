@@ -104,11 +104,11 @@ const getPrizePositionDisplay = (card: any, category?: string): string => {
   // Specific winning type for BOX category
   if (catUpper === 'BOX') {
     const p = (card.prize || '').toUpperCase();
-    if (p.includes('DOUBLE DIRECT')) return 'BOX - DOUBLE DIRECT';
-    if (p.includes('DOUBLE TURN')) return 'BOX - DOUBLE TURN';
-    if (p.includes('ULTA')) return 'BOX - ULTA TURN';
-    if (p.includes('STRAIGHT')) return 'BOX - STRAIGHT';
-    return 'BOX - WINNER';
+    if (p.includes('DOUBLE DIRECT')) return 'DOUBLE DIRECT';
+    if (p.includes('DOUBLE TURN')) return 'DOUBLE TURN';
+    if (p.includes('ULTA') || p.includes('ULTRA')) return 'ULTRA TURN';
+    if (p.includes('STRAIGHT')) return 'STRAIGHT';
+    return 'WINNER';
   }
 
   // For all other non-SUPER sections (AB, BC, AC, A, B, C), badge must display WINNER
