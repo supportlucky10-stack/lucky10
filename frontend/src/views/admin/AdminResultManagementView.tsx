@@ -989,12 +989,24 @@ export const AdminResultManagementView: React.FC = () => {
         )}
       </div>
 
-      {/* DEDICATED OFF-SCREEN SHARE CARD (Exact same styling and proportions as Customer TodaysResultView) */}
+      {/* DEDICATED OFF-SCREEN SHARE CARD (Hidden completely off-screen to eliminate iPhone background bleed) */}
       <div
-        id="admin-result-share-container"
-        className="fixed left-0 top-0 -z-50 pointer-events-none max-w-md w-full sm:w-[420px] bg-black p-2 pb-5 space-y-1.5 select-none"
+        style={{
+          position: 'fixed',
+          left: '-9999px',
+          top: '-9999px',
+          width: '420px',
+          maxWidth: '420px',
+          zIndex: -9999,
+          pointerEvents: 'none',
+          overflow: 'hidden',
+        }}
         aria-hidden="true"
       >
+        <div
+          id="admin-result-share-container"
+          className="w-[420px] bg-black p-2 pb-5 space-y-1.5 select-none text-white font-sans"
+        >
         {/* Top Controls: Row 1 (Date Pill & Change Date Button) & Row 2 (TIME Dropdown) */}
         <div className="space-y-1.5 shrink-0">
           <div className="grid grid-cols-2 gap-2 items-center">
@@ -1072,6 +1084,7 @@ export const AdminResultManagementView: React.FC = () => {
             })}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
