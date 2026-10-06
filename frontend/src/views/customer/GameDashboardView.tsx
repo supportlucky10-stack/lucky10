@@ -329,6 +329,7 @@ export const GameDashboardView: React.FC = () => {
       setEndRange('');
       setStepVal('');
       setInputCount('');
+      setIsReverse(false);
     }
   };
 
@@ -380,6 +381,7 @@ export const GameDashboardView: React.FC = () => {
       setEndRange('');
       setStepVal('');
       setInputCount('');
+      setIsReverse(false);
     }
   };
 
@@ -492,6 +494,8 @@ export const GameDashboardView: React.FC = () => {
       setStepVal('');
       setInputCount('');
       setBoxCount('');
+      setIsSet(false);
+      setIsReverse(false);
     }
   };
 
