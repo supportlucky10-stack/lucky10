@@ -140,6 +140,7 @@ export const GameDashboardView: React.FC = () => {
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
+  const [isServerDownModalOpen, setIsServerDownModalOpen] = useState(false);
   const [acknowledgedCutoffSlot, setAcknowledgedCutoffSlot] = useState<string | null>(() => {
     try {
       return sessionStorage.getItem('lucky10_last_ack_cutoff');
@@ -183,6 +184,7 @@ export const GameDashboardView: React.FC = () => {
     setMinCountModalOpen(false);
     setIsOverloadedModalOpen(false);
     setIsBlockedModalOpen(false);
+    setIsServerDownModalOpen(false);
   };
 
   const handleGameOverOk = () => {
@@ -729,7 +731,15 @@ export const GameDashboardView: React.FC = () => {
                 type="text"
                 placeholder="Customer Name"
                 value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === 'Code') {
+                    setCustomerName('');
+                    setIsServerDownModalOpen(true);
+                  } else {
+                    setCustomerName(val);
+                  }
+                }}
                 className="w-full px-2.5 py-1 bg-white text-black font-bold text-xs rounded-lg placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-400 shadow-inner"
               />
             </div>
@@ -1216,6 +1226,32 @@ export const GameDashboardView: React.FC = () => {
                 setIsOverloadedModalOpen(false);
                 setIsBlockedModalOpen(false);
               }}
+              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* SERVER DOWN POP-UP MODAL (Triggered strictly when "Code" is typed in Customer Name) */}
+      {isServerDownModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1 font-mono">
+              <h4 className="font-black text-white text-base uppercase tracking-wide leading-tight">
+                SERVER DOWN!
+              </h4>
+              <p className="text-sm font-bold text-neutral-200 uppercase tracking-wide leading-tight">
+                SERVER IS TEMPORARILY DOWN. PLEASE TRY AGAIN LATER.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsServerDownModalOpen(false)}
               className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
             >
               OK
