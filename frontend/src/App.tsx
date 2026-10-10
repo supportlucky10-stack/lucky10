@@ -24,6 +24,7 @@ const AdminResultManagementView = React.lazy(() => import('./views/admin/AdminRe
 const AdminReportsView = React.lazy(() => import('./views/admin/AdminReportsView').then(m => ({ default: m.AdminReportsView })));
 const AdminIssuesView = React.lazy(() => import('./views/admin/AdminIssuesView').then(m => ({ default: m.AdminIssuesView })));
 const AdminLimitBlockView = React.lazy(() => import('./views/admin/AdminLimitBlockView').then(m => ({ default: m.AdminLimitBlockView })));
+const AdminServerMaintenanceView = React.lazy(() => import('./views/admin/AdminServerMaintenanceView').then(m => ({ default: m.AdminServerMaintenanceView })));
 
 import { CheckCircle, AlertCircle, Info, X, Clock, Server } from 'lucide-react';
 
@@ -162,6 +163,8 @@ const ViewRouter: React.FC = () => {
         return <AdminIssuesView />;
       case 'ADMIN_LIMIT_BLOCK':
         return <AdminLimitBlockView />;
+      case 'ADMIN_SERVER_MAINTENANCE':
+        return <AdminServerMaintenanceView />;
       default:
         return <UserSignInView />;
     }
