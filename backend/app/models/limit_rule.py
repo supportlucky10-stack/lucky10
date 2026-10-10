@@ -37,3 +37,12 @@ class GlobalLimitRule(Base):
     default_max_count = Column(Float, default=100.0, nullable=False)
     is_enabled = Column(Boolean, default=False, nullable=False)
     game_slot = Column(String, default="ALL", nullable=False)
+
+class MaintenanceSetting(Base):
+    __tablename__ = "maintenance_settings"
+
+    id = Column(String, primary_key=True, default="default")
+    is_enabled = Column(Boolean, default=False, nullable=False)
+    message = Column(String, default="Server is under maintenance. Please try again later.", nullable=False)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+

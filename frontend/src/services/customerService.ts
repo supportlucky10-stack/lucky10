@@ -50,8 +50,14 @@ export const customerService = {
     blockedNumbers: any[];
     agencyLimits: any[];
     globalLimit: any | null;
+    maintenance?: { isEnabled: boolean; message: string };
+    taken3DigitNumbers?: Record<string, string[]>;
   }> {
     return await apiRequest('/api/customer/limits', { method: 'GET' });
+  },
+
+  async getMaintenanceStatus(): Promise<{ isEnabled: boolean; message: string }> {
+    return await apiRequest<{ isEnabled: boolean; message: string }>('/api/customer/maintenance', { method: 'GET' });
   },
 
   async getGameStatus(): Promise<{

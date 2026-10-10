@@ -132,4 +132,16 @@ export const adminService = {
       body: JSON.stringify(data),
     });
   },
+
+  async getMaintenanceStatus(): Promise<{ isEnabled: boolean; message: string }> {
+    return await apiRequest<{ isEnabled: boolean; message: string }>('/api/admin/maintenance', { method: 'GET' });
+  },
+
+  async updateMaintenanceStatus(data: { isEnabled: boolean; message?: string }): Promise<{ isEnabled: boolean; message: string }> {
+    return await apiRequest<{ isEnabled: boolean; message: string }>('/api/admin/maintenance', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
 };
+

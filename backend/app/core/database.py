@@ -57,6 +57,8 @@ Base = declarative_base()
 
 def ensure_schema_compatibility():
     try:
+        import app.models
+        Base.metadata.create_all(bind=engine)
         with engine.begin() as conn:
             if engine.dialect.name == "sqlite":
                 cols = [row[1] for row in conn.execute(text("PRAGMA table_info(game_results)")).fetchall()]

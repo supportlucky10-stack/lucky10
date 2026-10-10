@@ -69,7 +69,11 @@ interface AppContextType {
   updateGlobalLimit: (rule: Partial<GlobalLimitRule>) => void;
   checkBetEligibility: (agencyIdOrName: string, slot: GameSlot, number: string, count: number, betType?: string, customerName?: string, skipBetSlip?: boolean) => { ok: boolean; reason?: string; type?: 'BLOCKED' | 'OVERLOADED' };
   refreshAllData: () => Promise<void>;
+  maintenanceState: { isEnabled: boolean; message: string };
+  updateMaintenance: (data: { isEnabled: boolean; message?: string }) => Promise<void>;
+  taken3DigitNumbers: Record<string, string[]>;
 }
+
 
 
 
@@ -192,6 +196,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isEnabled: false,
     gameSlot: 'ALL',
   });
+  const [maintenanceState, setMaintenanceState] = useState<{ isEnabled: boolean; message: string }>({
+    isEnabled: false,
+    message: 'Server is currently under maintenance. Please try again later.',
+  });
+  const [taken3DigitNumbers, setTaken3DigitNumbers] = useState<Record<string, string[]>>({});
+
 
   const isSavingTicketRef = useRef(false);
 
@@ -414,8 +424,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setBlockedNumbers(lims.blockedNumbers || []);
           setAgencyNumberLimits(lims.agencyLimits || []);
           setGlobalLimitRule(lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' });
+          if (lims.maintenance) {
+            setMaintenanceState(lims.maintenance);
+          }
+          if (lims.taken3DigitNumbers) {
+            setTaken3DigitNumbers(lims.taken3DigitNumbers);
+          }
         }
       } catch {}
+
 
       if (currentUser && !isAdminLoggedIn) {
         try {
@@ -515,8 +532,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setAgencyNumberLimits((prev) => (areAgencyLimitsEqual(prev, newAgencyLimits) ? prev : newAgencyLimits));
           const newGlobal = lims.globalLimit || { isEnabled: false, defaultMaxCount: 100, gameSlot: 'ALL' };
           setGlobalLimitRule((prev) => (areGlobalLimitsEqual(prev, newGlobal) ? prev : newGlobal));
+          if (lims.maintenance) {
+            setMaintenanceState((prev) => {
+              if (prev.isEnabled === lims.maintenance!.isEnabled && prev.message === lims.maintenance!.message) {
+                return prev;
+              }
+              return lims.maintenance!;
+            });
+          }
+          if (lims.taken3DigitNumbers) {
+            setTaken3DigitNumbers(lims.taken3DigitNumbers);
+          }
         }
       } catch {}
+
 
       if (isAdminLoggedIn) {
         try {
@@ -1003,6 +1032,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch (e) {}
     addToast('Global limit rule updated', 'success');
+  };
+
+  const updateMaintenance = async (data: { isEnabled: boolean; message?: string }) => {
+    try {
+      const updated = await adminService.updateMaintenanceStatus(data);
+      setMaintenanceState(updated);
+      addToast(
+        data.isEnabled
+          ? 'Server Maintenance enabled. User portal is now locked.'
+          : 'Server Maintenance disabled. User portal is now unlocked.',
+        data.isEnabled ? 'info' : 'success'
+      );
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to update maintenance status', 'error');
+    }
   };
 
   const addToBetSlip = (item: Omit<BetSlipItem, 'id'>): boolean => {
@@ -1620,6 +1664,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateGlobalLimit,
     checkBetEligibility,
     refreshAllData,
+    maintenanceState,
+    updateMaintenance,
+    taken3DigitNumbers,
   }), [
     currentView,
     setCurrentView,
@@ -1669,7 +1716,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateGlobalLimit,
     checkBetEligibility,
     refreshAllData,
+    maintenanceState,
+    updateMaintenance,
+    taken3DigitNumbers,
   ]);
+
 
   return (
     <AppContext.Provider value={contextValue}>

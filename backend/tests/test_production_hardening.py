@@ -82,7 +82,7 @@ def test_sequential_ticket_number_generation(client, test_customer_user, custome
             "totalAmount": 10.0,
             "items": [
                 {
-                    "number": "123",
+                    "number": f"{100 + i}",
                     "count": 1,
                     "type": "SUPER",
                     "unitPrice": 10.0,

@@ -17,3 +17,8 @@ class GlobalLimitUpdate(BaseModel):
     defaultMaxCount: Optional[float] = 100.0
     isEnabled: Optional[bool] = False
     gameSlot: Optional[str] = "ALL"
+
+class MaintenanceSettingUpdate(BaseModel):
+    isEnabled: bool
+    message: Optional[str] = "Server is under maintenance. Please try again later."
+

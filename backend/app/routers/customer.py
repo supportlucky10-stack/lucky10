@@ -11,7 +11,7 @@ from app.models.user import User
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
 from app.models.issue import IssueTicket
-from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
+from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule, MaintenanceSetting
 from app.schemas.user import UserAccountResponse
 from app.schemas.ticket import TicketCreateSchema, PlacedTicketResponse, BetItemSchema
 from app.schemas.issue import IssueCreateSchema, IssueResponseSchema
@@ -196,6 +196,14 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
         raise HTTPException(status_code=400, detail="Your bet slip is empty!")
 
     with _ticket_placement_lock:
+        # ── 0. SERVER MAINTENANCE CHECK ──
+        m_setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
+        if m_setting and m_setting.is_enabled:
+            raise HTTPException(
+                status_code=503,
+                detail=m_setting.message or "Server is currently under maintenance. Please try again later."
+            )
+
         # ── 1. AUTHORITATIVE BILLING CUTOFF VALIDATION ──
         now_ist = get_ist_now()
         business_date = get_business_date(now_ist)
@@ -214,94 +222,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
 
         user = current_user
 
-        # ── 1. SERVER-SIDE BLOCK NUMBER ENFORCEMENT ──
-        # Number cannot be played if blocked for this slot or ALL
-        blocked_rules = db.query(BlockedNumberRule).filter(
-            (BlockedNumberRule.game_slot == "ALL") | (BlockedNumberRule.game_slot == req.gameSlot)
-        ).all()
-        blocked_set = {b.number.strip() for b in blocked_rules}
-
-        for item in req.items:
-            raw_num = item.number.strip()
-            clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
-            if clean_num in blocked_set or raw_num in blocked_set:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Number cant be played"
-                )
-
-        # ── 2. SERVER-SIDE LIMIT ENFORCEMENT (AGENCY LIMITS & LIMIT ALL) ──
-        agency_limits = db.query(AgencyNumberLimit).filter(
-            (AgencyNumberLimit.agency_id == user.id) |
-            (AgencyNumberLimit.agency_name.ilike(user.username)) |
-            (AgencyNumberLimit.agency_name.ilike(user.name)) |
-            (AgencyNumberLimit.agency_id == "ALL"),
-            (AgencyNumberLimit.game_slot == "ALL") | (AgencyNumberLimit.game_slot == req.gameSlot)
-        ).all()
-
-        global_limit = db.query(GlobalLimitRule).first()
-        has_agency_limits = len(agency_limits) > 0
-        has_global_limit = bool(global_limit and global_limit.is_enabled and (global_limit.game_slot == "ALL" or global_limit.game_slot == req.gameSlot))
-
-        if has_agency_limits or has_global_limit:
-            # Query placed count for TODAY (exact IST business day) in this game slot for this agency
-            today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
-            today_start_utc = today_start_ist.astimezone(timezone.utc)
-            today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
-            today_end_utc = today_end_ist.astimezone(timezone.utc)
-
-            existing_items = (
-                db.query(BetItem.number, BetItem.count)
-                .join(Ticket, BetItem.ticket_id == Ticket.id)
-                .filter(
-                    Ticket.user_id == user.id,
-                    Ticket.game_slot == req.gameSlot,
-                    Ticket.placed_at >= today_start_utc,
-                    Ticket.placed_at <= today_end_utc,
-                )
-                .all()
-            )
-
-            placed_counts: dict[str, float] = {}
-            for num_val, cnt_val in existing_items:
-                n_raw = num_val.strip()
-                n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
-                placed_counts[n_raw] = placed_counts.get(n_raw, 0.0) + float(cnt_val)
-                if n_clean != n_raw:
-                    placed_counts[n_clean] = placed_counts.get(n_clean, 0.0) + float(cnt_val)
-
-            batch_counts: dict[str, float] = {}
-            for item in req.items:
-                raw_num = item.number.strip()
-                clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
-                item_cnt = float(item.count)
-
-                current_placed = max(placed_counts.get(raw_num, 0.0), placed_counts.get(clean_num, 0.0))
-                current_batch = max(batch_counts.get(raw_num, 0.0), batch_counts.get(clean_num, 0.0))
-                total_requested = current_placed + current_batch + item_cnt
-
-                # Check agency-specific limit
-                spec_lim = next((l for l in agency_limits if l.number.strip() == raw_num or l.number.strip() == clean_num), None)
-                if spec_lim:
-                    if total_requested > spec_lim.max_count:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="Number Overloaded! Not in Booked."
-                        )
-
-                # Check global limit ("Limit All")
-                if has_global_limit:
-                    if total_requested > global_limit.default_max_count:
-                        raise HTTPException(
-                            status_code=400,
-                            detail="Number Overloaded! Not in Booked."
-                        )
-
-                batch_counts[raw_num] = batch_counts.get(raw_num, 0.0) + item_cnt
-                if clean_num != raw_num:
-                    batch_counts[clean_num] = batch_counts.get(clean_num, 0.0) + item_cnt
-
-        # ── 3. DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
+        # ── DUPLICATE / RETRY IDEMPOTENCY GUARD (3-Second Window) ──
         c_req_clean = (req.customerName or "").strip().lower()
         if c_req_clean == "customer":
             c_req_clean = ""
@@ -321,6 +242,45 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                 rec_nums = sorted([f"{i.number}:{i.count}:{i.type}" for i in recent_same_ticket.items])
                 if req_nums == rec_nums:
                     return format_ticket(recent_same_ticket)
+
+        # ── 2. 3-DIGIT NO-REPETITION ENFORCEMENT PER GAME SLOT ──
+        three_digit_nums_in_req = set()
+        for item in req.items:
+            raw_num = item.number.strip()
+            clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
+            if len(clean_num) == 3 and clean_num.isdigit():
+                if clean_num in three_digit_nums_in_req:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Number {clean_num} can only be placed once in this game slot."
+                    )
+                three_digit_nums_in_req.add(clean_num)
+
+        if three_digit_nums_in_req:
+            today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_start_utc = today_start_ist.astimezone(timezone.utc)
+            today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
+            today_end_utc = today_end_ist.astimezone(timezone.utc)
+
+            existing_3digit_items = (
+                db.query(BetItem.number)
+                .join(Ticket, BetItem.ticket_id == Ticket.id)
+                .filter(
+                    Ticket.game_slot == req.gameSlot,
+                    Ticket.placed_at >= today_start_utc,
+                    Ticket.placed_at <= today_end_utc,
+                )
+                .all()
+            )
+            for (num_val,) in existing_3digit_items:
+                n_raw = (num_val or '').strip()
+                n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
+                if n_clean in three_digit_nums_in_req:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Number {n_clean} has reached its limit and cannot be placed in this game slot."
+                    )
+
 
         # Authoritative calculation of financial values
 
@@ -513,6 +473,33 @@ def get_customer_limits(db: Session = Depends(get_db)):
     blocked_rules = db.query(BlockedNumberRule).order_by(BlockedNumberRule.id.asc()).all()
     agency_limits = db.query(AgencyNumberLimit).order_by(AgencyNumberLimit.id.asc()).all()
     global_limit = db.query(GlobalLimitRule).first()
+    m_setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
+
+    now_ist = get_ist_now()
+    today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_utc = today_start_ist.astimezone(timezone.utc)
+    today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
+    today_end_utc = today_end_ist.astimezone(timezone.utc)
+
+    all_today_3digit = (
+        db.query(Ticket.game_slot, BetItem.number)
+        .join(Ticket, BetItem.ticket_id == Ticket.id)
+        .filter(
+            Ticket.placed_at >= today_start_utc,
+            Ticket.placed_at <= today_end_utc,
+        )
+        .all()
+    )
+    taken_3digit: dict[str, list[str]] = {}
+    for s_val, n_val in all_today_3digit:
+        n_raw = (n_val or '').strip()
+        n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
+        if len(n_clean) == 3 and n_clean.isdigit():
+            if s_val not in taken_3digit:
+                taken_3digit[s_val] = []
+            if n_clean not in taken_3digit[s_val]:
+                taken_3digit[s_val].append(n_clean)
+
     return {
         "blockedNumbers": [
             {
@@ -539,4 +526,17 @@ def get_customer_limits(db: Session = Depends(get_db)):
             "isEnabled": global_limit.is_enabled if global_limit else False,
             "gameSlot": global_limit.game_slot if global_limit else "ALL",
         } if global_limit else None,
+        "maintenance": {
+            "isEnabled": m_setting.is_enabled if m_setting else False,
+            "message": m_setting.message if m_setting else "Server is under maintenance. Please try again later.",
+        },
+        "taken3DigitNumbers": taken_3digit,
     }
+
+@router.get("/maintenance")
+def get_customer_maintenance_status(db: Session = Depends(get_db)):
+    setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
+    if not setting:
+        return {"isEnabled": False, "message": "Server is under maintenance. Please try again later."}
+    return {"isEnabled": setting.is_enabled, "message": setting.message}
+

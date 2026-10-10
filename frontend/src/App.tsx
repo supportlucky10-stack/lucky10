@@ -25,10 +25,11 @@ const AdminReportsView = React.lazy(() => import('./views/admin/AdminReportsView
 const AdminIssuesView = React.lazy(() => import('./views/admin/AdminIssuesView').then(m => ({ default: m.AdminIssuesView })));
 const AdminLimitBlockView = React.lazy(() => import('./views/admin/AdminLimitBlockView').then(m => ({ default: m.AdminLimitBlockView })));
 
-import { CheckCircle, AlertCircle, Info, X, Clock } from 'lucide-react';
+import { CheckCircle, AlertCircle, Info, X, Clock, Server } from 'lucide-react';
 
 const ViewRouter: React.FC = () => {
-  const { currentView, toasts, removeToast, isAdminLoggedIn, currentUser, logout } = useApp();
+  const { currentView, toasts, removeToast, isAdminLoggedIn, currentUser, logout, maintenanceState } = useApp();
+
   const [showTimeoutModal, setShowTimeoutModal] = useState<boolean>(false);
 
   const isUserInSession = Boolean(currentUser) || isAdminLoggedIn || (currentView !== 'USER_SIGN_IN' && currentView !== 'ADMIN_SIGN_IN');
@@ -224,8 +225,36 @@ const ViewRouter: React.FC = () => {
         </div>
       )}
 
+      {/* SERVER UNDER MAINTENANCE FULL-SCREEN LOCKOUT (Customer view only) */}
+      {maintenanceState?.isEnabled && !isAdminSection && (
+        <div className="fixed inset-0 z-[999999] bg-black/95 backdrop-blur-lg flex items-center justify-center p-4 animate-fade-in font-sans select-none pointer-events-auto">
+          <div className="bg-gradient-to-b from-neutral-900 via-neutral-950 to-black border-2 border-amber-500/80 rounded-2xl p-6 sm:p-8 max-w-md w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.35)] space-y-5 animate-drop-in">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-full bg-amber-950/60 border-2 border-amber-400/60 flex items-center justify-center shadow-[0_0_25px_rgba(245,158,11,0.3)]">
+              <Server className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400 animate-pulse" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest bg-amber-950 text-amber-300 border border-amber-800 font-mono">
+                NOTICE
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-white tracking-wider uppercase font-mono">
+                SERVER UNDER MAINTENANCE
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-300 font-semibold leading-relaxed pt-2">
+                {maintenanceState.message || 'Server is currently under maintenance. Please try again later.'}
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-neutral-900 text-[11px] text-neutral-400 font-mono">
+              All player services are temporarily paused while maintenance is in progress. Please check back shortly.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* PWA Install Modal (Never shown in admin) */}
       {!isAdminSection && <InstallPromptModal />}
+
 
       <React.Suspense fallback={<div className="p-8 text-center text-gold/60 text-xs font-mono">Loading...</div>}>
         {renderView()}

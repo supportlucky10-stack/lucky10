@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem } from '../../types';
-import { isGameSlotOpen, getBusinessDateIST } from '../../utils/dateUtils';
+import { isGameSlotOpen, getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
 
 interface SlotTheme {
@@ -122,6 +122,8 @@ export const GameDashboardView: React.FC = () => {
     saveTicket,
     setCurrentView,
     addToast,
+    placedTickets,
+    taken3DigitNumbers,
   } = useApp();
 
   const [isSlotDropdownOpen, setIsSlotDropdownOpen] = useState(false);
@@ -141,6 +143,17 @@ export const GameDashboardView: React.FC = () => {
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
   const [isServerDownModalOpen, setIsServerDownModalOpen] = useState(false);
+
+  // 3-Digit Limit Conflict Modal State (Once per game slot rule)
+  interface ConflictModalData {
+    conflictingNumbers: string[];
+    pendingItems: Omit<BetSlipItem, 'id'>[];
+    customerName?: string;
+    onOkSuccess?: () => void;
+  }
+  const [conflictModalData, setConflictModalData] = useState<ConflictModalData | null>(null);
+  const [isLimitConflictModalOpen, setIsLimitConflictModalOpen] = useState(false);
+
   const [acknowledgedCutoffSlot, setAcknowledgedCutoffSlot] = useState<string | null>(() => {
     try {
       return sessionStorage.getItem('lucky10_last_ack_cutoff');
@@ -185,7 +198,114 @@ export const GameDashboardView: React.FC = () => {
     setIsOverloadedModalOpen(false);
     setIsBlockedModalOpen(false);
     setIsServerDownModalOpen(false);
+    setIsLimitConflictModalOpen(false);
+    setConflictModalData(null);
   };
+
+  const todayStr = getBusinessDateIST();
+
+  // Set of all 3-digit numbers already placed for this active slot today (System-wide + staging)
+  const getAlreadyPlaced3DigitNumbers = (): Set<string> => {
+    const set = new Set<string>();
+
+    // 1. Backend-wide placed 3-digit numbers for this active slot
+    const backendTaken = taken3DigitNumbers[activeGameSlot] || [];
+    backendTaken.forEach((n) => set.add(n));
+
+    // 2. Placed tickets for today in this slot
+    placedTickets.forEach((t) => {
+      const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
+      if (tDate === todayStr && t.gameSlot === activeGameSlot) {
+        t.items.forEach((it) => {
+          const raw = (it.number || '').trim();
+          const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+          if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+            set.add(clean);
+          }
+        });
+      }
+    });
+
+    // 3. Numbers currently in staging bet slip
+    betSlip.forEach((it) => {
+      const raw = (it.number || '').trim();
+      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        set.add(clean);
+      }
+    });
+
+    return set;
+  };
+
+  const checkBatchFor3DigitConflicts = (
+    itemsToAdd: Omit<BetSlipItem, 'id'>[]
+  ): { hasConflict: boolean; conflictingNumbers: string[] } => {
+    const bookedSet = getAlreadyPlaced3DigitNumbers();
+    const conflicting = new Set<string>();
+    const seenInBatch = new Set<string>();
+
+    for (const it of itemsToAdd) {
+      const raw = (it.number || '').trim();
+      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        if (bookedSet.has(clean) || seenInBatch.has(clean)) {
+          conflicting.add(clean);
+        } else {
+          seenInBatch.add(clean);
+        }
+      }
+    }
+
+    return {
+      hasConflict: conflicting.size > 0,
+      conflictingNumbers: Array.from(conflicting),
+    };
+  };
+
+  const handleConflictModalOk = () => {
+    if (!conflictModalData) {
+      setIsLimitConflictModalOpen(false);
+      return;
+    }
+
+    const { conflictingNumbers, pendingItems, customerName: cName, onOkSuccess } = conflictModalData;
+
+    // Filter out items matching conflicting 3-digit numbers
+    const validItems = pendingItems.filter((it) => {
+      const raw = (it.number || '').trim();
+      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+      return !conflictingNumbers.includes(clean);
+    });
+
+    setIsLimitConflictModalOpen(false);
+    setConflictModalData(null);
+
+    if (validItems.length > 0) {
+      const res = addBatchToBetSlip(validItems, cName);
+      if (res.blockedCount > 0 || res.overloadedCount > 0) {
+        setIsOverloadedModalOpen(true);
+      }
+      if (res.addedCount > 0) {
+        addToast(
+          `Added ${res.addedCount} item(s). Excluded limited number(s): ${conflictingNumbers.join(', ')}`,
+          'success'
+        );
+        if (onOkSuccess) onOkSuccess();
+      }
+    } else {
+      addToast(
+        `Number ${conflictingNumbers.join(', ')} reached limit. No other numbers to add.`,
+        'info'
+      );
+    }
+  };
+
+  const handleConflictModalBack = () => {
+    setIsLimitConflictModalOpen(false);
+    setConflictModalData(null);
+  };
+
 
   const handleGameOverOk = () => {
     const currentBusinessDate = getBusinessDateIST();
@@ -482,6 +602,27 @@ export const GameDashboardView: React.FC = () => {
       }
     });
 
+    const conflictCheck = checkBatchFor3DigitConflicts(itemsToAdd);
+    if (conflictCheck.hasConflict) {
+      setConflictModalData({
+        conflictingNumbers: conflictCheck.conflictingNumbers,
+        pendingItems: itemsToAdd,
+        customerName,
+        onOkSuccess: () => {
+          setInputNum('');
+          setStartRange('');
+          setEndRange('');
+          setStepVal('');
+          setInputCount('');
+          setBoxCount('');
+          setIsSet(false);
+          setIsReverse(false);
+        },
+      });
+      setIsLimitConflictModalOpen(true);
+      return;
+    }
+
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0 || res.overloadedCount > 0) {
@@ -538,7 +679,19 @@ export const GameDashboardView: React.FC = () => {
         return;
       }
 
+      const conflictCheck = checkBatchFor3DigitConflicts(parseRes.items);
+      if (conflictCheck.hasConflict) {
+        setConflictModalData({
+          conflictingNumbers: conflictCheck.conflictingNumbers,
+          pendingItems: parseRes.items,
+          customerName,
+        });
+        setIsLimitConflictModalOpen(true);
+        return;
+      }
+
       const res = addBatchToBetSlip(parseRes.items, customerName);
+
 
       if (res.blockedCount > 0 || res.overloadedCount > 0) {
         setIsOverloadedModalOpen(true);
@@ -1201,6 +1354,54 @@ export const GameDashboardView: React.FC = () => {
             >
               OK
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3-DIGIT LIMIT REACHED POP-UP MODAL (OK / BACK) */}
+      {isLimitConflictModalOpen && conflictModalData && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none font-sans">
+          <div className="bg-neutral-950 border-2 border-amber-500 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-[0_0_45px_rgba(245,158,11,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-amber-950/80 text-amber-400 border border-amber-600 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
+            </div>
+
+            <div className="space-y-2 font-mono">
+              <h4 className="font-black text-white text-base sm:text-lg uppercase tracking-wide leading-tight">
+                LIMIT REACHED!
+              </h4>
+              <p className="text-xs sm:text-sm font-semibold text-neutral-200 leading-relaxed">
+                The number{' '}
+                <span className="text-amber-400 font-black">
+                  {conflictModalData.conflictingNumbers.join(', ')}
+                </span>{' '}
+                has reached its limit and cannot be placed in {activeGameSlot}.
+              </p>
+              <p className="text-[11px] sm:text-xs text-neutral-400 font-sans">
+                Numbers other than{' '}
+                <span className="text-amber-300 font-bold">
+                  {conflictModalData.conflictingNumbers.join(', ')}
+                </span>{' '}
+                can be entered.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 pt-2 font-mono">
+              <button
+                type="button"
+                onClick={handleConflictModalBack}
+                className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-300 hover:text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-neutral-700"
+              >
+                BACK
+              </button>
+              <button
+                type="button"
+                onClick={handleConflictModalOk}
+                className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:brightness-110 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-amber-300"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}

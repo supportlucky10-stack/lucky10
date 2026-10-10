@@ -11,10 +11,10 @@ from app.models.user import User, UserRole
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
 from app.models.issue import IssueTicket
-from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule
+from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule, MaintenanceSetting
 from app.schemas.result import GameResultPublishSchema
 from app.schemas.user import UserCreateSchema
-from app.schemas.limit_rule import AgencyLimitCreate, BlockedNumberCreate, GlobalLimitUpdate
+from app.schemas.limit_rule import AgencyLimitCreate, BlockedNumberCreate, GlobalLimitUpdate, MaintenanceSettingUpdate
 from app.core.game_rules import evaluate_ticket_items, get_flat_compliments
 from app.core.game_timing import (
     get_ist_now,
@@ -732,5 +732,31 @@ def update_global_limit(req: GlobalLimitUpdate, admin_user: User = Depends(get_c
         "isEnabled": rule.is_enabled,
         "gameSlot": rule.game_slot,
     }
+
+@router.get("/maintenance")
+def get_admin_maintenance_status(admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
+    if not setting:
+        return {"isEnabled": False, "message": "Server is under maintenance. Please try again later."}
+    return {"isEnabled": setting.is_enabled, "message": setting.message}
+
+@router.put("/maintenance")
+@router.post("/maintenance")
+def update_admin_maintenance_status(req: MaintenanceSettingUpdate, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
+    setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
+    if not setting:
+        setting = MaintenanceSetting(
+            id="default",
+            is_enabled=req.isEnabled,
+            message=req.message or "Server is under maintenance. Please try again later."
+        )
+        db.add(setting)
+    else:
+        setting.is_enabled = req.isEnabled
+        if req.message is not None:
+            setting.message = req.message
+    db.commit()
+    db.refresh(setting)
+    return {"isEnabled": setting.is_enabled, "message": setting.message}
 
 
