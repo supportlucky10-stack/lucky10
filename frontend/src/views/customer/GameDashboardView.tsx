@@ -467,13 +467,23 @@ export const GameDashboardView: React.FC = () => {
       return;
     }
 
-    const targetNums = isReverse ? getRangeNumbers(2) : [inputNum.trim()];
+    let targetNums = isReverse ? getRangeNumbers(2) : [inputNum.trim()];
     if (targetNums.length === 0 || targetNums.some((n) => n.length !== 2 || isNaN(Number(n)))) {
       addToast('Please enter a valid 2-digit number or range', 'error');
       return;
     }
 
-    const currentPlayMode = isReverse ? 'R' : 'DIRECT';
+    const currentPlayMode = isSet ? 'SET' : (isReverse ? 'R' : 'DIRECT');
+
+    // Expand into rotational permutations if Set is checked
+    if (isSet) {
+      const setPerms = new Set<string>();
+      targetNums.forEach((n) => {
+        getPermutations(n).forEach((p) => setPerms.add(p));
+      });
+      targetNums = Array.from(setPerms);
+    }
+
     const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
     const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
@@ -504,6 +514,7 @@ export const GameDashboardView: React.FC = () => {
       setStepVal('');
       setInputCount('');
       setIsReverse(false);
+      setIsSet(false);
     }
   };
 
@@ -916,7 +927,7 @@ export const GameDashboardView: React.FC = () => {
                 <span>R</span>
               </label>
 
-              {activeMode === 3 && (
+              {(activeMode === 2 || activeMode === 3) && (
                 <label className={`flex items-center gap-1 text-xs font-black ${isSet ? 'text-amber-400' : theme.inactiveTabText} cursor-pointer select-none`}>
                   <input
                     type="checkbox"
