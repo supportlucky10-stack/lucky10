@@ -772,34 +772,42 @@ export const MyPlayReportView: React.FC = () => {
         if (!evalRes.isWinner) return;
 
         const winAmt = evalRes.winAmount;
-        const prizeTitle = evalRes.prizeTitle;
-
         if (winAmt > 0) {
           const gameTitle = getDisplayGame(item);
           const playModeTitle = getDisplayPlayMode(item);
           const catName = gameTitle;
           const existing = catMap.get(catName) || [];
-          const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
-          const perOccWinAmt = occurrences > 1 ? count * 20 : winAmt;
-          for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
-            const occSuffix = occurrences > 1 ? `_occ_${occIdx}` : '';
+          const prizesToDisplay = evalRes.winningPrizes && evalRes.winningPrizes.length > 0
+            ? evalRes.winningPrizes
+            : (evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1
+                ? Array.from({ length: evalRes.complimentOccurrences }, () => ({
+                    prizeTitle: evalRes.prizeTitle,
+                    winAmount: count * 20,
+                  }))
+                : [{
+                    prizeTitle: evalRes.prizeTitle,
+                    winAmount: winAmt,
+                  }]);
+
+          prizesToDisplay.forEach((prizeObj, pIdx) => {
+            const pSuffix = prizesToDisplay.length > 1 ? `_p_${pIdx + 1}` : '';
             existing.push({
-              id: item.id ? `w_${ticket.id}_${item.id}${occSuffix}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeTitle}${occSuffix}`,
+              id: item.id ? `w_${ticket.id}_${item.id}${pSuffix}` : `w_${ticket.id}_${itemIdx}_${num}_${prizeObj.prizeTitle}${pSuffix}`,
               ticketId: ticket.ticketId || ticket.id,
               userName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
               agencyName: (ticket as any).agencyName || (ticket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency',
               customerName: formatCustomerName((ticket as any).customerName),
-              prize: prizeTitle,
+              prize: prizeObj.prizeTitle,
               number: num,
               count: count,
-              total: perOccWinAmt,
+              total: prizeObj.winAmount,
               slot: ticket.gameSlot,
               type: gameTitle,
               gameMode: gameTitle,
               playMode: playModeTitle,
               placedAt: ticket.placedAt,
             });
-          }
+          });
           catMap.set(catName, existing);
         }
       });

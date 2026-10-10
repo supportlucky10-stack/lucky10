@@ -227,63 +227,64 @@ def evaluate_bet_item(
     # ----------------------------------------------------
     target_3digit = clean_digits_only or num_str
     if len(target_3digit) == 3:
+        matched_wins = []
         if target_3digit == p1:
-            return {
-                "is_winner": True,
+            matched_wins.append({
                 "prize_title": "1ST PRIZE",
                 "win_amount": count * 5000.0,
-                "matched_number": num_str,
                 "rate_multiplier": 500.0,
                 "matched_position": "1st Prize (Primary)",
-            }
+            })
         if p2 and target_3digit == p2:
-            return {
-                "is_winner": True,
+            matched_wins.append({
                 "prize_title": "2ND PRIZE",
                 "win_amount": count * 500.0,
-                "matched_number": num_str,
                 "rate_multiplier": 50.0,
                 "matched_position": "2nd Prize",
-            }
+            })
         if p3 and target_3digit == p3:
-            return {
-                "is_winner": True,
+            matched_wins.append({
                 "prize_title": "3RD PRIZE",
                 "win_amount": count * 250.0,
-                "matched_number": num_str,
                 "rate_multiplier": 25.0,
                 "matched_position": "3rd Prize",
-            }
+            })
         if p4 and target_3digit == p4:
-            return {
-                "is_winner": True,
+            matched_wins.append({
                 "prize_title": "4TH PRIZE",
                 "win_amount": count * 100.0,
-                "matched_number": num_str,
                 "rate_multiplier": 10.0,
                 "matched_position": "4th Prize",
-            }
+            })
         if p5 and target_3digit == p5:
-            return {
-                "is_winner": True,
+            matched_wins.append({
                 "prize_title": "5TH PRIZE",
                 "win_amount": count * 50.0,
-                "matched_number": num_str,
                 "rate_multiplier": 5.0,
                 "matched_position": "5th Prize",
-            }
+            })
         num_comp_matches = compliments.count(target_3digit) if compliments else 0
         has_p6 = bool(p6 and target_3digit == p6 and target_3digit not in (compliments or []))
         total_occurrences = num_comp_matches + (1 if has_p6 else 0)
-        if total_occurrences > 0:
+        for _ in range(total_occurrences):
+            matched_wins.append({
+                "prize_title": "6TH / COMPLIMENT PRIZE" if has_p6 else "COMPLIMENT PRIZE",
+                "win_amount": count * 20.0,
+                "rate_multiplier": 2.0,
+                "matched_position": "6th Prize" if has_p6 else "Compliment Prize",
+            })
+
+        if matched_wins:
+            total_win = sum(w["win_amount"] for w in matched_wins)
             return {
                 "is_winner": True,
-                "prize_title": "6TH / COMPLIMENT PRIZE" if (p6 and target_3digit == p6) else "COMPLIMENT PRIZE",
-                "win_amount": count * 20.0 * total_occurrences,
+                "prize_title": matched_wins[0]["prize_title"],
+                "win_amount": total_win,
                 "matched_number": num_str,
-                "rate_multiplier": 2.0,
-                "matched_position": "6th Prize" if (p6 and target_3digit == p6) else "Compliment Prize",
-                "compliment_occurrences": total_occurrences,
+                "rate_multiplier": matched_wins[0]["rate_multiplier"],
+                "matched_position": matched_wins[0]["matched_position"],
+                "compliment_occurrences": total_occurrences if total_occurrences > 0 else 1,
+                "winning_prizes": matched_wins,
             }
 
     return not_won
@@ -324,8 +325,21 @@ def evaluate_ticket_items(
 
         if eval_res["is_winner"]:
             total_win += eval_res["win_amount"]
-            occ = eval_res.get("compliment_occurrences", 1)
-            if occ and occ > 1:
+            winning_prizes = eval_res.get("winning_prizes")
+            if winning_prizes and len(winning_prizes) > 1:
+                for wp in winning_prizes:
+                    winning_items.append({
+                        "item": item,
+                        "eval": {
+                            **eval_res,
+                            "prize_title": wp["prize_title"],
+                            "win_amount": wp["win_amount"],
+                            "rate_multiplier": wp["rate_multiplier"],
+                            "matched_position": wp["matched_position"],
+                        },
+                    })
+            elif eval_res.get("compliment_occurrences", 1) > 1:
+                occ = eval_res["compliment_occurrences"]
                 per_occ_win = cnt * 20.0
                 for _ in range(occ):
                     winning_items.append({

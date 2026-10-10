@@ -12,6 +12,14 @@ export interface GameResultData {
   compliments?: string[][] | string[];
 }
 
+export interface WinningPrizeItem {
+  prizeTitle: string;
+  prizeCategory?: '1ST' | '2ND' | '3RD' | '4TH' | '5TH' | '6TH' | 'BOX' | '2DIGIT' | '1DIGIT' | 'NONE';
+  winAmount: number;
+  rateMultiplier: number;
+  matchedPrizePosition?: string;
+}
+
 export interface EvaluationResult {
   isWinner: boolean;
   prizeTitle: string;
@@ -21,6 +29,7 @@ export interface EvaluationResult {
   rateMultiplier: number;
   matchedPrizePosition?: string;
   complimentOccurrences?: number;
+  winningPrizes?: WinningPrizeItem[];
 }
 
 /**
@@ -256,72 +265,76 @@ export function evaluateBetItem(item: BetSlipItem, result?: GameResultData | nul
   // ----------------------------------------------------
   const target3Digit = cleanDigitsOnly || numStr;
   if (target3Digit.length === 3) {
+    const matchedWins: WinningPrizeItem[] = [];
+
     if (target3Digit === p1) {
-      return {
-        isWinner: true,
+      matchedWins.push({
         prizeTitle: '1ST PRIZE',
         prizeCategory: '1ST',
         winAmount: count * 5000,
-        matchedNumber: numStr,
         rateMultiplier: 500,
         matchedPrizePosition: '1st Prize (Primary)',
-      };
+      });
     }
     if (p2 && target3Digit === p2) {
-      return {
-        isWinner: true,
+      matchedWins.push({
         prizeTitle: '2ND PRIZE',
         prizeCategory: '2ND',
         winAmount: count * 500,
-        matchedNumber: numStr,
         rateMultiplier: 50,
         matchedPrizePosition: '2nd Prize',
-      };
+      });
     }
     if (p3 && target3Digit === p3) {
-      return {
-        isWinner: true,
+      matchedWins.push({
         prizeTitle: '3RD PRIZE',
         prizeCategory: '3RD',
         winAmount: count * 250,
-        matchedNumber: numStr,
         rateMultiplier: 25,
         matchedPrizePosition: '3rd Prize',
-      };
+      });
     }
     if (p4 && target3Digit === p4) {
-      return {
-        isWinner: true,
+      matchedWins.push({
         prizeTitle: '4TH PRIZE',
         prizeCategory: '4TH',
         winAmount: count * 100,
-        matchedNumber: numStr,
         rateMultiplier: 10,
         matchedPrizePosition: '4th Prize',
-      };
+      });
     }
     if (p5 && target3Digit === p5) {
-      return {
-        isWinner: true,
+      matchedWins.push({
         prizeTitle: '5TH PRIZE',
         prizeCategory: '5TH',
         winAmount: count * 50,
-        matchedNumber: numStr,
         rateMultiplier: 5,
         matchedPrizePosition: '5th Prize',
-      };
+      });
     }
     const matchingOccurrences = comps.filter((c) => c === target3Digit).length;
-    if (matchingOccurrences > 0) {
-      return {
-        isWinner: true,
+    for (let i = 0; i < matchingOccurrences; i++) {
+      matchedWins.push({
         prizeTitle: 'COMPLIMENT PRIZE',
         prizeCategory: '6TH',
-        winAmount: count * 20 * matchingOccurrences,
-        matchedNumber: numStr,
+        winAmount: count * 20,
         rateMultiplier: 2,
         matchedPrizePosition: 'Compliment Prize',
-        complimentOccurrences: matchingOccurrences,
+      });
+    }
+
+    if (matchedWins.length > 0) {
+      const totalWin = matchedWins.reduce((sum, w) => sum + w.winAmount, 0);
+      return {
+        isWinner: true,
+        prizeTitle: matchedWins[0].prizeTitle,
+        prizeCategory: matchedWins[0].prizeCategory || 'NONE',
+        winAmount: totalWin,
+        matchedNumber: numStr,
+        rateMultiplier: matchedWins[0].rateMultiplier,
+        matchedPrizePosition: matchedWins[0].matchedPrizePosition,
+        complimentOccurrences: matchingOccurrences > 0 ? matchingOccurrences : undefined,
+        winningPrizes: matchedWins,
       };
     }
   }
@@ -353,7 +366,21 @@ export function evaluateTicket(ticket: PlacedTicket, result?: GameResultData | n
     const res = evaluateBetItem(item, result);
     if (res.isWinner) {
       totalWinAmount += res.winAmount;
-      if (res.complimentOccurrences && res.complimentOccurrences > 1) {
+      if (res.winningPrizes && res.winningPrizes.length > 1) {
+        for (const wp of res.winningPrizes) {
+          winningItems.push({
+            item,
+            eval: {
+              ...res,
+              prizeTitle: wp.prizeTitle,
+              prizeCategory: wp.prizeCategory || res.prizeCategory,
+              winAmount: wp.winAmount,
+              rateMultiplier: wp.rateMultiplier,
+              matchedPrizePosition: wp.matchedPrizePosition,
+            },
+          });
+        }
+      } else if (res.complimentOccurrences && res.complimentOccurrences > 1) {
         const perOccWin = (item.count || 1) * 20;
         for (let occ = 1; occ <= res.complimentOccurrences; occ++) {
           winningItems.push({

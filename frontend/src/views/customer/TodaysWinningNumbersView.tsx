@@ -42,19 +42,29 @@ export const TodaysWinningNumbersView: React.FC = () => {
         tkt.items.forEach((item) => {
           const evalRes = evaluateBetItem(item, res);
           if (evalRes.isWinner) {
-            const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
-            const perOccWinAmt = occurrences > 1 ? (item.count || 1) * 20 : evalRes.winAmount;
-            for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
-              const occSuffix = occurrences > 1 ? `-occ-${occIdx}` : '';
+            const prizesToDisplay = evalRes.winningPrizes && evalRes.winningPrizes.length > 0
+              ? evalRes.winningPrizes
+              : (evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1
+                  ? Array.from({ length: evalRes.complimentOccurrences }, () => ({
+                      prizeTitle: evalRes.prizeTitle,
+                      winAmount: (item.count || 1) * 20,
+                    }))
+                  : [{
+                      prizeTitle: evalRes.prizeTitle,
+                      winAmount: evalRes.winAmount,
+                    }]);
+
+            prizesToDisplay.forEach((prizeObj, pIdx) => {
+              const pSuffix = prizesToDisplay.length > 1 ? `-p-${pIdx + 1}` : '';
               winnersList.push({
-                id: `TW-${tkt.id}-${item.id || item.number}${occSuffix}`,
+                id: `TW-${tkt.id}-${item.id || item.number}${pSuffix}`,
                 user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
                 slot: slot,
-                prize: `${evalRes.prizeTitle} (${evalRes.matchedNumber})`,
-                winAmount: `₹${perOccWinAmt.toLocaleString()}`,
+                prize: `${prizeObj.prizeTitle} (${evalRes.matchedNumber})`,
+                winAmount: `₹${prizeObj.winAmount.toLocaleString()}`,
                 time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
               });
-            }
+            });
           }
         });
       });
@@ -102,21 +112,31 @@ export const TodaysWinningNumbersView: React.FC = () => {
         tkt.items.forEach((item) => {
           const evalRes = evaluateBetItem(item, res);
           if (evalRes.isWinner) {
-            const occurrences = evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1 ? evalRes.complimentOccurrences : 1;
-            const perOccWinAmt = occurrences > 1 ? (item.count || 1) * 20 : evalRes.winAmount;
-            for (let occIdx = 1; occIdx <= occurrences; occIdx++) {
-              const occSuffix = occurrences > 1 ? `-occ-${occIdx}` : '';
+            const prizesToDisplay = evalRes.winningPrizes && evalRes.winningPrizes.length > 0
+              ? evalRes.winningPrizes
+              : (evalRes.complimentOccurrences && evalRes.complimentOccurrences > 1
+                  ? Array.from({ length: evalRes.complimentOccurrences }, () => ({
+                      prizeTitle: evalRes.prizeTitle,
+                      winAmount: (item.count || 1) * 20,
+                    }))
+                  : [{
+                      prizeTitle: evalRes.prizeTitle,
+                      winAmount: evalRes.winAmount,
+                    }]);
+
+            prizesToDisplay.forEach((prizeObj, pIdx) => {
+              const pSuffix = prizesToDisplay.length > 1 ? `-p-${pIdx + 1}` : '';
               winnersList.push({
-                id: `PW-${tkt.id}-${item.id || item.number}${occSuffix}`,
+                id: `PW-${tkt.id}-${item.id || item.number}${pSuffix}`,
                 user: (tkt as any).customerName || (tkt as any).userName || (tkt as any).agencyName || 'Player',
                 date: selectedDate,
                 slot: slot,
-                prize: evalRes.prizeTitle,
-                winAmount: `₹${perOccWinAmt.toLocaleString()}`,
+                prize: prizeObj.prizeTitle,
+                winAmount: `₹${prizeObj.winAmount.toLocaleString()}`,
                 number: evalRes.matchedNumber,
                 time: tkt.placedAt ? tkt.placedAt.split(' ')[1]?.slice(0, 5) || '1:05 PM' : '1:05 PM',
               });
-            }
+            });
           }
         });
       });
