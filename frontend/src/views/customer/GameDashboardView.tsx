@@ -140,6 +140,7 @@ export const GameDashboardView: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
+  const [overloadedNumbers, setOverloadedNumbers] = useState<string[]>([]);
   const [isBlockedModalOpen, setIsBlockedModalOpen] = useState(false);
   const [isGameOverModalOpen, setIsGameOverModalOpen] = useState(false);
   const [isServerDownModalOpen, setIsServerDownModalOpen] = useState(false);
@@ -196,6 +197,7 @@ export const GameDashboardView: React.FC = () => {
     setCopiedSavedBill(false);
     setMinCountModalOpen(false);
     setIsOverloadedModalOpen(false);
+    setOverloadedNumbers([]);
     setIsBlockedModalOpen(false);
     setIsServerDownModalOpen(false);
     setIsLimitConflictModalOpen(false);
@@ -204,19 +206,30 @@ export const GameDashboardView: React.FC = () => {
 
   const todayStr = getBusinessDateIST();
 
+  const isSameSlot = (slotA?: string, slotB?: string): boolean => {
+    if (!slotA || !slotB) return false;
+    if (slotA === slotB) return true;
+    const aNorm = slotA.replace(/\s*(game|dear)\s*/gi, '').trim().toLowerCase();
+    const bNorm = slotB.replace(/\s*(game|dear)\s*/gi, '').trim().toLowerCase();
+    return aNorm === bNorm;
+  };
+
   // Set of all 3-digit numbers already placed for this active slot today (from backend and placed tickets)
   const getAlreadyPlaced3DigitNumbers = (): Set<string> => {
     const set = new Set<string>();
 
     // 1. Backend-wide placed 3-digit numbers for this active slot
-    const backendTaken = taken3DigitNumbers[activeGameSlot] || [];
-    backendTaken.forEach((n) => set.add(n));
+    Object.entries(taken3DigitNumbers || {}).forEach(([slot, nums]) => {
+      if (isSameSlot(slot, activeGameSlot) && Array.isArray(nums)) {
+        nums.forEach((n) => set.add(n));
+      }
+    });
 
     // 2. Placed tickets for today in this slot
     placedTickets.forEach((t) => {
       const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
-      if (tDate === todayStr && t.gameSlot === activeGameSlot) {
-        t.items.forEach((it) => {
+      if (tDate === todayStr && isSameSlot(t.gameSlot, activeGameSlot)) {
+        t.items?.forEach((it) => {
           const raw = (it.number || '').trim();
           const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
           if (clean.length === 3 && /^\d{3}$/.test(clean)) {
@@ -235,12 +248,42 @@ export const GameDashboardView: React.FC = () => {
     const bookedSet = getAlreadyPlaced3DigitNumbers();
     const conflicting = new Set<string>();
 
+    // Types currently in draft betSlip per 3-digit number
+    const betSlipTypesByNum: Record<string, Set<string>> = {};
+    betSlip.forEach((it) => {
+      const raw = (it.number || '').trim();
+      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        if (!betSlipTypesByNum[clean]) {
+          betSlipTypesByNum[clean] = new Set();
+        }
+        const t = (it.type || '').toUpperCase();
+        betSlipTypesByNum[clean].add(
+          t === 'SUPER' || t === 'DIRECT' ? 'DIRECT' : (t === 'BOX' || t === 'SHUFFLE' ? 'BOX' : t)
+        );
+      }
+    });
+
     for (const it of itemsToAdd) {
       const raw = (it.number || '').trim();
       const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
       if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        // 1. Saved in a previous bill today for this slot
         if (bookedSet.has(clean)) {
           conflicting.add(clean);
+          continue;
+        }
+
+        // 2. Already present in current draft bill or earlier in this bulk batch with the same bet type
+        const t = (it.type || '').toUpperCase();
+        const normT = (t === 'SUPER' || t === 'DIRECT') ? 'DIRECT' : ((t === 'BOX' || t === 'SHUFFLE') ? 'BOX' : t);
+        if (!betSlipTypesByNum[clean]) {
+          betSlipTypesByNum[clean] = new Set();
+        }
+        if (betSlipTypesByNum[clean].has(normT)) {
+          conflicting.add(clean);
+        } else {
+          betSlipTypesByNum[clean].add(normT);
         }
       }
     }
@@ -272,18 +315,28 @@ export const GameDashboardView: React.FC = () => {
     if (validItems.length > 0) {
       const res = addBatchToBetSlip(validItems, cName);
       if (res.blockedCount > 0 || res.overloadedCount > 0) {
+        setOverloadedNumbers(res.failedNumbers || []);
         setIsOverloadedModalOpen(true);
       }
       if (res.addedCount > 0) {
         addToast(
-          `Added ${res.addedCount} item(s). Excluded limited number(s): ${conflictingNumbers.join(', ')}`,
+          `Added ${res.addedCount} item(s). Excluded overloaded number(s): ${conflictingNumbers.join(', ')}`,
           'success'
         );
         if (onOkSuccess) onOkSuccess();
       }
     } else {
+      if (onOkSuccess) onOkSuccess();
+      setInputNum('');
+      setStartRange('');
+      setEndRange('');
+      setStepVal('');
+      setInputCount('');
+      setBoxCount('');
+      setIsSet(false);
+      setIsReverse(false);
       addToast(
-        `Number ${conflictingNumbers.join(', ')} reached limit. No other numbers to add.`,
+        `Number ${conflictingNumbers.join(', ')} overloaded. Continue with next number.`,
         'info'
       );
     }
@@ -429,6 +482,7 @@ export const GameDashboardView: React.FC = () => {
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0 || res.overloadedCount > 0) {
+      setOverloadedNumbers(res.failedNumbers || []);
       setIsOverloadedModalOpen(true);
     }
 
@@ -491,6 +545,7 @@ export const GameDashboardView: React.FC = () => {
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0 || res.overloadedCount > 0) {
+      setOverloadedNumbers(res.failedNumbers || []);
       setIsOverloadedModalOpen(true);
     }
 
@@ -601,9 +656,32 @@ export const GameDashboardView: React.FC = () => {
       }
     });
 
+    // Check for 3-digit conflicts (already booked for slot or duplicate in betSlip)
+    const conflictCheck = checkBatchFor3DigitConflicts(itemsToAdd);
+    if (conflictCheck.hasConflict) {
+      setConflictModalData({
+        conflictingNumbers: conflictCheck.conflictingNumbers,
+        pendingItems: itemsToAdd,
+        customerName,
+        onOkSuccess: () => {
+          setInputNum('');
+          setStartRange('');
+          setEndRange('');
+          setStepVal('');
+          setInputCount('');
+          setBoxCount('');
+          setIsSet(false);
+          setIsReverse(false);
+        },
+      });
+      setIsLimitConflictModalOpen(true);
+      return;
+    }
+
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 
     if (res.blockedCount > 0 || res.overloadedCount > 0) {
+      setOverloadedNumbers(res.failedNumbers || []);
       setIsOverloadedModalOpen(true);
     }
 
@@ -670,8 +748,8 @@ export const GameDashboardView: React.FC = () => {
 
       const res = addBatchToBetSlip(parseRes.items, customerName);
 
-
       if (res.blockedCount > 0 || res.overloadedCount > 0) {
+        setOverloadedNumbers(res.failedNumbers || []);
         setIsOverloadedModalOpen(true);
       }
 
@@ -1336,48 +1414,41 @@ export const GameDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* 3-DIGIT LIMIT REACHED POP-UP MODAL (OK / BACK) */}
+      {/* 3-DIGIT LIMIT / NUMBER OVERLOADED POP-UP MODAL */}
       {isLimitConflictModalOpen && conflictModalData && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none font-sans">
-          <div className="bg-neutral-950 border-2 border-amber-500 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-[0_0_45px_rgba(245,158,11,0.35)] space-y-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-amber-950/80 text-amber-400 border border-amber-600 flex items-center justify-center mx-auto shadow-inner">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-sm w-full p-5 sm:p-6 shadow-[0_0_45px_rgba(244,63,94,0.35)] space-y-4 text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-950/80 text-rose-400 border border-rose-700 flex items-center justify-center mx-auto shadow-inner">
               <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
             </div>
 
-            <div className="space-y-2 font-mono">
+            <div className="space-y-1.5 font-mono">
               <h4 className="font-black text-white text-base sm:text-lg uppercase tracking-wide leading-tight">
-                LIMIT REACHED!
+                {conflictModalData.conflictingNumbers.join(', ')} Number Overloaded!
               </h4>
-              <p className="text-xs sm:text-sm font-semibold text-neutral-200 leading-relaxed">
-                The number{' '}
-                <span className="text-amber-400 font-black">
-                  {conflictModalData.conflictingNumbers.join(', ')}
-                </span>{' '}
-                has reached its limit and cannot be placed in {activeGameSlot}.
-              </p>
-              <p className="text-[11px] sm:text-xs text-neutral-400 font-sans">
-                Numbers other than{' '}
-                <span className="text-amber-300 font-bold">
-                  {conflictModalData.conflictingNumbers.join(', ')}
-                </span>{' '}
-                can be entered.
+              <p className="text-xs sm:text-sm font-semibold text-neutral-300 leading-relaxed font-sans">
+                {conflictModalData.conflictingNumbers.length > 1
+                  ? 'Continue without these numbers'
+                  : 'Continue without this number'}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-2 font-mono">
-              <button
-                type="button"
-                onClick={handleConflictModalBack}
-                className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-300 hover:text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-neutral-700"
-              >
-                BACK
-              </button>
+            <div className="flex flex-col gap-2.5 pt-2 font-mono">
               <button
                 type="button"
                 onClick={handleConflictModalOk}
                 className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:brightness-110 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-amber-300"
               >
-                OK
+                {conflictModalData.conflictingNumbers.length > 1
+                  ? 'Continue without these numbers'
+                  : 'Continue without this number'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConflictModalBack}
+                className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-400 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all border border-neutral-800"
+              >
+                BACK
               </button>
             </div>
           </div>
@@ -1386,29 +1457,45 @@ export const GameDashboardView: React.FC = () => {
 
       {/* NUMBER OVERLOADED & BLOCKED POP-UP MODAL */}
       {(isOverloadedModalOpen || isBlockedModalOpen) && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none">
-          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-xs w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[9999] flex items-center justify-center p-4 animate-drop-in select-none font-sans">
+          <div className="bg-neutral-950 border-2 border-rose-500 rounded-2xl max-w-sm w-full p-5 shadow-[0_0_40px_rgba(244,63,94,0.35)] space-y-4 text-center">
             <div className="w-12 h-12 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center mx-auto shadow-inner">
               <AlertTriangle className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <div className="space-y-1 font-mono">
-              <h4 className="font-black text-white text-base uppercase tracking-wide leading-tight">
-                NUMBER OVERLOADED!
+            <div className="space-y-1.5 font-mono">
+              <h4 className="font-black text-white text-base sm:text-lg uppercase tracking-wide leading-tight">
+                {overloadedNumbers.length > 0
+                  ? `${overloadedNumbers.join(', ')} Number Overloaded!`
+                  : 'NUMBER OVERLOADED!'}
               </h4>
-              <p className="text-sm font-bold text-neutral-200 uppercase tracking-wide leading-tight">
-                NOT IN BOOKED.
+              <p className="text-xs sm:text-sm font-semibold text-neutral-300 leading-relaxed font-sans">
+                Continue without this number
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIsOverloadedModalOpen(false);
-                setIsBlockedModalOpen(false);
-              }}
-              className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-rose-400 font-mono"
-            >
-              OK
-            </button>
+            <div className="flex flex-col gap-2.5 pt-2 font-mono">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOverloadedModalOpen(false);
+                  setIsBlockedModalOpen(false);
+                  setOverloadedNumbers([]);
+                }}
+                className="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:brightness-110 active:scale-95 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-amber-300"
+              >
+                Continue without this number
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOverloadedModalOpen(false);
+                  setIsBlockedModalOpen(false);
+                  setOverloadedNumbers([]);
+                }}
+                className="w-full py-2 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-neutral-400 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-all border border-neutral-800"
+              >
+                BACK
+              </button>
+            </div>
           </div>
         </div>
       )}

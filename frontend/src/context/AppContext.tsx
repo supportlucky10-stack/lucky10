@@ -29,7 +29,7 @@ interface AppContextType {
   setActiveGameSlot: (slot: GameSlot) => void;
   betSlip: BetSlipItem[];
   addToBetSlip: (item: Omit<BetSlipItem, 'id'>, customerName?: string) => boolean;
-  addBatchToBetSlip: (items: Omit<BetSlipItem, 'id'>[], customerName?: string) => { addedCount: number; blockedCount: number; overloadedCount: number };
+  addBatchToBetSlip: (items: Omit<BetSlipItem, 'id'>[], customerName?: string) => { addedCount: number; blockedCount: number; overloadedCount: number; failedNumbers: string[] };
   removeFromBetSlip: (id: string) => void;
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
@@ -1064,9 +1064,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return true;
   };
 
-  const addBatchToBetSlip = (items: Omit<BetSlipItem, 'id'>[], customerName?: string): { addedCount: number; blockedCount: number; overloadedCount: number } => {
+  const addBatchToBetSlip = (items: Omit<BetSlipItem, 'id'>[], customerName?: string): { addedCount: number; blockedCount: number; overloadedCount: number; failedNumbers: string[] } => {
     const agencyId = currentUser?.id || currentUser?.username || '';
     const validItems: BetSlipItem[] = [];
+    const failedNumbers: string[] = [];
     let blockedCount = 0;
     let overloadedCount = 0;
 
@@ -1082,6 +1083,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!validation.ok) {
         if (validation.type === 'BLOCKED') blockedCount++;
         else overloadedCount++;
+        const cleanFailNum = numToTest.includes(':') ? numToTest.split(':')[1].trim() : numToTest;
+        if (!failedNumbers.includes(cleanFailNum)) failedNumbers.push(cleanFailNum);
         continue;
       }
       batchCounts[key] = currentBatchCount + item.count;
@@ -1094,7 +1097,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addToast(`Added ${validItems.length} bet(s) to slip`, 'success');
     }
 
-    return { addedCount: validItems.length, blockedCount, overloadedCount };
+    return { addedCount: validItems.length, blockedCount, overloadedCount, failedNumbers };
   };
 
   const removeFromBetSlip = (id: string) => {
@@ -1163,6 +1166,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       newTicket.customerName = cleanCustName;
 
       setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
+
+      // Immediately register newly placed 3-digit numbers across all slot name variants in taken3DigitNumbers state
+      setTaken3DigitNumbers((prev) => {
+        const next = { ...prev };
+        const ticketItems = (newTicket.items && newTicket.items.length > 0) ? newTicket.items : betSlip;
+        const numsToAdd: string[] = [];
+        ticketItems.forEach((it) => {
+          const raw = (it.number || '').trim();
+          const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+          if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+            numsToAdd.push(clean);
+          }
+        });
+        if (numsToAdd.length > 0) {
+          const normBase = activeGameSlot.replace(/\s*(game|dear)\s*/gi, '').trim();
+          const slotVariants = [activeGameSlot, normBase, `${normBase} Game`, `${normBase} DEAR`];
+          slotVariants.forEach((k) => {
+            if (k) {
+              const existing = next[k] ? [...next[k]] : [];
+              numsToAdd.forEach((n) => {
+                if (!existing.includes(n)) existing.push(n);
+              });
+              next[k] = existing;
+            }
+          });
+        }
+        return next;
+      });
+
+      // Also trigger a background limits refresh to stay authoritative
+      customerService.getLimits().then((lims) => {
+        if (lims?.taken3DigitNumbers) {
+          setTaken3DigitNumbers((prev) => ({ ...prev, ...lims.taken3DigitNumbers }));
+        }
+      }).catch(() => null);
+
       setBetSlip([]);
       addToast(`Ticket #${newTicket.id} saved successfully!`, 'success');
       return newTicket.id;
