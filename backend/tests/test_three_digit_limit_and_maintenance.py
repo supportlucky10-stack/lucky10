@@ -18,7 +18,7 @@ def test_three_digit_single_entry_per_slot(client, test_customer_user, customer_
         res1 = client.post("/api/customer/tickets", json=ticket1, headers=customer_token_headers)
         assert res1.status_code == 200, res1.text
 
-        # 2. Next placement trying to place 455 again in 1 PM Game (even with different count or BOX)
+        # 2. Later, placing 455 in BOX in another bill in the same game slot SUCCEEDS (no restriction since only Super was placed earlier)
         ticket2 = {
             "gameSlot": "1 PM Game",
             "actionType": "SAVE",
@@ -26,8 +26,30 @@ def test_three_digit_single_entry_per_slot(client, test_customer_user, customer_
             "items": [{"number": "455", "count": 2, "type": "BOX", "unitPrice": 10.0, "totalAmount": 20.0}]
         }
         res2 = client.post("/api/customer/tickets", json=ticket2, headers=customer_token_headers)
-        assert res2.status_code == 400
-        assert "Overloaded" in res2.json()["detail"] or "reached its limit" in res2.json()["detail"]
+        assert res2.status_code == 200, res2.text
+
+        # 2b. Now both SUPER and BOX have been placed for 455 in 1 PM Game. Trying SUPER again FAILS!
+        set_mock_ist_now(datetime(2026, 8, 23, 12, 30, 10, tzinfo=IST_TZ))
+        ticket_super_again = {
+            "gameSlot": "1 PM Game",
+            "actionType": "SAVE",
+            "totalAmount": 10.0,
+            "items": [{"number": "455", "count": 1, "type": "SUPER", "unitPrice": 10.0, "totalAmount": 10.0}]
+        }
+        res_super_again = client.post("/api/customer/tickets", json=ticket_super_again, headers=customer_token_headers)
+        assert res_super_again.status_code == 400
+        assert "Overloaded" in res_super_again.json()["detail"]
+
+        # 2c. Trying BOX again for 455 in 1 PM Game also FAILS!
+        ticket_box_again = {
+            "gameSlot": "1 PM Game",
+            "actionType": "SAVE",
+            "totalAmount": 10.0,
+            "items": [{"number": "455", "count": 1, "type": "BOX", "unitPrice": 10.0, "totalAmount": 10.0}]
+        }
+        res_box_again = client.post("/api/customer/tickets", json=ticket_box_again, headers=customer_token_headers)
+        assert res_box_again.status_code == 400
+        assert "Overloaded" in res_box_again.json()["detail"]
 
         # 3. Customer places BOTH Super and Box for number 500 in 1 PM Game in a single bill
         ticket_both = {

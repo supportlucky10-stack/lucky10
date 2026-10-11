@@ -214,14 +214,34 @@ export const GameDashboardView: React.FC = () => {
     return aNorm === bNorm;
   };
 
-  // Set of all 3-digit numbers already placed for this active slot today (from backend and placed tickets)
-  const getAlreadyPlaced3DigitNumbers = (): Set<string> => {
-    const set = new Set<string>();
+  // Map of 3-digit numbers to their placed types ('DIRECT' | 'BOX') for this active slot today
+  const getAlreadyPlaced3DigitTypes = (): Record<string, Set<'DIRECT' | 'BOX'>> => {
+    const map: Record<string, Set<'DIRECT' | 'BOX'>> = {};
+
+    const addEntry = (num: string, typ: 'DIRECT' | 'BOX') => {
+      if (!map[num]) map[num] = new Set();
+      map[num].add(typ);
+    };
 
     // 1. Backend-wide placed 3-digit numbers for this active slot
-    Object.entries(taken3DigitNumbers || {}).forEach(([slot, nums]) => {
-      if (isSameSlot(slot, activeGameSlot) && Array.isArray(nums)) {
-        nums.forEach((n) => set.add(n));
+    Object.entries(taken3DigitNumbers || {}).forEach(([slot, items]) => {
+      if (isSameSlot(slot, activeGameSlot) && Array.isArray(items)) {
+        items.forEach((itemStr) => {
+          if (itemStr.includes(':')) {
+            const [num, typ] = itemStr.split(':');
+            const clean = num.trim();
+            if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+              const tUpper = typ.trim().toUpperCase();
+              addEntry(clean, (tUpper === 'BOX' || tUpper === 'SHUFFLE') ? 'BOX' : 'DIRECT');
+            }
+          } else {
+            const clean = itemStr.trim();
+            if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+              addEntry(clean, 'DIRECT');
+              addEntry(clean, 'BOX');
+            }
+          }
+        });
       }
     });
 
@@ -233,33 +253,32 @@ export const GameDashboardView: React.FC = () => {
           const raw = (it.number || '').trim();
           const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
           if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-            set.add(clean);
+            const tUpper = (it.type || '').toUpperCase();
+            addEntry(clean, (tUpper === 'BOX' || tUpper === 'SHUFFLE') ? 'BOX' : 'DIRECT');
           }
         });
       }
     });
 
-    return set;
+    return map;
   };
 
   const checkBatchFor3DigitConflicts = (
     itemsToAdd: Omit<BetSlipItem, 'id'>[]
   ): { hasConflict: boolean; conflictingNumbers: string[] } => {
-    const bookedSet = getAlreadyPlaced3DigitNumbers();
+    const bookedTypes = getAlreadyPlaced3DigitTypes();
     const conflicting = new Set<string>();
 
     // Types currently in draft betSlip per 3-digit number
-    const betSlipTypesByNum: Record<string, Set<string>> = {};
+    const draftTypes: Record<string, Set<'DIRECT' | 'BOX'>> = {};
     betSlip.forEach((it) => {
       const raw = (it.number || '').trim();
       const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
       if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        if (!betSlipTypesByNum[clean]) {
-          betSlipTypesByNum[clean] = new Set();
-        }
+        if (!draftTypes[clean]) draftTypes[clean] = new Set();
         const t = (it.type || '').toUpperCase();
-        betSlipTypesByNum[clean].add(
-          t === 'SUPER' || t === 'DIRECT' ? 'DIRECT' : (t === 'BOX' || t === 'SHUFFLE' ? 'BOX' : t)
+        draftTypes[clean].add(
+          t === 'BOX' || t === 'SHUFFLE' ? 'BOX' : 'DIRECT'
         );
       }
     });
@@ -268,22 +287,21 @@ export const GameDashboardView: React.FC = () => {
       const raw = (it.number || '').trim();
       const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
       if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        // 1. Saved in a previous bill today for this slot
-        if (bookedSet.has(clean)) {
+        const t = (it.type || '').toUpperCase();
+        const normT: 'DIRECT' | 'BOX' = (t === 'BOX' || t === 'SHUFFLE') ? 'BOX' : 'DIRECT';
+
+        // 1. Check if this specific type (Direct vs Box) was already saved in a previous bill today for this slot
+        if (bookedTypes[clean] && bookedTypes[clean].has(normT)) {
           conflicting.add(clean);
           continue;
         }
 
-        // 2. Already present in current draft bill or earlier in this bulk batch with the same bet type
-        const t = (it.type || '').toUpperCase();
-        const normT = (t === 'SUPER' || t === 'DIRECT') ? 'DIRECT' : ((t === 'BOX' || t === 'SHUFFLE') ? 'BOX' : t);
-        if (!betSlipTypesByNum[clean]) {
-          betSlipTypesByNum[clean] = new Set();
-        }
-        if (betSlipTypesByNum[clean].has(normT)) {
+        // 2. Check if this specific type is already present in current draft bill or earlier in this bulk batch
+        if (draftTypes[clean] && draftTypes[clean].has(normT)) {
           conflicting.add(clean);
         } else {
-          betSlipTypesByNum[clean].add(normT);
+          if (!draftTypes[clean]) draftTypes[clean] = new Set();
+          draftTypes[clean].add(normT);
         }
       }
     }
@@ -301,12 +319,37 @@ export const GameDashboardView: React.FC = () => {
     }
 
     const { conflictingNumbers, pendingItems, customerName: cName, onOkSuccess } = conflictModalData;
+    const bookedTypes = getAlreadyPlaced3DigitTypes();
 
-    // Filter out items matching conflicting 3-digit numbers
-    const validItems = pendingItems.filter((it) => {
+    const draftTypes: Record<string, Set<'DIRECT' | 'BOX'>> = {};
+    betSlip.forEach((it) => {
       const raw = (it.number || '').trim();
       const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
-      return !conflictingNumbers.includes(clean);
+      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        if (!draftTypes[clean]) draftTypes[clean] = new Set();
+        const t = (it.type || '').toUpperCase();
+        draftTypes[clean].add(t === 'BOX' || t === 'SHUFFLE' ? 'BOX' : 'DIRECT');
+      }
+    });
+
+    // Filter out only the specific items that conflict (e.g. if Super was booked, allow Box)
+    const validItems: Omit<BetSlipItem, 'id'>[] = [];
+    pendingItems.forEach((it) => {
+      const raw = (it.number || '').trim();
+      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
+      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
+        const t = (it.type || '').toUpperCase();
+        const normT: 'DIRECT' | 'BOX' = (t === 'BOX' || t === 'SHUFFLE') ? 'BOX' : 'DIRECT';
+        const isConflict = (bookedTypes[clean] && bookedTypes[clean].has(normT)) ||
+                           (draftTypes[clean] && draftTypes[clean].has(normT));
+        if (!isConflict) {
+          validItems.push(it);
+          if (!draftTypes[clean]) draftTypes[clean] = new Set();
+          draftTypes[clean].add(normT);
+        }
+      } else {
+        validItems.push(it);
+      }
     });
 
     setIsLimitConflictModalOpen(false);
@@ -346,7 +389,6 @@ export const GameDashboardView: React.FC = () => {
     setIsLimitConflictModalOpen(false);
     setConflictModalData(null);
   };
-
 
   const handleGameOverOk = () => {
     const currentBusinessDate = getBusinessDateIST();

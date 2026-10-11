@@ -243,8 +243,8 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                 if req_nums == rec_nums:
                     return format_ticket(recent_same_ticket)
 
-        # ── 3-DIGIT LIMIT VALIDATION (ONCE PER GAME SLOT TODAY) ──
-        three_digit_nums_in_req = set()
+        # ── 3-DIGIT LIMIT VALIDATION (MAX 1 SUPER AND 1 BOX PER GAME SLOT TODAY) ──
+        three_digit_items_in_req: list[tuple[str, str]] = []
         seen_types_per_num = set()
 
         for it in req.items:
@@ -257,34 +257,41 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                 if type_key in seen_types_per_num:
                     raise HTTPException(
                         status_code=400,
-                        detail=f"{clean_num} Number Overloaded! Cannot be placed multiple times in the same bill."
+                        detail=f"{clean_num} Number Overloaded! Cannot place duplicate {norm_type} in the same bill."
                     )
                 seen_types_per_num.add(type_key)
-                three_digit_nums_in_req.add(clean_num)
+                three_digit_items_in_req.append((clean_num, norm_type))
 
-        if three_digit_nums_in_req:
-            from app.core.game_timing import get_ist_day_utc_bounds
-            start_utc, end_utc = get_ist_day_utc_bounds()
+        if three_digit_items_in_req:
+            today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_start_utc = today_start_ist.astimezone(timezone.utc)
+            today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
+            today_end_utc = today_end_ist.astimezone(timezone.utc)
+            start_naive = today_start_utc.replace(tzinfo=None)
+            end_naive = today_end_utc.replace(tzinfo=None)
             norm_req_slot = normalize_slot_name(req.gameSlot)
 
             existing_3digit_items = (
-                db.query(BetItem.number)
+                db.query(BetItem.number, BetItem.type)
                 .join(Ticket, BetItem.ticket_id == Ticket.id)
                 .filter(
                     (Ticket.game_slot == req.gameSlot) | (Ticket.game_slot == norm_req_slot),
-                    Ticket.placed_at >= start_utc,
-                    Ticket.placed_at < end_utc,
+                    (Ticket.placed_at >= today_start_utc) | (Ticket.placed_at >= start_naive),
+                    (Ticket.placed_at <= today_end_utc) | (Ticket.placed_at <= end_naive),
                 )
                 .all()
             )
-            for (num_val,) in existing_3digit_items:
+            for num_val, type_val in existing_3digit_items:
                 n_raw = (num_val or "").strip()
                 n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
-                if n_clean in three_digit_nums_in_req:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"{n_clean} Number Overloaded! Already placed in this game slot."
-                    )
+                t_norm = (type_val or "").strip().upper()
+                t_norm = "DIRECT" if t_norm in ("DIRECT", "SUPER") else ("BOX" if t_norm in ("BOX", "SHUFFLE") else t_norm)
+                for req_clean, req_type in three_digit_items_in_req:
+                    if n_clean == req_clean and t_norm == req_type:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"{n_clean} Number Overloaded! Already placed in this game slot."
+                        )
 
         # Authoritative calculation of financial values
 
@@ -483,7 +490,7 @@ def get_customer_limits(db: Session = Depends(get_db)):
     start_utc, end_utc = get_ist_day_utc_bounds()
 
     all_today_3digit = (
-        db.query(Ticket.game_slot, BetItem.number)
+        db.query(Ticket.game_slot, BetItem.number, BetItem.type)
         .join(Ticket, BetItem.ticket_id == Ticket.id)
         .filter(
             Ticket.placed_at >= start_utc,
@@ -492,17 +499,20 @@ def get_customer_limits(db: Session = Depends(get_db)):
         .all()
     )
     taken_3digit: dict[str, list[str]] = {}
-    for s_val, n_val in all_today_3digit:
+    for s_val, n_val, t_val in all_today_3digit:
         norm_s = normalize_slot_name(s_val) if s_val else ""
         n_raw = (n_val or '').strip()
         n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
         if len(n_clean) == 3 and n_clean.isdigit():
+            t_norm = (t_val or "").strip().upper()
+            t_norm = "DIRECT" if t_norm in ("DIRECT", "SUPER") else ("BOX" if t_norm in ("BOX", "SHUFFLE") else t_norm)
+            typed_key = f"{n_clean}:{t_norm}"
             for key in {s_val, norm_s}:
                 if key:
                     if key not in taken_3digit:
                         taken_3digit[key] = []
-                    if n_clean not in taken_3digit[key]:
-                        taken_3digit[key].append(n_clean)
+                    if typed_key not in taken_3digit[key]:
+                        taken_3digit[key].append(typed_key)
 
     return {
         "blockedNumbers": [

@@ -1167,25 +1167,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setPlacedTickets((prev) => dedupeTickets([newTicket, ...prev]));
 
-      // Immediately register newly placed 3-digit numbers across all slot name variants in taken3DigitNumbers state
+      // Immediately register newly placed 3-digit numbers with type across all slot name variants in taken3DigitNumbers state
       setTaken3DigitNumbers((prev) => {
         const next = { ...prev };
         const ticketItems = (newTicket.items && newTicket.items.length > 0) ? newTicket.items : betSlip;
-        const numsToAdd: string[] = [];
+        const itemsToAdd: string[] = [];
         ticketItems.forEach((it) => {
           const raw = (it.number || '').trim();
           const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
           if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-            numsToAdd.push(clean);
+            const tUpper = (it.type || '').toUpperCase();
+            const normT = (tUpper === 'BOX' || tUpper === 'SHUFFLE') ? 'BOX' : 'DIRECT';
+            const key = `${clean}:${normT}`;
+            if (!itemsToAdd.includes(key)) itemsToAdd.push(key);
           }
         });
-        if (numsToAdd.length > 0) {
+        if (itemsToAdd.length > 0) {
           const normBase = activeGameSlot.replace(/\s*(game|dear)\s*/gi, '').trim();
           const slotVariants = [activeGameSlot, normBase, `${normBase} Game`, `${normBase} DEAR`];
           slotVariants.forEach((k) => {
             if (k) {
               const existing = next[k] ? [...next[k]] : [];
-              numsToAdd.forEach((n) => {
+              itemsToAdd.forEach((n) => {
                 if (!existing.includes(n)) existing.push(n);
               });
               next[k] = existing;
