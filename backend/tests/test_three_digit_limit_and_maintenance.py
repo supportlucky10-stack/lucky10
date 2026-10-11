@@ -113,7 +113,7 @@ def test_three_digit_single_entry_per_slot(client, test_customer_user, customer_
         set_mock_ist_now(None)
 
 
-def test_three_digit_limit_single_global_quota_all_users(client, db_session, test_customer_user, customer_token_headers):
+def test_three_digit_limit_separate_for_each_user(client, db_session, test_customer_user, customer_token_headers):
     from app.models.user import User, UserRole
     from app.core.security import get_password_hash, create_access_token
 
@@ -135,60 +135,36 @@ def test_three_digit_limit_single_global_quota_all_users(client, db_session, tes
 
     set_mock_ist_now(datetime(2026, 8, 23, 12, 30, 0, tzinfo=IST_TZ))
     try:
-        # User 1 places 455 in SUPER in 1 PM Game
+        # User 1 places 455 in Super and Box in 1 PM Game
         ticket1 = {
             "gameSlot": "1 PM Game",
             "actionType": "SAVE",
-            "totalAmount": 10.0,
+            "totalAmount": 20.0,
             "items": [
                 {"number": "455", "count": 1, "type": "SUPER", "unitPrice": 10.0, "totalAmount": 10.0},
+                {"number": "455", "count": 1, "type": "BOX", "unitPrice": 10.0, "totalAmount": 10.0},
             ]
         }
         res1 = client.post("/api/customer/tickets", json=ticket1, headers=customer_token_headers)
         assert res1.status_code == 200
 
-        # User 2 places 455 in BOX in 1 PM Game (succeeds because BOX has not been used yet in this slot)
-        ticket2 = {
-            "gameSlot": "1 PM Game",
-            "actionType": "SAVE",
-            "totalAmount": 10.0,
-            "items": [
-                {"number": "455", "count": 1, "type": "BOX", "unitPrice": 10.0, "totalAmount": 10.0},
-            ]
-        }
-        res2 = client.post("/api/customer/tickets", json=ticket2, headers=user2_headers)
-        assert res2.status_code == 200
-
-        # Now BOTH Super and Box for 455 are consumed across the whole game slot.
-        # Advancing time by 10s to bypass idempotency guard
-        set_mock_ist_now(datetime(2026, 8, 23, 12, 30, 10, tzinfo=IST_TZ))
-
-        # Trying 455 in SUPER again by User 2 fails with Overloaded!
-        ticket_repeat_super = {
+        # User 1 cannot place 455 again (Overloaded)
+        ticket_repeat = {
             "gameSlot": "1 PM Game",
             "actionType": "SAVE",
             "totalAmount": 10.0,
             "items": [{"number": "455", "count": 1, "type": "SUPER", "unitPrice": 10.0, "totalAmount": 10.0}]
         }
-        res_repeat_super = client.post("/api/customer/tickets", json=ticket_repeat_super, headers=user2_headers)
-        assert res_repeat_super.status_code == 400
-        assert "Overloaded" in res_repeat_super.json()["detail"]
+        res_repeat = client.post("/api/customer/tickets", json=ticket_repeat, headers=customer_token_headers)
+        assert res_repeat.status_code == 400
 
-        # Trying 455 in BOX again by User 1 fails with Overloaded!
-        ticket_repeat_box = {
-            "gameSlot": "1 PM Game",
-            "actionType": "SAVE",
-            "totalAmount": 10.0,
-            "items": [{"number": "455", "count": 1, "type": "BOX", "unitPrice": 10.0, "totalAmount": 10.0}]
-        }
-        res_repeat_box = client.post("/api/customer/tickets", json=ticket_repeat_box, headers=customer_token_headers)
-        assert res_repeat_box.status_code == 400
-        assert "Overloaded" in res_repeat_box.json()["detail"]
+        # User 2 CAN place 455 in 1 PM Game without restriction!
+        res_user2 = client.post("/api/customer/tickets", json=ticket1, headers=user2_headers)
+        assert res_user2.status_code == 200, res_user2.text
 
-        # Global limits endpoint returns 455:DIRECT and 455:BOX for everyone
-        lims = client.get("/api/customer/limits").json()
-        assert "455:DIRECT" in lims["taken3DigitNumbers"].get("1 PM Game", [])
-        assert "455:BOX" in lims["taken3DigitNumbers"].get("1 PM Game", [])
+        # User 1's limits include 455, User 2's limits also include their own 455
+        lims1 = client.get("/api/customer/limits", headers=customer_token_headers).json()
+        assert "455:DIRECT" in lims1["taken3DigitNumbers"].get("1 PM Game", [])
     finally:
         set_mock_ist_now(None)
 
