@@ -204,7 +204,7 @@ export const GameDashboardView: React.FC = () => {
 
   const todayStr = getBusinessDateIST();
 
-  // Set of all 3-digit numbers already placed for this active slot today (System-wide + staging)
+  // Set of all 3-digit numbers already placed for this active slot today (from backend and placed tickets)
   const getAlreadyPlaced3DigitNumbers = (): Set<string> => {
     const set = new Set<string>();
 
@@ -226,15 +226,6 @@ export const GameDashboardView: React.FC = () => {
       }
     });
 
-    // 3. Numbers currently in staging bet slip
-    betSlip.forEach((it) => {
-      const raw = (it.number || '').trim();
-      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
-      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        set.add(clean);
-      }
-    });
-
     return set;
   };
 
@@ -243,16 +234,13 @@ export const GameDashboardView: React.FC = () => {
   ): { hasConflict: boolean; conflictingNumbers: string[] } => {
     const bookedSet = getAlreadyPlaced3DigitNumbers();
     const conflicting = new Set<string>();
-    const seenInBatch = new Set<string>();
 
     for (const it of itemsToAdd) {
       const raw = (it.number || '').trim();
       const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
       if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        if (bookedSet.has(clean) || seenInBatch.has(clean)) {
+        if (bookedSet.has(clean)) {
           conflicting.add(clean);
-        } else {
-          seenInBatch.add(clean);
         }
       }
     }
@@ -612,27 +600,6 @@ export const GameDashboardView: React.FC = () => {
         });
       }
     });
-
-    const conflictCheck = checkBatchFor3DigitConflicts(itemsToAdd);
-    if (conflictCheck.hasConflict) {
-      setConflictModalData({
-        conflictingNumbers: conflictCheck.conflictingNumbers,
-        pendingItems: itemsToAdd,
-        customerName,
-        onOkSuccess: () => {
-          setInputNum('');
-          setStartRange('');
-          setEndRange('');
-          setStepVal('');
-          setInputCount('');
-          setBoxCount('');
-          setIsSet(false);
-          setIsReverse(false);
-        },
-      });
-      setIsLimitConflictModalOpen(true);
-      return;
-    }
 
     const res = addBatchToBetSlip(itemsToAdd, customerName);
 

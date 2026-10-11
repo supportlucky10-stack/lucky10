@@ -243,45 +243,6 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                 if req_nums == rec_nums:
                     return format_ticket(recent_same_ticket)
 
-        # ── 2. 3-DIGIT NO-REPETITION ENFORCEMENT PER GAME SLOT ──
-        three_digit_nums_in_req = set()
-        for item in req.items:
-            raw_num = item.number.strip()
-            clean_num = raw_num.split(":")[1].strip() if ":" in raw_num else raw_num
-            if len(clean_num) == 3 and clean_num.isdigit():
-                if clean_num in three_digit_nums_in_req:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Number {clean_num} can only be placed once in this game slot."
-                    )
-                three_digit_nums_in_req.add(clean_num)
-
-        if three_digit_nums_in_req:
-            today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
-            today_start_utc = today_start_ist.astimezone(timezone.utc)
-            today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
-            today_end_utc = today_end_ist.astimezone(timezone.utc)
-
-            existing_3digit_items = (
-                db.query(BetItem.number)
-                .join(Ticket, BetItem.ticket_id == Ticket.id)
-                .filter(
-                    Ticket.game_slot == req.gameSlot,
-                    Ticket.placed_at >= today_start_utc,
-                    Ticket.placed_at <= today_end_utc,
-                )
-                .all()
-            )
-            for (num_val,) in existing_3digit_items:
-                n_raw = (num_val or '').strip()
-                n_clean = n_raw.split(":")[1].strip() if ":" in n_raw else n_raw
-                if n_clean in three_digit_nums_in_req:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Number {n_clean} has reached its limit and cannot be placed in this game slot."
-                    )
-
-
         # Authoritative calculation of financial values
 
         calculated_items = []
@@ -475,18 +436,15 @@ def get_customer_limits(db: Session = Depends(get_db)):
     global_limit = db.query(GlobalLimitRule).first()
     m_setting = db.query(MaintenanceSetting).filter(MaintenanceSetting.id == "default").first()
 
-    now_ist = get_ist_now()
-    today_start_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
-    today_start_utc = today_start_ist.astimezone(timezone.utc)
-    today_end_ist = now_ist.replace(hour=23, minute=59, second=59, microsecond=999999)
-    today_end_utc = today_end_ist.astimezone(timezone.utc)
+    from app.core.game_timing import get_ist_day_utc_bounds
+    start_utc, end_utc = get_ist_day_utc_bounds()
 
     all_today_3digit = (
         db.query(Ticket.game_slot, BetItem.number)
         .join(Ticket, BetItem.ticket_id == Ticket.id)
         .filter(
-            Ticket.placed_at >= today_start_utc,
-            Ticket.placed_at <= today_end_utc,
+            Ticket.placed_at >= start_utc,
+            Ticket.placed_at < end_utc,
         )
         .all()
     )
