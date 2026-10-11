@@ -264,51 +264,12 @@ export const GameDashboardView: React.FC = () => {
   };
 
   const checkBatchFor3DigitConflicts = (
-    itemsToAdd: Omit<BetSlipItem, 'id'>[]
+    _itemsToAdd: Omit<BetSlipItem, 'id'>[]
   ): { hasConflict: boolean; conflictingNumbers: string[] } => {
-    const bookedTypes = getAlreadyPlaced3DigitTypes();
-    const conflicting = new Set<string>();
-
-    // Types currently in draft betSlip per 3-digit number
-    const draftTypes: Record<string, Set<'DIRECT' | 'BOX'>> = {};
-    betSlip.forEach((it) => {
-      const raw = (it.number || '').trim();
-      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
-      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        if (!draftTypes[clean]) draftTypes[clean] = new Set();
-        const t = (it.type || '').toUpperCase();
-        draftTypes[clean].add(
-          t === 'BOX' || t === 'SHUFFLE' ? 'BOX' : 'DIRECT'
-        );
-      }
-    });
-
-    for (const it of itemsToAdd) {
-      const raw = (it.number || '').trim();
-      const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
-      if (clean.length === 3 && /^\d{3}$/.test(clean)) {
-        const t = (it.type || '').toUpperCase();
-        const normT: 'DIRECT' | 'BOX' = (t === 'BOX' || t === 'SHUFFLE') ? 'BOX' : 'DIRECT';
-
-        // 1. Check if this specific type (Direct vs Box) was already saved in a previous bill today for this slot
-        if (bookedTypes[clean] && bookedTypes[clean].has(normT)) {
-          conflicting.add(clean);
-          continue;
-        }
-
-        // 2. Check if this specific type is already present in current draft bill or earlier in this bulk batch
-        if (draftTypes[clean] && draftTypes[clean].has(normT)) {
-          conflicting.add(clean);
-        } else {
-          if (!draftTypes[clean]) draftTypes[clean] = new Set();
-          draftTypes[clean].add(normT);
-        }
-      }
-    }
-
+    // 3-digit single-entry restriction completely removed
     return {
-      hasConflict: conflicting.size > 0,
-      conflictingNumbers: Array.from(conflicting),
+      hasConflict: false,
+      conflictingNumbers: [],
     };
   };
 
