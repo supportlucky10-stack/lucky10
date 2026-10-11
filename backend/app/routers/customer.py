@@ -4,9 +4,10 @@ import threading
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db, get_next_ticket_id
-from app.core.security import get_current_customer, require_customer_for_betting
+from app.core.security import get_current_customer, require_customer_for_betting, security_bearer, decode_token
 from app.models.user import User
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem
@@ -275,6 +276,7 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
                 db.query(BetItem.number, BetItem.type)
                 .join(Ticket, BetItem.ticket_id == Ticket.id)
                 .filter(
+                    Ticket.user_id == user.id,
                     (Ticket.game_slot == req.gameSlot) | (Ticket.game_slot == norm_req_slot),
                     (Ticket.placed_at >= today_start_utc) | (Ticket.placed_at >= start_naive),
                     (Ticket.placed_at <= today_end_utc) | (Ticket.placed_at <= end_naive),
@@ -480,7 +482,10 @@ def submit_issue(req: IssueCreateSchema, current_user: User = Depends(get_curren
     }
 
 @router.get("/limits")
-def get_customer_limits(db: Session = Depends(get_db)):
+def get_customer_limits(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_bearer),
+    db: Session = Depends(get_db)
+):
     blocked_rules = db.query(BlockedNumberRule).order_by(BlockedNumberRule.id.asc()).all()
     agency_limits = db.query(AgencyNumberLimit).order_by(AgencyNumberLimit.id.asc()).all()
     global_limit = db.query(GlobalLimitRule).first()
@@ -489,15 +494,24 @@ def get_customer_limits(db: Session = Depends(get_db)):
     from app.core.game_timing import get_ist_day_utc_bounds
     start_utc, end_utc = get_ist_day_utc_bounds()
 
-    all_today_3digit = (
-        db.query(Ticket.game_slot, BetItem.number, BetItem.type)
-        .join(Ticket, BetItem.ticket_id == Ticket.id)
-        .filter(
-            Ticket.placed_at >= start_utc,
-            Ticket.placed_at < end_utc,
+    current_user_id = None
+    if credentials and credentials.credentials:
+        payload = decode_token(credentials.credentials)
+        if payload:
+            current_user_id = payload.get("sub")
+
+    all_today_3digit = []
+    if current_user_id:
+        all_today_3digit = (
+            db.query(Ticket.game_slot, BetItem.number, BetItem.type)
+            .join(Ticket, BetItem.ticket_id == Ticket.id)
+            .filter(
+                Ticket.user_id == current_user_id,
+                Ticket.placed_at >= start_utc,
+                Ticket.placed_at < end_utc,
+            )
+            .all()
         )
-        .all()
-    )
     taken_3digit: dict[str, list[str]] = {}
     for s_val, n_val, t_val in all_today_3digit:
         norm_s = normalize_slot_name(s_val) if s_val else ""
