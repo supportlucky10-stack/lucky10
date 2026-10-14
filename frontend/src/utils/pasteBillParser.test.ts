@@ -1024,9 +1024,111 @@ Dear
   console.log('✓ Test 30 Passed: Customer pasted entry order and grouping strictly preserved');
 }
 
+// TEST 31: User Exact Pasted Input (Glued Bills without newline)
+// Input: "AB AC BC 12 21 81 18 28 82 72 27-1AB AC 12 21 81 18 28 82 72 27-1"
+{
+  const input = 'AB AC BC 12 21 81 18 28 82 72 27-1AB AC 12 21 81 18 28 82 72 27-1';
+  const res = parsePastedBillText(input);
+  assert(res.success === true, 'Test 31: should parse glued bills successfully');
+  // Bill 1: 3 pairs (AB, AC, BC) * 8 numbers = 24 items
+  // Bill 2: 2 pairs (AB, AC) * 8 numbers = 16 items
+  // Total = 40 items
+  assert(res.items.length === 40, `Test 31: expected 40 items, got ${res.items.length}`);
+  assert(res.totalCount === 40, `Test 31: expected totalCount 40, got ${res.totalCount}`);
+  assert(res.totalAmount === 400, `Test 31: expected totalAmount 400, got ${res.totalAmount}`);
+
+  const nums = ['12', '21', '81', '18', '28', '82', '72', '27'];
+
+  // Verify Bill 1 (first 24 items: 8 AB, 8 AC, 8 BC)
+  const bill1Pairs = ['AB', 'AC', 'BC'];
+  let idx = 0;
+  for (const pair of bill1Pairs) {
+    for (const num of nums) {
+      const item = res.items[idx];
+      assert(item.number === `${pair}:${num}`, `Test 31 [${idx}]: expected number ${pair}:${num}, got ${item.number}`);
+      assert(item.type === 'Pair', `Test 31 [${idx}]: expected type Pair`);
+      assert(item.count === 1, `Test 31 [${idx}]: expected count 1`);
+      assert(item.unitPrice === 10, `Test 31 [${idx}]: expected unitPrice 10`);
+      assert(item.totalAmount === 10, `Test 31 [${idx}]: expected totalAmount 10`);
+      idx++;
+    }
+  }
+
+  // Verify Bill 2 (next 16 items: 8 AB, 8 AC)
+  const bill2Pairs = ['AB', 'AC'];
+  for (const pair of bill2Pairs) {
+    for (const num of nums) {
+      const item = res.items[idx];
+      assert(item.number === `${pair}:${num}`, `Test 31 [${idx}]: expected number ${pair}:${num}, got ${item.number}`);
+      assert(item.type === 'Pair', `Test 31 [${idx}]: expected type Pair`);
+      assert(item.count === 1, `Test 31 [${idx}]: expected count 1`);
+      assert(item.unitPrice === 10, `Test 31 [${idx}]: expected unitPrice 10`);
+      assert(item.totalAmount === 10, `Test 31 [${idx}]: expected totalAmount 10`);
+      idx++;
+    }
+  }
+
+  console.log('✓ Test 31 Passed: Exact user pasted input parsed into 40 items (24 + 16 bets) with ₹400 total amount');
+}
+
+// TEST 32: Two bills separated by newline
+{
+  const input = `AB AC BC 12 21 81 18 28 82 72 27-1\nAB AC 12 21 81 18 28 82 72 27-1`;
+  const res = parsePastedBillText(input);
+  assert(res.success === true, 'Test 32: should succeed');
+  assert(res.items.length === 40, `Test 32: expected 40 items, got ${res.items.length}`);
+  assert(res.totalCount === 40, `Test 32: totalCount 40`);
+  assert(res.totalAmount === 400, `Test 32: totalAmount 400`);
+  console.log('✓ Test 32 Passed: Newline-separated multi-pair multi-number bills produce 40 items');
+}
+
+// TEST 33: Two bills separated by space on a single line
+{
+  const input = 'AB AC BC 12 21 81 18 28 82 72 27-1 AB AC 12 21 81 18 28 82 72 27-1';
+  const res = parsePastedBillText(input);
+  assert(res.success === true, 'Test 33: should succeed');
+  assert(res.items.length === 40, `Test 33: expected 40 items, got ${res.items.length}`);
+  console.log('✓ Test 33 Passed: Space-separated inline bills produce 40 items');
+}
+
+// TEST 34: Case-insensitivity, different counts, and flexible separators
+{
+  // 1. Lowercase pairs with dot separators and count = 2
+  const inp1 = 'ab ac bc 12.21.81.18.28.82.72.27=2';
+  const res1 = parsePastedBillText(inp1);
+  assert(res1.success === true, 'Test 34 case 1 should succeed');
+  assert(res1.items.length === 24, `Test 34 case 1 expected 24 items, got ${res1.items.length}`);
+  assert(res1.items.every((it) => it.count === 2 && it.totalAmount === 20), 'Test 34 case 1 counts and amounts');
+  assert(res1.items[0].number === 'AB:12', 'Test 34 case 1 uppercase AB:12');
+
+  // 2. Glued bills with count = 5 and count = 10
+  const inp2 = 'AB AC 12 21-5BC 81 82 72-10';
+  const res2 = parsePastedBillText(inp2);
+  assert(res2.success === true, 'Test 34 case 2 should succeed');
+  // Bill 1: 2 pairs * 2 numbers = 4 items (each count 5)
+  // Bill 2: 1 pair * 3 numbers = 3 items (each count 10)
+  // Total = 7 items
+  assert(res2.items.length === 7, `Test 34 case 2 expected 7 items, got ${res2.items.length}`);
+  assert(res2.items[0].number === 'AB:12' && res2.items[0].count === 5, 'Item 0 count 5');
+  assert(res2.items[4].number === 'BC:81' && res2.items[4].count === 10, 'Item 4 count 10');
+
+  console.log('✓ Test 34 Passed: Case variations, varied counts (2, 5, 10), and flexible separators verified');
+}
+
+// TEST 35: Mixed clipboard with 3-digit bills, 1-digit bills, glued bills, and unrelated text
+{
+  const mixed = `Random Header\nAB AC BC 12 21 81 18 28 82 72 27-1AB AC 12 21 81 18 28 82 72 27-1\nSome chat text\n638*3+2\nDear Sir\nABC 5 10`;
+  const res = parsePastedBillText(mixed);
+  assert(res.success === true, 'Test 35: should succeed');
+  // 40 items (from the two pair bills) + 2 items (from 638*3+2) + 3 items (from ABC 5 10) = 45 items
+  assert(res.items.length === 45, `Test 35: expected 45 items, got ${res.items.length}`);
+  console.log('✓ Test 35 Passed: Mixed glued bills, 3-digit bills, 1-digit bills, and chat text correctly handled');
+}
+
 console.log('\n========================================');
-console.log('ALL 30 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 35 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
+
 
 
 

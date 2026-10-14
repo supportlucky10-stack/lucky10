@@ -55,7 +55,13 @@ export function parsePastedBillText(text: string): ParseResult {
     };
   }
 
-  const rawLines = text.split(/\r?\n/);
+  // Pre-split concatenated bills (e.g. "...27-1AB AC..." or "...-1 AB AC..." without newlines)
+  const normalizedText = text.replace(
+    /(\d+(?:box|b)?)\s*(?=(?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc]|[Aa][Bb][Cc]|[Aa][Ll][Ll]|[A-Ca-c][^0-9a-zA-Z]+\d)\b)/gi,
+    '$1\n'
+  );
+
+  const rawLines = normalizedText.split(/\r?\n/);
   const items: BetSlipItemDraft[] = [];
 
   for (let i = 0; i < rawLines.length; i++) {
@@ -162,59 +168,42 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
-    // Format D1: Combined 2-Digit Pairs: Ab. Ac. Bc.. 79..2, AB. AC. BC.. 79..2, ab..ac..bc..79..2, AB..AC..BC..97..2, AB . AC . BC .. 79 .. 2, etc.
+    // Format D: 2-Digit Pairs (Single or Multiple Pairs: AB, AC, BC) with Single or Multiple Numbers:
+    // Examples:
+    //   Single pair, single number: AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, AC*89*10
+    //   Multiple pairs, single number: AB. AC. BC.. 79..2, Ab. Ac. Bc.. 79..2, ab..ac..bc..79..2
+    //   Single pair, multiple numbers: AB.79..89.73.37.1, AC.79.89.73.37.1., BC..79..89.73.37.1
+    //   Multiple pairs, multiple numbers:
+    //     AB AC BC 12 21 81 18 28 82 72 27-1
+    //     AB AC 12 21 81 18 28 82 72 27-1
+    //   Case-insensitive: AB/Ab/aB/ab, AC/Ac/aC/ac, BC/Bc/bC/bc
     const multiPairMatch = trimmed.match(
-      /^((?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc])(?:[^0-9a-zA-Z]+(?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc]))+)([^0-9a-zA-Z]+)(\d{2})([^0-9a-zA-Z]+)(\d+)$/
+      /^((?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc])(?:[^0-9a-zA-Z]+(?:[Aa][Bb]|[Bb][Cc]|[Aa][Cc]))*)([^0-9a-zA-Z]+)((?:\d{2}[^0-9a-zA-Z]+)+)(\d+)[^0-9a-zA-Z]*$/
     );
     if (multiPairMatch) {
       const pairGroup = multiPairMatch[1];
-      const digits = multiPairMatch[3];
-      const count = parseInt(multiPairMatch[5], 10);
+      const numbersGroup = multiPairMatch[3];
+      const count = parseInt(multiPairMatch[4], 10);
       if (count > 0) {
         const pairTokens = [...pairGroup.matchAll(/[Aa][Bb]|[Bb][Cc]|[Aa][Cc]/gi)].map((m) => m[0].toUpperCase());
         const uniquePairs = Array.from(new Set(pairTokens));
-        const unitPrice2Digit = 10;
-        uniquePairs.forEach((pair) => {
-          items.push({
-            number: `${pair}:${digits}`,
-            count,
-            type: 'Pair',
-            playMode: 'DIRECT',
-            unitPrice: unitPrice2Digit,
-            totalAmount: count * unitPrice2Digit,
-          });
-        });
-        continue;
-      }
-    }
-
-    // Format D2: Single 2-Digit Pair with single or multiple numbers (AB, AC, BC):
-    // Examples:
-    //   AB*45*10, AB-45-10, AB=45=10, AB 45 10, BC*23*10, BC-23-10, BC 23 10, AC*89*10
-    //   AB.79..89.73.37.1, AC.79.89.73.37.1., BC..79..89.73.37.1, AB.79.89.1, AB.79.1
-    //   AB-79-89-73-37-1, AB=79=89=73=37=1, AB+79+89+73+37+1, AC-79-89-73-37-1, BC-79-89-73-37-1
-    //   Case-insensitive: AB/Ab/aB/ab, AC/Ac/aC/ac, BC/Bc/bC/bc
-    const pairMatch = trimmed.match(
-      /^([Aa][Bb]|[Bb][Cc]|[Aa][Cc])([^0-9a-zA-Z]+)((?:\d{2}[^0-9a-zA-Z]+)+)(\d+)[^0-9a-zA-Z]*$/
-    );
-    if (pairMatch) {
-      const pair = pairMatch[1].toUpperCase();
-      const numbersGroup = pairMatch[3];
-      const count = parseInt(pairMatch[4], 10);
-      if (count > 0) {
         const nums = [...numbersGroup.matchAll(/\d{2}/g)].map((m) => m[0]);
-        const unitPrice2Digit = 10;
-        nums.forEach((digits) => {
-          items.push({
-            number: `${pair}:${digits}`,
-            count,
-            type: 'Pair',
-            playMode: 'DIRECT',
-            unitPrice: unitPrice2Digit,
-            totalAmount: count * unitPrice2Digit,
+        if (nums.length > 0) {
+          const unitPrice2Digit = 10;
+          uniquePairs.forEach((pair) => {
+            nums.forEach((digits) => {
+              items.push({
+                number: `${pair}:${digits}`,
+                count,
+                type: 'Pair',
+                playMode: 'DIRECT',
+                unitPrice: unitPrice2Digit,
+                totalAmount: count * unitPrice2Digit,
+              });
+            });
           });
-        });
-        continue;
+          continue;
+        }
       }
     }
 
