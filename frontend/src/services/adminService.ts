@@ -1,5 +1,5 @@
 import { apiRequest } from './api';
-import type { UserAccount, GameResult, GameSlot, PlacedTicket } from '../types';
+import type { UserAccount, GameResult, GameSlot, PlacedTicket, DeletedTicket } from '../types';
 
 export const adminService = {
   async getAllUsers(): Promise<UserAccount[]> {
@@ -84,6 +84,15 @@ export const adminService = {
 
   async getTicketsByDate(date: string): Promise<PlacedTicket[]> {
     return await apiRequest<PlacedTicket[]>(`/api/admin/tickets/by-date?date=${encodeURIComponent(date)}`, { method: 'GET' });
+  },
+
+  async getDeletedTickets(date?: string, userId?: string, gameSlot?: string): Promise<DeletedTicket[]> {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (userId) params.append('user_id', userId);
+    if (gameSlot) params.append('game_slot', gameSlot);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return await apiRequest<DeletedTicket[]>(`/api/admin/tickets/deleted${query}`, { method: 'GET' });
   },
 
   async deleteTicket(ticketId: string): Promise<{ success: boolean; message: string }> {

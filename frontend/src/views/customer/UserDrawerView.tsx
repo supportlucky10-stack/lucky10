@@ -28,6 +28,10 @@ export const UserDrawerView: React.FC = () => {
       action: () => setCurrentView('EDIT_DELETE_BILL'),
     },
     {
+      label: 'Deleted Bills',
+      action: () => setCurrentView('DELETED_BILLS'),
+    },
+    {
       label: 'Result View',
       action: () => setCurrentView('TODAYS_RESULT'),
     },

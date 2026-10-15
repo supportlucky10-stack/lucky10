@@ -9,7 +9,7 @@ from app.core.database import get_db, get_next_ticket_id
 from app.core.security import get_current_customer, require_customer_for_betting
 from app.models.user import User
 from app.models.game_result import GameResult
-from app.models.ticket import Ticket, BetItem
+from app.models.ticket import Ticket, BetItem, DeletedTicket
 from app.models.issue import IssueTicket
 from app.models.limit_rule import AgencyNumberLimit, BlockedNumberRule, GlobalLimitRule, MaintenanceSetting
 from app.schemas.user import UserAccountResponse
@@ -68,6 +68,53 @@ def format_ticket(ticket: Ticket) -> dict:
         "status": ticket.status,
         "winAmount": ticket.win_amount,
         "createdAt": ist_str,
+    }
+
+def format_deleted_ticket(d_ticket: DeletedTicket) -> dict:
+    from app.core.game_timing import IST_TZ
+    cust_name = getattr(d_ticket, "customer_name", "") or ""
+    if cust_name.lower() == "customer":
+        cust_name = ""
+    user_obj = getattr(d_ticket, "user", None)
+    agency_name = (user_obj.name or user_obj.username) if user_obj else ""
+    user_name = agency_name
+
+    if d_ticket.placed_at:
+        dt = d_ticket.placed_at
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        placed_ist = dt.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        placed_ist = ""
+
+    if d_ticket.deleted_at:
+        dt_del = d_ticket.deleted_at
+        if dt_del.tzinfo is None:
+            dt_del = dt_del.replace(tzinfo=timezone.utc)
+        deleted_ist = dt_del.astimezone(IST_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    else:
+        deleted_ist = ""
+
+    try:
+        items = json.loads(d_ticket.items_json) if d_ticket.items_json else []
+    except Exception:
+        items = []
+
+    return {
+        "id": d_ticket.id,
+        "ticketId": d_ticket.id,
+        "userId": d_ticket.user_id,
+        "userName": user_name,
+        "agencyName": agency_name,
+        "customerName": cust_name,
+        "gameSlot": d_ticket.game_slot,
+        "items": items,
+        "totalAmount": d_ticket.total_amount,
+        "placedAt": placed_ist,
+        "deletedAt": deleted_ist,
+        "deletedBy": d_ticket.deleted_by,
+        "businessDate": d_ticket.business_date,
+        "status": "DELETED",
     }
 
 def format_result(res: GameResult) -> dict:
@@ -384,7 +431,7 @@ def get_user_tickets(date: Optional[str] = None, current_user: User = Depends(ge
 
 @router.delete("/tickets/{ticket_id}")
 def delete_user_ticket(ticket_id: str, current_user: User = Depends(get_current_customer), db: Session = Depends(get_db)):
-    ticket = db.query(Ticket).filter(
+    ticket = db.query(Ticket).options(joinedload(Ticket.items)).filter(
         Ticket.id == ticket_id,
         Ticket.user_id == current_user.id
     ).first()
@@ -392,13 +439,67 @@ def delete_user_ticket(ticket_id: str, current_user: User = Depends(get_current_
         raise HTTPException(status_code=404, detail="Ticket not found")
 
     try:
-        db.query(BetItem).filter(BetItem.ticket_id == ticket.id).delete(synchronize_session=False)
+        # Snapshot items before deletion
+        items_data = [
+            {
+                "id": it.id,
+                "number": it.number,
+                "count": it.count,
+                "type": it.type,
+                "unitPrice": it.unit_price,
+                "totalAmount": it.total_amount,
+            }
+            for it in (ticket.items or [])
+        ]
+
+        from app.core.game_timing import IST_TZ, get_business_date
+        if ticket.placed_at:
+            p_dt = ticket.placed_at
+            if p_dt.tzinfo is None:
+                p_dt = p_dt.replace(tzinfo=timezone.utc)
+            b_date = p_dt.astimezone(IST_TZ).strftime("%Y-%m-%d")
+        else:
+            b_date = get_business_date()
+
+        user_label = current_user.name or current_user.username or "Customer"
+        deleted_record = DeletedTicket(
+            id=ticket.id,
+            user_id=ticket.user_id,
+            customer_name=ticket.customer_name or "",
+            game_slot=ticket.game_slot,
+            total_amount=ticket.total_amount,
+            placed_at=ticket.placed_at or datetime.now(timezone.utc),
+            deleted_at=datetime.now(timezone.utc),
+            deleted_by=f"CUSTOMER ({user_label})",
+            items_json=json.dumps(items_data),
+            business_date=b_date,
+        )
+        db.merge(deleted_record)
+
         db.delete(ticket)
         db.commit()
         return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}
     except Exception as exc:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to delete ticket: {str(exc)}")
+
+
+@router.get("/tickets/deleted")
+def get_user_deleted_tickets(
+    date: Optional[str] = None,
+    current_user: User = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    query = (
+        db.query(DeletedTicket)
+        .options(joinedload(DeletedTicket.user))
+        .filter(DeletedTicket.user_id == current_user.id)
+    )
+    if date and date.strip() and date.strip().lower() != "all":
+        query = query.filter(DeletedTicket.business_date == date.strip())
+
+    records = query.order_by(DeletedTicket.deleted_at.desc()).limit(300).all()
+    return [format_deleted_ticket(r) for r in records]
 
 
 

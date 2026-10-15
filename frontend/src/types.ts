@@ -11,6 +11,7 @@ export type ViewType =
   | 'PREVIOUS_WINNING_NUMBERS'
   | 'MY_PLAY_REPORT'
   | 'EDIT_DELETE_BILL'
+  | 'DELETED_BILLS'
   | 'ADMIN_SIGN_IN'
   | 'ADMIN_DRAWER'
   | 'ADMIN_USERS_LIST'
@@ -18,7 +19,8 @@ export type ViewType =
   | 'ADMIN_REPORTS'
   | 'ADMIN_ISSUES'
   | 'ADMIN_LIMIT_BLOCK'
-  | 'ADMIN_SERVER_MAINTENANCE';
+  | 'ADMIN_SERVER_MAINTENANCE'
+  | 'ADMIN_DELETED_BILLS';
 
 export type GameSlot = '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game';
 
@@ -106,4 +108,30 @@ export interface ToastMessage {
   id: string;
   text: string;
   type: 'success' | 'error' | 'info';
+}
+
+export interface DeletedTicketItem {
+  id?: string;
+  number: string;
+  count: number;
+  type: string;
+  unitPrice: number;
+  totalAmount: number;
+}
+
+export interface DeletedTicket {
+  id: string;
+  ticketId: string;
+  userId: string;
+  userName?: string;
+  agencyName?: string;
+  customerName?: string;
+  gameSlot: GameSlot | string;
+  items: DeletedTicketItem[];
+  totalAmount: number;
+  placedAt: string;
+  deletedAt: string;
+  deletedBy: string;
+  businessDate: string;
+  status: 'DELETED';
 }

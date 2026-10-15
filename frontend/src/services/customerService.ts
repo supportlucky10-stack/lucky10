@@ -1,5 +1,5 @@
 import { apiRequest } from './api';
-import type { GameResult, PlacedTicket, GameSlot, BetSlipItem } from '../types';
+import type { GameResult, PlacedTicket, GameSlot, BetSlipItem, DeletedTicket } from '../types';
 
 export const customerService = {
   async getTodayResults(date?: string): Promise<Record<GameSlot, GameResult>> {
@@ -31,6 +31,10 @@ export const customerService = {
 
   async getUserTickets(): Promise<PlacedTicket[]> {
     return await apiRequest<PlacedTicket[]>('/api/customer/tickets', { method: 'GET' });
+  },
+
+  async getDeletedTickets(date?: string): Promise<DeletedTicket[]> {
+    return await apiRequest<DeletedTicket[]>(`/api/customer/tickets/deleted${date ? `?date=${encodeURIComponent(date)}` : ''}`, { method: 'GET' });
   },
 
   async deleteTicket(ticketId: string): Promise<{ success: boolean; message: string }> {

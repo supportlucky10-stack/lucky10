@@ -7,6 +7,7 @@ import a2Icon from '../../assets/admin logo/a2.png';
 import a3Icon from '../../assets/admin logo/a3.png';
 import a4Icon from '../../assets/admin logo/a4.png';
 import a5Icon from '../../assets/admin logo/a5.png';
+import a6Icon from '../../assets/admin logo/a6.png';
 
 export const AdminDrawerView: React.FC = () => {
   const { logout, setCurrentView } = useApp();
@@ -15,6 +16,7 @@ export const AdminDrawerView: React.FC = () => {
     { label: 'Users List', icon: a1Icon, action: () => setCurrentView('ADMIN_USERS_LIST') },
     { label: 'Result Management', icon: a2Icon, action: () => setCurrentView('ADMIN_RESULT_MANAGEMENT') },
     { label: 'Reports', icon: a3Icon, action: () => setCurrentView('ADMIN_REPORTS') },
+    { label: 'Deleted Bills', icon: a6Icon, action: () => setCurrentView('ADMIN_DELETED_BILLS') },
     { label: 'Limit / Block', icon: a4Icon, action: () => setCurrentView('ADMIN_LIMIT_BLOCK') },
     { label: 'Server Maintenance', icon: a5Icon, action: () => setCurrentView('ADMIN_SERVER_MAINTENANCE') },
   ];

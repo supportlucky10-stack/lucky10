@@ -15,6 +15,7 @@ import { PreviousWinningNumbersView } from './views/customer/PreviousWinningNumb
 import { MyPlayReportView } from './views/customer/MyPlayReportView';
 import { EditDeleteBillView } from './views/customer/EditDeleteBillView';
 import { TotalCountView } from './views/customer/TotalCountView';
+import { DeletedBillsView } from './views/common/DeletedBillsView';
 
 // Admin View Imports (Lazy-Loaded to reduce initial player bundle)
 const AdminSignInView = React.lazy(() => import('./views/admin/AdminSignInView').then(m => ({ default: m.AdminSignInView })));
@@ -149,6 +150,8 @@ const ViewRouter: React.FC = () => {
         return <MyPlayReportView />;
       case 'EDIT_DELETE_BILL':
         return <EditDeleteBillView />;
+      case 'DELETED_BILLS':
+        return <DeletedBillsView />;
       case 'ADMIN_SIGN_IN':
         return <AdminSignInView />;
       case 'ADMIN_DRAWER':
@@ -159,6 +162,8 @@ const ViewRouter: React.FC = () => {
         return <AdminResultManagementView />;
       case 'ADMIN_REPORTS':
         return <AdminReportsView />;
+      case 'ADMIN_DELETED_BILLS':
+        return <DeletedBillsView isAdmin={true} />;
       case 'ADMIN_ISSUES':
         return <AdminIssuesView />;
       case 'ADMIN_LIMIT_BLOCK':

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Integer, BigInteger, Index
+from sqlalchemy import Column, String, Float, ForeignKey, DateTime, Integer, BigInteger, Index, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime, timezone
 from app.core.database import Base
@@ -45,3 +45,26 @@ class TicketCounter(Base):
 
     id = Column(Integer, primary_key=True, default=1)
     current_val = Column(BigInteger, nullable=False, default=2243296)
+
+
+class DeletedTicket(Base):
+    __tablename__ = "deleted_tickets"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    customer_name = Column(String, default="", nullable=True)
+    game_slot = Column(String, nullable=False, index=True)
+    total_amount = Column(Float, nullable=False)
+    placed_at = Column(DateTime, nullable=False, index=True)
+    deleted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+    deleted_by = Column(String, default="CUSTOMER", nullable=False)
+    items_json = Column(Text, nullable=False)
+    business_date = Column(String, nullable=False, index=True)
+
+    user = relationship("User")
+
+    __table_args__ = (
+        Index("ix_deleted_tickets_user_date", "user_id", "business_date"),
+        Index("ix_deleted_tickets_date", "business_date"),
+    )
+
