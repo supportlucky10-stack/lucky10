@@ -1217,17 +1217,17 @@ export const GameDashboardView: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleMode3Add('BOX')}
-                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
-                  >
-                    BOX
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => handleMode3Add('SUPER')}
                     className="w-full h-10 sm:h-11 bg-black text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-white/90 cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
                   >
                     SUPER
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMode3Add('BOX')}
+                    className="w-full h-10 sm:h-11 bg-gradient-to-b from-[#6b1675] via-[#4d0f54] to-[#2e0933] text-white font-black text-xs sm:text-sm rounded-xl shadow-md hover:brightness-115 active:scale-95 uppercase tracking-wide border-2 border-[#a82ab8] cursor-pointer flex items-center justify-center [touch-action:manipulation] [-webkit-tap-highlight-color:transparent]"
+                  >
+                    BOX
                   </button>
                 </div>
               )}
