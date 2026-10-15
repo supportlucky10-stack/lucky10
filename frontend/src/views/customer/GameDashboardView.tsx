@@ -529,7 +529,7 @@ export const GameDashboardView: React.FC = () => {
       targetNums = Array.from(setPerms);
     }
 
-    const pairs = pair === 'ALL' ? ['AB', 'AC', 'BC'] : [pair];
+    const pairs = pair === 'ALL' ? ['AB', 'BC', 'AC'] : [pair];
     const itemsToAdd: Omit<BetSlipItem, 'id'>[] = [];
 
     targetNums.forEach((n) => {
@@ -1186,7 +1186,7 @@ export const GameDashboardView: React.FC = () => {
 
               {activeMode === 2 && (
                 <div className="grid grid-cols-4 gap-2">
-                  {(['AB', 'AC', 'BC'] as const).map((pair) => (
+                  {(['AB', 'BC', 'AC'] as const).map((pair) => (
                     <button
                       key={pair}
                       type="button"
