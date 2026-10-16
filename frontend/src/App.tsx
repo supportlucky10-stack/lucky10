@@ -150,8 +150,6 @@ const ViewRouter: React.FC = () => {
         return <MyPlayReportView />;
       case 'EDIT_DELETE_BILL':
         return <EditDeleteBillView />;
-      case 'DELETED_BILLS':
-        return <DeletedBillsView />;
       case 'ADMIN_SIGN_IN':
         return <AdminSignInView />;
       case 'ADMIN_DRAWER':

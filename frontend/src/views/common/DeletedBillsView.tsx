@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { customerService } from '../../services/customerService';
 import { adminService } from '../../services/adminService';
 import type { DeletedTicket, UserAccount } from '../../types';
 import { getBusinessDateIST, formatDisplayDate } from '../../utils/dateUtils';
@@ -10,7 +9,6 @@ import {
   Calendar,
   Trash2,
   Clock,
-  User,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -84,10 +82,9 @@ const getDisplayNumber = (item: { number?: string; type?: string }): string => {
   return num;
 };
 
-export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = false }) => {
+export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = true }) => {
   const { setCurrentView, addToast } = useApp();
 
-  const [dateMode, setDateMode] = useState<'DATE' | 'ALL'>('DATE');
   const [selectedDate, setSelectedDate] = useState<string>(getBusinessDateIST());
   const [usersList, setUsersList] = useState<UserAccount[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('ALL');
@@ -113,15 +110,9 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
   const loadDeletedTickets = async () => {
     setIsLoading(true);
     try {
-      const dateParam = dateMode === 'DATE' ? selectedDate : undefined;
-      let tickets: DeletedTicket[] = [];
-      if (isAdmin) {
-        const uId = selectedUserId !== 'ALL' ? selectedUserId : undefined;
-        const gSlot = selectedSlot !== 'ALL' ? selectedSlot : undefined;
-        tickets = await adminService.getDeletedTickets(dateParam, uId, gSlot);
-      } else {
-        tickets = await customerService.getDeletedTickets(dateParam);
-      }
+      const uId = selectedUserId !== 'ALL' ? selectedUserId : undefined;
+      const gSlot = selectedSlot !== 'ALL' ? selectedSlot : undefined;
+      const tickets = await adminService.getDeletedTickets(selectedDate, uId, gSlot);
       setDeletedTickets(tickets || []);
     } catch (err: any) {
       addToast(err?.message || 'Failed to load deleted bills', 'error');
@@ -132,7 +123,7 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
 
   useEffect(() => {
     loadDeletedTickets();
-  }, [isAdmin, dateMode, selectedDate, selectedUserId, selectedSlot]);
+  }, [isAdmin, selectedDate, selectedUserId, selectedSlot]);
 
   // Filter by search query (Bill ID, Customer Name, or Number)
   const filteredTickets = useMemo(() => {
@@ -182,83 +173,45 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
       {/* Header Banner with Back navigation */}
       <HeaderBanner
         title="DELETED BILLS"
-        onBackClick={() => setCurrentView(isAdmin ? 'ADMIN_DRAWER' : 'USER_DRAWER')}
+        onBackClick={() => setCurrentView('ADMIN_DRAWER')}
       />
 
       <div className="w-full max-w-md sm:max-w-xl mx-auto px-3 sm:px-5 py-3 space-y-3">
         {/* Filter Controls Card */}
         <div className="bg-neutral-950 border border-neutral-800 rounded-2xl p-3 sm:p-4 shadow-xl space-y-3">
-          {/* Top Row: Date Selection Mode & Date Picker */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-gold" />
-                Date Filter
+          {/* Date Picker Row */}
+          <div className="grid grid-cols-2 gap-2 items-center">
+            {/* Date Display Pill */}
+            <div className="relative bg-gold-metallic text-black rounded-xl px-3 py-2 cursor-pointer flex items-center justify-center shadow-md border border-gold-dark overflow-hidden">
+              <span className="text-black font-black text-xs sm:text-sm font-mono whitespace-nowrap">
+                {formatDisplayDate(selectedDate)}
               </span>
-
-              {/* Mode Toggle: Specific Date vs All Dates */}
-              <div className="inline-flex rounded-lg bg-neutral-900 p-0.5 border border-neutral-800 text-xs font-mono font-bold">
-                <button
-                  type="button"
-                  onClick={() => setDateMode('DATE')}
-                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    dateMode === 'DATE'
-                      ? 'bg-gradient-to-r from-gold via-yellow-400 to-gold-dark text-black shadow font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  By Date
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setDateMode('ALL')}
-                  className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
-                    dateMode === 'ALL'
-                      ? 'bg-gradient-to-r from-gold via-yellow-400 to-gold-dark text-black shadow font-black'
-                      : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  All Dates
-                </button>
-              </div>
+              <input
+                ref={dateInputRef}
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) setSelectedDate(e.target.value);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+              />
             </div>
 
-            {/* Date Picker Button (When 'DATE' is selected) */}
-            {dateMode === 'DATE' && (
-              <div className="grid grid-cols-2 gap-2 items-center pt-1">
-                {/* Date Display Pill */}
-                <div className="relative bg-gold-metallic text-black rounded-xl px-3 py-2 cursor-pointer flex items-center justify-center shadow-md border border-gold-dark overflow-hidden">
-                  <span className="text-black font-black text-xs sm:text-sm font-mono whitespace-nowrap">
-                    {formatDisplayDate(selectedDate)}
-                  </span>
-                  <input
-                    ref={dateInputRef}
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      if (e.target.value) setSelectedDate(e.target.value);
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                  />
-                </div>
-
-                {/* Change Date Action Button */}
-                <div className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-3 py-2 cursor-pointer flex items-center justify-center gap-1.5 shadow-md overflow-hidden">
-                  <Calendar className="w-4 h-4 text-gold shrink-0 pointer-events-none" />
-                  <span className="font-bold text-xs sm:text-sm whitespace-nowrap pointer-events-none">
-                    Change Date
-                  </span>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      if (e.target.value) setSelectedDate(e.target.value);
-                    }}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                  />
-                </div>
-              </div>
-            )}
+            {/* Change Date Action Button */}
+            <div className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-3 py-2 cursor-pointer flex items-center justify-center gap-1.5 shadow-md overflow-hidden">
+              <Calendar className="w-4 h-4 text-gold shrink-0 pointer-events-none" />
+              <span className="font-bold text-xs sm:text-sm whitespace-nowrap pointer-events-none">
+                Change Date
+              </span>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => {
+                  if (e.target.value) setSelectedDate(e.target.value);
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+              />
+            </div>
           </div>
 
           {/* Admin Filters: User/Agency & Game Slot */}
@@ -379,9 +332,7 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
                 No Deleted Bills Found
               </h4>
               <p className="text-xs text-neutral-400 font-mono mt-1">
-                {dateMode === 'DATE'
-                  ? `No bills were deleted on ${formatDisplayDate(selectedDate)}.`
-                  : 'There are no recorded deleted bills in the archive.'}
+                No bills were deleted on {formatDisplayDate(selectedDate)}.
               </p>
             </div>
           </div>
@@ -423,8 +374,8 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
                     </div>
                   </div>
 
-                  {/* Deletion Audit Timestamp & Actor Bar */}
-                  <div className="bg-rose-950/30 border-b border-rose-900/40 px-3 sm:px-4 py-2 text-xs font-mono space-y-1">
+                  {/* Deletion Audit Timestamp Bar */}
+                  <div className="bg-rose-950/30 border-b border-rose-900/40 px-3 sm:px-4 py-2 text-xs font-mono">
                     <div className="flex items-center justify-between text-rose-300">
                       <span className="flex items-center gap-1.5 font-bold">
                         <Trash2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
@@ -432,16 +383,6 @@ export const DeletedBillsView: React.FC<DeletedBillsViewProps> = ({ isAdmin = fa
                       </span>
                       <span className="font-extrabold text-white">
                         {formatDateTime(ticket.deletedAt)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-neutral-300 text-[11px]">
-                      <span className="flex items-center gap-1.5 font-bold text-neutral-400">
-                        <User className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                        Deleted By:
-                      </span>
-                      <span className="font-bold text-rose-300">
-                        {ticket.deletedBy || '—'}
                       </span>
                     </div>
                   </div>
