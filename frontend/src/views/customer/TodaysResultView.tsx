@@ -17,6 +17,28 @@ export const TodaysResultView: React.FC = () => {
   const isManualDateRef = useRef<boolean>(false);
   const isManualSlotRef = useRef<boolean>(false);
   const lastCutoffSlotRef = useRef<GameSlot>(getResultPageActiveSlot());
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const triggerDatePicker = () => {
+    if (dateInputRef.current) {
+      if ('showPicker' in dateInputRef.current && typeof (dateInputRef.current as any).showPicker === 'function') {
+        try {
+          (dateInputRef.current as any).showPicker();
+          return;
+        } catch {}
+      }
+      try {
+        dateInputRef.current.focus();
+        dateInputRef.current.click();
+      } catch {}
+    }
+  };
+
+  const handleDateChange = (newDate: string) => {
+    if (!newDate) return;
+    isManualDateRef.current = newDate !== getBusinessDateIST();
+    setSelectedDate(newDate);
+  };
 
   // 1. Silent automatic game transition based strictly on IST cutoff times
   const syncResultSchedule = useCallback(() => {
@@ -187,6 +209,7 @@ export const TodaysResultView: React.FC = () => {
             <div className="grid grid-cols-2 gap-2 sm:gap-2.5 items-center">
               {/* Left: Date Display Pill */}
               <div
+                onClick={triggerDatePicker}
                 className="relative bg-gold-metallic text-black rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center shadow-lg h-[46px] sm:h-[50px] border-2 border-gold-dark overflow-hidden select-none"
               >
                 <span className="text-black font-black text-sm sm:text-base tracking-normal font-mono whitespace-nowrap [word-break:keep-all] shrink-0 leading-none pointer-events-none">
@@ -196,17 +219,20 @@ export const TodaysResultView: React.FC = () => {
                   type="date"
                   value={selectedDate}
                   onChange={(e) => {
-                    if (e.target.value) {
-                      setSelectedDate(e.target.value);
-                      isManualDateRef.current = e.target.value !== getBusinessDateIST();
-                    }
+                    if (e.target.value) handleDateChange(e.target.value);
                   }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker?.();
+                    } catch {}
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
                 />
               </div>
 
               {/* Right: Change Date Button */}
               <div
+                onClick={triggerDatePicker}
                 className="relative bg-neutral-900 border border-neutral-700 hover:border-gold/60 text-neutral-200 rounded-xl px-2 sm:px-3 py-1 cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 shadow-md h-[46px] sm:h-[50px] overflow-hidden select-none"
               >
                 <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-gold shrink-0 pointer-events-none" />
@@ -214,15 +240,18 @@ export const TodaysResultView: React.FC = () => {
                   Change date
                 </span>
                 <input
+                  ref={dateInputRef}
                   type="date"
                   value={selectedDate}
                   onChange={(e) => {
-                    if (e.target.value) {
-                      setSelectedDate(e.target.value);
-                      isManualDateRef.current = e.target.value !== getBusinessDateIST();
-                    }
+                    if (e.target.value) handleDateChange(e.target.value);
                   }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                  onClick={(e) => {
+                    try {
+                      e.currentTarget.showPicker?.();
+                    } catch {}
+                  }}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20 full-date-input"
                 />
               </div>
             </div>
