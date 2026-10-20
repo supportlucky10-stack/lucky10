@@ -17,15 +17,15 @@ import { EditDeleteBillView } from './views/customer/EditDeleteBillView';
 import { TotalCountView } from './views/customer/TotalCountView';
 import { DeletedBillsView } from './views/common/DeletedBillsView';
 
-// Admin View Imports (Lazy-Loaded to reduce initial player bundle)
-const AdminSignInView = React.lazy(() => import('./views/admin/AdminSignInView').then(m => ({ default: m.AdminSignInView })));
-const AdminDrawerView = React.lazy(() => import('./views/admin/AdminDrawerView').then(m => ({ default: m.AdminDrawerView })));
-const AdminUsersAndResultsView = React.lazy(() => import('./views/admin/AdminUsersAndResultsView').then(m => ({ default: m.AdminUsersAndResultsView })));
-const AdminResultManagementView = React.lazy(() => import('./views/admin/AdminResultManagementView').then(m => ({ default: m.AdminResultManagementView })));
-const AdminReportsView = React.lazy(() => import('./views/admin/AdminReportsView').then(m => ({ default: m.AdminReportsView })));
-const AdminIssuesView = React.lazy(() => import('./views/admin/AdminIssuesView').then(m => ({ default: m.AdminIssuesView })));
-const AdminLimitBlockView = React.lazy(() => import('./views/admin/AdminLimitBlockView').then(m => ({ default: m.AdminLimitBlockView })));
-const AdminServerMaintenanceView = React.lazy(() => import('./views/admin/AdminServerMaintenanceView').then(m => ({ default: m.AdminServerMaintenanceView })));
+// Admin View Imports (Direct Imports for instantaneous 0ms transitions without loading delays)
+import { AdminSignInView } from './views/admin/AdminSignInView';
+import { AdminDrawerView } from './views/admin/AdminDrawerView';
+import { AdminUsersAndResultsView } from './views/admin/AdminUsersAndResultsView';
+import { AdminResultManagementView } from './views/admin/AdminResultManagementView';
+import { AdminReportsView } from './views/admin/AdminReportsView';
+import { AdminIssuesView } from './views/admin/AdminIssuesView';
+import { AdminLimitBlockView } from './views/admin/AdminLimitBlockView';
+import { AdminServerMaintenanceView } from './views/admin/AdminServerMaintenanceView';
 
 import { CheckCircle, AlertCircle, Info, X, Clock, Server } from 'lucide-react';
 
@@ -262,9 +262,7 @@ const ViewRouter: React.FC = () => {
       {!isAdminSection && <InstallPromptModal />}
 
 
-      <React.Suspense fallback={<div className="p-8 text-center text-gold/60 text-xs font-mono">Loading...</div>}>
-        {renderView()}
-      </React.Suspense>
+      {renderView()}
     </MobileContainer>
   );
 };
