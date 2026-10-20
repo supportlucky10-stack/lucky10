@@ -1,268 +1,257 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Mail, Lock, Eye, EyeOff, Shield } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ArrowRight, Home } from 'lucide-react';
 
 export const AdminSignInView: React.FC = () => {
-  const { loginAdmin } = useApp();
+  const { loginAdmin, setCurrentView } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Strict body scroll lock
   useEffect(() => {
-    const origPos = document.body.style.position;
-    const origTop = document.body.style.top;
-    const origLeft = document.body.style.left;
-    const origRight = document.body.style.right;
-    const origBottom = document.body.style.bottom;
-    const origOverflow = document.body.style.overflow;
-    const origTouch = document.body.style.touchAction;
-
-    document.body.style.position = 'fixed';
-    document.body.style.top = '0';
-    document.body.style.left = '0';
-    document.body.style.right = '0';
-    document.body.style.bottom = '0';
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-
-    return () => {
-      document.body.style.position = origPos;
-      document.body.style.top = origTop;
-      document.body.style.left = origLeft;
-      document.body.style.right = origRight;
-      document.body.style.bottom = origBottom;
-      document.body.style.overflow = origOverflow;
-      document.body.style.touchAction = origTouch;
-    };
+    document.title = 'Lucky 10 - Admin Login';
   }, []);
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    loginAdmin(username, password);
+    setLoginError('');
+    if (!username.trim()) {
+      setLoginError('Please enter username or email');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const ok = await loginAdmin(username.trim(), password.trim());
+      if (!ok) {
+        setLoginError('Invalid admin credentials');
+      }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] max-h-[100dvh] bg-[#FFFDF5] text-neutral-900 flex flex-col justify-between items-center overflow-hidden overscroll-none select-none z-50 font-sans">
+    <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col items-center justify-center relative overflow-hidden select-none px-4 py-8 antialiased font-sans">
       
-      {/* TOP-LEFT ORGANIC YELLOW SHAPE */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
-        <svg
-          viewBox="0 0 400 400"
-          className="absolute -top-28 -left-28 w-80 h-80 sm:w-96 sm:h-96 text-[#FBBF24] opacity-95"
-          fill="currentColor"
-        >
-          <path d="M0,0 L320,0 C260,110 240,160 160,200 C80,240 30,220 0,300 Z" />
-        </svg>
-      </div>
+      {/* Home Button Navigation back to User Login */}
+      <button
+        type="button"
+        onClick={() => setCurrentView('USER_SIGN_IN')}
+        className="absolute top-5 left-5 sm:top-6 sm:left-6 z-40 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/80 border border-[#f5b82e]/50 text-[#f5b82e] hover:bg-[#f5b82e]/15 hover:border-[#f5b82e] active:scale-95 transition-all backdrop-blur-md shadow-[0_0_15px_rgba(245,184,46,0.2)] cursor-pointer group"
+        title="Go to User Login"
+      >
+        <Home className="w-4 h-4 stroke-[2.2] group-hover:scale-110 transition-transform" />
+        <span className="text-xs font-bold tracking-wide">User Login</span>
+      </button>
 
-      {/* TOP BRANDING & GREETING */}
-      <div className="relative z-10 w-full max-w-sm px-5 pt-7 sm:pt-10 flex flex-col items-center shrink-0">
+      {/* Glossy Dark Floor Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-[#060606] pointer-events-none" />
+
+      {/* Main Glass Card Container */}
+      <div className="relative z-10 w-full max-w-[365px] sm:max-w-[390px] flex flex-col items-center">
         
-        {/* Liora Fashions Logo with Bag & Flower */}
-        <div className="flex flex-col items-center justify-center">
-          {/* Shopping Bag Icon with Yellow Flower */}
-          <div className="relative w-12 h-12 flex items-center justify-center mb-1">
-            <svg viewBox="0 0 100 100" className="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
-              {/* Bag Handle */}
+        {/* Glass Card */}
+        <div
+          className="relative w-full rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 pt-8 sm:pt-9 pb-8 sm:pb-9 bg-[#0b0b0b]/80 backdrop-blur-2xl border-[1.5px] border-[#f5b82e]/85 overflow-hidden"
+          style={{
+            boxShadow: '0 0 40px rgba(245, 184, 46, 0.35), inset 0 0 20px rgba(245, 184, 46, 0.12), 0 20px 50px rgba(0, 0, 0, 0.8)',
+            WebkitBoxReflect: 'below 3px linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.4) 70%, #000000 98%)',
+          }}
+        >
+          {/* Card Header Home Shortcut */}
+          <button
+            type="button"
+            onClick={() => setCurrentView('USER_SIGN_IN')}
+            className="absolute top-4 right-4 z-20 p-2 rounded-full text-[#f5b82e]/70 hover:text-[#f5b82e] hover:bg-[#f5b82e]/10 active:scale-90 transition-all cursor-pointer"
+            title="Go to User Login"
+          >
+            <Home className="w-5 h-5 stroke-[2]" />
+          </button>
+
+          {/* Diagonal Glass Sheen Highlight */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-[32px] sm:rounded-[36px] overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 42%, transparent 65%)',
+            }}
+          />
+
+          {/* Specular Edge Flares */}
+          {/* Top-Left Corner Glare */}
+          <div className="absolute top-2 left-6 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute w-12 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Top-Center Border Glare */}
+          <div className="absolute -top-[1.5px] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffdf5d,0_0_20px_7px_rgba(245,184,46,0.95)]" />
+            <div className="absolute w-16 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Top-Right Corner Glare */}
+          <div className="absolute top-2 right-6 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute w-10 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Right Edge Flare */}
+          <div className="absolute top-[45%] -right-[1.5px] -translate-y-1/2 pointer-events-none z-20 flex flex-col items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute h-10 w-[2px] bg-gradient-to-b from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Bottom-Center Border Glare */}
+          <div className="absolute -bottom-[1.5px] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffdf5d,0_0_20px_7px_rgba(245,184,46,0.95)]" />
+            <div className="absolute w-20 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Top Avatar Circle */}
+          <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full mx-auto flex items-center justify-center bg-black/40 border-2 border-[#f5b82e] shadow-[0_0_25px_rgba(245,184,46,0.5),inset_0_0_15px_rgba(245,184,46,0.25)]">
+            {/* Top Vertex Glare on Circle */}
+            <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 pointer-events-none flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffe270,0_0_20px_6px_rgba(245,184,46,0.9)]" />
+              <div className="absolute w-10 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+            </div>
+
+            {/* Gold Crown Outline Icon */}
+            <svg
+              viewBox="0 0 64 64"
+              className="w-13 h-13 sm:w-14 sm:h-14 drop-shadow-[0_0_12px_rgba(245,184,46,0.65)]"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              {/* 3 top circles */}
+              <circle cx="15" cy="22" r="2.5" fill="#f5b82e" />
+              <circle cx="32" cy="14" r="2.5" fill="#f5b82e" />
+              <circle cx="49" cy="22" r="2.5" fill="#f5b82e" />
+              {/* Crown body */}
               <path
-                d="M38 40 V27 C38 20.37 43.37 15 50 15 C56.63 15 62 20.37 62 27 V40"
-                stroke="#E11D48"
-                strokeWidth="5"
+                d="M15 25 L22 34 L32 17 L42 34 L49 25 L46 43 H18 L15 25 Z"
+                stroke="#f5b82e"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Base bar */}
+              <path
+                d="M18 48 H46"
+                stroke="#f5b82e"
+                strokeWidth="2.8"
                 strokeLinecap="round"
               />
-              {/* Bag Body */}
-              <path
-                d="M26 40 L32 82 C32.5 85.5 35.5 88 39 88 H61 C64.5 88 67.5 85.5 68 82 L74 40 C74.5 36.5 71.8 33.5 68.3 33.5 H31.7 C28.2 33.5 25.5 36.5 26 40 Z"
-                stroke="#E11D48"
-                strokeWidth="5.5"
-                strokeLinejoin="round"
-                fill="none"
-              />
-              {/* Daisy Flower on Right Handle Base */}
-              <g transform="translate(65, 38)">
-                <circle cx="0" cy="-6" r="3.5" fill="#FBBF24" />
-                <circle cx="5.5" cy="-2.5" r="3.5" fill="#FBBF24" />
-                <circle cx="4" cy="4.5" r="3.5" fill="#FBBF24" />
-                <circle cx="-4" cy="4.5" r="3.5" fill="#FBBF24" />
-                <circle cx="-5.5" cy="-2.5" r="3.5" fill="#FBBF24" />
-                <circle cx="0" cy="0" r="3" fill="#D97706" />
-              </g>
             </svg>
           </div>
 
-          {/* Liora Fashions Text */}
-          <div className="text-center leading-tight">
-            <span className="font-serif text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight block">
-              Liora
-            </span>
-            <span className="font-serif text-2xl sm:text-3xl font-extrabold text-[#E11D48] tracking-tight block -mt-1.5">
-              Fashions
-            </span>
+          {/* Title & Subtitle */}
+          <div className="text-center mt-4 mb-6">
+            <h1 className="text-2xl sm:text-[27px] font-bold text-white tracking-wide">
+              Admin Login
+            </h1>
+            <p className="text-neutral-400 text-sm font-normal mt-1">
+              Access admin panel
+            </p>
           </div>
 
-          {/* ADMIN PANEL Subtitle with Gold Lines */}
-          <div className="flex items-center gap-2 mt-1.5 w-44 justify-center">
-            <div className="h-[1.5px] bg-[#FBBF24] flex-1" />
-            <span className="text-[10px] font-bold tracking-widest text-[#334155] uppercase whitespace-nowrap">
-              ADMIN PANEL
-            </span>
-            <div className="h-[1.5px] bg-[#FBBF24] flex-1" />
-          </div>
-        </div>
-
-        {/* Welcome Back & Subtitle */}
-        <div className="mt-4 sm:mt-5 text-center">
-          <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-900 tracking-tight">
-            Welcome Back!
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-500 font-normal mt-0.5">
-            Sign in to your admin account
-          </p>
-        </div>
-      </div>
-
-      {/* WHITE CARD FORM */}
-      <div className="relative z-10 w-full max-w-sm px-5 my-auto shrink-0">
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.06)] border border-neutral-100/90 p-5 sm:p-6">
-          <div onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }} className="space-y-3.5 sm:space-y-4">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             
-            {/* Field 1: Email or Phone (Admin Username) */}
-            <div>
-              <label className="block text-xs sm:text-sm font-semibold text-neutral-800 mb-1.5">
-                Email or Phone
-              </label>
-              <div className="relative flex items-center">
-                <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 absolute left-3.5 pointer-events-none shrink-0" />
-                <input
-                  type="text"
-                  name="admin_user_field"
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  placeholder="Enter email or phone number"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 sm:pl-11 pr-3.5 py-2.5 sm:py-3 bg-white border border-neutral-200 focus:border-[#E11D48] text-neutral-900 placeholder:text-neutral-400 font-medium rounded-xl text-xs sm:text-sm shadow-sm outline-none transition-colors"
-                  required
-                />
-              </div>
+            {/* Input 1: Username or Email */}
+            <div className="relative flex items-center bg-[#101010]/95 border border-[#262626] focus-within:border-[#f5b82e]/80 rounded-2xl px-4 py-3 sm:py-3.5 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.7)]">
+              <User className="w-5 h-5 text-neutral-400 stroke-[1.8] shrink-0" />
+              <input
+                type="text"
+                name="username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (loginError) setLoginError('');
+                }}
+                placeholder="Username or Email"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full bg-transparent text-white placeholder-neutral-500 text-[14px] sm:text-[15px] font-medium focus:outline-none pl-3 pr-1 caret-[#f5b82e]"
+              />
+              {/* Subtle Warm Highlight between inputs */}
+              <div className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[1.5px] bg-gradient-to-r from-transparent via-[#f5b82e]/60 to-transparent blur-[0.5px] pointer-events-none" />
             </div>
 
-            {/* Field 2: Password (Admin Password) */}
-            <div>
-              <label className="block text-xs sm:text-sm font-semibold text-neutral-800 mb-1.5">
-                Password
-              </label>
-              <div className="relative flex items-center">
-                <Lock className="w-4 h-4 sm:w-5 sm:h-5 text-neutral-400 absolute left-3.5 pointer-events-none shrink-0" />
-                <input
-                  type="text"
-                  name="admin_pwd_field"
-                  autoComplete="off"
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck={false}
-                  placeholder="Enter your password"
-                  value={password}
-                  style={!showPassword ? ({ WebkitTextSecurity: 'disc' } as React.CSSProperties) : undefined}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 sm:pl-11 pr-10 py-2.5 sm:py-3 bg-white border border-neutral-200 focus:border-[#E11D48] text-neutral-900 placeholder:text-neutral-400 font-medium rounded-xl text-xs sm:text-sm shadow-sm outline-none transition-colors"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 text-neutral-400 hover:text-neutral-600 focus:outline-none p-1 cursor-pointer"
-                  title={showPassword ? 'Hide password' : 'Show password'}
-                  tabIndex={-1}
-                >
-                  {showPassword ? (
-                    <EyeOff className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                  ) : (
-                    <Eye className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me & Forgot Password Row */}
-            <div className="flex items-center justify-between pt-0.5 text-xs">
-              <label className="flex items-center gap-2 text-neutral-700 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-3.5 h-3.5 rounded border-neutral-300 text-[#E11D48] focus:ring-[#E11D48] cursor-pointer"
-                />
-                <span className="font-normal text-neutral-700">Remember me</span>
-              </label>
+            {/* Input 2: Password */}
+            <div className="relative flex items-center bg-[#101010]/95 border border-[#262626] focus-within:border-[#f5b82e]/80 rounded-2xl px-4 py-3 sm:py-3.5 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.7)]">
+              <Lock className="w-5 h-5 text-neutral-400 stroke-[1.8] shrink-0" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (loginError) setLoginError('');
+                }}
+                placeholder="Password"
+                autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full bg-transparent text-white placeholder-neutral-500 text-[14px] sm:text-[15px] font-medium focus:outline-none pl-3 pr-1 caret-[#f5b82e]"
+              />
               <button
                 type="button"
-                className="text-[#E11D48] hover:underline font-medium cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+                className="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
                 tabIndex={-1}
+                title={showPassword ? 'Hide password' : 'Show password'}
               >
-                Forgot Password?
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5 stroke-[1.8]" />
+                ) : (
+                  <Eye className="w-5 h-5 stroke-[1.8]" />
+                )}
               </button>
             </div>
+
+            {/* Error Message */}
+            {loginError && (
+              <div className="py-2 px-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs font-medium text-center">
+                {loginError}
+              </div>
+            )}
 
             {/* Login Button */}
             <button
-              type="button"
-              onClick={() => handleSubmit()}
-              className="w-full py-3 bg-[#E11D48] hover:bg-[#BE123C] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-[0_4px_14px_rgba(225,29,72,0.35)] transition-all active:scale-[0.98] cursor-pointer tracking-wide flex items-center justify-center gap-2 mt-2"
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 sm:py-4 mt-5 sm:mt-6 rounded-2xl font-bold text-black text-[16px] sm:text-[17px] tracking-wide flex items-center justify-center gap-2.5 transition-all duration-150 active:scale-[0.985] hover:brightness-105 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(180deg, #ffdc4a 0%, #f7b726 50%, #d89108 100%)',
+                boxShadow: '0 0 32px rgba(245, 184, 46, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5)',
+              }}
             >
-              <span>Login</span>
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Logging in...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Login</span>
+                  <ArrowRight className="w-5 h-5 stroke-[2.75] text-black" />
+                </>
+              )}
             </button>
-
-            {/* OR Divider */}
-            <div className="flex items-center gap-3 pt-1">
-              <div className="h-[1px] bg-neutral-200 flex-1" />
-              <span className="text-[11px] font-semibold text-neutral-400 uppercase tracking-wider">
-                OR
-              </span>
-              <div className="h-[1px] bg-neutral-200 flex-1" />
-            </div>
-
-            {/* Cosmetic Login with OTP Button */}
-            <div>
-              <button
-                type="button"
-                className="w-full py-2.5 sm:py-3 bg-white border border-[#FBBF24] hover:bg-neutral-50 active:scale-[0.98] text-neutral-800 font-bold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
-                tabIndex={-1}
-              >
-                <Shield className="w-4 h-4 text-[#F59E0B] fill-[#F59E0B]/20" />
-                <span>Login with OTP</span>
-              </button>
-            </div>
-
-          </div>
+          </form>
         </div>
+
+        {/* Ambient Floor Glare line directly beneath card base */}
+        <div className="w-64 sm:w-80 h-2 bg-gradient-to-r from-transparent via-[#f5b82e]/80 to-transparent blur-[4px] mx-auto mt-0.5 pointer-events-none" />
+
       </div>
-
-      {/* BOTTOM ORGANIC YELLOW WAVE & FOOTER */}
-      <div className="relative w-full shrink-0 flex flex-col items-center justify-end pb-3 sm:pb-5 pt-4 z-10">
-        {/* Bottom Yellow Organic Curve Background */}
-        <div className="absolute bottom-0 left-0 right-0 w-full pointer-events-none -z-10 overflow-hidden leading-none">
-          <svg
-            viewBox="0 0 500 150"
-            preserveAspectRatio="none"
-            className="w-full h-24 sm:h-32 text-[#FBBF24]"
-            fill="currentColor"
-          >
-            <path d="M0,70 C150,130 350,10 500,60 L500,150 L0,150 Z" />
-          </svg>
-        </div>
-
-        {/* Footer Text */}
-        <div className="text-center text-neutral-800 text-[11px] sm:text-xs font-medium leading-relaxed select-none">
-          <div>© 2026 Liora Fashions</div>
-          <div className="text-neutral-700">All Rights Reserved</div>
-        </div>
-      </div>
-
     </div>
   );
 };

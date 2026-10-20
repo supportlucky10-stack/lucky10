@@ -1,300 +1,222 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Search, MapPin, ArrowRight, Bell, Home, ShoppingBag, Sparkles, Store, User, Plus } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, ArrowRight } from 'lucide-react';
 
 export const UserSignInView: React.FC = () => {
   const { loginUser } = useApp();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Lock iOS Safari rubber-band scrolling and set browser tab title to Leora Fashions
   useEffect(() => {
-    document.title = 'Myntra';
-    const originalOverflow = document.body.style.overflow;
-    const originalTouchAction = document.body.style.touchAction;
-
-    document.body.style.overflow = 'auto';
-    document.body.style.touchAction = 'auto';
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-      document.body.style.touchAction = originalTouchAction;
-    };
+    document.title = 'Lucky 10 - User Login';
   }, []);
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setLoginError('');
     if (!username.trim()) {
-      setLoginError('Please enter username');
+      setLoginError('Please enter username or mobile number');
       return;
     }
-    const res = await loginUser(username.trim(), password.trim());
-    if (!res.success) {
-      setLoginError(res.error || 'Invalid credentials');
+    setIsLoading(true);
+    try {
+      const res = await loginUser(username.trim(), password.trim());
+      if (!res.success) {
+        setLoginError(res.error || 'Invalid credentials');
+      }
+    } catch (err: any) {
+      setLoginError(err?.message || 'Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div
-      className="w-full min-h-screen min-h-[100dvh] bg-[#f8f9fa] text-black flex flex-col justify-between antialiased select-none font-sans overflow-y-auto"
-      style={{ paddingBottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
-    >
+    <div className="w-full min-h-screen min-h-[100dvh] bg-black text-white flex flex-col items-center justify-center relative overflow-hidden select-none px-4 py-8 antialiased font-sans">
       
-      {/* ================= 1. TOP YELLOW BRAND HEADER & SECRET LOGIN BAR ================= */}
-      <div
-        className="w-full bg-[#FFD000] px-4 pb-3.5 shadow-md space-y-2.5 shrink-0"
-        style={{ paddingTop: 'max(14px, env(safe-area-inset-top, 0px))' }}
-      >
+      {/* Glossy Dark Floor Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/95 to-[#060606] pointer-events-none" />
+
+      {/* Main Glass Card Container */}
+      <div className="relative z-10 w-full max-w-[365px] sm:max-w-[390px] flex flex-col items-center">
         
-        {/* Brand Title & Notification Bell */}
-        <div className="flex items-center justify-between">
-          <h1 className="font-serif font-black text-xl sm:text-2xl text-black tracking-tight">
-            Leora Fashions
-          </h1>
-          <div className="relative cursor-pointer p-1">
-            <Bell className="w-6 h-6 text-black fill-black/10 stroke-[2]" />
-            <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-[#FFD000] shadow-sm">
-              10
-            </span>
-          </div>
-        </div>
+        {/* Glass Card */}
+        <div
+          className="relative w-full rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 pt-8 sm:pt-9 pb-8 sm:pb-9 bg-[#0b0b0b]/80 backdrop-blur-2xl border-[1.5px] border-[#f5b82e]/85 overflow-hidden"
+          style={{
+            boxShadow: '0 0 40px rgba(245, 184, 46, 0.35), inset 0 0 20px rgba(245, 184, 46, 0.12), 0 20px 50px rgba(0, 0, 0, 0.8)',
+            WebkitBoxReflect: 'below 3px linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.4) 70%, #000000 98%)',
+          }}
+        >
+          {/* Diagonal Glass Sheen Highlight */}
+          <div
+            className="absolute inset-0 pointer-events-none rounded-[32px] sm:rounded-[36px] overflow-hidden"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0.02) 42%, transparent 65%)',
+            }}
+          />
 
-        {/* Search Bar (Secret Username Input) */}
-        <div onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }} className="w-full space-y-2.5">
-          <div className="relative w-full bg-white rounded-lg px-3 py-2 flex items-center gap-2.5 shadow-sm border border-black/10 focus-within:border-black/40 transition-all">
-            <Search className="w-4 h-4 text-neutral-500 shrink-0" />
-            <input
-              type="text"
-              name="player_user_search"
-              autoComplete="off"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="Search for Offers, Highlights, Best Deals"
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                if (loginError) setLoginError('');
-              }}
-              className="w-full bg-transparent text-black placeholder-neutral-500 font-medium text-xs sm:text-sm focus:outline-none select-text cursor-text caret-black"
-            />
+          {/* Specular Edge Flares */}
+          {/* Top-Left Corner Glare */}
+          <div className="absolute top-2 left-6 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute w-12 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
           </div>
 
-          {/* Location Bar (Secret Password Input & Arrow Login Button) */}
-          <div className="flex items-center justify-between gap-2 px-1">
-            <div className="flex items-center gap-2 flex-1">
-              <div className="relative flex items-center justify-center shrink-0">
-                <MapPin className="w-5 h-5 text-black stroke-[2.5]" />
-              </div>
+          {/* Top-Center Border Glare */}
+          <div className="absolute -top-[1.5px] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffdf5d,0_0_20px_7px_rgba(245,184,46,0.95)]" />
+            <div className="absolute w-16 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Top-Right Corner Glare */}
+          <div className="absolute top-2 right-6 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute w-10 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Right Edge Flare */}
+          <div className="absolute top-[45%] -right-[1.5px] -translate-y-1/2 pointer-events-none z-20 flex flex-col items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_8px_3px_#ffdf5d,0_0_18px_6px_rgba(245,184,46,0.9)]" />
+            <div className="absolute h-10 w-[2px] bg-gradient-to-b from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Bottom-Center Border Glare */}
+          <div className="absolute -bottom-[1.5px] left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center justify-center">
+            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffdf5d,0_0_20px_7px_rgba(245,184,46,0.95)]" />
+            <div className="absolute w-20 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+          </div>
+
+          {/* Top Avatar Circle */}
+          <div className="relative w-22 h-22 sm:w-24 sm:h-24 rounded-full mx-auto flex items-center justify-center bg-black/40 border-2 border-[#f5b82e] shadow-[0_0_25px_rgba(245,184,46,0.5),inset_0_0_15px_rgba(245,184,46,0.25)]">
+            {/* Top Vertex Glare on Circle */}
+            <div className="absolute -top-[3px] left-1/2 -translate-x-1/2 pointer-events-none flex items-center justify-center">
+              <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_10px_3px_#ffe270,0_0_20px_6px_rgba(245,184,46,0.9)]" />
+              <div className="absolute w-10 h-[2px] bg-gradient-to-r from-transparent via-[#fff8cc] to-transparent blur-[0.5px]" />
+            </div>
+
+            {/* Gold User Icon Outline */}
+            <svg
+              viewBox="0 0 48 48"
+              className="w-12 h-12 sm:w-13 sm:h-13 text-[#f5b82e] drop-shadow-[0_0_12px_rgba(245,184,46,0.6)]"
+              fill="none"
+              stroke="#f5b82e"
+              strokeWidth="2.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="24" cy="16" r="7.5" />
+              <path d="M11 38 C11 30.5 16.5 28.5 24 28.5 C31.5 28.5 37 30.5 37 38" />
+            </svg>
+          </div>
+
+          {/* Title & Subtitle */}
+          <div className="text-center mt-4 mb-6">
+            <h1 className="text-2xl sm:text-[27px] font-bold text-white tracking-wide">
+              User Login
+            </h1>
+            <p className="text-neutral-400 text-sm font-normal mt-1">
+              Access your account
+            </p>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            
+            {/* Input 1: Username or Mobile Number */}
+            <div className="relative flex items-center bg-[#101010]/95 border border-[#262626] focus-within:border-[#f5b82e]/80 rounded-2xl px-4 py-3 sm:py-3.5 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.7)]">
+              <User className="w-5 h-5 text-neutral-400 stroke-[1.8] shrink-0" />
               <input
                 type="text"
-                name="player_location_token"
-                autoComplete="off"
+                name="username"
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (loginError) setLoginError('');
+                }}
+                placeholder="Username or Mobile Number"
+                autoComplete="username"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
-                placeholder="Select Location"
+                className="w-full bg-transparent text-white placeholder-neutral-500 text-[14px] sm:text-[15px] font-medium focus:outline-none pl-3 pr-1 caret-[#f5b82e]"
+              />
+              {/* Subtle Warm Highlight between inputs */}
+              <div className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-8 h-[1.5px] bg-gradient-to-r from-transparent via-[#f5b82e]/60 to-transparent blur-[0.5px] pointer-events-none" />
+            </div>
+
+            {/* Input 2: Password */}
+            <div className="relative flex items-center bg-[#101010]/95 border border-[#262626] focus-within:border-[#f5b82e]/80 rounded-2xl px-4 py-3 sm:py-3.5 transition-all shadow-[inset_0_2px_4px_rgba(0,0,0,0.7)]">
+              <Lock className="w-5 h-5 text-neutral-400 stroke-[1.8] shrink-0" />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                name="password"
                 value={password}
-                style={{ WebkitTextSecurity: 'disc' } as React.CSSProperties}
                 onChange={(e) => {
                   setPassword(e.target.value);
                   if (loginError) setLoginError('');
                 }}
-                className="w-full bg-transparent text-black placeholder-neutral-600/80 font-bold text-xs sm:text-sm focus:outline-none select-text cursor-text caret-black"
+                placeholder="Password"
+                autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="w-full bg-transparent text-white placeholder-neutral-500 text-[14px] sm:text-[15px] font-medium focus:outline-none pl-3 pr-1 caret-[#f5b82e]"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="p-1 text-neutral-400 hover:text-white transition-colors cursor-pointer shrink-0"
+                tabIndex={-1}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5 stroke-[1.8]" />
+                ) : (
+                  <Eye className="w-5 h-5 stroke-[1.8]" />
+                )}
+              </button>
             </div>
 
-            {/* Right Arrow (Secret Submit Button) */}
+            {/* Error Message */}
+            {loginError && (
+              <div className="py-2 px-3 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs font-medium text-center">
+                {loginError}
+              </div>
+            )}
+
+            {/* Login Button */}
             <button
-              type="button"
-              onClick={() => handleSubmit()}
-              className="p-1.5 text-black hover:bg-black/15 active:scale-90 rounded-md transition-all cursor-pointer shrink-0"
-              title="Submit"
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 sm:py-4 mt-5 sm:mt-6 rounded-2xl font-bold text-black text-[16px] sm:text-[17px] tracking-wide flex items-center justify-center gap-2.5 transition-all duration-150 active:scale-[0.985] hover:brightness-105 cursor-pointer disabled:opacity-75 disabled:cursor-not-allowed"
+              style={{
+                background: 'linear-gradient(180deg, #ffdc4a 0%, #f7b726 50%, #d89108 100%)',
+                boxShadow: '0 0 32px rgba(245, 184, 46, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5)',
+              }}
             >
-              <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[3]" />
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                  <span>Logging in...</span>
+                </div>
+              ) : (
+                <>
+                  <span>Login</span>
+                  <ArrowRight className="w-5 h-5 stroke-[2.75] text-black" />
+                </>
+              )}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ================= 2. MAIN CONTENT AREA (Banner + Pink Offers Grid) ================= */}
-      <div className="w-full max-w-md mx-auto px-3.5 py-3 space-y-4 flex-1 flex flex-col justify-start">
-        
-        {/* Nike Billboard Banner Card */}
-        <div className="flex items-center gap-2.5 overflow-hidden">
-          <div className="flex-1 bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-200/80">
-            <img
-              src="/liora/nike_billboard.jpg"
-              alt="Nike Billboard"
-              className="w-full h-auto object-cover max-h-[190px]"
-            />
-          </div>
-          <div className="w-6 h-28 bg-[#7e606b] rounded-l-2xl shrink-0 opacity-80" />
+          </form>
         </div>
 
-        {/* Hot Pink Offers Section Card */}
-        <div className="w-full bg-[#E61853] rounded-2xl p-3.5 space-y-3 shadow-md">
-          <div className="flex items-center justify-between text-white px-0.5">
-            <h2 className="font-black text-lg tracking-tight text-white">Offers</h2>
-            <span className="text-white/90 text-xs font-semibold hover:underline cursor-pointer">see all</span>
-          </div>
-
-          {/* 2x2 Grid of Fashion Offer Cards */}
-          <div className="grid grid-cols-2 gap-2.5">
-            
-            {/* Card 1: FRAPPE DRESS */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="bg-gradient-to-r from-[#edd177] via-[#c89825] to-[#edd177] text-black font-black text-[10px] text-center py-0.5 tracking-wider uppercase border-b border-[#a87c1a]">
-                  BIG DEALS
-                </div>
-                <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
-                  <img
-                    src="/liora/frappe_dress.jpg"
-                    alt="Frappe Dress"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute right-1.5 bottom-1.5 w-5 h-5 bg-[#FFD000] border border-black rounded-md flex items-center justify-center shadow-sm">
-                    <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-2 text-center space-y-0.5 font-sans">
-                <span className="font-bold text-[10px] text-neutral-800 uppercase block tracking-tight truncate">
-                  FRAPPE DRESS
-                </span>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] font-black">
-                  <span className="text-neutral-400 line-through">₹5500/-</span>
-                  <span className="text-[#E61853]">₹3750/-</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2: GOWN DRESS */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="bg-gradient-to-r from-[#edd177] via-[#c89825] to-[#edd177] text-black font-black text-[10px] text-center py-0.5 tracking-wider uppercase border-b border-[#a87c1a]">
-                  30 % OFF
-                </div>
-                <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
-                  <img
-                    src="/liora/gown_dress.jpg"
-                    alt="Gown Dress"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute right-1.5 bottom-1.5 w-5 h-5 bg-[#FFD000] border border-black rounded-md flex items-center justify-center shadow-sm">
-                    <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-2 text-center space-y-0.5 font-sans">
-                <span className="font-bold text-[10px] text-neutral-800 uppercase block tracking-tight truncate">
-                  GOWN DRESS
-                </span>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] font-black">
-                  <span className="text-neutral-400 line-through">₹4100/-</span>
-                  <span className="text-[#E61853]">₹2930/-</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3: PASHMINA SHAWL */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="bg-gradient-to-r from-[#edd177] via-[#c89825] to-[#edd177] text-black font-black text-[10px] text-center py-0.5 tracking-wider uppercase border-b border-[#a87c1a]">
-                  STUNNING OFFER
-                </div>
-                <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
-                  <img
-                    src="/liora/pashmina_shawl.jpg"
-                    alt="Pashmina Shawl"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute left-1.5 bottom-1.5 bg-[#FFD000] text-black text-[8px] font-black px-1 py-0.5 rounded border border-black shadow-sm">
-                    7 DAY
-                  </div>
-                  <div className="absolute right-1.5 bottom-1.5 w-5 h-5 bg-[#FFD000] border border-black rounded-md flex items-center justify-center shadow-sm">
-                    <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-2 text-center space-y-0.5 font-sans">
-                <span className="font-bold text-[10px] text-neutral-800 uppercase block tracking-tight truncate">
-                  PASHMINA SHAWL
-                </span>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] font-black">
-                  <span className="text-neutral-400 line-through">₹700/-</span>
-                  <span className="text-[#E61853]">₹300/-</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: TOP AND JEANS */}
-            <div className="bg-white rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="bg-gradient-to-r from-[#edd177] via-[#c89825] to-[#edd177] text-black font-black text-[10px] text-center py-0.5 tracking-wider uppercase border-b border-[#a87c1a]">
-                  LIMITED OFFER
-                </div>
-                <div className="relative aspect-square w-full overflow-hidden bg-neutral-100">
-                  <img
-                    src="/liora/top_and_jeans.jpg"
-                    alt="Top and Jeans"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute left-1.5 bottom-1.5 bg-[#FFD000] text-black text-[8px] font-black px-1 py-0.5 rounded border border-black shadow-sm">
-                    1 DAY
-                  </div>
-                  <div className="absolute right-1.5 bottom-1.5 w-5 h-5 bg-[#FFD000] border border-black rounded-md flex items-center justify-center shadow-sm">
-                    <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-2 text-center space-y-0.5 font-sans">
-                <span className="font-bold text-[10px] text-neutral-800 uppercase block tracking-tight truncate">
-                  TOP AND JEANS
-                </span>
-                <div className="flex items-center justify-center gap-1.5 text-[11px] font-black">
-                  <span className="text-neutral-400 line-through">₹1750/-</span>
-                  <span className="text-[#E61853]">₹1100/-</span>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        {/* Ambient Floor Glare line directly beneath card base */}
+        <div className="w-64 sm:w-80 h-2 bg-gradient-to-r from-transparent via-[#f5b82e]/80 to-transparent blur-[4px] mx-auto mt-0.5 pointer-events-none" />
 
       </div>
-
-      {/* ================= 3. BOTTOM NAVIGATION BAR ================= */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 pt-2 px-4 flex items-center justify-around z-40 shadow-lg"
-        style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom, 0px))' }}
-      >
-        <div className="flex flex-col items-center gap-0.5 text-[#FFD000] cursor-pointer">
-          <Home className="w-5 h-5 stroke-[2.5]" />
-          <span className="text-[10px] font-black text-black">Home</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5 text-neutral-600 hover:text-black cursor-pointer">
-          <ShoppingBag className="w-5 h-5 stroke-[2]" />
-          <span className="text-[10px] font-bold">Offers</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5 text-neutral-600 hover:text-black cursor-pointer">
-          <Sparkles className="w-5 h-5 stroke-[2]" />
-          <span className="text-[10px] font-bold">Highlights</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5 text-neutral-600 hover:text-black cursor-pointer">
-          <Store className="w-5 h-5 stroke-[2]" />
-          <span className="text-[10px] font-bold">Stores</span>
-        </div>
-        <div className="flex flex-col items-center gap-0.5 text-neutral-600 hover:text-black cursor-pointer">
-          <User className="w-5 h-5 stroke-[2]" />
-          <span className="text-[10px] font-bold">Profile</span>
-        </div>
-      </div>
-
     </div>
   );
 };
-
