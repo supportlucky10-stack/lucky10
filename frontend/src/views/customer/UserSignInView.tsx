@@ -48,7 +48,6 @@ export const UserSignInView: React.FC = () => {
           className="relative w-full rounded-[32px] sm:rounded-[36px] p-6 sm:p-8 pt-8 sm:pt-9 pb-8 sm:pb-9 bg-[#0b0b0b]/80 backdrop-blur-2xl border-[1.5px] border-[#f5b82e]/85 overflow-hidden"
           style={{
             boxShadow: '0 0 40px rgba(245, 184, 46, 0.35), inset 0 0 20px rgba(245, 184, 46, 0.12), 0 20px 50px rgba(0, 0, 0, 0.8)',
-            WebkitBoxReflect: 'below 3px linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.4) 70%, #000000 98%)',
           }}
         >
           {/* Diagonal Glass Sheen Highlight */}
@@ -212,10 +211,6 @@ export const UserSignInView: React.FC = () => {
             </button>
           </form>
         </div>
-
-        {/* Ambient Floor Glare line directly beneath card base */}
-        <div className="w-64 sm:w-80 h-2 bg-gradient-to-r from-transparent via-[#f5b82e]/80 to-transparent blur-[4px] mx-auto mt-0.5 pointer-events-none" />
-
       </div>
     </div>
   );
