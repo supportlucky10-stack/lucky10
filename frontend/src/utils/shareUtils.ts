@@ -15,16 +15,10 @@ const isIOS = (): boolean =>
   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
 let fontsPreloadPromise: Promise<void> | null = null;
-let cachedFontEmbedCSS: string = '';
 
 /**
- * Pre-load critical bold font weights and convert to Base64 in the background.
- * By passing pre-embedded base64 font CSS via html-to-image's fontEmbedCSS option:
- * 1. html-to-image completely bypasses scanning document.styleSheets and remote Google Fonts.
- * 2. It avoids all cross-origin font fetch latency and CORS SecurityErrors.
- * 3. The SVG canvas rasterizes locally embedded Montserrat 700/800/900 TrueType glyphs directly from memory.
- * 4. Image capture latency drops from ~1500-2500ms down to ~80-120ms.
- * 5. Boldness is 100% consistent across Android, iOS, Windows, Mac, and WhatsApp.
+ * Pre-load critical bold font weights in the background so they are
+ * immediately ready when the user clicks share, avoiding on-click network latency.
  */
 const ensureBoldFontsLoaded = (): Promise<void> => {
   if (fontsPreloadPromise) return fontsPreloadPromise;
@@ -37,26 +31,8 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
       { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
     ];
 
-    const fontFaceRules: string[] = [];
-
     const loadPromises = weights.map(async ({ weight, url }) => {
       try {
-        // Fetch font data and encode to Base64 for instant html-to-image embedding
-        const res = await fetch(url);
-        if (res.ok) {
-          const blob = await res.blob();
-          const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-          if (base64) {
-            fontFaceRules.push(
-              `@font-face { font-family: 'Montserrat'; font-style: normal; font-weight: ${weight}; font-display: block; src: url('${base64}') format('truetype'); }`
-            );
-          }
-        }
-
         const existing = [...document.fonts].find(
           (f) => f.family === 'Montserrat' && f.weight === weight && f.status === 'loaded'
         );
@@ -76,12 +52,6 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
     });
 
     await Promise.all(loadPromises);
-
-    if (fontFaceRules.length > 0) {
-      cachedFontEmbedCSS = `${fontFaceRules.join('\n')}
-#result-share-container, #admin-result-share-container { font-family: 'Montserrat', sans-serif !important; }
-#result-share-container .font-mono, #admin-result-share-container .font-mono { font-family: 'Montserrat', monospace, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; }`;
-    }
 
     try {
       await document.fonts.ready;
@@ -172,19 +142,13 @@ export const captureAndShareElement = async ({
     // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
     await ensureBoldFontsLoaded();
 
-    // Step 2: Instant capture with optimized encoding and cached font embed CSS
-    const captureOptions: Parameters<typeof toJpeg>[1] = {
+    // Step 2: Instant capture with optimized encoding
+    const dataUrl = await captureWithFontFix(targetElem, {
       quality: 0.92,
       backgroundColor: '#000000',
       pixelRatio: 2,
       filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
-    };
-
-    if (cachedFontEmbedCSS) {
-      captureOptions.fontEmbedCSS = cachedFontEmbedCSS;
-    }
-
-    const dataUrl = await captureWithFontFix(targetElem, captureOptions);
+    });
 
     const blob = dataUriToBlob(dataUrl);
 

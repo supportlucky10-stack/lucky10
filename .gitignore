@@ -1,8 +1,6 @@
 # Environment & DB
 .env
 *.db
-*.db-shm
-*.db-wal
 *.sqlite
 
 # Python

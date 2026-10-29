@@ -15,18 +15,6 @@ code, kbd, samp, pre, .font-mono {
   font-feature-settings: "zero" 0, "tnum" 1 !important;
 }
 
-/* Ensure dedicated off-screen share cards use Montserrat with tabular numbers for identical bold rendering across Android, iOS & WhatsApp */
-#result-share-container,
-#admin-result-share-container {
-  font-family: 'Montserrat', sans-serif !important;
-}
-
-#result-share-container .font-mono,
-#admin-result-share-container .font-mono {
-  font-family: 'Montserrat', monospace, sans-serif !important;
-  font-variant-numeric: tabular-nums lining-nums normal !important;
-}
-
 /* Montserrat Local Font Declarations from /fonts directory */
 @font-face {
   font-family: 'Montserrat';
