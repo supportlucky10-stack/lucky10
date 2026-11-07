@@ -228,6 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Midnight Business Date Reset: resets to default slot when crossing midnight
   const lastBusinessDateRef = useRef<string>(getBusinessDateIST());
+  const lastAuthCheckTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const syncMidnightDate = () => {
@@ -568,29 +569,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (currentUser) {
         try {
           const todayStr = getBusinessDateIST();
-          // Authoritatively verify currentUser status from backend database
-          const freshProfile = await authService.getCurrentUser().catch(() => null);
-          if (freshProfile) {
-            if (freshProfile.isActive === false) {
-              logout();
-              addToast('Your account is deactivated. Please contact administrator.', 'error');
-              return;
-            }
-            setCurrentUser((prev) => {
-              if (!prev) return freshProfile;
-              if (
-                prev.id === freshProfile.id &&
-                prev.name === freshProfile.name &&
-                prev.username === freshProfile.username &&
-                prev.mode === freshProfile.mode &&
-                prev.role === freshProfile.role &&
-                prev.isActive === freshProfile.isActive &&
-                prev.agencyName === freshProfile.agencyName
-              ) {
-                return prev;
+          // Authoritatively verify currentUser status periodically (every 30s or on tab visibility) to save network load
+          const nowTs = Date.now();
+          if (nowTs - lastAuthCheckTimeRef.current >= 30000) {
+            lastAuthCheckTimeRef.current = nowTs;
+            const freshProfile = await authService.getCurrentUser().catch(() => null);
+            if (freshProfile) {
+              if (freshProfile.isActive === false) {
+                logout();
+                addToast('Your account is deactivated. Please contact administrator.', 'error');
+                return;
               }
-              return freshProfile;
-            });
+              setCurrentUser((prev) => {
+                if (!prev) return freshProfile;
+                if (
+                  prev.id === freshProfile.id &&
+                  prev.name === freshProfile.name &&
+                  prev.username === freshProfile.username &&
+                  prev.mode === freshProfile.mode &&
+                  prev.role === freshProfile.role &&
+                  prev.isActive === freshProfile.isActive &&
+                  prev.agencyName === freshProfile.agencyName
+                ) {
+                  return prev;
+                }
+                return freshProfile;
+              });
+            }
           }
           const tkts = await customerService.getTicketsByDate(todayStr).catch(() => null);
           if (tkts) {
@@ -613,10 +618,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     loadInitialData();
-    timer = setInterval(pollLiveUpdates, 2000);
+    timer = setInterval(pollLiveUpdates, 5000);
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
+        lastAuthCheckTimeRef.current = 0; // force fresh auth check on tab focus
         pollLiveUpdates();
       }
     };

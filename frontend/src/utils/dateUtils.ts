@@ -29,6 +29,11 @@ export const extractDateStr = (raw?: string): string => {
   if (!raw) return getLocalDateStr();
   let clean = raw.trim();
 
+  // Fast-path: Standard ISO date format YYYY-MM-DD (vast majority of tickets from backend/storage)
+  if (clean.length >= 10 && clean[4] === '-' && clean[7] === '-') {
+    return clean.slice(0, 10);
+  }
+
   // 1. YYYY-MM-DD or YYYY/MM/DD at start (e.g. 2026-08-25, 2026-08-25 14:01:58)
   const ymdMatch = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
   if (ymdMatch) {

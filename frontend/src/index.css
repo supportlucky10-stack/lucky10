@@ -386,3 +386,18 @@ input.text-white, textarea.text-white, input.text-gold, textarea.text-gold, inpu
   -webkit-user-select: none !important;
 }
 
+
+#result-share-container,
+#admin-result-share-container,
+#bill-share-container,
+#play-report-container {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+#result-share-container .font-mono,
+#admin-result-share-container .font-mono,
+#bill-share-container .font-mono,
+#play-report-container .font-mono {
+  font-family: 'Montserrat', monospace, sans-serif !important;
+  font-variant-numeric: tabular-nums lining-nums normal !important;
+}

@@ -48,6 +48,7 @@ if db_url.startswith("sqlite"):
             cursor.execute("PRAGMA journal_mode=WAL")
             cursor.execute("PRAGMA synchronous=NORMAL")
             cursor.execute("PRAGMA busy_timeout=5000")
+            cursor.execute("PRAGMA busy_timeout=10000")
             cursor.close()
         except Exception:
             pass
