@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Camera, Upload, Loader2, X } from 'lucide-react';
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
+import { scanResultImage } from '../../utils/resultOcrUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -97,6 +98,72 @@ export const AdminResultManagementView: React.FC = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // ── Image Auto-Fill (OCR) States ──
+  const [isScanningImage, setIsScanningImage] = useState(false);
+  const [scanningStatus, setScanningStatus] = useState('');
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanFeedback, setScanFeedback] = useState<{ message: string; isError?: boolean } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so selecting the same file again triggers onChange
+    e.target.value = '';
+
+    setIsScanningImage(true);
+    setScanProgress(10);
+    setScanningStatus('Reading image...');
+    setScanFeedback(null);
+
+    try {
+      const parsed = await scanResultImage(file, (progress, status) => {
+        setScanProgress(progress);
+        setScanningStatus(status);
+      });
+
+      let prizesFilled = 0;
+      if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
+      if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
+      if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
+      if (parsed.prize5) { setPrize5(parsed.prize5); prizesFilled++; }
+
+      let compsFilled = 0;
+      if (parsed.complimentBoxes && parsed.complimentBoxes.length > 0) {
+        setComplimentBoxes((prev) => {
+          const upd = [...prev];
+          parsed.complimentBoxes.forEach((num, idx) => {
+            if (num && num.trim().length === 3 && idx < 30) {
+              upd[idx] = num.trim();
+              compsFilled++;
+            }
+          });
+          return upd;
+        });
+      }
+
+      // 1st Prize is strictly manual as per client requirement
+      setScanFeedback({
+        message: `Auto-filled ${prizesFilled}/4 Prizes (2nd-5th) and ${compsFilled}/30 Compliments! 1st Prize must be entered manually.`,
+        isError: false,
+      });
+
+      // Automatically focus on 1st Prize input for fast manual completion
+      setTimeout(() => {
+        prize1InputRef.current?.focus();
+      }, 350);
+    } catch (err: any) {
+      setScanFeedback({
+        message: err?.message || 'Failed to scan image. Please try another clear screenshot.',
+        isError: true,
+      });
+    } finally {
+      setIsScanningImage(false);
+      setScanningStatus('');
+    }
+  };
 
   const [isEditing1st, setIsEditing1st] = useState(false);
   const [isEditingOther, setIsEditingOther] = useState(false);
@@ -668,6 +735,105 @@ export const AdminResultManagementView: React.FC = () => {
 
             {/* Other Prizes (2nd to 5th) and Compliments in ONE unified card with Edit Option */}
             <div className="space-y-4 pt-1">
+              {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
+              <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3.5 space-y-3 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/40 flex items-center justify-center text-gold shrink-0">
+                      <Camera className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                        <span>Auto-Fill from Image</span>
+                        <span className="text-[9px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black uppercase tracking-wider border border-gold/30">
+                          OCR
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-neutral-400">
+                        Upload screenshot to auto-fill 2nd–5th & Compliments (1st Prize stays manual)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                      onChange={handleImageUpload}
+                    />
+                    <button
+                      type="button"
+                      disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                        isScanningImage
+                          ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
+                          : isOtherPrizesPublished && !isEditingOther
+                          ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
+                          : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
+                      }`}
+                    >
+                      {isScanningImage ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin text-gold" />
+                          <span>{scanningStatus || 'SCANNING...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>UPLOAD IMAGE</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress bar when scanning */}
+                {isScanningImage && (
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between text-[10px] text-neutral-300 font-bold">
+                      <span>{scanningStatus}</span>
+                      <span>{scanProgress}%</span>
+                    </div>
+                    <div className="w-full bg-neutral-800 h-2 rounded-full overflow-hidden border border-neutral-700">
+                      <div
+                        className="bg-gradient-to-r from-gold via-amber-400 to-yellow-300 h-full rounded-full transition-all duration-300"
+                        style={{ width: `${scanProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Feedback Toast Banner */}
+                {scanFeedback && (
+                  <div
+                    className={`p-2.5 rounded-xl border text-xs flex items-center justify-between gap-2 animate-fade-in ${
+                      scanFeedback.isError
+                        ? 'bg-red-950/60 border-red-500/50 text-red-200'
+                        : 'bg-emerald-950/60 border-emerald-500/50 text-emerald-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      {scanFeedback.isError ? (
+                        <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      )}
+                      <span className="font-medium text-[11px] sm:text-xs">{scanFeedback.message}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setScanFeedback(null)}
+                      className="p-1 text-neutral-400 hover:text-white cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-2">
