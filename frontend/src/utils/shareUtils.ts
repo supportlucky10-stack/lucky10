@@ -80,7 +80,7 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
     if (fontFaceRules.length > 0) {
       cachedFontEmbedCSS = `${fontFaceRules.join('\n')}
 #result-share-container, #admin-result-share-container, #bill-share-container, #play-report-container { font-family: 'Montserrat', sans-serif !important; }
-#result-share-container .font-mono, #admin-result-share-container .font-mono, #bill-share-container .font-mono, #play-report-container .font-mono { font-family: 'Montserrat', monospace, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; }`;
+#result-share-container .font-mono, #admin-result-share-container .font-mono, #bill-share-container .font-mono, #play-report-container .font-mono { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; font-weight: 700 !important; }`;
     }
 
     try {
