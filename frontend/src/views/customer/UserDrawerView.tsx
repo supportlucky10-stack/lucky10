@@ -12,12 +12,12 @@ export const UserDrawerView: React.FC = () => {
       },
     },
     {
-      label: 'Change Game',
-      action: () => setCurrentView('CHANGE_GAME'),
-    },
-    {
       label: 'Reports',
       action: () => setCurrentView('MY_PLAY_REPORT'),
+    },
+    {
+      label: 'Change Game',
+      action: () => setCurrentView('CHANGE_GAME'),
     },
     {
       label: 'Total Count View',
