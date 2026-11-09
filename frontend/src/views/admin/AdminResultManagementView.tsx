@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Camera, Upload, Loader2, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X } from 'lucide-react';
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import { scanResultImage } from '../../utils/resultOcrUtils';
@@ -143,12 +143,6 @@ export const AdminResultManagementView: React.FC = () => {
           return upd;
         });
       }
-
-      // 1st Prize is strictly manual as per client requirement
-      setScanFeedback({
-        message: `Auto-filled ${prizesFilled}/4 Prizes (2nd-5th) and ${compsFilled}/30 Compliments! 1st Prize must be entered manually.`,
-        isError: false,
-      });
 
       // Automatically focus on 1st Prize input for fast manual completion
       setTimeout(() => {
@@ -736,59 +730,40 @@ export const AdminResultManagementView: React.FC = () => {
             {/* Other Prizes (2nd to 5th) and Compliments in ONE unified card with Edit Option */}
             <div className="space-y-4 pt-1">
               {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
-              <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3.5 space-y-3 shadow-md">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-gold/15 border border-gold/40 flex items-center justify-center text-gold shrink-0">
-                      <Camera className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
-                        <span>Auto-Fill from Image</span>
-                        <span className="text-[9px] bg-gold/20 text-gold px-1.5 py-0.5 rounded font-black uppercase tracking-wider border border-gold/30">
-                          OCR
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-400">
-                        Upload screenshot to auto-fill 2nd–5th & Compliments (1st Prize stays manual)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
-                      onChange={handleImageUpload}
-                    />
-                    <button
-                      type="button"
-                      disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
-                        isScanningImage
-                          ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
-                          : isOtherPrizesPublished && !isEditingOther
-                          ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
-                          : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
-                      }`}
-                    >
-                      {isScanningImage ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-gold" />
-                          <span>{scanningStatus || 'SCANNING...'}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4" />
-                          <span>UPLOAD IMAGE</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
+              <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3 space-y-3 shadow-md">
+                <div className="flex items-center justify-center">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                    onChange={handleImageUpload}
+                  />
+                  <button
+                    type="button"
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                      isScanningImage
+                        ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
+                        : isOtherPrizesPublished && !isEditingOther
+                        ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
+                        : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
+                    }`}
+                  >
+                    {isScanningImage ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-gold" />
+                        <span>{scanningStatus || 'SCANNING...'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>UPLOAD IMAGE</span>
+                      </>
+                    )}
+                  </button>
                 </div>
 
                 {/* Progress bar when scanning */}
