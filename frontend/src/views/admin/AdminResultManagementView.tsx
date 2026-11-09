@@ -125,6 +125,7 @@ export const AdminResultManagementView: React.FC = () => {
       });
 
       let prizesFilled = 0;
+      if (parsed.prize1) { setPrize1(parsed.prize1); prizesFilled++; }
       if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
       if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
       if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
@@ -144,10 +145,12 @@ export const AdminResultManagementView: React.FC = () => {
         });
       }
 
-      // Automatically focus on 1st Prize input for fast manual completion
-      setTimeout(() => {
-        prize1InputRef.current?.focus();
-      }, 350);
+      // If 1st prize was not in image, focus on 1st prize input
+      if (!parsed.prize1) {
+        setTimeout(() => {
+          prize1InputRef.current?.focus();
+        }, 350);
+      }
     } catch (err: any) {
       setScanFeedback({
         message: err?.message || 'Failed to scan image. Please try another clear screenshot.',
