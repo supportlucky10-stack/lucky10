@@ -101,6 +101,35 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
           }
         }
 
+        // Step 3: Clear outer 8px border to prevent phone screenshot scrollbars and edge lines from distorting OCR
+        const border = 8;
+        for (let y = 0; y < targetHeight; y++) {
+          if (y < border || y >= targetHeight - border) {
+            for (let x = 0; x < targetWidth; x++) {
+              const idx = (y * targetWidth + x) * 4;
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 255;
+            }
+          } else {
+            for (let x = 0; x < border; x++) {
+              const idx = (y * targetWidth + x) * 4;
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 255;
+            }
+            for (let x = targetWidth - border; x < targetWidth; x++) {
+              const idx = (y * targetWidth + x) * 4;
+              data[idx] = 255;
+              data[idx + 1] = 255;
+              data[idx + 2] = 255;
+              data[idx + 3] = 255;
+            }
+          }
+        }
+
         ctx.putImageData(imgData, 0, 0);
         resolve(canvas);
       } catch (err) {
@@ -315,6 +344,9 @@ export async function scanResultImage(
   }
 
   onProgress?.(70, 'Reading result numbers...');
+  await worker.setParameters({
+    tessedit_pageseg_mode: '4' as any,
+  });
   const ret = await worker.recognize(canvas);
   await worker.terminate();
 
