@@ -6,7 +6,6 @@ import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loa
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import { scanResultImage } from '../../utils/resultOcrUtils';
-import { adminService } from '../../services/adminService';
 
 const slotThemes: Record<string, {
   name: string;
@@ -115,44 +114,31 @@ export const AdminResultManagementView: React.FC = () => {
     e.target.value = '';
 
     setIsScanningImage(true);
-    setScanProgress(15);
-    setScanningStatus('AI analyzing image...');
+    setScanProgress(10);
+    setScanningStatus('Reading image...');
     setScanFeedback(null);
 
     try {
-      let parsed: {
-        prize2?: string;
-        prize3?: string;
-        prize4?: string;
-        prize5?: string;
-        complimentBoxes?: string[];
-      };
+      const parsed = await scanResultImage(file, (progress, status) => {
+        setScanProgress(progress);
+        setScanningStatus(status);
+      });
 
-      try {
-        setScanProgress(35);
-        parsed = await adminService.extractResultImage(file);
-        setScanProgress(90);
-      } catch (aiErr: any) {
-        console.warn('AI extraction fallback to local scanner:', aiErr);
-        setScanningStatus('Scanning image...');
-        parsed = await scanResultImage(file, (progress, status) => {
-          setScanProgress(progress);
-          setScanningStatus(status);
-        });
-      }
-
+      let prizesFilled = 0;
       // 1st Prize is strictly updated manually by the user
-      if (parsed.prize2) { setPrize2(parsed.prize2); }
-      if (parsed.prize3) { setPrize3(parsed.prize3); }
-      if (parsed.prize4) { setPrize4(parsed.prize4); }
-      if (parsed.prize5) { setPrize5(parsed.prize5); }
+      if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
+      if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
+      if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
+      if (parsed.prize5) { setPrize5(parsed.prize5); prizesFilled++; }
 
+      let compsFilled = 0;
       if (parsed.complimentBoxes && parsed.complimentBoxes.length > 0) {
         setComplimentBoxes((prev) => {
           const upd = [...prev];
-          parsed.complimentBoxes?.forEach((num, idx) => {
+          parsed.complimentBoxes.forEach((num, idx) => {
             if (num && num.trim().length === 3 && idx < 30) {
               upd[idx] = num.trim();
+              compsFilled++;
             }
           });
           return upd;

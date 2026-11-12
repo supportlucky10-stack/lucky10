@@ -54,10 +54,6 @@ export async function apiRequest<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (typeof FormData !== 'undefined' && options.body instanceof FormData) {
-    delete headers['Content-Type'];
-  }
-
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
