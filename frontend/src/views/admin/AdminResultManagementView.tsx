@@ -145,6 +145,23 @@ export const AdminResultManagementView: React.FC = () => {
         });
       }
 
+      const totalExtracted = prizesFilled + compsFilled;
+      if (totalExtracted >= 34) {
+        setScanFeedback({
+          message: 'Extracted all 4 prizes & 30 compliments successfully.',
+          isError: false,
+        });
+      } else {
+        setScanFeedback({
+          message: `Extracted ${prizesFilled}/4 prizes & ${compsFilled}/30 compliments.`,
+          isError: false,
+        });
+      }
+
+      setTimeout(() => {
+        setScanFeedback((curr) => (!curr?.isError ? null : curr));
+      }, 4000);
+
       // Automatically focus on 1st Prize input for fast manual entry
       setTimeout(() => {
         prize1InputRef.current?.focus();

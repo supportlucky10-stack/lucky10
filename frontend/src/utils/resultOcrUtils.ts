@@ -91,7 +91,7 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
 
           for (let x = 0; x < targetWidth; x++) {
             const lum = gray[rowStart + x];
-            const isText = isDarkRow ? lum > 170 : lum < 145;
+            const isText = isDarkRow ? lum > 160 : lum < 140;
             const val = isText ? 0 : 255;
             const idx = (rowStart + x) * 4;
             data[idx] = val;
@@ -155,11 +155,19 @@ function cleanLotteryText(text: string): string {
   cleaned = cleaned.replace(/(\b\d{2})\s+(\d\b)/g, '$1$2');
   cleaned = cleaned.replace(/(\b\d)\s+(\d{2}\b)/g, '$1$2');
   cleaned = cleaned.replace(/\|\s*(\d{3})/g, ' $1');
+  cleaned = cleaned.replace(/\|\s*o(\d{2})/gi, ' 0$1');
   cleaned = cleaned.replace(/\b[oO](\d{2})\b/g, '0$1');
   cleaned = cleaned.replace(/\b(\d)[oO](\d)\b/g, '$10$2');
   cleaned = cleaned.replace(/\b(\d{2})[oO]\b/g, '$10');
   return cleaned;
 }
+
+const clean3DigitVal = (val: string): string => {
+  if (!val) return '';
+  const numOnly = val.replace(/[oO]/g, '0').replace(/\D/g, '').trim();
+  if (!numOnly) return '';
+  return numOnly.padStart(3, '0').slice(-3);
+};
 
 /**
  * Parses raw OCR text into structured 1st, 2nd, 3rd, 4th, 5th prizes and 30 compliments.
@@ -229,23 +237,23 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
     // 3rd: "3rd", "THIRD", "3 :", "3 -", "3 ", "3rc"
     // 4th: "4th", "FOURTH", "4 :", "4 -", "4 ", "ath", "4tn", "4t", "4rh", "4ih"
     // 5th: "5th", "FIFTH", "5 :", "5 -", "5 ", "sth", "5tn", "5t", "sin", "5rh"
-    const m1 = line.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?(\d{3})\b/i);
-    const m2 = line.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?(\d{3})\b/i);
-    const m3 = line.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?(\d{3})\b/i);
-    const m4 = line.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?(\d{3})\b/i);
-    const m5 = line.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh)\b.*?(\d{3})\b/i);
+    const m1 = line.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?([0-9oO]{3})\b/i);
+    const m2 = line.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?([0-9oO]{3})\b/i);
+    const m3 = line.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?([0-9oO]{3})\b/i);
+    const m4 = line.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?([0-9oO]{3})\b/i);
+    const m5 = line.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh)\b.*?([0-9oO]{3})\b/i);
 
     let matched = false;
-    if (m1 && !prize1) { prize1 = m1[1]; matched = true; }
-    if (m2 && !prize2) { prize2 = m2[1]; matched = true; }
-    if (m3 && !prize3) { prize3 = m3[1]; matched = true; }
-    if (m4 && !prize4) { prize4 = m4[1]; matched = true; }
-    if (m5 && !prize5) { prize5 = m5[1]; matched = true; }
+    if (m1 && !prize1) { prize1 = clean3DigitVal(m1[1]); matched = true; }
+    if (m2 && !prize2) { prize2 = clean3DigitVal(m2[1]); matched = true; }
+    if (m3 && !prize3) { prize3 = clean3DigitVal(m3[1]); matched = true; }
+    if (m4 && !prize4) { prize4 = clean3DigitVal(m4[1]); matched = true; }
+    if (m5 && !prize5) { prize5 = clean3DigitVal(m5[1]); matched = true; }
 
     if (nums.length > 0) {
       prizeCandidateRows.push({
         line,
-        num: nums[nums.length - 1],
+        num: clean3DigitVal(nums[nums.length - 1]),
         matched,
       });
     }
@@ -312,8 +320,9 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
 }
 
 /**
- * Scans a user-uploaded image file with Tesseract.js and extracts
- * 1st-5th prizes and 30 compliments.
+ * Scans a user-uploaded image file with Tesseract.js using:
+ * Pass 1: Full-canvas scan with row-adaptive binarization.
+ * Pass 2: Targeted 3-column slicing if any compliment numbers were missed.
  */
 export async function scanResultImage(
   file: File,
@@ -322,43 +331,91 @@ export async function scanResultImage(
   onProgress?.(10, 'Enhancing image for scanning...');
   const canvas = await preprocessImageFile(file);
 
-  onProgress?.(30, 'Initializing scanner engine...');
+  onProgress?.(25, 'Initializing scanner engine...');
   let worker;
   try {
-    // Attempt local traineddata first for offline/fast load
     worker = await createWorker('eng', 1, {
       langPath: '/tessdata',
       gzip: false,
       logger: (m) => {
         if (m.status === 'recognizing text') {
-          const pct = 30 + Math.round((m.progress || 0) * 60);
+          const pct = 25 + Math.round((m.progress || 0) * 55);
           onProgress?.(pct, `Scanning image (${Math.round((m.progress || 0) * 100)}%)...`);
         }
       },
     });
   } catch {
-    // Fallback to default CDN if local fails
     worker = await createWorker('eng', 1, {
       logger: (m) => {
         if (m.status === 'recognizing text') {
-          const pct = 30 + Math.round((m.progress || 0) * 60);
+          const pct = 25 + Math.round((m.progress || 0) * 55);
           onProgress?.(pct, `Scanning image (${Math.round((m.progress || 0) * 100)}%)...`);
         }
       },
     });
   }
 
-  onProgress?.(70, 'Reading result numbers...');
-  let ret;
   try {
-    ret = await worker.recognize(canvas);
+    onProgress?.(65, 'Reading result numbers...');
+    const ret = await worker.recognize(canvas);
+    let parsed = parseLotteryResultText(ret.data.text);
+
+    // Pass 2: Targeted 3-column slicing if compliments table missed any numbers (< 30)
+    const filledComps = parsed.complimentBoxes.filter((c) => Boolean(c && c.trim().length === 3)).length;
+    if (filledComps < 30) {
+      onProgress?.(85, 'Precision scanning 3 columns...');
+      const w = canvas.width;
+      const h = canvas.height;
+      const tableTop = Math.round(h * 0.40);
+      const tableHeight = Math.round(h * 0.58);
+      const colWidth = Math.round(w / 3);
+
+      for (let col = 0; col < 3; col++) {
+        const colCanvas = document.createElement('canvas');
+        colCanvas.width = colWidth;
+        colCanvas.height = tableHeight;
+        const colCtx = colCanvas.getContext('2d');
+        if (colCtx) {
+          colCtx.drawImage(
+            canvas,
+            col * colWidth,
+            tableTop,
+            colWidth,
+            tableHeight,
+            0,
+            0,
+            colWidth,
+            tableHeight
+          );
+          const colRet = await worker.recognize(colCanvas);
+          const cleanColText = cleanLotteryText(colRet.data.text);
+          const colNums = cleanColText.match(/\b\d{3}\b/g) || [];
+          if (colNums.length >= 10) {
+            const tenNums = colNums.slice(-10);
+            for (let row = 0; row < 10; row++) {
+              const boxIdx = row + col * 10;
+              if (!parsed.complimentBoxes[boxIdx] || parsed.complimentBoxes[boxIdx].trim().length !== 3) {
+                parsed.complimentBoxes[boxIdx] = tenNums[row];
+              }
+            }
+          }
+        }
+      }
+
+      // Re-count extracted numbers after precision column slicing
+      let count = 0;
+      if (parsed.prize1) count++;
+      if (parsed.prize2) count++;
+      if (parsed.prize3) count++;
+      if (parsed.prize4) count++;
+      if (parsed.prize5) count++;
+      count += parsed.complimentBoxes.filter((c) => Boolean(c && c.trim().length === 3)).length;
+      parsed.extractedCount = count;
+    }
+
+    onProgress?.(100, 'Complete!');
+    return parsed;
   } finally {
     await worker.terminate();
   }
-
-  onProgress?.(95, 'Organizing results into boxes...');
-  const parsed = parseLotteryResultText(ret.data.text);
-  onProgress?.(100, 'Complete!');
-
-  return parsed;
 }
