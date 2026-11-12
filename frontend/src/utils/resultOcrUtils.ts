@@ -152,7 +152,12 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
  */
 function cleanLotteryText(text: string): string {
   let cleaned = text.replace(/(\b\d)\s+(\d)\s+(\d\b)/g, '$1$2$3');
+  cleaned = cleaned.replace(/(\b\d{2})\s+(\d\b)/g, '$1$2');
+  cleaned = cleaned.replace(/(\b\d)\s+(\d{2}\b)/g, '$1$2');
+  cleaned = cleaned.replace(/\|\s*(\d{3})/g, ' $1');
   cleaned = cleaned.replace(/\b[oO](\d{2})\b/g, '0$1');
+  cleaned = cleaned.replace(/\b(\d)[oO](\d)\b/g, '$10$2');
+  cleaned = cleaned.replace(/\b(\d{2})[oO]\b/g, '$10');
   return cleaned;
 }
 
@@ -344,11 +349,12 @@ export async function scanResultImage(
   }
 
   onProgress?.(70, 'Reading result numbers...');
-  await worker.setParameters({
-    tessedit_pageseg_mode: '4' as any,
-  });
-  const ret = await worker.recognize(canvas);
-  await worker.terminate();
+  let ret;
+  try {
+    ret = await worker.recognize(canvas);
+  } finally {
+    await worker.terminate();
+  }
 
   onProgress?.(95, 'Organizing results into boxes...');
   const parsed = parseLotteryResultText(ret.data.text);
