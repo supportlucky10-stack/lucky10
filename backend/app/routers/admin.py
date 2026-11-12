@@ -2,11 +2,12 @@ import json
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy import func
 from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db
 from app.core.security import get_current_admin, get_password_hash
+from app.core.ai_vision import extract_lottery_result_from_image
 from app.models.user import User, UserRole
 from app.models.game_result import GameResult
 from app.models.ticket import Ticket, BetItem, DeletedTicket
@@ -859,5 +860,36 @@ def update_admin_maintenance_status(req: MaintenanceSettingUpdate, admin_user: U
     db.commit()
     db.refresh(setting)
     return {"isEnabled": setting.is_enabled, "message": setting.message}
+
+
+@router.post("/extract-result-image")
+async def extract_result_image(
+    file: UploadFile = File(...),
+    admin_user: User = Depends(get_current_admin),
+):
+    """
+    Extracts 2nd-5th prizes and 30 compliments from an uploaded result screenshot using Vision AI.
+    1st prize is intentionally excluded so the administrator can enter it manually.
+    """
+    if not file:
+        raise HTTPException(status_code=400, detail="No image file provided.")
+
+    contents = await file.read()
+    if not contents or len(contents) == 0:
+        raise HTTPException(status_code=400, detail="The uploaded image file is empty.")
+
+    if len(contents) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Image size exceeds 10MB limit.")
+
+    mime_type = file.content_type or "image/jpeg"
+
+    try:
+        result = await extract_lottery_result_from_image(contents, mime_type)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI extraction failed: {str(e)}")
+
 
 

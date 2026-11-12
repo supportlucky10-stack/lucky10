@@ -152,5 +152,21 @@ export const adminService = {
       body: JSON.stringify(data),
     });
   },
+
+  async extractResultImage(file: File): Promise<{
+    prize2: string;
+    prize3: string;
+    prize4: string;
+    prize5: string;
+    complimentBoxes: string[];
+    model?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return await apiRequest('/api/admin/extract-result-image', {
+      method: 'POST',
+      body: formData,
+    });
+  },
 };
 

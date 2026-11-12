@@ -59,6 +59,7 @@ class Settings:
     JWT_ALGORITHM: str = _get_str("JWT_ALGORITHM", "HS256")
     ACCESS_TOKEN_EXPIRE_MINUTES: int = _get_int("ACCESS_TOKEN_EXPIRE_MINUTES", 1440)  # 24 hours
     ALLOWED_ORIGINS: str = _get_str("ALLOWED_ORIGINS", "*")
+    GEMINI_API_KEY: str = _get_str("GEMINI_API_KEY", "")
     DB_POOL_SIZE: int = _get_int("DB_POOL_SIZE", 50)
     DB_MAX_OVERFLOW: int = _get_int("DB_MAX_OVERFLOW", 100)
     DB_POOL_TIMEOUT: int = _get_int("DB_POOL_TIMEOUT", 30)
