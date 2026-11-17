@@ -8,7 +8,7 @@ import type { PlacedTicket } from '../types';
  */
 export const LONG_BILL_THRESHOLD_ITEMS = 40;
 
-const formatPlacedAtDate = (str?: string): string => {
+export const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
   const clean = str.trim();
   const match = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
@@ -49,7 +49,7 @@ const formatPlacedAtDate = (str?: string): string => {
   return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss} ${ampm}`;
 };
 
-const getDisplayGame = (item: { number?: string; type?: string }): string => {
+export const getDisplayGame = (item: { number?: string; type?: string }): string => {
   const num = item.number || '';
   if (num.includes(':')) {
     return num.split(':')[0].toUpperCase();
@@ -63,12 +63,17 @@ const getDisplayGame = (item: { number?: string; type?: string }): string => {
   return item.type || 'SUPER';
 };
 
-const getDisplayNumber = (item: { number?: string; type?: string }): string => {
+export const getDisplayNumber = (item: { number?: string; type?: string }): string => {
   const num = item.number || '';
   if (num.includes(':')) {
     return num.split(':')[1];
   }
   return num;
+};
+
+export const formatCustomerName = (name?: string): string => {
+  if (!name || name.trim().toLowerCase() === 'customer') return '';
+  return name.trim();
 };
 
 const escapePdfText = (text?: string): string => {
