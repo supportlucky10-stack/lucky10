@@ -4,7 +4,7 @@ import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangl
 import type { GameSlot, BetSlipItem, PlacedTicket } from '../../types';
 import { isGameSlotOpen, getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
-import { shareBill, formatPlacedAtDate, getDisplayGame, getDisplayNumber, formatCustomerName } from '../../utils/billShareUtils';
+import { shareBill, prepareBillFile, formatPlacedAtDate, getDisplayGame, getDisplayNumber, formatCustomerName } from '../../utils/billShareUtils';
 
 interface SlotTheme {
   name: string;
@@ -154,18 +154,46 @@ export const GameDashboardView: React.FC = () => {
     (savedBillId ? placedTickets.find((t) => t.id === savedBillId || (t as any).ticketId === savedBillId) : null) ||
     null;
 
+  const cachedBillFilePromiseRef = useRef<Promise<File | null> | null>(null);
+
+  useEffect(() => {
+    if (savedBillId && ticketToShare) {
+      // Start background preparation immediately when the popup appears so click-to-share is instant
+      const agency =
+        (ticketToShare as any).agencyName ||
+        (ticketToShare as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      cachedBillFilePromiseRef.current = prepareBillFile(ticketToShare, 'bill-share-container', agency);
+    } else {
+      cachedBillFilePromiseRef.current = null;
+    }
+  }, [savedBillId, ticketToShare, currentUser]);
+
   const handleShareBill = async () => {
     if (!ticketToShare || isSharingBill) return;
     setIsSharingBill(true);
     try {
-      await shareBill(
-        ticketToShare,
-        'bill-share-container',
-        (ticketToShare as any).agencyName || (ticketToShare as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'
-      );
+      const agency =
+        (ticketToShare as any).agencyName ||
+        (ticketToShare as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      let readyFile: File | null = null;
+      if (cachedBillFilePromiseRef.current) {
+        readyFile = await cachedBillFilePromiseRef.current;
+      }
+      if (!readyFile) {
+        readyFile = await prepareBillFile(ticketToShare, 'bill-share-container', agency);
+      }
+      await shareBill(ticketToShare, 'bill-share-container', agency, readyFile);
     } catch (err: any) {
-      console.error('Failed to share bill:', err);
-      addToast('Failed to share bill', 'error');
+      if (err?.name !== 'AbortError') {
+        console.error('Failed to share bill:', err);
+        addToast('Failed to share bill', 'error');
+      }
     } finally {
       setIsSharingBill(false);
     }

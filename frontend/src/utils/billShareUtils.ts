@@ -1,4 +1,4 @@
-import { captureAndShareElement } from './shareUtils';
+import { captureAndShareElement, captureElementToFile, shareFileDirectly } from './shareUtils';
 import type { PlacedTicket } from '../types';
 
 /**
@@ -304,24 +304,22 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
 };
 
 /**
- * Shares a bill:
- * - If bill items <= LONG_BILL_THRESHOLD_ITEMS and height is within limits:
- *   uses the exact existing image sharing method untouched.
- * - If bill items > LONG_BILL_THRESHOLD_ITEMS:
- *   generates complete multi-page PDF and shares using native share or download + WhatsApp.
+ * Pre-generates the bill File object in memory (image or PDF).
+ * Can be invoked in the background as soon as a bill is saved, so that
+ * when the user clicks "Share", the file is already ready with 0ms latency.
  */
-export const shareBill = async (
+export const prepareBillFile = async (
   ticket: PlacedTicket,
   elementId: string,
   agencyNameFallback?: string
-): Promise<void> => {
+): Promise<File | null> => {
   const items = ticket.items || [];
   const containerElem = typeof document !== 'undefined' ? document.getElementById(elementId) : null;
   const isTooTall = containerElem ? containerElem.scrollHeight > 1600 : false;
 
-  // ── NORMAL / SMALL BILL: Use EXACT existing implementation untouched ──
+  // ── NORMAL / SMALL BILL: Capture crisp image file ──
   if (items.length <= LONG_BILL_THRESHOLD_ITEMS && !isTooTall) {
-    return captureAndShareElement({
+    return captureElementToFile({
       elementId,
       fileName: `bill_${ticket.id}.jpg`,
       title: `Bill ID - ${ticket.id}`,
@@ -329,66 +327,46 @@ export const shareBill = async (
     });
   }
 
-  // ── VERY LONG BILL ONLY: Automatic Multi-Page PDF Fallback ──
+  // ── VERY LONG BILL ONLY: Multi-Page PDF ──
   try {
     const pdfBlob = buildBillPdfBlob(ticket, agencyNameFallback);
     const pdfFileName = `bill_${ticket.id}.pdf`;
-    const pdfFile = new File([pdfBlob], pdfFileName, {
+    return new File([pdfBlob], pdfFileName, {
       type: 'application/pdf',
       lastModified: Date.now(),
     });
-
-    // 1. Try mobile Web Share API for direct WhatsApp / PDF Sharing
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      let canShareFiles = false;
-      try {
-        if (navigator.canShare) {
-          canShareFiles = navigator.canShare({ files: [pdfFile] });
-        } else {
-          canShareFiles = true;
-        }
-      } catch {
-        canShareFiles = false;
-      }
-
-      if (canShareFiles) {
-        try {
-          await navigator.share({
-            files: [pdfFile],
-            text: `Bill ID - ${ticket.id}`,
-          });
-          return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return;
-          try {
-            await navigator.share({
-              files: [pdfFile],
-            });
-            return;
-          } catch (retryErr: any) {
-            if (retryErr?.name === 'AbortError') return;
-          }
-        }
-      }
-    }
-
-    // 2. Fallback for desktop browsers or when native file share is unsupported:
-    const downloadUrl = URL.createObjectURL(pdfBlob);
-    const link = document.createElement('a');
-    link.download = pdfFileName;
-    link.href = downloadUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
-
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const textParam = `?text=${encodeURIComponent(`Bill ID - ${ticket.id}`)}`;
-    const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com/send${textParam}`;
-    window.open(waUrl, '_blank');
   } catch (pdfErr) {
-    console.error('Failed to generate or share bill PDF:', pdfErr);
+    console.error('Failed to prepare bill PDF file:', pdfErr);
+    return null;
   }
+};
+
+/**
+ * Shares a bill:
+ * - If precomputedFile is passed, shares it directly with 0ms delay!
+ * - If not, generates the file on demand and shares it.
+ */
+export const shareBill = async (
+  ticket: PlacedTicket,
+  elementId: string,
+  agencyNameFallback?: string,
+  precomputedFile?: File | null
+): Promise<void> => {
+  const file = precomputedFile || (await prepareBillFile(ticket, elementId, agencyNameFallback));
+  if (file) {
+    return shareFileDirectly(file, {
+      title: `Bill ID - ${ticket.id}`,
+      textSummary: `Bill ID - ${ticket.id}`,
+    });
+  }
+
+  // Fallback: standard capture and share
+  return captureAndShareElement({
+    elementId,
+    fileName: `bill_${ticket.id}.jpg`,
+    title: `Bill ID - ${ticket.id}`,
+    textSummary: `Bill ID - ${ticket.id}`,
+  });
 };
 
 export interface WinningReportPdfData {

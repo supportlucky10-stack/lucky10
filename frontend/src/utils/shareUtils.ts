@@ -8,12 +8,6 @@ export interface ShareElementOptions {
   textSummary?: string;
 }
 
-/** Detect iOS (iPhone / iPad / iPod) */
-const isIOS = (): boolean =>
-  /iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-  // iPad on iOS 13+ reports as MacIntel
-  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
 let fontsPreloadPromise: Promise<void> | null = null;
 let cachedFontEmbedCSS: string = '';
 
@@ -33,8 +27,6 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
   fontsPreloadPromise = (async () => {
     const weights: Array<{ weight: string; url: string }> = [
       { weight: '700', url: '/fonts/Montserrat-Bold.ttf' },
-      { weight: '800', url: '/fonts/Montserrat-ExtraBold.ttf' },
-      { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
     ];
 
     const fontFaceRules: string[] = [];
@@ -100,22 +92,10 @@ if (typeof window !== 'undefined') {
   }
 }
 
-let isSvgWarmedUp = false;
-
-/**
- * Fast capture: warms up SVG font rasterization once per session on iOS,
- * without artificial timeouts or cache-busting re-downloads.
- */
 const captureWithFontFix = async (
   elem: HTMLElement,
   options: Parameters<typeof toJpeg>[1]
 ): Promise<string> => {
-  if (isIOS() && !isSvgWarmedUp) {
-    try {
-      await toJpeg(elem, options);
-      isSvgWarmedUp = true;
-    } catch {}
-  }
   return toJpeg(elem, options);
 };
 
@@ -148,35 +128,25 @@ const dataUriToBlob = (dataURI: string): Blob => {
 };
 
 /**
- * Captures an HTML element as a crisp JPG image and shares it via Web Share API or triggers download + WhatsApp.
+ * Captures an HTML element as a crisp, fast JPG File object.
  */
-export const captureAndShareElement = async ({
+export const captureElementToFile = async ({
   elementId,
   element,
   fileName = 'share_image.jpg',
-  title = '',
-  textSummary = '',
-}: ShareElementOptions): Promise<void> => {
+}: ShareElementOptions): Promise<File | null> => {
   const targetElem = element || (elementId ? document.getElementById(elementId) : null);
-
-  if (!targetElem) {
-    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const fallbackUrl = mobile
-      ? textSummary ? `whatsapp://send?text=${encodeURIComponent(textSummary)}` : `whatsapp://send`
-      : textSummary ? `https://web.whatsapp.com/send?text=${encodeURIComponent(textSummary)}` : `https://web.whatsapp.com`;
-    window.open(fallbackUrl, '_blank');
-    return;
-  }
+  if (!targetElem) return null;
 
   try {
     // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
     await ensureBoldFontsLoaded();
 
-    // Step 2: Instant capture with optimized encoding and cached font embed CSS
+    // Step 2: High-speed capture with pixelRatio: 1.5 and quality: 0.88 for instant encoding & crisp clarity
     const captureOptions: Parameters<typeof toJpeg>[1] = {
-      quality: 0.92,
+      quality: 0.88,
       backgroundColor: '#000000',
-      pixelRatio: 2,
+      pixelRatio: 1.5,
       filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
     };
 
@@ -185,102 +155,92 @@ export const captureAndShareElement = async ({
     }
 
     const dataUrl = await captureWithFontFix(targetElem, captureOptions);
-
     const blob = dataUriToBlob(dataUrl);
 
     const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
       ? fileName
       : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
 
-    const file = new File([blob], jpgFileName, { type: 'image/jpeg', lastModified: Date.now() });
-
-    const shareText = (textSummary || title || '').trim();
-
-    // 1. Try mobile Web Share API for direct WhatsApp / Image Sharing
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      let canShareFiles = false;
-      try {
-        if (navigator.canShare) {
-          canShareFiles = navigator.canShare({ files: [file] });
-        } else {
-          canShareFiles = true;
-        }
-      } catch (e) {
-        canShareFiles = false;
-      }
-
-      if (canShareFiles) {
-        try {
-          const shareData: { files: File[]; text?: string } = {
-            files: [file],
-          };
-          if (shareText) {
-            shareData.text = shareText;
-          }
-          await navigator.share(shareData);
-          return;
-        } catch (shareErr: any) {
-          if (shareErr?.name === 'AbortError') return;
-          try {
-            await navigator.share({
-              files: [file],
-            });
-            return;
-          } catch (retryErr: any) {
-            if (retryErr?.name === 'AbortError') return;
-          }
-        }
-      }
-    }
-
-    // 2. Fallback for desktop browsers:
-    // Try copying image to clipboard for fast Ctrl+V in WhatsApp Web
-    try {
-      if (navigator.clipboard && (window as any).ClipboardItem) {
-        const pngBlob = await new Promise<Blob | null>((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0);
-              canvas.toBlob((b) => resolve(b), 'image/png');
-            } else {
-              resolve(null);
-            }
-          };
-          img.onerror = () => resolve(null);
-          img.src = dataUrl;
-        });
-
-        if (pngBlob) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': pngBlob }),
-          ]);
-        }
-      }
-    } catch (clipErr) {
-      // ignore clipboard fallback errors
-    }
-
-    // Download JPG file
-    const link = document.createElement('a');
-    link.download = jpgFileName;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    // Open WhatsApp
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    const textParam = shareText ? `?text=${encodeURIComponent(shareText)}` : '';
-    const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
-    window.open(waUrl, '_blank');
+    return new File([blob], jpgFileName, { type: 'image/jpeg', lastModified: Date.now() });
   } catch (err) {
-    console.error('Failed to capture screen element image:', err);
-    const shareText = (textSummary || title || '').trim();
+    console.error('Failed to capture screen element to file:', err);
+    return null;
+  }
+};
+
+/**
+ * Shares a prepared File directly via mobile Web Share API or download + WhatsApp.
+ */
+export const shareFileDirectly = async (
+  file: File,
+  options?: { title?: string; textSummary?: string }
+): Promise<void> => {
+  const shareText = (options?.textSummary || options?.title || '').trim();
+
+  // 1. Try mobile Web Share API for instant WhatsApp / Image Sharing
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    let canShareFiles = false;
+    try {
+      if (navigator.canShare) {
+        canShareFiles = navigator.canShare({ files: [file] });
+      } else {
+        canShareFiles = true;
+      }
+    } catch {
+      canShareFiles = false;
+    }
+
+    if (canShareFiles) {
+      try {
+        const shareData: { files: File[]; text?: string } = {
+          files: [file],
+        };
+        if (shareText) {
+          shareData.text = shareText;
+        }
+        await navigator.share(shareData);
+        return;
+      } catch (shareErr: any) {
+        if (shareErr?.name === 'AbortError') return;
+        try {
+          await navigator.share({
+            files: [file],
+          });
+          return;
+        } catch (retryErr: any) {
+          if (retryErr?.name === 'AbortError') return;
+        }
+      }
+    }
+  }
+
+  // 2. Fallback for desktop browsers:
+  const downloadUrl = URL.createObjectURL(file);
+  const link = document.createElement('a');
+  link.download = file.name;
+  link.href = downloadUrl;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(downloadUrl), 5000);
+
+  // Open WhatsApp
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const textParam = shareText ? `?text=${encodeURIComponent(shareText)}` : '';
+  const waUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
+  window.open(waUrl, '_blank');
+};
+
+/**
+ * Captures an HTML element as a crisp JPG image and shares it via Web Share API or triggers download + WhatsApp.
+ */
+export const captureAndShareElement = async (options: ShareElementOptions): Promise<void> => {
+  const file = await captureElementToFile(options);
+  if (file) {
+    await shareFileDirectly(file, options);
+  } else {
+    // Fallback if element not found or capture failed
+    const shareText = (options.textSummary || options.title || '').trim();
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     const textParam = shareText ? `?text=${encodeURIComponent(shareText)}` : '';
     const fallbackUrl = isMobile ? `whatsapp://send${textParam}` : `https://web.whatsapp.com${textParam ? `/send${textParam}` : ''}`;
