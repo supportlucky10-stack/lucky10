@@ -815,14 +815,13 @@ Dear
     }
   }
 
-  // 4. Negative test: Hyphen '-' between numbers is FORBIDDEN
+  // 4. Hyphen '-' between numbers is fully supported with universal separators
   {
-    const invalidHyphenInput = '088-789-432-687-819-3+2';
-    const res = parsePastedBillText(invalidHyphenInput);
-    // Must NOT be parsed as the new multiple-number format (should not produce 10 items)
+    const hyphenInput = '088-789-432-687-819-3+2';
+    const res = parsePastedBillText(hyphenInput);
     assert(
-      res.success === false || res.items.length !== 10,
-      'Test 28 negative: "088-789-432-687-819-3+2" must NOT be interpreted as multiple-number Super+Box'
+      res.success === true && res.items.length === 10,
+      'Test 28: "088-789-432-687-819-3+2" with hyphen separators should produce 10 items'
     );
   }
 
@@ -836,7 +835,7 @@ Dear
     assert(res2.items[3].number === '789' && res2.items[3].count === 2 && res2.items[3].type === 'Shuffle', '789 Box 2');
   }
 
-  console.log('✓ Test 28 Passed: Multiple 3-digit numbers + Super + Box format verified across flexible separators and hyphen restriction');
+  console.log('✓ Test 28 Passed: Multiple 3-digit numbers + Super + Box format verified across flexible separators and universal hyphen support');
 }
 
 // TEST 29: Multiple 3-Digit Numbers + Box (b / B / box / Box / BOX)
@@ -1125,8 +1124,71 @@ Dear
   console.log('✓ Test 35 Passed: Mixed glued bills, 3-digit bills, 1-digit bills, and chat text correctly handled');
 }
 
+// TEST 36: Universal separator multiple 3-digit numbers with Super + Box (833..862..864..354..364..587..1*1)
+{
+  const testInputs = [
+    { text: '833..862..864..354..364..587..1*1', superCount: 1, boxCount: 1 },
+    { text: '833-862-864-354-364-587-1*1', superCount: 1, boxCount: 1 },
+    { text: '833 / 862 / 864 / 354 / 364 / 587 / 1*1', superCount: 1, boxCount: 1 },
+    { text: '833, 862, 864, 354, 364, 587, 1*1', superCount: 1, boxCount: 1 },
+    { text: '833*862*864*354*364*587*1*1', superCount: 1, boxCount: 1 },
+    { text: '833 862 864 354 364 587 1*1', superCount: 1, boxCount: 1 },
+    { text: '833..862..864..354..364..587-3+2', superCount: 3, boxCount: 2 },
+    { text: '833..862..864..354..364..587..1..1', superCount: 1, boxCount: 1 },
+    { text: '833..862..864..354..364..587 1 1', superCount: 1, boxCount: 1 },
+    { text: '833..862..864..354..364..587..100*50', superCount: 100, boxCount: 50 },
+  ];
+
+  const expectedNums = ['833', '862', '864', '354', '364', '587'];
+
+  for (const { text, superCount, boxCount } of testInputs) {
+    const res = parsePastedBillText(text);
+    assert(res.success === true, `Test 36: "${text}" should succeed`);
+    assert(res.items.length === 12, `Test 36: "${text}" expected 12 items (6 Direct + 6 Shuffle), got ${res.items.length}`);
+    for (let i = 0; i < expectedNums.length; i++) {
+      const directItem = res.items[i * 2];
+      const shuffleItem = res.items[i * 2 + 1];
+      assert(directItem.number === expectedNums[i], `Direct item ${i} number ${expectedNums[i]}`);
+      assert(directItem.type === 'Direct' && directItem.count === superCount, `Direct item ${i} count ${superCount}`);
+      assert(shuffleItem.number === expectedNums[i], `Shuffle item ${i} number ${expectedNums[i]}`);
+      assert(shuffleItem.type === 'Shuffle' && shuffleItem.count === boxCount, `Shuffle item ${i} count ${boxCount}`);
+    }
+  }
+
+  // Leading zeros test: 088..001..010..354..1*1
+  {
+    const res = parsePastedBillText('088..001..010..354..1*1');
+    assert(res.success === true && res.items.length === 8, 'Leading zeros should succeed');
+    assert(res.items[0].number === '088' && res.items[2].number === '001' && res.items[4].number === '010', 'Leading zeros preserved');
+  }
+
+  // Duplicate numbers test: 833..833..862..1*1
+  {
+    const res = parsePastedBillText('833..833..862..1*1');
+    assert(res.success === true && res.items.length === 6, 'Duplicate numbers should succeed');
+    assert(res.items[0].number === '833' && res.items[2].number === '833' && res.items[4].number === '862', 'Duplicates preserved in order');
+  }
+
+  // Mixed separators test: 833..862-864/354,364*587 1*1
+  {
+    const res = parsePastedBillText('833..862-864/354,364*587 1*1');
+    assert(res.success === true && res.items.length === 12, 'Mixed separators should succeed');
+  }
+
+  // Mixed clipboard with unrelated text
+  {
+    const clipboard = `Hello Dear\n833..862..864..354..364..587..1*1\nThank you\n638*3+2`;
+    const res = parsePastedBillText(clipboard);
+    assert(res.success === true, 'Mixed clipboard should succeed');
+    // 12 items + 2 items = 14 items
+    assert(res.items.length === 14, `Expected 14 items, got ${res.items.length}`);
+  }
+
+  console.log('✓ Test 36 Passed: All universal separator variants of 833..862..864..354..364..587..1*1 verified');
+}
+
 console.log('\n========================================');
-console.log('ALL 35 PASTE BILL PARSER TESTS PASSED!  ');
+console.log('ALL 36 PASTE BILL PARSER TESTS PASSED!  ');
 console.log('========================================\n');
 
 

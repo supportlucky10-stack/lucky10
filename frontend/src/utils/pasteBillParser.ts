@@ -225,29 +225,42 @@ export function parsePastedBillText(text: string): ParseResult {
       }
     }
 
-    // Format G: Multiple 3-Digit Numbers + Super + Box:
-    //    <num3> [SEP_NOT_DASH] <num3> ... <num3> [SEP_BEFORE_SUPER] <superCount> [SEP_SUPER_BOX] <boxCount>
+    // Format G: Multiple 3-Digit Numbers + Super + Box (Universal Separator Support):
+    //    <num3> [ANY_SEP] <num3> ... <num3> [ANY_SEP] <superCount> [ANY_SEP] <boxCount>
     //    Examples:
+    //      833..862..864..354..364..587..1*1
+    //      833-862-864-354-364-587-1*1
+    //      833 / 862 / 864 / 354 / 364 / 587 / 1*1
+    //      833, 862, 864, 354, 364, 587, 1*1
+    //      833*862*864*354*364*587*1*1
+    //      833 862 864 354 364 587 1*1
     //      088.789.432.687.819-3+2
-    //      088+789+432+687+819-3+2
-    //      088=789=432=687=819-3+2
-    //      088/789/432/687/819-3+2
-    //      088:789:432:687:819-3+2
-    //      088_789_432_687_819-3+2
-    //      088@789@432@687@819-3+2
-    //      088#789#432#687#819-3+2
-    //      088.789.432.687.819-3=2, 088.789.432.687.819-3/2, 088.789.432.687.819-3:2, etc.
-    //    Note: Hyphen '-' is strictly forbidden between the individual 3-digit numbers.
-    //          Leading zeroes ("088") are strictly preserved.
-    const multi3DigitSuperBoxMatch = trimmed.match(
-      /^((?:\d{3}[^0-9a-zA-Z\-]+)+\d{3})\s*\-+\s*(\d+)((?:[^0-9a-zA-Z\-]|[xX])+)(\d+)$/
-    );
+    //      088-789-432-687-819-3+2
+    //      833..862..864..354..364..587..1..1
+    //      833..862..864..354..364..587 1 1
+    //      833..862..864..354..364..587=1=1
+    //      833..862..864..354..364..587..100*50
+    //    Note: Leading zeroes ("088") and all separators (., -, /, *, +, =, ,, spaces, etc.) are strictly preserved.
+    const multi3DigitSuperBoxOpMatch =
+      trimmed.match(
+        /^((?:(?<!\d)\d{3}(?!\d)(?:[^0-9a-zA-Z]|[xX])+)+(?<!\d)\d{3}(?!\d))(?:[^0-9a-zA-Z]|[xX])+(\d{1,2})\s*[\*+xX]\s*(\d+)$/
+      ) ||
+      trimmed.match(
+        /^((?:(?<!\d)\d{3}(?!\d)(?:[^0-9a-zA-Z]|[xX])+)+(?<!\d)\d{3}(?!\d))(?<![\*+xX])(?:[^0-9a-zA-Z\d\*+xX]+)(\d{3})\s*[\*xX]\s*(\d+)$/
+      );
+    const multi3DigitSuperBoxSepMatch = !multi3DigitSuperBoxOpMatch
+      ? trimmed.match(
+          /^((?:(?<!\d)\d{3}(?!\d)(?:[^0-9a-zA-Z]|[xX])+)+(?<!\d)\d{3}(?!\d))(?:[^0-9a-zA-Z]|[xX])+(\d{1,2})(?:[^0-9a-zA-Z]|[xX])+(\d{1,2})$/
+        )
+      : null;
+    const multi3DigitSuperBoxMatch = multi3DigitSuperBoxOpMatch || multi3DigitSuperBoxSepMatch;
+
     if (multi3DigitSuperBoxMatch) {
       const numbersGroup = multi3DigitSuperBoxMatch[1];
       const superCount = parseInt(multi3DigitSuperBoxMatch[2], 10);
-      const boxCount = parseInt(multi3DigitSuperBoxMatch[4], 10);
+      const boxCount = parseInt(multi3DigitSuperBoxMatch[3], 10);
       if (superCount > 0 || boxCount > 0) {
-        const nums = [...numbersGroup.matchAll(/\d{3}/g)].map((m) => m[0]);
+        const nums = [...numbersGroup.matchAll(/(?<!\d)\d{3}(?!\d)/g)].map((m) => m[0]);
         nums.forEach((num) => {
           if (superCount > 0) {
             items.push({
