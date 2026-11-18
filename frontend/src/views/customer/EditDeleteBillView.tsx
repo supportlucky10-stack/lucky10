@@ -7,6 +7,37 @@ import { shareBill } from '../../utils/billShareUtils';
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
   const clean = str.trim();
+
+  // If the string contains ISO timezone marker ('Z' or '+XX:XX' or '-XX:XX'), format accurately in IST (Asia/Kolkata)
+  if (clean.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(clean)) {
+    try {
+      const d = new Date(clean);
+      if (!isNaN(d.getTime())) {
+        const formatter = new Intl.DateTimeFormat('en-GB', {
+          timeZone: 'Asia/Kolkata',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true,
+        });
+        const parts = formatter.formatToParts(d);
+        const dd = parts.find((p) => p.type === 'day')?.value || '01';
+        const mm = parts.find((p) => p.type === 'month')?.value || '01';
+        const yyyy = parts.find((p) => p.type === 'year')?.value || '2026';
+        const hh = parts.find((p) => p.type === 'hour')?.value || '12';
+        const min = parts.find((p) => p.type === 'minute')?.value || '00';
+        const ss = parts.find((p) => p.type === 'second')?.value || '00';
+        const ampm = (parts.find((p) => p.type === 'dayPeriod')?.value || 'AM').toUpperCase();
+        return `${dd}/${mm}/${yyyy} ${hh}:${min}:${ss} ${ampm}`;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
   const match = clean.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[T\s](\d{2}):(\d{2})(?::(\d{2}))?/);
   if (match) {
     const [, yyyy, mmStr, ddStr, hStr, mStr, sStr] = match;

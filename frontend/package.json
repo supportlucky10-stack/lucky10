@@ -7,6 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "test:result-parser": "npx tsx src/utils/resultOcrUtils.test.ts",
+    "test:paste-bill": "npx tsx src/utils/pasteBillParser.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {

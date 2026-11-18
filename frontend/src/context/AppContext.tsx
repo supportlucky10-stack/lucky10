@@ -34,7 +34,7 @@ interface AppContextType {
   clearBetSlip: () => void;
   placedTickets: PlacedTicket[];
   userTickets: PlacedTicket[];
-  saveTicket: (customerName?: string) => Promise<string | null>;
+  saveTicket: (customerName?: string) => Promise<PlacedTicket | null>;
   deleteTicket: (ticketId: string) => Promise<boolean>;
   gameResults: Record<GameSlot, GameResult>;
   allPublishedResults: Record<string, GameResult>;
@@ -1114,7 +1114,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBetSlip([]);
   };
 
-  const saveTicket = async (customerName?: string): Promise<string | null> => {
+  const saveTicket = async (customerName?: string): Promise<PlacedTicket | null> => {
     if (isSavingTicketRef.current) {
       return null;
     }
@@ -1213,7 +1213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       setBetSlip([]);
       addToast(`Ticket #${newTicket.id} saved successfully!`, 'success');
-      return newTicket.id;
+      return newTicket;
     } catch (err: any) {
       throw err;
     } finally {

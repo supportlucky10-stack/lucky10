@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X, FileText } from 'lucide-react';
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
-import { scanResultImage } from '../../utils/resultOcrUtils';
+import { scanResultImage, parseLotteryResultText } from '../../utils/resultOcrUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -99,11 +99,14 @@ export const AdminResultManagementView: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // ── Image Auto-Fill (OCR) States ──
+  // ── Image Auto-Fill (OCR) & Universal Result Text States ──
   const [isScanningImage, setIsScanningImage] = useState(false);
   const [scanningStatus, setScanningStatus] = useState('');
   const [scanProgress, setScanProgress] = useState(0);
   const [scanFeedback, setScanFeedback] = useState<{ message: string; isError?: boolean } | null>(null);
+  const [uncertainTokens, setUncertainTokens] = useState<string[]>([]);
+  const [showPasteInput, setShowPasteInput] = useState(false);
+  const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,6 +120,7 @@ export const AdminResultManagementView: React.FC = () => {
     setScanProgress(10);
     setScanningStatus('Reading image...');
     setScanFeedback(null);
+    setUncertainTokens([]);
 
     try {
       const parsed = await scanResultImage(file, (progress, status) => {
@@ -143,6 +147,12 @@ export const AdminResultManagementView: React.FC = () => {
           });
           return upd;
         });
+      }
+
+      if (parsed.uncertainTokens && parsed.uncertainTokens.length > 0) {
+        setUncertainTokens(parsed.uncertainTokens);
+      } else {
+        setUncertainTokens([]);
       }
 
       const totalExtracted = prizesFilled + compsFilled;
@@ -174,6 +184,61 @@ export const AdminResultManagementView: React.FC = () => {
     } finally {
       setIsScanningImage(false);
       setScanningStatus('');
+    }
+  };
+
+  const handlePasteResultText = (text: string) => {
+    if (!text || !text.trim()) return;
+    try {
+      const parsed = parseLotteryResultText(text);
+
+      let prizesFilled = 0;
+      // 1st Prize is strictly updated manually by the user; focus on 1st prize input
+      if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
+      if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
+      if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
+      if (parsed.prize5) { setPrize5(parsed.prize5); prizesFilled++; }
+
+      let compsFilled = 0;
+      if (parsed.complimentBoxes && parsed.complimentBoxes.length > 0) {
+        setComplimentBoxes((prev) => {
+          const upd = [...prev];
+          parsed.complimentBoxes.forEach((num, idx) => {
+            if (num && num.trim().length === 3 && idx < 30) {
+              upd[idx] = num.trim();
+              compsFilled++;
+            }
+          });
+          return upd;
+        });
+      }
+
+      if (parsed.uncertainTokens && parsed.uncertainTokens.length > 0) {
+        setUncertainTokens(parsed.uncertainTokens);
+      } else {
+        setUncertainTokens([]);
+      }
+
+      const totalExtracted = prizesFilled + compsFilled;
+      setScanFeedback({
+        message: totalExtracted > 0
+          ? `Auto-filled ${prizesFilled}/4 prizes & ${compsFilled}/30 compliments from text.`
+          : 'No recognized prize or compliment numbers found in text.',
+        isError: totalExtracted === 0,
+      });
+
+      setTimeout(() => {
+        setScanFeedback((curr) => (!curr?.isError ? null : curr));
+      }, 4000);
+
+      setTimeout(() => {
+        prize1InputRef.current?.focus();
+      }, 350);
+    } catch (err: any) {
+      setScanFeedback({
+        message: err?.message || 'Failed to parse result text.',
+        isError: true,
+      });
     }
   };
 
@@ -747,9 +812,9 @@ export const AdminResultManagementView: React.FC = () => {
 
             {/* Other Prizes (2nd to 5th) and Compliments in ONE unified card with Edit Option */}
             <div className="space-y-4 pt-1">
-              {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
+              {/* ── IMAGE & UNIVERSAL TEXT AUTO-FILL CARD ── */}
               <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3 space-y-3 shadow-md">
-                <div className="flex items-center justify-center">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -762,7 +827,7 @@ export const AdminResultManagementView: React.FC = () => {
                     type="button"
                     disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                    className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
                       isScanningImage
                         ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
                         : isOtherPrizesPublished && !isEditingOther
@@ -782,7 +847,53 @@ export const AdminResultManagementView: React.FC = () => {
                       </>
                     )}
                   </button>
+
+                  <button
+                    type="button"
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                    onClick={() => setShowPasteInput((v) => !v)}
+                    className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                      isOtherPrizesPublished && !isEditingOther
+                        ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
+                        : showPasteInput
+                        ? 'bg-amber-400 text-black border border-amber-300'
+                        : 'bg-neutral-800 text-gold border border-gold/40 hover:bg-neutral-700 cursor-pointer'
+                    }`}
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>{showPasteInput ? 'HIDE PASTE BOX' : 'PASTE RESULT TEXT'}</span>
+                  </button>
                 </div>
+
+                {/* Paste Result Text Input Box */}
+                {showPasteInput && (
+                  <div className="pt-2 space-y-2 border-t border-neutral-800 animate-fade-in">
+                    <p className="text-[11px] text-neutral-400 font-medium">
+                      Paste result numbers with any separators (e.g. <span className="font-mono text-gold">833..862..864..354..364..587..1*1</span> or full WhatsApp/Telegram text):
+                    </p>
+                    <textarea
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
+                      placeholder="Paste lottery result numbers or full message here..."
+                      rows={3}
+                      className="w-full bg-neutral-950 border border-gold/40 rounded-xl p-2.5 text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-gold"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handlePasteResultText(pastedText);
+                          setPastedText('');
+                          setShowPasteInput(false);
+                        }}
+                        disabled={!pastedText.trim()}
+                        className="px-4 py-1.5 rounded-lg font-bold text-xs bg-gold-metallic text-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow"
+                      >
+                        AUTO-FILL FROM TEXT
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Progress bar when scanning */}
                 {isScanningImage && (
@@ -796,6 +907,41 @@ export const AdminResultManagementView: React.FC = () => {
                         className="bg-gradient-to-r from-gold via-amber-400 to-yellow-300 h-full rounded-full transition-all duration-300"
                         style={{ width: `${scanProgress}%` }}
                       />
+                    </div>
+                  </div>
+                )}
+
+                {/* Uncertain Content for Administrator Verification */}
+                {uncertainTokens.length > 0 && (
+                  <div className="p-3 bg-amber-950/70 border border-amber-500/60 rounded-xl space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                        <span className="text-xs font-bold text-amber-200">
+                          Uncertain Content for Verification ({uncertainTokens.length})
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setUncertainTokens([])}
+                        className="text-[10px] text-neutral-400 hover:text-white px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 cursor-pointer"
+                        title="Dismiss uncertain items"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-neutral-300">
+                      The parser identified the following non-number or unrecognized tokens. Please review if any need manual entry:
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {uncertainTokens.map((tok, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2.5 py-1 rounded-md bg-neutral-900 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold shadow-sm"
+                        >
+                          {tok}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 )}

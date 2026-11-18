@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem, PlacedTicket } from '../../types';
 import { isGameSlotOpen, getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
@@ -140,7 +140,6 @@ export const GameDashboardView: React.FC = () => {
   const [savedBillId, setSavedBillId] = useState<string | null>(null);
   const [savedTicketData, setSavedTicketData] = useState<PlacedTicket | null>(null);
   const [isSharingBill, setIsSharingBill] = useState(false);
-  const [copiedSavedBill, setCopiedSavedBill] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
   const [isOverloadedModalOpen, setIsOverloadedModalOpen] = useState(false);
@@ -165,7 +164,7 @@ export const GameDashboardView: React.FC = () => {
         currentUser?.name ||
         currentUser?.agencyName ||
         'Agency';
-      cachedBillFilePromiseRef.current = prepareBillFile(ticketToShare, 'bill-share-container', agency);
+      cachedBillFilePromiseRef.current = prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
     } else {
       cachedBillFilePromiseRef.current = null;
     }
@@ -186,9 +185,9 @@ export const GameDashboardView: React.FC = () => {
         readyFile = await cachedBillFilePromiseRef.current;
       }
       if (!readyFile) {
-        readyFile = await prepareBillFile(ticketToShare, 'bill-share-container', agency);
+        readyFile = await prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
       }
-      await shareBill(ticketToShare, 'bill-share-container', agency, readyFile);
+      await shareBill(ticketToShare, 'dashboard-bill-card-container', agency, readyFile);
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         console.error('Failed to share bill:', err);
@@ -250,7 +249,6 @@ export const GameDashboardView: React.FC = () => {
     setSavedBillId(null);
     setSavedTicketData(null);
     setIsSharingBill(false);
-    setCopiedSavedBill(false);
     setMinCountModalOpen(false);
     setIsOverloadedModalOpen(false);
     setOverloadedNumbers([]);
@@ -860,33 +858,13 @@ export const GameDashboardView: React.FC = () => {
                 addToast(`${activeGameSlot} Time Out. Billing is closed for this game.`, 'error');
                 return;
               }
-              const betSlipSnapshot = [...betSlip];
-              const totalSnapshot = betSlipSnapshot.reduce((sum, item) => sum + item.totalAmount, 0);
-              const custSnapshot = customerName;
-              const slotSnapshot = activeGameSlot;
               setIsSaving(true);
               try {
-                const billId = await saveTicket(customerName);
-                if (billId) {
-                  setSavedBillId(billId);
+                const savedTicket = await saveTicket(customerName);
+                if (savedTicket) {
+                  setSavedBillId(savedTicket.id);
+                  setSavedTicketData(savedTicket);
                   setCustomerName('');
-                  const found = placedTickets.find((t) => t.id === billId || (t as any).ticketId === billId);
-                  if (found) {
-                    setSavedTicketData(found);
-                  } else {
-                    setSavedTicketData({
-                      id: billId,
-                      ticketId: billId,
-                      userId: currentUser?.id || '',
-                      userName: currentUser?.name || currentUser?.agencyName || currentUser?.username || 'Agency',
-                      agencyName: currentUser?.name || currentUser?.agencyName || currentUser?.username || 'Agency',
-                      customerName: custSnapshot,
-                      gameSlot: slotSnapshot,
-                      items: betSlipSnapshot,
-                      totalAmount: totalSnapshot,
-                      placedAt: new Date().toISOString(),
-                    });
-                  }
                 }
               } catch (err: any) {
                 const msg = err?.message || '';
@@ -1406,23 +1384,8 @@ export const GameDashboardView: React.FC = () => {
             </div>
             <div className="space-y-1 font-mono">
               <h4 className="font-black text-white text-base uppercase tracking-wide">Successfully Saved</h4>
-              <p className="text-sm text-gold font-bold flex items-center justify-center gap-2">
-                <span>BILL ID: <span className="text-white font-black">{savedBillId}</span></span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (savedBillId) {
-                      navigator.clipboard.writeText(savedBillId);
-                      setCopiedSavedBill(true);
-                      addToast(`Copied Bill ID ${savedBillId}`, 'success');
-                      setTimeout(() => setCopiedSavedBill(false), 2000);
-                    }
-                  }}
-                  className="p-1 rounded-md bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-neutral-300 hover:text-gold transition-all cursor-pointer inline-flex items-center justify-center border border-neutral-700"
-                  title="Copy Bill ID"
-                >
-                  {copiedSavedBill ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
+              <p className="text-sm text-gold font-bold">
+                BILL ID: <span className="text-white font-black">{savedBillId}</span>
               </p>
             </div>
             <div className="space-y-2 pt-1 font-mono">
@@ -1478,7 +1441,7 @@ export const GameDashboardView: React.FC = () => {
           aria-hidden="true"
         >
           <div
-            id="bill-share-container"
+            id="dashboard-bill-card-container"
             style={{ width: '440px', position: 'relative', left: '0', top: '0', margin: '0' }}
             className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 text-white font-sans"
           >
@@ -1498,7 +1461,7 @@ export const GameDashboardView: React.FC = () => {
             </div>
 
             {/* Agency, Customer & Slot Info Bar */}
-            <div className="bg-white px-4 py-2.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
+            <div className="bg-white px-3 sm:px-4 py-2 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
               <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(ticketToShare as any).agencyName || (ticketToShare as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
               <div className="text-center">{formatCustomerName((ticketToShare as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((ticketToShare as any).customerName)}</strong></> : null}</div>
               <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(ticketToShare.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
@@ -1529,10 +1492,8 @@ export const GameDashboardView: React.FC = () => {
 
             {/* Bill Total Footer Bar */}
             <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap">TOTAL AMOUNT</span>
-                <span className="text-white font-black text-base sm:text-lg whitespace-nowrap">₹{ticketToShare.totalAmount}</span>
-              </div>
+              <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
+              <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{ticketToShare.totalAmount}</span>
             </div>
           </div>
         </div>

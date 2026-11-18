@@ -27,6 +27,8 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
   fontsPreloadPromise = (async () => {
     const weights: Array<{ weight: string; url: string }> = [
       { weight: '700', url: '/fonts/Montserrat-Bold.ttf' },
+      { weight: '800', url: '/fonts/Montserrat-ExtraBold.ttf' },
+      { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
     ];
 
     const fontFaceRules: string[] = [];
@@ -71,8 +73,8 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
 
     if (fontFaceRules.length > 0) {
       cachedFontEmbedCSS = `${fontFaceRules.join('\n')}
-#result-share-container, #admin-result-share-container, #bill-share-container, #play-report-container { font-family: 'Montserrat', sans-serif !important; }
-#result-share-container .font-mono, #admin-result-share-container .font-mono, #bill-share-container .font-mono, #play-report-container .font-mono { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; font-weight: 700 !important; }`;
+#result-share-container, #admin-result-share-container, #play-report-container { font-family: 'Montserrat', sans-serif !important; }
+#result-share-container .font-mono, #admin-result-share-container .font-mono, #play-report-container .font-mono { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; font-weight: 700 !important; }`;
     }
 
     try {
@@ -142,11 +144,11 @@ export const captureElementToFile = async ({
     // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
     await ensureBoldFontsLoaded();
 
-    // Step 2: High-speed capture with pixelRatio: 1.5 and quality: 0.88 for instant encoding & crisp clarity
+    // Step 2: Instant capture with standard crisp 2x resolution and original 0.92 quality
     const captureOptions: Parameters<typeof toJpeg>[1] = {
-      quality: 0.88,
+      quality: 0.92,
       backgroundColor: '#000000',
-      pixelRatio: 1.5,
+      pixelRatio: 2,
       filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
     };
 
