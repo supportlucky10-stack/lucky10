@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X, FileText } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X } from 'lucide-react';
 import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
-import { scanResultImage, parseLotteryResultText, extractLineTokens } from '../../utils/resultOcrUtils';
+import { scanResultImage } from '../../utils/resultOcrUtils';
 
 const slotThemes: Record<string, {
   name: string;
@@ -99,14 +99,11 @@ export const AdminResultManagementView: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // ── Image Auto-Fill (OCR) & Universal Result Text States ──
+  // ── Image Auto-Fill (OCR) States ──
   const [isScanningImage, setIsScanningImage] = useState(false);
   const [scanningStatus, setScanningStatus] = useState('');
   const [scanProgress, setScanProgress] = useState(0);
   const [scanFeedback, setScanFeedback] = useState<{ message: string; isError?: boolean } | null>(null);
-  const [uncertainTokens, setUncertainTokens] = useState<string[]>([]);
-  const [showPasteInput, setShowPasteInput] = useState(false);
-  const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +117,6 @@ export const AdminResultManagementView: React.FC = () => {
     setScanProgress(10);
     setScanningStatus('Reading image...');
     setScanFeedback(null);
-    setUncertainTokens([]);
 
     try {
       const parsed = await scanResultImage(file, (progress, status) => {
@@ -147,12 +143,6 @@ export const AdminResultManagementView: React.FC = () => {
           });
           return upd;
         });
-      }
-
-      if (parsed.uncertainTokens && parsed.uncertainTokens.length > 0) {
-        setUncertainTokens(parsed.uncertainTokens);
-      } else {
-        setUncertainTokens([]);
       }
 
       const totalExtracted = prizesFilled + compsFilled;
@@ -422,113 +412,6 @@ export const AdminResultManagementView: React.FC = () => {
   const shortSlot = selectedSlot.replace(' Game', '').replace(' ', '');
 
   const [activeTab, setActiveTab] = useState<'publish' | 'preview'>('publish');
-
-  const handlePasteResultText = (text: string) => {
-    if (!text || !text.trim()) return;
-    try {
-      const parsed = parseLotteryResultText(text);
-
-      // If slot was already published and within edit window, auto-enable edit mode
-      if (is1stPrizePublished && !isEditing1st && canEdit1st) {
-        setIsEditing1st(true);
-      }
-      if (isOtherPrizesPublished && !isEditingOther && canEditOther) {
-        setIsEditingOther(true);
-      }
-
-      let prizesFilled = 0;
-      if (parsed.prize1) {
-        setPrize1(parsed.prize1);
-        prizesFilled++;
-      }
-      if (parsed.prize2) {
-        setPrize2(parsed.prize2);
-        prizesFilled++;
-      }
-      if (parsed.prize3) {
-        setPrize3(parsed.prize3);
-        prizesFilled++;
-      }
-      if (parsed.prize4) {
-        setPrize4(parsed.prize4);
-        prizesFilled++;
-      }
-      if (parsed.prize5) {
-        setPrize5(parsed.prize5);
-        prizesFilled++;
-      }
-
-      let compsFilled = 0;
-      if (parsed.complimentBoxes && parsed.complimentBoxes.length > 0) {
-        setComplimentBoxes((prev) => {
-          const upd = [...prev];
-          parsed.complimentBoxes.forEach((num, idx) => {
-            if (num && num.trim().length === 3 && idx < 30) {
-              upd[idx] = num.trim();
-              compsFilled++;
-            }
-          });
-          return upd;
-        });
-      }
-
-      if (parsed.uncertainTokens && parsed.uncertainTokens.length > 0) {
-        setUncertainTokens(parsed.uncertainTokens);
-      } else {
-        setUncertainTokens([]);
-      }
-
-      const totalExtracted = prizesFilled + compsFilled;
-      setScanFeedback({
-        message: totalExtracted > 0
-          ? `Auto-filled 1st Prize (${parsed.prize1 || '---'}), ${prizesFilled > 1 ? `${prizesFilled - 1} other prizes` : ''} & ${compsFilled} compliments.`
-          : 'No recognized prize or compliment numbers found in text.',
-        isError: totalExtracted === 0,
-      });
-
-      setTimeout(() => {
-        setScanFeedback((curr) => (!curr?.isError ? null : curr));
-      }, 5000);
-    } catch (err: any) {
-      setScanFeedback({
-        message: err?.message || 'Failed to parse result text.',
-        isError: true,
-      });
-    }
-  };
-
-  const handlePrizeInputPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = e.clipboardData.getData('text');
-    if (!pasted || !pasted.trim()) return;
-    const clean = pasted.trim();
-    // Intercept if pasted text has more than 3 characters or contains non-numeric separators
-    if (clean.length > 3 || /[^0-9]/.test(clean)) {
-      e.preventDefault();
-      handlePasteResultText(clean);
-    }
-  };
-
-  // Global paste handler on Result Management page
-  useEffect(() => {
-    const handleGlobalPaste = (e: ClipboardEvent) => {
-      if (activeTab !== 'publish') return;
-      const activeTag = document.activeElement?.tagName?.toLowerCase();
-      // If user is actively typing in a textarea, allow standard textarea pasting
-      if (activeTag === 'textarea') return;
-      const pasted = e.clipboardData?.getData('text');
-      if (!pasted || !pasted.trim()) return;
-      const clean = pasted.trim();
-      if (clean.length > 3 || /[^0-9]/.test(clean)) {
-        const tokens = extractLineTokens(clean);
-        if (tokens.numbers.length >= 2 || (tokens.numbers.length >= 1 && tokens.uncertainTokens.length >= 1)) {
-          e.preventDefault();
-          handlePasteResultText(clean);
-        }
-      }
-    };
-    window.addEventListener('paste', handleGlobalPaste);
-    return () => window.removeEventListener('paste', handleGlobalPaste);
-  }, [activeTab, is1stPrizePublished, isEditing1st, canEdit1st, isOtherPrizesPublished, isEditingOther, canEditOther]);
   const [previewDate, setPreviewDate] = useState<string>(todayStr);
   const [previewSlot, setPreviewSlot] = useState<GameSlot>('1 PM Game');
   const [isPreviewSlotOpen, setIsPreviewSlotOpen] = useState(false);
@@ -837,7 +720,6 @@ export const AdminResultManagementView: React.FC = () => {
                   disabled={is1stPrizePublished && !isEditing1st}
                   readOnly={is1stPrizePublished && !isEditing1st}
                   onChange={handle1stPrizeChange}
-                  onPaste={handlePrizeInputPaste}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
                     is1stPrizePublished && !isEditing1st
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -865,9 +747,9 @@ export const AdminResultManagementView: React.FC = () => {
 
             {/* Other Prizes (2nd to 5th) and Compliments in ONE unified card with Edit Option */}
             <div className="space-y-4 pt-1">
-              {/* ── IMAGE & UNIVERSAL TEXT AUTO-FILL CARD ── */}
+              {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
               <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3 space-y-3 shadow-md">
-                <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex items-center justify-center">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -878,12 +760,12 @@ export const AdminResultManagementView: React.FC = () => {
                   />
                   <button
                     type="button"
-                    disabled={isScanningImage || (isOtherPrizesPublished && !canEditOther)}
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-full sm:w-auto px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
                       isScanningImage
                         ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
-                        : isOtherPrizesPublished && !canEditOther
+                        : isOtherPrizesPublished && !isEditingOther
                         ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
                         : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
                     }`}
@@ -900,53 +782,7 @@ export const AdminResultManagementView: React.FC = () => {
                       </>
                     )}
                   </button>
-
-                  <button
-                    type="button"
-                    disabled={isScanningImage || (isOtherPrizesPublished && !canEditOther)}
-                    onClick={() => setShowPasteInput((v) => !v)}
-                    className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
-                      isOtherPrizesPublished && !canEditOther
-                        ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
-                        : showPasteInput
-                        ? 'bg-amber-400 text-black border border-amber-300'
-                        : 'bg-neutral-800 text-gold border border-gold/40 hover:bg-neutral-700 cursor-pointer'
-                    }`}
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>{showPasteInput ? 'HIDE PASTE BOX' : 'PASTE RESULT TEXT'}</span>
-                  </button>
                 </div>
-
-                {/* Paste Result Text Input Box */}
-                {showPasteInput && (
-                  <div className="pt-2 space-y-2 border-t border-neutral-800 animate-fade-in">
-                    <p className="text-[11px] text-neutral-400 font-medium">
-                      Paste result numbers with any separators (e.g. <span className="font-mono text-gold">833..862..864..354..364..587..1*1</span> or full WhatsApp/Telegram text):
-                    </p>
-                    <textarea
-                      value={pastedText}
-                      onChange={(e) => setPastedText(e.target.value)}
-                      placeholder="Paste lottery result numbers or full message here..."
-                      rows={3}
-                      className="w-full bg-neutral-950 border border-gold/40 rounded-xl p-2.5 text-xs text-white placeholder-neutral-500 font-mono focus:outline-none focus:border-gold"
-                    />
-                    <div className="flex justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          handlePasteResultText(pastedText);
-                          setPastedText('');
-                          setShowPasteInput(false);
-                        }}
-                        disabled={!pastedText.trim()}
-                        className="px-4 py-1.5 rounded-lg font-bold text-xs bg-gold-metallic text-black hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow"
-                      >
-                        AUTO-FILL FROM TEXT
-                      </button>
-                    </div>
-                  </div>
-                )}
 
                 {/* Progress bar when scanning */}
                 {isScanningImage && (
@@ -960,41 +796,6 @@ export const AdminResultManagementView: React.FC = () => {
                         className="bg-gradient-to-r from-gold via-amber-400 to-yellow-300 h-full rounded-full transition-all duration-300"
                         style={{ width: `${scanProgress}%` }}
                       />
-                    </div>
-                  </div>
-                )}
-
-                {/* Uncertain Content for Administrator Verification */}
-                {uncertainTokens.length > 0 && (
-                  <div className="p-3 bg-amber-950/70 border border-amber-500/60 rounded-xl space-y-2 animate-fade-in">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                        <span className="text-xs font-bold text-amber-200">
-                          Uncertain Content for Verification ({uncertainTokens.length})
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setUncertainTokens([])}
-                        className="text-[10px] text-neutral-400 hover:text-white px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 cursor-pointer"
-                        title="Dismiss uncertain items"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-neutral-300">
-                      The parser identified the following non-number or unrecognized tokens. Please review if any need manual entry:
-                    </p>
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {uncertainTokens.map((tok, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 rounded-md bg-neutral-900 border border-amber-400/50 text-amber-300 font-mono text-xs font-bold shadow-sm"
-                        >
-                          {tok}
-                        </span>
-                      ))}
                     </div>
                   </div>
                 )}
@@ -1077,7 +878,6 @@ export const AdminResultManagementView: React.FC = () => {
                       readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(0, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(0, e)}
-                      onPaste={handlePrizeInputPaste}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -1098,7 +898,6 @@ export const AdminResultManagementView: React.FC = () => {
                       readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(1, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(1, e)}
-                      onPaste={handlePrizeInputPaste}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -1121,7 +920,6 @@ export const AdminResultManagementView: React.FC = () => {
                       readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(2, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(2, e)}
-                      onPaste={handlePrizeInputPaste}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -1142,7 +940,6 @@ export const AdminResultManagementView: React.FC = () => {
                       readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(3, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(3, e)}
-                      onPaste={handlePrizeInputPaste}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
                         isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
@@ -1186,7 +983,6 @@ export const AdminResultManagementView: React.FC = () => {
                           tabIndex={5 + compIdx}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
-                          onPaste={handlePrizeInputPaste}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
                             isOtherPrizesPublished && !isEditingOther
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
