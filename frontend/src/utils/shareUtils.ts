@@ -26,6 +26,8 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
 
   fontsPreloadPromise = (async () => {
     const weights: Array<{ weight: string; url: string }> = [
+      { weight: '400', url: '/fonts/Montserrat-Regular.ttf' },
+      { weight: '600', url: '/fonts/Montserrat-SemiBold.ttf' },
       { weight: '700', url: '/fonts/Montserrat-Bold.ttf' },
       { weight: '800', url: '/fonts/Montserrat-ExtraBold.ttf' },
       { weight: '900', url: '/fonts/Montserrat-Black.ttf' },
@@ -71,11 +73,28 @@ const ensureBoldFontsLoaded = (): Promise<void> => {
 
     await Promise.all(loadPromises);
 
-    if (fontFaceRules.length > 0) {
-      cachedFontEmbedCSS = `${fontFaceRules.join('\n')}
-#result-share-container, #admin-result-share-container, #play-report-container { font-family: 'Montserrat', sans-serif !important; }
-#result-share-container .font-mono, #admin-result-share-container .font-mono, #play-report-container .font-mono { font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; font-variant-numeric: tabular-nums lining-nums normal !important; font-weight: 700 !important; }`;
-    }
+    const billSelectors = '#dashboard-bill-card-container, #edit-bill-card-container, #bill-details-card-container, #bill-share-container';
+    const resultSelectors = '#result-share-container, #admin-result-share-container, #play-report-container';
+
+    cachedFontEmbedCSS = `${fontFaceRules.join('\n')}
+${billSelectors} {
+  font-family: 'Montserrat', sans-serif !important;
+}
+${billSelectors} * {
+  font-family: 'Montserrat', sans-serif !important;
+}
+${billSelectors} .font-mono {
+  font-family: 'Montserrat', monospace, sans-serif !important;
+  font-variant-numeric: tabular-nums lining-nums normal !important;
+}
+${resultSelectors} {
+  font-family: 'Montserrat', sans-serif !important;
+}
+${resultSelectors} .font-mono {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  font-variant-numeric: tabular-nums lining-nums normal !important;
+  font-weight: 700 !important;
+}`;
 
     try {
       await document.fonts.ready;
@@ -143,6 +162,9 @@ export const captureElementToFile = async ({
   try {
     // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
     await ensureBoldFontsLoaded();
+
+    // Small frame wait for iOS Safari to flush layout and font bindings
+    await new Promise((resolve) => setTimeout(resolve, 25));
 
     // Step 2: Instant capture with standard crisp 2x resolution and original 0.92 quality
     const captureOptions: Parameters<typeof toJpeg>[1] = {

@@ -2195,14 +2195,14 @@ export const MyPlayReportView: React.FC = () => {
               </div>
 
               {/* Agency, Customer & Slot Info Bar */}
-              <div className="bg-white px-3 sm:px-4 py-2 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
+              <div className="bg-white px-4 py-2.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
                 <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
                 <div className="text-center">{formatCustomerName((selectedSingleTicket as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></> : null}</div>
                 <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(selectedSingleTicket.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
               </div>
 
               {/* Table Column Headers Bar */}
-              <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-3 sm:px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+              <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
                 <span className="text-left">GAME</span>
                 <span>NUM</span>
                 <span>COUNT</span>
@@ -2214,20 +2214,20 @@ export const MyPlayReportView: React.FC = () => {
                 {selectedSingleTicket.items.map((item: any, idx: number) => (
                   <div
                     key={idx}
-                    className="grid grid-cols-4 px-3 sm:px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
+                    className="grid grid-cols-4 px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
                   >
                     <span className="text-left uppercase text-black font-black">{getDisplayGame(item)}</span>
-                    <span className="text-black font-black tracking-wider text-xs sm:text-sm">{getDisplayNumber(item)}</span>
-                    <span className="text-black font-black text-xs sm:text-sm">{item.count}</span>
+                    <span className="text-black font-black tracking-wider text-xs">{getDisplayNumber(item)}</span>
+                    <span className="text-black font-black text-xs">{item.count}</span>
                     <span className="text-right text-black font-mono font-bold">₹{item.totalAmount}</span>
                   </div>
                 ))}
               </div>
 
               {/* Bill Total Footer Bar (Clean Layout without DELETE button) */}
-              <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
+              <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-2.5 flex items-center justify-between font-mono gap-2">
                 <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
-                <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
+                <span className="text-white font-black text-base whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
               </div>
 
             </div>
