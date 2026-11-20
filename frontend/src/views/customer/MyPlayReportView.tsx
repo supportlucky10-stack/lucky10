@@ -2176,7 +2176,7 @@ export const MyPlayReportView: React.FC = () => {
               onMouseLeave={cancelDetailLongPress}
               onTouchStart={() => startDetailLongPress(selectedSingleTicket)}
               onTouchEnd={cancelDetailLongPress}
-              className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 cursor-pointer"
+              className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 cursor-pointer w-full max-w-[328px] mx-auto"
             >
               
               {/* Bill ID Header Bar */}

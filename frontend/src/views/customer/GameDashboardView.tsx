@@ -1434,7 +1434,7 @@ export const GameDashboardView: React.FC = () => {
             position: 'fixed',
             left: '0',
             top: '0',
-            width: '440px',
+            width: '328px',
             zIndex: -50,
             pointerEvents: 'none',
           }}
@@ -1442,8 +1442,8 @@ export const GameDashboardView: React.FC = () => {
         >
           <div
             id="dashboard-bill-card-container"
-            style={{ width: '440px', position: 'relative', left: '0', top: '0', margin: '0' }}
-            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0"
+            style={{ width: '328px', position: 'relative', left: '0', top: '0', margin: '0' }}
+            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 w-[328px] max-w-[328px]"
           >
             {/* Bill ID Header Bar */}
             <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">

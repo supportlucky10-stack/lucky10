@@ -231,7 +231,7 @@ export const EditDeleteBillView: React.FC = () => {
                 </p>
               </div>
             ) : (
-              <div id="edit-bill-card-container" className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0">
+              <div id="edit-bill-card-container" className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 w-full max-w-[328px] mx-auto">
                 
                 {/* Bill ID Header Bar (Clean layout without top delete button) */}
                 <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono">
