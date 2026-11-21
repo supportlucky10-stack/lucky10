@@ -1434,7 +1434,7 @@ export const GameDashboardView: React.FC = () => {
             position: 'fixed',
             left: '0',
             top: '0',
-            width: '328px',
+            width: '396px',
             zIndex: -50,
             pointerEvents: 'none',
           }}
@@ -1442,8 +1442,8 @@ export const GameDashboardView: React.FC = () => {
         >
           <div
             id="dashboard-bill-card-container"
-            style={{ width: '328px', position: 'relative', left: '0', top: '0', margin: '0' }}
-            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 w-[328px] max-w-[328px]"
+            style={{ width: '396px', position: 'relative', left: '0', top: '0', margin: '0' }}
+            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 text-white font-sans"
           >
             {/* Bill ID Header Bar */}
             <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">
@@ -1461,14 +1461,14 @@ export const GameDashboardView: React.FC = () => {
             </div>
 
             {/* Agency, Customer & Slot Info Bar */}
-            <div className="bg-white px-4 py-2.5 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
+            <div className="bg-white px-3 sm:px-4 py-2 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
               <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(ticketToShare as any).agencyName || (ticketToShare as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
               <div className="text-center">{formatCustomerName((ticketToShare as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((ticketToShare as any).customerName)}</strong></> : null}</div>
               <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(ticketToShare.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
             </div>
 
             {/* Table Column Headers Bar */}
-            <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+            <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-3 sm:px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
               <span className="text-left">GAME</span>
               <span>NUM</span>
               <span>COUNT</span>
@@ -1480,20 +1480,20 @@ export const GameDashboardView: React.FC = () => {
               {(ticketToShare.items || []).map((item: any, idx: number) => (
                 <div
                   key={idx}
-                  className="grid grid-cols-4 px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
+                  className="grid grid-cols-4 px-3 sm:px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
                 >
                   <span className="text-left uppercase text-black font-black">{getDisplayGame(item)}</span>
-                  <span className="text-black font-black tracking-wider text-xs">{getDisplayNumber(item)}</span>
-                  <span className="text-black font-black text-xs">{item.count}</span>
+                  <span className="text-black font-black tracking-wider text-xs sm:text-sm">{getDisplayNumber(item)}</span>
+                  <span className="text-black font-black text-xs sm:text-sm">{item.count}</span>
                   <span className="text-right text-black font-mono font-bold">₹{item.totalAmount}</span>
                 </div>
               ))}
             </div>
 
             {/* Bill Total Footer Bar */}
-            <div className="bg-neutral-900 border-t border-neutral-800 px-4 py-2.5 flex items-center justify-between font-mono gap-2">
+            <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
               <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
-              <span className="text-white font-black text-base whitespace-nowrap shrink-0">₹{ticketToShare.totalAmount}</span>
+              <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{ticketToShare.totalAmount}</span>
             </div>
           </div>
         </div>
