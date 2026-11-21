@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { Search, Trash2, CheckCircle2 } from 'lucide-react';
-import { shareBill } from '../../utils/billShareUtils';
+import { shareBill, prepareBillFile } from '../../utils/billShareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -135,15 +135,44 @@ export const EditDeleteBillView: React.FC = () => {
   };
 
   const [isSharingBill, setIsSharingBill] = useState(false);
+  const cachedBillFilePromiseRef = useRef<Promise<File | null> | null>(null);
+
+  useEffect(() => {
+    if (searchedBill) {
+      const agency =
+        (searchedBill as any).agencyName ||
+        (searchedBill as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      cachedBillFilePromiseRef.current = prepareBillFile(searchedBill, 'edit-bill-share-container', agency);
+    } else {
+      cachedBillFilePromiseRef.current = null;
+    }
+  }, [searchedBill, currentUser]);
 
   const handleShareBillToWhatsApp = async () => {
     if (!searchedBill || isSharingBill) return;
     setIsSharingBill(true);
     try {
+      const agency =
+        (searchedBill as any).agencyName ||
+        (searchedBill as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      let readyFile: File | null = null;
+      if (cachedBillFilePromiseRef.current) {
+        readyFile = await cachedBillFilePromiseRef.current;
+      }
+      if (!readyFile) {
+        readyFile = await prepareBillFile(searchedBill, 'edit-bill-share-container', agency);
+      }
       await shareBill(
         searchedBill,
-        'edit-bill-card-container',
-        (searchedBill as any).agencyName || (searchedBill as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'
+        'edit-bill-share-container',
+        agency,
+        readyFile
       );
     } finally {
       setIsSharingBill(false);
@@ -301,6 +330,78 @@ export const EditDeleteBillView: React.FC = () => {
         )}
 
       </div>
+
+      {/* Off-screen Bill Receipt Container for fixed 396px high-quality capture across all phones */}
+      {searchedBill && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '0',
+            top: '0',
+            width: '396px',
+            zIndex: -50,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        >
+          <div
+            id="edit-bill-share-container"
+            style={{ width: '396px', position: 'relative', left: '0', top: '0', margin: '0' }}
+            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 text-white font-sans"
+          >
+            {/* Bill ID Header Bar */}
+            <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">
+              <div className="shrink-0 min-w-0">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold font-black text-base">{searchedBill.id}</span>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0 whitespace-nowrap">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
+                <span className="text-white font-extrabold text-xs whitespace-nowrap font-mono">{formatPlacedAtDate(searchedBill.placedAt)}</span>
+              </div>
+            </div>
+
+            {/* Agency, Customer & Slot Info Bar */}
+            <div className="bg-white px-3 sm:px-4 py-2 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
+              <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(searchedBill as any).agencyName || (searchedBill as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
+              <div className="text-center">{formatCustomerName((searchedBill as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((searchedBill as any).customerName)}</strong></> : null}</div>
+              <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(searchedBill.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
+            </div>
+
+            {/* Table Column Headers Bar */}
+            <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-3 sm:px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+              <span className="text-left">GAME</span>
+              <span>NUM</span>
+              <span>COUNT</span>
+              <span className="text-right">AMOUNT</span>
+            </div>
+
+            {/* Table Rows in White Theme */}
+            <div className="divide-y divide-neutral-200 font-mono text-xs font-bold bg-white text-black">
+              {searchedBill.items.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-4 px-3 sm:px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
+                >
+                  <span className="text-left uppercase text-black font-black">{getDisplayGame(item)}</span>
+                  <span className="text-black font-black tracking-wider text-xs sm:text-sm">{getDisplayNumber(item)}</span>
+                  <span className="text-black font-black text-xs sm:text-sm">{item.count}</span>
+                  <span className="text-right text-black font-mono font-bold">₹{item.totalAmount}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Bill Total Footer Bar */}
+            <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
+              <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
+              <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{searchedBill.totalAmount}</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DELETE PERMISSION CONFIRMATION DIALOG MODAL */}
       {confirmDeleteId && (

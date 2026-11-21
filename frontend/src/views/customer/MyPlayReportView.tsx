@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
 import { getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
-import { shareBill, shareWinningReport } from '../../utils/billShareUtils';
+import { shareBill, shareWinningReport, prepareBillFile } from '../../utils/billShareUtils';
 import {
   ClipboardList,
   Trophy,
@@ -261,15 +261,44 @@ export const MyPlayReportView: React.FC = () => {
   }, [currentUser, placedTickets, userTickets, deletedTicketIds]);
 
   const [isSharingBill, setIsSharingBill] = useState(false);
+  const cachedDetailBillFilePromiseRef = useRef<Promise<File | null> | null>(null);
+
+  useEffect(() => {
+    if (selectedSingleTicket) {
+      const agency =
+        (selectedSingleTicket as any).agencyName ||
+        (selectedSingleTicket as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      cachedDetailBillFilePromiseRef.current = prepareBillFile(selectedSingleTicket, 'bill-details-share-container', agency);
+    } else {
+      cachedDetailBillFilePromiseRef.current = null;
+    }
+  }, [selectedSingleTicket, currentUser]);
 
   const handleShareBillToWhatsApp = async () => {
     if (!selectedSingleTicket || isSharingBill) return;
     setIsSharingBill(true);
     try {
+      const agency =
+        (selectedSingleTicket as any).agencyName ||
+        (selectedSingleTicket as any).userName ||
+        currentUser?.name ||
+        currentUser?.agencyName ||
+        'Agency';
+      let readyFile: File | null = null;
+      if (cachedDetailBillFilePromiseRef.current) {
+        readyFile = await cachedDetailBillFilePromiseRef.current;
+      }
+      if (!readyFile) {
+        readyFile = await prepareBillFile(selectedSingleTicket, 'bill-details-share-container', agency);
+      }
       await shareBill(
         selectedSingleTicket,
-        'bill-details-card-container',
-        (selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'
+        'bill-details-share-container',
+        agency,
+        readyFile
       );
     } finally {
       setIsSharingBill(false);
@@ -2232,6 +2261,78 @@ export const MyPlayReportView: React.FC = () => {
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Off-screen Bill Receipt Container for fixed 396px high-quality capture across all phones */}
+      {selectedSingleTicket && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '0',
+            top: '0',
+            width: '396px',
+            zIndex: -50,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        >
+          <div
+            id="bill-details-share-container"
+            style={{ width: '396px', position: 'relative', left: '0', top: '0', margin: '0' }}
+            className="bg-neutral-950 border border-gold/40 rounded-2xl overflow-hidden shadow-2xl space-y-0 text-white font-sans"
+          >
+            {/* Bill ID Header Bar */}
+            <div className="bg-neutral-900 border-b border-neutral-800 p-3.5 flex items-center justify-between font-mono gap-2">
+              <div className="shrink-0 min-w-0">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gold font-black text-base">{selectedSingleTicket.id}</span>
+                </div>
+              </div>
+
+              <div className="text-right shrink-0 whitespace-nowrap">
+                <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">DATE &amp; TIME</span>
+                <span className="text-white font-extrabold text-xs whitespace-nowrap font-mono">{formatPlacedAtDate(selectedSingleTicket.placedAt)}</span>
+              </div>
+            </div>
+
+            {/* Agency, Customer & Slot Info Bar */}
+            <div className="bg-white px-3 sm:px-4 py-2 border-b border-neutral-200 grid grid-cols-3 gap-2 text-xs font-mono text-neutral-800 items-center">
+              <div className="text-left">Agency: <strong className="text-black font-bold ml-1">{(selectedSingleTicket as any).agencyName || (selectedSingleTicket as any).userName || currentUser?.name || currentUser?.agencyName || 'Agency'}</strong></div>
+              <div className="text-center">{formatCustomerName((selectedSingleTicket as any).customerName) ? <>Customer: <strong className="text-black font-bold ml-1">{formatCustomerName((selectedSingleTicket as any).customerName)}</strong></> : null}</div>
+              <div className="text-right">Slot: <strong className="text-black font-bold ml-1">{(selectedSingleTicket.gameSlot || '').replace(/\s*Game$/i, '')}</strong></div>
+            </div>
+
+            {/* Table Column Headers Bar */}
+            <div className="bg-pink-100 text-neutral-900 font-mono text-xs font-black px-3 sm:px-4 py-1.5 grid grid-cols-4 items-center text-center border-b border-neutral-200 uppercase tracking-wider">
+              <span className="text-left">GAME</span>
+              <span>NUM</span>
+              <span>COUNT</span>
+              <span className="text-right">AMOUNT</span>
+            </div>
+
+            {/* Table Rows in White Theme */}
+            <div className="divide-y divide-neutral-200 font-mono text-xs font-bold bg-white text-black">
+              {selectedSingleTicket.items.map((item: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-4 px-3 sm:px-4 py-1.5 bg-white text-center items-center font-mono hover:bg-neutral-50 transition-colors"
+                >
+                  <span className="text-left uppercase text-black font-black">{getDisplayGame(item)}</span>
+                  <span className="text-black font-black tracking-wider text-xs sm:text-sm">{getDisplayNumber(item)}</span>
+                  <span className="text-black font-black text-xs sm:text-sm">{item.count}</span>
+                  <span className="text-right text-black font-mono font-bold">₹{item.totalAmount}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Bill Total Footer Bar */}
+            <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
+              <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
+              <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
+            </div>
           </div>
         </div>
       )}
