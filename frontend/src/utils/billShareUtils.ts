@@ -314,24 +314,29 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
     );
   });
 
-  let output = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const offsets: number[] = [];
+  const headerStr = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+  const headerBytes = encoder.encode(headerStr);
+  let currentOffset = headerBytes.length;
+  const chunks: any[] = [headerBytes];
 
   objects.forEach((obj, idx) => {
     const objNum = idx + 1;
-    offsets.push(encoder.encode(output).length);
-    output += `${objNum} 0 obj\n${obj}\nendobj\n`;
+    offsets.push(currentOffset);
+    const objBytes = encoder.encode(`${objNum} 0 obj\n${obj}\nendobj\n`);
+    currentOffset += objBytes.length;
+    chunks.push(objBytes);
   });
 
-  const xrefOffset = encoder.encode(output).length;
-  output += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  const xrefOffset = currentOffset;
+  let xrefStr = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.forEach((off) => {
-    output += `${String(off).padStart(10, '0')} 00000 n \n`;
+    xrefStr += `${String(off).padStart(10, '0')} 00000 n \n`;
   });
+  xrefStr += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  chunks.push(encoder.encode(xrefStr));
 
-  output += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-
-  return new Blob([encoder.encode(output)], { type: 'application/pdf' });
+  return new Blob(chunks, { type: 'application/pdf' });
 };
 
 /**
@@ -652,24 +657,29 @@ export const buildWinningReportPdfBlob = (data: WinningReportPdfData): Blob => {
     );
   });
 
-  let output = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
   const offsets: number[] = [];
+  const headerStr = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+  const headerBytes = encoder.encode(headerStr);
+  let currentOffset = headerBytes.length;
+  const chunks: any[] = [headerBytes];
 
   objects.forEach((obj, idx) => {
     const objNum = idx + 1;
-    offsets.push(encoder.encode(output).length);
-    output += `${objNum} 0 obj\n${obj}\nendobj\n`;
+    offsets.push(currentOffset);
+    const objBytes = encoder.encode(`${objNum} 0 obj\n${obj}\nendobj\n`);
+    currentOffset += objBytes.length;
+    chunks.push(objBytes);
   });
 
-  const xrefOffset = encoder.encode(output).length;
-  output += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  const xrefOffset = currentOffset;
+  let xrefStr = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
   offsets.forEach((off) => {
-    output += `${String(off).padStart(10, '0')} 00000 n \n`;
+    xrefStr += `${String(off).padStart(10, '0')} 00000 n \n`;
   });
+  xrefStr += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  chunks.push(encoder.encode(xrefStr));
 
-  output += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-
-  return new Blob([encoder.encode(output)], { type: 'application/pdf' });
+  return new Blob(chunks, { type: 'application/pdf' });
 };
 
 /**

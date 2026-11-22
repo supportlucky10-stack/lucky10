@@ -204,6 +204,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 
   const isSavingTicketRef = useRef(false);
+  const placedCountCacheRef = useRef<{
+    cacheKey: string;
+    countsMap: Map<string, number>;
+  }>({ cacheKey: '', countsMap: new Map() });
 
   const dedupeTickets = (list: PlacedTicket[]): PlacedTicket[] => {
     const seen = new Set<string>();
@@ -874,36 +878,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     }
 
-    // Calculate existing count already placed today for this number AND specific bet type in this slot across this agency
-    const agencyTickets = placedTickets.filter((t) => {
-      const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
-      const matchesDate = tDate === todayStr;
-      const matchesSlot = t.gameSlot === slot;
-      const matchesAgency =
-        !agencyIdOrName ||
-        agencyIdOrName === 'ALL' ||
-        t.userId === agencyIdOrName ||
-        ((t as any).agencyName && (t as any).agencyName.toLowerCase() === agencyIdOrName.toLowerCase()) ||
-        ((t as any).userName && (t as any).userName.toLowerCase() === agencyIdOrName.toLowerCase());
-      return matchesDate && matchesSlot && matchesAgency;
-    });
-
-    let currentAgencyPlacedCount = 0;
-    agencyTickets.forEach((t) => {
-      t.items.forEach((it) => {
-        const itRaw = (it.number || '').trim();
-        const itType = normType(it.type);
-        const matchesNum = itRaw === fullNum || itRaw === rawNum;
-        const matchesType = !targetType || !itType || itType === targetType;
-        if (matchesNum && matchesType) {
-          currentAgencyPlacedCount += it.count || 1;
+    // Calculate existing count already placed today for this number AND specific bet type in this slot across this agency.
+    // Optimized with a lookup cache so validating long bills (50-200+ items) runs in O(1) per item instead of O(N*M).
+    const cacheKey = `${todayStr}|${slot}|${agencyIdOrName}|${placedTickets.length}`;
+    let countsMap: Map<string, number>;
+    if (placedCountCacheRef.current.cacheKey === cacheKey) {
+      countsMap = placedCountCacheRef.current.countsMap;
+    } else {
+      countsMap = new Map();
+      const normAgency = agencyIdOrName ? agencyIdOrName.toLowerCase() : '';
+      for (let i = 0; i < placedTickets.length; i++) {
+        const t = placedTickets[i];
+        if (t.gameSlot !== slot) continue;
+        const tDate = t.placedAt ? extractDateStr(t.placedAt) : todayStr;
+        if (tDate !== todayStr) continue;
+        if (normAgency && normAgency !== 'all') {
+          const tUser = (t.userId || '').toLowerCase();
+          const tAgency = ((t as any).agencyName || '').toLowerCase();
+          const tUName = ((t as any).userName || '').toLowerCase();
+          if (tUser !== normAgency && tAgency !== normAgency && tUName !== normAgency) {
+            continue;
+          }
         }
-      });
-    });
+        for (let j = 0; j < t.items.length; j++) {
+          const it = t.items[j];
+          const itRaw = (it.number || '').trim();
+          const itClean = itRaw.includes(':') ? itRaw.split(':')[1].trim() : itRaw;
+          const itType = normType(it.type);
+          const c = it.count || 1;
+
+          const k1 = `${itRaw}_${itType}`;
+          const k2 = `${itClean}_${itType}`;
+          const k3 = `${itRaw}_`;
+          const k4 = `${itClean}_`;
+          countsMap.set(k1, (countsMap.get(k1) || 0) + c);
+          if (k2 !== k1) countsMap.set(k2, (countsMap.get(k2) || 0) + c);
+          countsMap.set(k3, (countsMap.get(k3) || 0) + c);
+          if (k4 !== k3) countsMap.set(k4, (countsMap.get(k4) || 0) + c);
+        }
+      }
+      placedCountCacheRef.current = { cacheKey, countsMap };
+    }
+
+    let currentAgencyPlacedCount = countsMap.get(`${fullNum}_${targetType}`) ??
+                                   countsMap.get(`${rawNum}_${targetType}`) ??
+                                   0;
 
     // ALSO count how much of this number is in the CURRENT unsubmitted staging betSlip (if not skipped)
-    if (!skipBetSlip) {
-      betSlip.forEach((it) => {
+    if (!skipBetSlip && betSlip.length > 0) {
+      for (let i = 0; i < betSlip.length; i++) {
+        const it = betSlip[i];
         const itRaw = (it.number || '').trim();
         const itType = normType(it.type);
         const matchesNum = itRaw === fullNum || itRaw === rawNum;
@@ -911,7 +935,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (matchesNum && matchesType) {
           currentAgencyPlacedCount += it.count || 1;
         }
-      });
+      }
     }
 
     // 2. Check Agency-Specific Limit (Option 1: Limit Count)
@@ -1177,29 +1201,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setTaken3DigitNumbers((prev) => {
         const next = { ...prev };
         const ticketItems = (newTicket.items && newTicket.items.length > 0) ? newTicket.items : betSlip;
-        const itemsToAdd: string[] = [];
-        ticketItems.forEach((it) => {
+        const itemsToAddSet = new Set<string>();
+        for (let i = 0; i < ticketItems.length; i++) {
+          const it = ticketItems[i];
           const raw = (it.number || '').trim();
           const clean = raw.includes(':') ? raw.split(':')[1].trim() : raw;
           if (clean.length === 3 && /^\d{3}$/.test(clean)) {
             const tUpper = (it.type || '').toUpperCase();
             const normT = (tUpper === 'BOX' || tUpper === 'SHUFFLE') ? 'BOX' : 'DIRECT';
-            const key = `${clean}:${normT}`;
-            if (!itemsToAdd.includes(key)) itemsToAdd.push(key);
+            itemsToAddSet.add(`${clean}:${normT}`);
           }
-        });
-        if (itemsToAdd.length > 0) {
+        }
+        if (itemsToAddSet.size > 0) {
           const normBase = activeGameSlot.replace(/\s*(game|dear)\s*/gi, '').trim();
           const slotVariants = [activeGameSlot, normBase, `${normBase} Game`, `${normBase} DEAR`];
-          slotVariants.forEach((k) => {
+          for (let s = 0; s < slotVariants.length; s++) {
+            const k = slotVariants[s];
             if (k) {
-              const existing = next[k] ? [...next[k]] : [];
-              itemsToAdd.forEach((n) => {
-                if (!existing.includes(n)) existing.push(n);
-              });
-              next[k] = existing;
+              const existingSet = new Set(next[k] || []);
+              itemsToAddSet.forEach((n) => existingSet.add(n));
+              next[k] = Array.from(existingSet);
             }
-          });
+          }
         }
         return next;
       });

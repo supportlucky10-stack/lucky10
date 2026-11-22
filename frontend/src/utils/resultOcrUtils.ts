@@ -31,11 +31,12 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
         const origWidth = img.naturalWidth || img.width;
         const origHeight = img.naturalHeight || img.height;
 
-        let scale = 2.0;
-        if (origWidth * scale > 1800) {
-          scale = 1800 / origWidth;
+        // Keep 1.0 scale for normal/high-res images (600px+) so numeral '9' inner loop does not blur or fuse into '0'.
+        // Only upscale if the source image is tiny (< 600px).
+        let scale = 1.0;
+        if (origWidth < 600) {
+          scale = Math.min(2.0, 800 / origWidth);
         }
-        if (scale < 1.0) scale = 1.0;
 
         const targetWidth = Math.round(origWidth * scale);
         const targetHeight = Math.round(origHeight * scale);
@@ -87,11 +88,14 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
             }
           }
 
-          const isDarkRow = rowMedian < 150;
+          const isDarkRow = rowMedian < 140;
 
           for (let x = 0; x < targetWidth; x++) {
             const lum = gray[rowStart + x];
-            const isText = isDarkRow ? lum > 160 : lum < 140;
+            // For dark banner rows (white text on dark background), invert so text is black on white.
+            // For standard light rows, use gentle threshold (115) to preserve the open curve of '9'
+            // and prevent antialiasing from closing the loop into '0'.
+            const isText = isDarkRow ? lum > 175 : lum < 115;
             const val = isText ? 0 : 255;
             const idx = (rowStart + x) * 4;
             data[idx] = val;
@@ -148,7 +152,8 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
 }
 
 /**
- * Normalizes common OCR artifacts in lottery text (e.g. spaced digits, 'O' instead of '0').
+ * Normalizes common OCR artifacts in lottery text (e.g. spaced digits, 'O' instead of '0',
+ * and letters like 'g', 'q', 'Q' mistakenly recognized in place of '9').
  */
 function cleanLotteryText(text: string): string {
   let cleaned = text.replace(/(\b\d)\s+(\d)\s+(\d\b)/g, '$1$2$3');
@@ -159,13 +164,28 @@ function cleanLotteryText(text: string): string {
   cleaned = cleaned.replace(/\b[oO](\d{2})\b/g, '0$1');
   cleaned = cleaned.replace(/\b(\d)[oO](\d)\b/g, '$10$2');
   cleaned = cleaned.replace(/\b(\d{2})[oO]\b/g, '$10');
+
+  // Handle OCR misrecognition of '9' as 'g', 'q', or 'Q'
+  cleaned = cleaned.replace(/\|\s*[gqQ](\d{2})/gi, ' 9$1');
+  cleaned = cleaned.replace(/\b[gqQ](\d{2})\b/g, '9$1');
+  cleaned = cleaned.replace(/\b(\d)[gqQ](\d)\b/g, '$19$2');
+  cleaned = cleaned.replace(/\b(\d{2})[gqQ]\b/g, '$19');
+
+  // Handle OCR misrecognition of '8' as 's'/'S' when surrounded by digits (e.g. 0s0 -> 080)
+  cleaned = cleaned.replace(/\b(\d)[sS](\d)\b/g, '$18$2');
+
   return cleaned;
 }
 
 const clean3DigitVal = (val: string): string => {
   if (!val) return '';
-  const numOnly = val.replace(/[oO]/g, '0').replace(/\D/g, '').trim();
+  // Convert OCR misread letters: O/o -> 0, g/q/Q -> 9
+  const numOnly = val.replace(/[oO]/g, '0').replace(/[gqQ]/g, '9').replace(/\D/g, '').trim();
   if (!numOnly) return '';
+  // Handle edge case where OCR appends a trailing '0' artifact to a 3-digit number (e.g. 7890 -> 789)
+  if (numOnly.length === 4 && numOnly.endsWith('0') && !numOnly.startsWith('0')) {
+    return numOnly.slice(0, 3);
+  }
   return numOnly.padStart(3, '0').slice(-3);
 };
 
@@ -213,19 +233,19 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
       continue;
     }
 
-    // Extract all 3-digit numbers in the line
-    const nums = line.match(/\b\d{3}\b/g) || [];
+    // Extract all 3-digit candidate numbers in the line
+    const nums = line.match(/\b[0-9oOgqQ]{3}\b/g) || [];
 
     // If line has 3 numbers (3 columns), it is definitely a compliments row!
     if (nums.length === 3) {
       inCompliments = true;
-      complimentRows.push(nums);
+      complimentRows.push(nums.map(clean3DigitVal));
       continue;
     }
 
     if (inCompliments) {
       if (nums.length > 0) {
-        complimentRows.push(nums);
+        complimentRows.push(nums.map(clean3DigitVal));
       }
       continue;
     }
@@ -237,11 +257,11 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
     // 3rd: "3rd", "THIRD", "3 :", "3 -", "3 ", "3rc"
     // 4th: "4th", "FOURTH", "4 :", "4 -", "4 ", "ath", "4tn", "4t", "4rh", "4ih"
     // 5th: "5th", "FIFTH", "5 :", "5 -", "5 ", "sth", "5tn", "5t", "sin", "5rh"
-    const m1 = line.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?([0-9oO]{3})\b/i);
-    const m2 = line.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?([0-9oO]{3})\b/i);
-    const m3 = line.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?([0-9oO]{3})\b/i);
-    const m4 = line.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?([0-9oO]{3})\b/i);
-    const m5 = line.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh)\b.*?([0-9oO]{3})\b/i);
+    const m1 = line.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m2 = line.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m3 = line.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m4 = line.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m5 = line.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh)\b.*?([0-9oOgqQ]{3})\b/i);
 
     let matched = false;
     if (m1 && !prize1) { prize1 = clean3DigitVal(m1[1]); matched = true; }
@@ -360,6 +380,27 @@ export async function scanResultImage(
     const ret = await worker.recognize(canvas);
     let parsed = parseLotteryResultText(ret.data.text);
 
+    // Pass 1.5: Precision fallback for top prize area (prizes 2-5) if any are missing
+    if (!parsed.prize2 || !parsed.prize3 || !parsed.prize4 || !parsed.prize5) {
+      onProgress?.(75, 'Precision scanning prize section...');
+      const w = canvas.width;
+      const h = canvas.height;
+      const topHeight = Math.round(h * 0.45);
+      const topCanvas = document.createElement('canvas');
+      topCanvas.width = w;
+      topCanvas.height = topHeight;
+      const topCtx = topCanvas.getContext('2d');
+      if (topCtx) {
+        topCtx.drawImage(canvas, 0, 0, w, topHeight, 0, 0, w, topHeight);
+        const topRet = await worker.recognize(topCanvas);
+        const topParsed = parseLotteryResultText(topRet.data.text);
+        if (!parsed.prize2 && topParsed.prize2) parsed.prize2 = topParsed.prize2;
+        if (!parsed.prize3 && topParsed.prize3) parsed.prize3 = topParsed.prize3;
+        if (!parsed.prize4 && topParsed.prize4) parsed.prize4 = topParsed.prize4;
+        if (!parsed.prize5 && topParsed.prize5) parsed.prize5 = topParsed.prize5;
+      }
+    }
+
     // Pass 2: Targeted 3-column slicing if compliments table missed any numbers (< 30)
     const filledComps = parsed.complimentBoxes.filter((c) => Boolean(c && c.trim().length === 3)).length;
     if (filledComps < 30) {
@@ -389,7 +430,7 @@ export async function scanResultImage(
           );
           const colRet = await worker.recognize(colCanvas);
           const cleanColText = cleanLotteryText(colRet.data.text);
-          const colNums = cleanColText.match(/\b\d{3}\b/g) || [];
+          const colNums = (cleanColText.match(/\b[0-9oOgqQ]{3}\b/g) || []).map(clean3DigitVal);
           if (colNums.length >= 10) {
             const tenNums = colNums.slice(-10);
             for (let row = 0; row < 10; row++) {

@@ -139,13 +139,16 @@ export const EditDeleteBillView: React.FC = () => {
 
   useEffect(() => {
     if (searchedBill) {
-      const agency =
-        (searchedBill as any).agencyName ||
-        (searchedBill as any).userName ||
-        currentUser?.name ||
-        currentUser?.agencyName ||
-        'Agency';
-      cachedBillFilePromiseRef.current = prepareBillFile(searchedBill, 'edit-bill-share-container', agency);
+      const timer = setTimeout(() => {
+        const agency =
+          (searchedBill as any).agencyName ||
+          (searchedBill as any).userName ||
+          currentUser?.name ||
+          currentUser?.agencyName ||
+          'Agency';
+        cachedBillFilePromiseRef.current = prepareBillFile(searchedBill, 'edit-bill-share-container', agency);
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       cachedBillFilePromiseRef.current = null;
     }

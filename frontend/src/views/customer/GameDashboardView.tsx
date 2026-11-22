@@ -157,14 +157,17 @@ export const GameDashboardView: React.FC = () => {
 
   useEffect(() => {
     if (savedBillId && ticketToShare) {
-      // Start background preparation immediately when the popup appears so click-to-share is instant
-      const agency =
-        (ticketToShare as any).agencyName ||
-        (ticketToShare as any).userName ||
-        currentUser?.name ||
-        currentUser?.agencyName ||
-        'Agency';
-      cachedBillFilePromiseRef.current = prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
+      // Schedule background preparation slightly after render so modal animation is 60fps instant
+      const timer = setTimeout(() => {
+        const agency =
+          (ticketToShare as any).agencyName ||
+          (ticketToShare as any).userName ||
+          currentUser?.name ||
+          currentUser?.agencyName ||
+          'Agency';
+        cachedBillFilePromiseRef.current = prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       cachedBillFilePromiseRef.current = null;
     }

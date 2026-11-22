@@ -1,4 +1,4 @@
-import { toJpeg } from 'html-to-image';
+import { toJpeg, toCanvas } from 'html-to-image';
 
 export interface ShareElementOptions {
   elementId?: string;
@@ -141,8 +141,12 @@ export const captureElementToFile = async ({
   if (!targetElem) return null;
 
   try {
-    // Step 1: Ensure background font loading is ready (resolves in 0ms if already cached)
-    await ensureBoldFontsLoaded();
+    // Only embed heavy Montserrat base64 fonts if capturing a result or report container.
+    // Bill cards use standard system sans & mono fonts, so omitting the 1MB font CSS avoids heavy SVG XML serialization and latency.
+    const isResultOrReport = elementId ? /result|report/i.test(elementId) : false;
+    if (isResultOrReport) {
+      await ensureBoldFontsLoaded();
+    }
 
     // Step 2: Instant capture with standard crisp 2x resolution and original 0.92 quality
     const captureOptions: Parameters<typeof toJpeg>[1] = {
@@ -152,12 +156,26 @@ export const captureElementToFile = async ({
       filter: (node) => (node as HTMLElement).tagName !== 'INPUT',
     };
 
-    if (cachedFontEmbedCSS) {
+    if (isResultOrReport && cachedFontEmbedCSS) {
       captureOptions.fontEmbedCSS = cachedFontEmbedCSS;
+    } else {
+      captureOptions.fontEmbedCSS = '';
     }
 
-    const dataUrl = await captureWithFontFix(targetElem, captureOptions);
-    const blob = dataUriToBlob(dataUrl);
+    let blob: Blob | null = null;
+    try {
+      const canvas = await toCanvas(targetElem, captureOptions);
+      blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
+      });
+    } catch {
+      // Non-fatal, fallback below
+    }
+
+    if (!blob) {
+      const dataUrl = await captureWithFontFix(targetElem, captureOptions);
+      blob = dataUriToBlob(dataUrl);
+    }
 
     const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
       ? fileName

@@ -265,13 +265,16 @@ export const MyPlayReportView: React.FC = () => {
 
   useEffect(() => {
     if (selectedSingleTicket) {
-      const agency =
-        (selectedSingleTicket as any).agencyName ||
-        (selectedSingleTicket as any).userName ||
-        currentUser?.name ||
-        currentUser?.agencyName ||
-        'Agency';
-      cachedDetailBillFilePromiseRef.current = prepareBillFile(selectedSingleTicket, 'bill-details-share-container', agency);
+      const timer = setTimeout(() => {
+        const agency =
+          (selectedSingleTicket as any).agencyName ||
+          (selectedSingleTicket as any).userName ||
+          currentUser?.name ||
+          currentUser?.agencyName ||
+          'Agency';
+        cachedDetailBillFilePromiseRef.current = prepareBillFile(selectedSingleTicket, 'bill-details-share-container', agency);
+      }, 50);
+      return () => clearTimeout(timer);
     } else {
       cachedDetailBillFilePromiseRef.current = null;
     }
