@@ -189,12 +189,13 @@ export const captureElementToFile = async ({
 };
 
 /**
- * Converts any image Blob (e.g. image/jpeg) to an image/png Blob,
+ * Converts any image Blob (e.g. image/jpeg) to an image/png Blob and base64 Data URL,
  * required by the W3C ClipboardItem specification for clipboard image writing.
  */
-export const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
-  if (blob.type === 'image/png') return blob;
-  return new Promise<Blob>((resolve) => {
+export const convertBlobToPngAndDataUrl = async (
+  blob: Blob
+): Promise<{ blob: Blob; dataUrl: string }> => {
+  return new Promise<{ blob: Blob; dataUrl: string }>((resolve) => {
     try {
       const img = new Image();
       const url = URL.createObjectURL(blob);
@@ -206,83 +207,135 @@ export const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
           canvas.height = img.naturalHeight || img.height;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve(blob);
+            resolve({ blob, dataUrl: '' });
             return;
           }
           ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL('image/png');
           canvas.toBlob((pngBlob) => {
-            resolve(pngBlob || blob);
+            resolve({ blob: pngBlob || blob, dataUrl });
           }, 'image/png');
         } catch {
-          resolve(blob);
+          resolve({ blob, dataUrl: '' });
         }
       };
       img.onerror = () => {
         URL.revokeObjectURL(url);
-        resolve(blob);
+        resolve({ blob, dataUrl: '' });
       };
       img.src = url;
     } catch {
-      resolve(blob);
+      resolve({ blob, dataUrl: '' });
     }
   });
+};
+
+export const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
+  const res = await convertBlobToPngAndDataUrl(blob);
+  return res.blob;
+};
+
+/**
+ * Copies text (e.g. "Bill ID - 2273474") to the system clipboard with robust cross-browser fallbacks.
+ */
+export const copyTextToClipboard = async (text: string): Promise<boolean> => {
+  if (!text) return false;
+  const cleanText = text.trim();
+
+  // Modern Async Clipboard API
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(cleanText);
+      return true;
+    } catch {
+      // Fallback below
+    }
+  }
+
+  // Fallback using document.execCommand('copy') for environments where writeText is restricted
+  if (typeof document !== 'undefined') {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = cleanText;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (successful) return true;
+    } catch {
+      // ignore
+    }
+  }
+
+  return false;
 };
 
 /**
  * Copies both an Image File and Text (e.g. "Bill ID - 2273474") to the system clipboard.
  * Pasting into chat/photo apps (WhatsApp, Telegram) will paste the image;
- * pasting into text fields will paste the text.
+ * pasting into text fields or caption inputs will paste the text.
  */
 export const copyFileAndTextToClipboard = async (
   file: File,
   text: string
 ): Promise<boolean> => {
-  if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
-
+  const cleanText = (text || '').trim();
   const isImage = file.type.startsWith('image/');
 
-  if (isImage && typeof ClipboardItem !== 'undefined') {
+  if (isImage && typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
     try {
-      const textBlob = text ? new Blob([text], { type: 'text/plain' }) : null;
-      const pngBlobPromise = convertBlobToPng(file);
+      const { blob: pngBlob, dataUrl } = await convertBlobToPngAndDataUrl(file);
 
-      // Attempt 1: Instant write with Promise (preserves synchronous user gesture in Safari/WebKit)
-      try {
-        const itemData: Record<string, any> = {
-          'image/png': pngBlobPromise,
-        };
-        if (textBlob) {
-          itemData['text/plain'] = textBlob;
-        }
-        await navigator.clipboard.write([new ClipboardItem(itemData)]);
-        return true;
-      } catch {
-        // Attempt 2: Resolve blob first, then write
-        const pngBlob = await pngBlobPromise;
-        const itemData: Record<string, Blob> = {
-          'image/png': pngBlob,
-        };
-        if (textBlob) {
-          itemData['text/plain'] = textBlob;
-        }
-        await navigator.clipboard.write([new ClipboardItem(itemData)]);
-        return true;
+      // Construct multi-mime representations:
+      // 1. 'text/plain' - for text fields, Notepad, search bars, chat inputs
+      // 2. 'text/html' - for rich-text editors and caption fields
+      // 3. 'image/png' - for image viewers, chats, WhatsApp media paste
+      const itemData: Record<string, Blob> = {};
+
+      if (cleanText) {
+        itemData['text/plain'] = new Blob([cleanText], { type: 'text/plain' });
       }
+
+      if (cleanText || dataUrl) {
+        const htmlSnippet = dataUrl
+          ? `<p style="font-family:sans-serif;font-weight:bold;font-size:14px;margin-bottom:8px;">${cleanText}</p><img src="${dataUrl}" alt="${cleanText}" />`
+          : `<p>${cleanText}</p>`;
+        itemData['text/html'] = new Blob([htmlSnippet], { type: 'text/html' });
+      }
+
+      if (pngBlob && pngBlob.type === 'image/png') {
+        itemData['image/png'] = pngBlob;
+      }
+
+      await navigator.clipboard.write([new ClipboardItem(itemData)]);
+      return true;
     } catch (imageErr) {
-      console.warn('Image clipboard write failed, falling back to text:', imageErr);
+      console.warn('Rich clipboard write failed, trying fallbacks:', imageErr);
+
+      // Fallback 1: Try writing image-only if composite format was rejected
+      try {
+        const pngBlob = await convertBlobToPng(file);
+        if (pngBlob && pngBlob.type === 'image/png') {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+          return true;
+        }
+      } catch {}
+
+      // Fallback 2: Copy text only
+      if (cleanText) {
+        return copyTextToClipboard(cleanText);
+      }
     }
   }
 
   // Fallback: Copy text only
-  if (text) {
-    try {
-      if (navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-        return true;
-      }
-    } catch (textErr) {
-      console.warn('Text clipboard write failed:', textErr);
-    }
+  if (cleanText) {
+    return copyTextToClipboard(cleanText);
   }
 
   return false;
@@ -319,11 +372,12 @@ export const shareFileDirectly = async (
 
     if (canShareFiles) {
       try {
-        const shareData: { files: File[]; text?: string } = {
+        const shareData: { files: File[]; text?: string; title?: string } = {
           files: [file],
         };
         if (shareText) {
           shareData.text = shareText;
+          shareData.title = shareText;
         }
         await navigator.share(shareData);
         return;

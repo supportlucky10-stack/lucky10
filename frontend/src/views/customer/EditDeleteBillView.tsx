@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
-import { Search, Trash2, CheckCircle2 } from 'lucide-react';
+import { Search, Trash2, CheckCircle2, Copy, Check } from 'lucide-react';
 import { shareBill, prepareBillFile } from '../../utils/billShareUtils';
+import { copyTextToClipboard } from '../../utils/shareUtils';
 
 const formatPlacedAtDate = (str?: string): string => {
   if (!str) return '';
@@ -135,6 +136,7 @@ export const EditDeleteBillView: React.FC = () => {
   };
 
   const [isSharingBill, setIsSharingBill] = useState(false);
+  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
   const cachedBillFilePromiseRef = useRef<Promise<File | null> | null>(null);
 
   useEffect(() => {
@@ -154,12 +156,20 @@ export const EditDeleteBillView: React.FC = () => {
     }
   }, [searchedBill, currentUser]);
 
+  const handleCopyBillId = async (id: string | number) => {
+    const text = `Bill ID - ${id}`;
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedBillId(String(id));
+      addToast(`Bill ID - ${id} copied!`, 'success');
+      setTimeout(() => setCopiedBillId(null), 3000);
+    } else {
+      addToast('Failed to copy Bill ID', 'error');
+    }
+  };
+
   const handleShareBillToWhatsApp = async () => {
     if (!searchedBill || isSharingBill) return;
-    const billIdText = `Bill ID - ${searchedBill.id}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(billIdText).catch(() => {});
-    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -181,6 +191,12 @@ export const EditDeleteBillView: React.FC = () => {
         agency,
         readyFile
       );
+      addToast('Bill image & Bill ID copied to clipboard!', 'success');
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Failed to share bill:', err);
+        addToast('Failed to share bill', 'error');
+      }
     } finally {
       setIsSharingBill(false);
     }
@@ -275,6 +291,24 @@ export const EditDeleteBillView: React.FC = () => {
                     <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                     <div className="flex items-center gap-2">
                       <span className="text-gold font-black text-base">{searchedBill.id}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyBillId(searchedBill.id)}
+                        className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-[10px] font-black rounded text-neutral-200 border border-neutral-600 transition-all cursor-pointer flex items-center gap-1"
+                        title="Copy Bill ID"
+                      >
+                        {copiedBillId === String(searchedBill.id) ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
+                            <span className="text-emerald-400">COPIED</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-gold" />
+                            <span>COPY ID</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
 

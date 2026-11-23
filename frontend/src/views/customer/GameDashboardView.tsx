@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, AlertTriangle, Lock } from 'lucide-react';
+import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem, PlacedTicket } from '../../types';
 import { isGameSlotOpen, getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
 import { shareBill, prepareBillFile, formatPlacedAtDate, getDisplayGame, getDisplayNumber, formatCustomerName } from '../../utils/billShareUtils';
+import { copyTextToClipboard } from '../../utils/shareUtils';
 
 interface SlotTheme {
   name: string;
@@ -139,6 +140,7 @@ export const GameDashboardView: React.FC = () => {
   const [isSet, setIsSet] = useState(false);
   const [savedBillId, setSavedBillId] = useState<string | null>(null);
   const [savedTicketData, setSavedTicketData] = useState<PlacedTicket | null>(null);
+  const [copiedBillId, setCopiedBillId] = useState<string | null>(null);
   const [isSharingBill, setIsSharingBill] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [minCountModalOpen, setMinCountModalOpen] = useState(false);
@@ -173,12 +175,20 @@ export const GameDashboardView: React.FC = () => {
     }
   }, [savedBillId, ticketToShare, currentUser]);
 
+  const handleCopyBillId = async (id: string | number) => {
+    const text = `Bill ID - ${id}`;
+    const ok = await copyTextToClipboard(text);
+    if (ok) {
+      setCopiedBillId(String(id));
+      addToast(`Bill ID - ${id} copied!`, 'success');
+      setTimeout(() => setCopiedBillId(null), 3000);
+    } else {
+      addToast('Failed to copy Bill ID', 'error');
+    }
+  };
+
   const handleShareBill = async () => {
     if (!ticketToShare || isSharingBill) return;
-    const billIdText = `Bill ID - ${ticketToShare.id}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(billIdText).catch(() => {});
-    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -195,6 +205,7 @@ export const GameDashboardView: React.FC = () => {
         readyFile = await prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
       }
       await shareBill(ticketToShare, 'dashboard-bill-card-container', agency, readyFile);
+      addToast('Bill image & Bill ID copied to clipboard!', 'success');
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         console.error('Failed to share bill:', err);
@@ -1389,11 +1400,31 @@ export const GameDashboardView: React.FC = () => {
             <div className="w-12 h-12 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center justify-center mx-auto shadow-inner">
               <CheckCircle2 className="w-7 h-7 stroke-[2.5]" />
             </div>
-            <div className="space-y-1 font-mono">
+            <div className="space-y-2 font-mono">
               <h4 className="font-black text-white text-base uppercase tracking-wide">Successfully Saved</h4>
-              <p className="text-sm text-gold font-bold">
-                BILL ID: <span className="text-white font-black">{savedBillId}</span>
-              </p>
+              <div className="flex items-center justify-center gap-2 bg-neutral-900 border border-neutral-800 rounded-xl py-2 px-3">
+                <p className="text-xs text-gold font-bold">
+                  BILL ID: <span className="text-white font-black">{savedBillId}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleCopyBillId(savedBillId)}
+                  className="px-2 py-0.5 bg-neutral-800 hover:bg-neutral-700 active:scale-90 text-[10px] font-black rounded text-neutral-200 border border-neutral-600 transition-all cursor-pointer flex items-center gap-1"
+                  title="Copy Bill ID"
+                >
+                  {copiedBillId === savedBillId ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-400 stroke-[3]" />
+                      <span className="text-emerald-400">COPIED</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3 text-gold" />
+                      <span>COPY ID</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <div className="space-y-2 pt-1 font-mono">
               <button
@@ -1414,6 +1445,25 @@ export const GameDashboardView: React.FC = () => {
                       <path d="M12.012 2c-5.506 0-9.989 4.478-9.99 9.984a9.93 9.93 0 0 0 1.371 5.034l-1.458 5.328 5.461-1.431a9.92 9.92 0 0 0 4.614 1.155h.004c5.505 0 9.988-4.478 9.99-9.984 0-2.668-1.039-5.176-2.927-7.062a9.92 9.92 0 0 0-7.065-2.924zm5.72 12.721c-.25.705-1.246 1.346-1.74 1.399-.445.048-1.025.074-1.656-.128-.386-.123-.882-.284-1.528-.563-2.696-1.164-4.448-3.902-4.584-4.084-.135-.182-1.107-1.474-1.107-2.81 0-1.336.7-1.993.951-2.259.251-.266.548-.333.73-.333.183 0 .365.002.525.01.171.008.401-.065.626.476.233.56.79 1.93.858 2.07.069.14.115.305.023.488-.092.183-.138.297-.274.457-.137.16-.288.358-.411.48-.137.137-.28.286-.12.56.16.274.71 1.171 1.524 1.895 1.047.93 1.931 1.22 2.205 1.357.274.137.434.114.594-.069.16-.183.685-.798.868-1.072.183-.274.365-.228.616-.137.251.091 1.598.753 1.872.89.274.137.457.205.525.32.069.114.069.662-.181 1.367z" />
                     </svg>
                     <span>SHARE BILL</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleCopyBillId(savedBillId)}
+                className={`w-full py-2.5 ${copiedBillId === savedBillId ? 'bg-emerald-950 text-emerald-300 border-emerald-600' : 'bg-neutral-900 hover:bg-neutral-800 text-gold border-neutral-700'} active:scale-95 font-black text-xs uppercase tracking-wider rounded-xl shadow flex items-center justify-center gap-2 transition-all cursor-pointer border font-mono`}
+                title="Copy Bill ID Text"
+              >
+                {copiedBillId === savedBillId ? (
+                  <>
+                    <Check className="w-4 h-4 stroke-[3] text-emerald-400" />
+                    <span>COPIED BILL ID: {savedBillId}</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4 text-gold" />
+                    <span>COPY BILL ID: {savedBillId}</span>
                   </>
                 )}
               </button>
