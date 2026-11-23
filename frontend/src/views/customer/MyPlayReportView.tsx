@@ -2266,13 +2266,6 @@ export const MyPlayReportView: React.FC = () => {
                 <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
               </div>
 
-              {/* WhatsApp Caption Banner Attached Directly to the Image */}
-              <div className="bg-[#005c4b] border-t border-[#075e54] px-4 py-2.5 flex items-center justify-between font-mono">
-                <span className="text-white font-black text-sm tracking-wide">
-                  Bill ID - <span className="text-[#25d366] font-black underline">{selectedSingleTicket.id}</span>
-                </span>
-              </div>
-
             </div>
 
           </div>
@@ -2346,13 +2339,6 @@ export const MyPlayReportView: React.FC = () => {
             <div className="bg-neutral-900 border-t border-neutral-800 px-3 sm:px-4 py-2.5 flex items-center justify-between font-mono gap-2">
               <span className="text-xs text-white uppercase font-black tracking-wider whitespace-nowrap shrink-0">TOTAL AMOUNT</span>
               <span className="text-white font-black text-base sm:text-lg whitespace-nowrap shrink-0">₹{selectedSingleTicket.totalAmount}</span>
-            </div>
-
-            {/* WhatsApp Caption Banner Attached Directly to the Image */}
-            <div className="bg-[#005c4b] border-t border-[#075e54] px-4 py-2.5 flex items-center justify-between font-mono">
-              <span className="text-white font-black text-sm tracking-wide">
-                Bill ID - <span className="text-[#25d366] font-black underline">{selectedSingleTicket.id}</span>
-              </span>
             </div>
           </div>
         </div>

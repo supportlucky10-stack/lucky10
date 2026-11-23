@@ -272,14 +272,6 @@ export const buildBillPdfBlob = (ticket: PlacedTicket, agencyNameFallback?: stri
 
       stream += `BT /F2 12 Tf 1 1 1 rg ${leftX + 14} ${totY + 9} Td (TOTAL AMOUNT) Tj ET\n`;
       stream += `BT /F2 14 Tf 0.95 0.80 0.20 rg ${leftX + 440} ${totY + 8} Td (Rs. ${escapePdfText(String(totalAmount))}) Tj ET\n`;
-
-      // ── WhatsApp Style Caption Box attached to the bottom ──
-      currentY = totY - 4;
-      const capH = 26;
-      const capY = currentY - capH;
-      stream += `0 0.36 0.29 rg ${leftX} ${capY} ${contentWidth} ${capH} re f\n`;
-      stream += `0.04 0.55 0.46 RG 1 w ${leftX} ${capY} ${contentWidth} ${capH} re S\n`;
-      stream += `BT /F2 11 Tf 1 1 1 rg ${leftX + 14} ${capY + 8} Td (Bill ID - ${escapePdfText(ticketId)}) Tj ET\n`;
     }
 
     // ── Footer (Page X of Y) ──
