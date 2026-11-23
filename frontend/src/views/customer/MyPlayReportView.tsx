@@ -282,6 +282,10 @@ export const MyPlayReportView: React.FC = () => {
 
   const handleShareBillToWhatsApp = async () => {
     if (!selectedSingleTicket || isSharingBill) return;
+    const billIdText = `Bill ID - ${selectedSingleTicket.id}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(billIdText).catch(() => {});
+    }
     setIsSharingBill(true);
     try {
       const agency =

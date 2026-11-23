@@ -189,6 +189,106 @@ export const captureElementToFile = async ({
 };
 
 /**
+ * Converts any image Blob (e.g. image/jpeg) to an image/png Blob,
+ * required by the W3C ClipboardItem specification for clipboard image writing.
+ */
+export const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
+  if (blob.type === 'image/png') return blob;
+  return new Promise<Blob>((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        try {
+          URL.revokeObjectURL(url);
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(blob);
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob((pngBlob) => {
+            resolve(pngBlob || blob);
+          }, 'image/png');
+        } catch {
+          resolve(blob);
+        }
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(blob);
+      };
+      img.src = url;
+    } catch {
+      resolve(blob);
+    }
+  });
+};
+
+/**
+ * Copies both an Image File and Text (e.g. "Bill ID - 2273474") to the system clipboard.
+ * Pasting into chat/photo apps (WhatsApp, Telegram) will paste the image;
+ * pasting into text fields will paste the text.
+ */
+export const copyFileAndTextToClipboard = async (
+  file: File,
+  text: string
+): Promise<boolean> => {
+  if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
+
+  const isImage = file.type.startsWith('image/');
+
+  if (isImage && typeof ClipboardItem !== 'undefined') {
+    try {
+      const textBlob = text ? new Blob([text], { type: 'text/plain' }) : null;
+      const pngBlobPromise = convertBlobToPng(file);
+
+      // Attempt 1: Instant write with Promise (preserves synchronous user gesture in Safari/WebKit)
+      try {
+        const itemData: Record<string, any> = {
+          'image/png': pngBlobPromise,
+        };
+        if (textBlob) {
+          itemData['text/plain'] = textBlob;
+        }
+        await navigator.clipboard.write([new ClipboardItem(itemData)]);
+        return true;
+      } catch {
+        // Attempt 2: Resolve blob first, then write
+        const pngBlob = await pngBlobPromise;
+        const itemData: Record<string, Blob> = {
+          'image/png': pngBlob,
+        };
+        if (textBlob) {
+          itemData['text/plain'] = textBlob;
+        }
+        await navigator.clipboard.write([new ClipboardItem(itemData)]);
+        return true;
+      }
+    } catch (imageErr) {
+      console.warn('Image clipboard write failed, falling back to text:', imageErr);
+    }
+  }
+
+  // Fallback: Copy text only
+  if (text) {
+    try {
+      if (navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch (textErr) {
+      console.warn('Text clipboard write failed:', textErr);
+    }
+  }
+
+  return false;
+};
+
+/**
  * Shares a prepared File directly via mobile Web Share API or download + WhatsApp.
  */
 export const shareFileDirectly = async (
@@ -196,6 +296,13 @@ export const shareFileDirectly = async (
   options?: { title?: string; textSummary?: string }
 ): Promise<void> => {
   const shareText = (options?.textSummary || options?.title || '').trim();
+
+  // Automatically copy image and text (e.g. "Bill ID - 2273474") to clipboard immediately
+  try {
+    await copyFileAndTextToClipboard(file, shareText);
+  } catch (copyErr) {
+    console.warn('Clipboard write warning:', copyErr);
+  }
 
   // 1. Try mobile Web Share API for instant WhatsApp / Image Sharing
   if (typeof navigator !== 'undefined' && navigator.share) {

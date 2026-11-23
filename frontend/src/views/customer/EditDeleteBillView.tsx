@@ -156,6 +156,10 @@ export const EditDeleteBillView: React.FC = () => {
 
   const handleShareBillToWhatsApp = async () => {
     if (!searchedBill || isSharingBill) return;
+    const billIdText = `Bill ID - ${searchedBill.id}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(billIdText).catch(() => {});
+    }
     setIsSharingBill(true);
     try {
       const agency =
