@@ -156,6 +156,10 @@ export const EditDeleteBillView: React.FC = () => {
 
   const handleShareBillToWhatsApp = async () => {
     if (!searchedBill || isSharingBill) return;
+    const billIdText = `Bill ID - ${searchedBill.id}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(billIdText).catch(() => {});
+    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -177,12 +181,6 @@ export const EditDeleteBillView: React.FC = () => {
         agency,
         readyFile
       );
-      addToast(`Bill image & Bill ID (${searchedBill.id}) copied to clipboard!`, 'success');
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        console.error('Failed to share bill:', err);
-        addToast('Failed to share bill', 'error');
-      }
     } finally {
       setIsSharingBill(false);
     }

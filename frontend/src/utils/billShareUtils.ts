@@ -353,11 +353,11 @@ export const prepareBillFile = async (
   const containerElem = typeof document !== 'undefined' ? document.getElementById(elementId) : null;
   const isTooTall = containerElem ? containerElem.scrollHeight > 1600 : false;
 
-  // ── NORMAL / SMALL BILL: Capture crisp lossless PNG image file ──
+  // ── NORMAL / SMALL BILL: Capture crisp image file ──
   if (items.length <= LONG_BILL_THRESHOLD_ITEMS && !isTooTall) {
     return captureElementToFile({
       elementId,
-      fileName: `bill_${ticket.id}.png`,
+      fileName: `bill_${ticket.id}.jpg`,
       title: `Bill ID - ${ticket.id}`,
       textSummary: `Bill ID - ${ticket.id}`,
     });
@@ -399,7 +399,7 @@ export const shareBill = async (
   // Fallback: standard capture and share
   return captureAndShareElement({
     elementId,
-    fileName: `bill_${ticket.id}.png`,
+    fileName: `bill_${ticket.id}.jpg`,
     title: `Bill ID - ${ticket.id}`,
     textSummary: `Bill ID - ${ticket.id}`,
   });
