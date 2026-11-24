@@ -175,10 +175,6 @@ export const GameDashboardView: React.FC = () => {
 
   const handleShareBill = async () => {
     if (!ticketToShare || isSharingBill) return;
-    const billIdText = `Bill ID - ${ticketToShare.id}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(billIdText).catch(() => {});
-    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -195,6 +191,7 @@ export const GameDashboardView: React.FC = () => {
         readyFile = await prepareBillFile(ticketToShare, 'dashboard-bill-card-container', agency);
       }
       await shareBill(ticketToShare, 'dashboard-bill-card-container', agency, readyFile);
+      addToast(`Bill image & Bill ID (${ticketToShare.id}) copied to clipboard!`, 'success');
     } catch (err: any) {
       if (err?.name !== 'AbortError') {
         console.error('Failed to share bill:', err);

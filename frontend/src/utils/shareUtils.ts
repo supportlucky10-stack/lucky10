@@ -162,11 +162,12 @@ export const captureElementToFile = async ({
       captureOptions.fontEmbedCSS = '';
     }
 
+    const isPng = fileName.toLowerCase().endsWith('.png');
     let blob: Blob | null = null;
     try {
       const canvas = await toCanvas(targetElem, captureOptions);
       blob = await new Promise<Blob | null>((resolve) => {
-        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.92);
+        canvas.toBlob((b) => resolve(b), isPng ? 'image/png' : 'image/jpeg', isPng ? undefined : 0.92);
       });
     } catch {
       // Non-fatal, fallback below
@@ -177,11 +178,12 @@ export const captureElementToFile = async ({
       blob = dataUriToBlob(dataUrl);
     }
 
-    const jpgFileName = fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
-      ? fileName
-      : fileName.replace(/\.[^/.]+$/, '') + '.jpg';
+    const outFileName = isPng
+      ? (fileName.endsWith('.png') ? fileName : fileName.replace(/\.[^/.]+$/, '') + '.png')
+      : (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') ? fileName : fileName.replace(/\.[^/.]+$/, '') + '.jpg');
 
-    return new File([blob], jpgFileName, { type: 'image/jpeg', lastModified: Date.now() });
+    const outMime = isPng ? 'image/png' : 'image/jpeg';
+    return new File([blob], outFileName, { type: outMime, lastModified: Date.now() });
   } catch (err) {
     console.error('Failed to capture screen element to file:', err);
     return null;
@@ -231,7 +233,7 @@ export const convertBlobToPng = async (blob: Blob): Promise<Blob> => {
 /**
  * Copies both an Image File and Text (e.g. "Bill ID - 2273474") to the system clipboard.
  * Pasting into chat/photo apps (WhatsApp, Telegram) will paste the image;
- * pasting into text fields will paste the text.
+ * pasting into caption/text fields will paste the Bill ID text.
  */
 export const copyFileAndTextToClipboard = async (
   file: File,
@@ -240,44 +242,47 @@ export const copyFileAndTextToClipboard = async (
   if (typeof navigator === 'undefined' || !navigator.clipboard) return false;
 
   const isImage = file.type.startsWith('image/');
+  const trimmedText = (text || '').trim();
 
   if (isImage && typeof ClipboardItem !== 'undefined') {
     try {
-      const textBlob = text ? new Blob([text], { type: 'text/plain' }) : null;
-      const pngBlobPromise = convertBlobToPng(file);
+      const pngBlob = await convertBlobToPng(file);
+      const textBlob = trimmedText ? new Blob([trimmedText], { type: 'text/plain' }) : null;
 
-      // Attempt 1: Instant write with Promise (preserves synchronous user gesture in Safari/WebKit)
-      try {
-        const itemData: Record<string, any> = {
-          'image/png': pngBlobPromise,
-        };
-        if (textBlob) {
-          itemData['text/plain'] = textBlob;
+      // Primary attempt: Write single ClipboardItem containing both image/png and text/plain (caption)
+      if (textBlob) {
+        try {
+          const combinedItem = new ClipboardItem({
+            'image/png': pngBlob,
+            'text/plain': textBlob,
+          });
+          await navigator.clipboard.write([combinedItem]);
+          return true;
+        } catch (combinedErr) {
+          console.warn('Combined image+caption clipboard write failed, trying image-only:', combinedErr);
         }
-        await navigator.clipboard.write([new ClipboardItem(itemData)]);
-        return true;
-      } catch {
-        // Attempt 2: Resolve blob first, then write
-        const pngBlob = await pngBlobPromise;
-        const itemData: Record<string, Blob> = {
-          'image/png': pngBlob,
-        };
-        if (textBlob) {
-          itemData['text/plain'] = textBlob;
-        }
-        await navigator.clipboard.write([new ClipboardItem(itemData)]);
-        return true;
       }
-    } catch (imageErr) {
-      console.warn('Image clipboard write failed, falling back to text:', imageErr);
+
+      // Secondary attempt: Write image-only
+      try {
+        const imageItem = new ClipboardItem({
+          'image/png': pngBlob,
+        });
+        await navigator.clipboard.write([imageItem]);
+        return true;
+      } catch (imageErr) {
+        console.warn('Image-only clipboard write failed:', imageErr);
+      }
+    } catch (err) {
+      console.warn('Clipboard write error:', err);
     }
   }
 
   // Fallback: Copy text only
-  if (text) {
+  if (trimmedText) {
     try {
       if (navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
+        await navigator.clipboard.writeText(trimmedText);
         return true;
       }
     } catch (textErr) {
@@ -319,11 +324,12 @@ export const shareFileDirectly = async (
 
     if (canShareFiles) {
       try {
-        const shareData: { files: File[]; text?: string } = {
+        const shareData: { files: File[]; text?: string; title?: string } = {
           files: [file],
         };
         if (shareText) {
           shareData.text = shareText;
+          shareData.title = shareText;
         }
         await navigator.share(shareData);
         return;

@@ -282,10 +282,6 @@ export const MyPlayReportView: React.FC = () => {
 
   const handleShareBillToWhatsApp = async () => {
     if (!selectedSingleTicket || isSharingBill) return;
-    const billIdText = `Bill ID - ${selectedSingleTicket.id}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(billIdText).catch(() => {});
-    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -307,6 +303,12 @@ export const MyPlayReportView: React.FC = () => {
         agency,
         readyFile
       );
+      addToast(`Bill image & Bill ID (${selectedSingleTicket.id}) copied to clipboard!`, 'success');
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Failed to share bill:', err);
+        addToast('Failed to share bill', 'error');
+      }
     } finally {
       setIsSharingBill(false);
     }
