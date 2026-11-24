@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { evaluateBetItem, getCommissionPercent } from '../../utils/gameRulesEngine';
 import { getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
 import { shareBill, shareWinningReport, prepareBillFile } from '../../utils/billShareUtils';
+import { copyTextToClipboard } from '../../utils/shareUtils';
 import {
   ClipboardList,
   Trophy,
@@ -280,12 +281,22 @@ export const MyPlayReportView: React.FC = () => {
     }
   }, [selectedSingleTicket, currentUser]);
 
+  const [copiedDetailBillId, setCopiedDetailBillId] = useState<string | null>(null);
+
+  const handleCopyDetailBillId = async (id: string | number) => {
+    const textToCopy = `Bill ID - ${id}`;
+    const ok = await copyTextToClipboard(textToCopy);
+    if (ok) {
+      setCopiedDetailBillId(String(id));
+      addToast(`Copied ${textToCopy}`, 'success');
+      setTimeout(() => setCopiedDetailBillId(null), 2000);
+    } else {
+      addToast('Failed to copy Bill ID', 'error');
+    }
+  };
+
   const handleShareBillToWhatsApp = async () => {
     if (!selectedSingleTicket || isSharingBill) return;
-    const billIdText = `Bill ID - ${selectedSingleTicket.id}`;
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(billIdText).catch(() => {});
-    }
     setIsSharingBill(true);
     try {
       const agency =
@@ -2221,6 +2232,25 @@ export const MyPlayReportView: React.FC = () => {
                   <span className="text-[10px] text-neutral-400 uppercase tracking-wider block font-bold">BILL ID</span>
                   <div className="flex items-center gap-2">
                     <span className="text-gold font-black text-base">{selectedSingleTicket.id}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCopyDetailBillId(selectedSingleTicket.id);
+                      }}
+                      className={`p-1 rounded-md border transition-all cursor-pointer flex items-center justify-center active:scale-90 ${
+                        copiedDetailBillId === String(selectedSingleTicket.id)
+                          ? 'bg-emerald-950 border-emerald-500 text-emerald-400'
+                          : 'bg-neutral-800 hover:bg-neutral-700 border-neutral-700 text-gold hover:text-white'
+                      }`}
+                      title="Copy Bill ID"
+                    >
+                      {copiedDetailBillId === String(selectedSingleTicket.id) ? (
+                        <Check className="w-3 h-3 stroke-[3] text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
