@@ -42,9 +42,53 @@ app.add_middleware(
 )
 
 import time
+import json
+import asyncio
+from typing import Optional
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from fastapi import WebSocket, WebSocketDisconnect, Query
+from app.core.ws_manager import ws_manager
+from app.core.security import decode_token
+
+@app.on_event("startup")
+async def on_startup():
+    try:
+        loop = asyncio.get_running_loop()
+        ws_manager.set_loop(loop)
+        logger.info("[WebSocket] Manager event loop registered successfully.")
+    except Exception as e:
+        logger.warning(f"[WebSocket] Startup event loop registration failed: {e}")
+
+@app.websocket("/api/ws")
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, token: Optional[str] = Query(None)):
+    user_id = None
+    role = "GUEST"
+    if token:
+        try:
+            payload = decode_token(token)
+            if payload:
+                user_id = str(payload.get("sub", ""))
+                role = str(payload.get("role", "CUSTOMER")).upper()
+        except Exception:
+            pass
+    await ws_manager.connect(websocket, user_id=user_id, role=role)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            try:
+                msg = json.loads(data)
+                if msg.get("type") == "PING":
+                    await websocket.send_text(json.dumps({"type": "PONG", "timestamp": time.time()}))
+            except Exception:
+                pass
+    except WebSocketDisconnect:
+        ws_manager.disconnect(websocket, user_id=user_id, role=role)
+    except Exception as exc:
+        logger.debug(f"[WebSocket] Connection closed with exception: {exc}")
+        ws_manager.disconnect(websocket, user_id=user_id, role=role)
 
 # Structured Request Logging Middleware (Never logs sensitive tokens/passwords)
 @app.middleware("http")

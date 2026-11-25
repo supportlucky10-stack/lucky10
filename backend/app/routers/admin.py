@@ -23,6 +23,7 @@ from app.core.game_timing import (
     normalize_slot_name,
     IST_TZ,
 )
+from app.core.ws_manager import ws_manager
 
 router = APIRouter(prefix="/api/admin", tags=["Admin Domain"])
 
@@ -108,6 +109,9 @@ def set_all_users_status(status_payload: dict, admin_user: User = Depends(get_cu
     is_active = bool(status_payload.get("isActive", True))
     db.query(User).filter(User.role == UserRole.CUSTOMER).update({"is_active": is_active}, synchronize_session="fetch")
     db.commit()
+    ws_manager.broadcast_sync({"type": "USERS_UPDATED"})
+    if not is_active:
+        ws_manager.broadcast_role_sync("CUSTOMER", {"type": "USER_DEACTIVATED"})
     return {"message": f"All users status updated to {'Active' if is_active else 'Deactivated'}"}
 
 @router.put("/users/{user_id}/status")
@@ -131,6 +135,9 @@ def toggle_user_status(user_id: str, status_payload: Optional[dict] = None, admi
         
     db.commit()
     db.refresh(user)
+    ws_manager.broadcast_sync({"type": "USERS_UPDATED"})
+    if user.is_active is False:
+        ws_manager.send_to_user_sync(user.id, {"type": "USER_DEACTIVATED", "userId": str(user.id)})
     return {"id": user.id, "isActive": user.is_active, "message": "User status updated successfully"}
 
 @router.put("/users/{user_id}/password")
@@ -321,7 +328,7 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
         except Exception:
             parsed_compliments = req.compliments or []
 
-        return {
+        res_data = {
             "id": target_res.id,
             "date": target_res.date,
             "gameSlot": target_res.game_slot,
@@ -336,6 +343,14 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
             "publishedAt1st": target_res.published_at_1st.isoformat() if target_res.published_at_1st else None,
             "publishedAtOther": target_res.published_at_other.isoformat() if target_res.published_at_other else None,
         }
+        ws_manager.broadcast_sync({
+            "type": "RESULTS_UPDATED",
+            "date": target_res.date,
+            "gameSlot": target_res.game_slot,
+            "result": res_data
+        })
+
+        return res_data
     except Exception as exc:
         db.rollback()
         raise exc
@@ -570,8 +585,15 @@ def delete_admin_ticket(ticket_id: str, admin_user: User = Depends(get_current_a
             business_date=b_date,
         )
         db.merge(deleted_record)
+        deleted_uid = str(ticket.user_id) if ticket.user_id else None
         db.delete(ticket)
         db.commit()
+        ws_manager.broadcast_sync({
+            "type": "TICKET_DELETED",
+            "ticketId": str(ticket_id),
+            "userId": deleted_uid,
+            "businessDate": b_date,
+        })
         return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}
     except Exception as exc:
         db.rollback()
@@ -708,6 +730,7 @@ def create_agency_limit(req: AgencyLimitCreate, admin_user: User = Depends(get_c
     db.add(new_limit)
     db.commit()
     db.refresh(new_limit)
+    ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
     return {
         "id": new_limit.id,
         "agencyId": new_limit.agency_id,
@@ -728,6 +751,7 @@ def delete_agency_limit(limit_id: str, admin_user: User = Depends(get_current_ad
         raise HTTPException(status_code=404, detail="Agency limit rule not found")
     db.delete(item)
     db.commit()
+    ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
     return {"message": "Agency limit removed"}
 
 @router.get("/limits/blocked")
@@ -757,6 +781,7 @@ def create_blocked_number(req: BlockedNumberCreate, admin_user: User = Depends(g
         existing.reason = req.reason or ""
         db.commit()
         db.refresh(existing)
+        ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
         return {
             "id": existing.id,
             "number": existing.number,
@@ -775,6 +800,7 @@ def create_blocked_number(req: BlockedNumberCreate, admin_user: User = Depends(g
     db.add(new_rule)
     db.commit()
     db.refresh(new_rule)
+    ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
     return {
         "id": new_rule.id,
         "number": new_rule.number,
@@ -793,6 +819,7 @@ def delete_blocked_number(blocked_id: str, admin_user: User = Depends(get_curren
         raise HTTPException(status_code=404, detail="Blocked number rule not found")
     db.delete(rule)
     db.commit()
+    ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
     return {"message": "Blocked number rule removed"}
 
 @router.get("/limits/global")
@@ -827,6 +854,7 @@ def update_global_limit(req: GlobalLimitUpdate, admin_user: User = Depends(get_c
             rule.game_slot = req.gameSlot
     db.commit()
     db.refresh(rule)
+    ws_manager.broadcast_sync({"type": "LIMITS_UPDATED"})
     return {
         "id": rule.id,
         "defaultMaxCount": rule.default_max_count,
@@ -858,6 +886,10 @@ def update_admin_maintenance_status(req: MaintenanceSettingUpdate, admin_user: U
             setting.message = req.message
     db.commit()
     db.refresh(setting)
+    ws_manager.broadcast_sync({
+        "type": "MAINTENANCE_UPDATED",
+        "maintenance": {"isEnabled": setting.is_enabled, "message": setting.message}
+    })
     return {"isEnabled": setting.is_enabled, "message": setting.message}
 
 

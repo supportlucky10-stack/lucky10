@@ -14,6 +14,7 @@ import type {
 import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { adminService } from '../services/adminService';
+import { getWebSocketUrl } from '../services/api';
 import { evaluateTicket } from '../utils/gameRulesEngine';
 import { extractDateStr, getDefaultBillingSlot, getBusinessDateIST } from '../utils/dateUtils';
 
@@ -562,11 +563,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (users) setRegisteredUsers((prev) => (areUsersEqual(prev, users) ? prev : users));
           if (tkts) {
             setPlacedTickets((prev) => {
-              const deduped = dedupeTickets([...tkts, ...prev]);
-              if (arePlacedTicketsEqual(prev, deduped)) {
+              // Reconcile today's tickets so deletions from customers disappear immediately
+              const otherDays = prev.filter((t) => {
+                const d = extractDateStr(t.placedAt || t.createdAt);
+                return d && d !== todayStr;
+              });
+              const reconciled = dedupeTickets([...tkts, ...otherDays]);
+              if (arePlacedTicketsEqual(prev, reconciled)) {
                 return prev;
               }
-              return deduped;
+              return reconciled;
             });
           }
         } catch {}
@@ -604,11 +610,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const tkts = await customerService.getTicketsByDate(todayStr).catch(() => null);
           if (tkts) {
             setPlacedTickets((prev) => {
-              const deduped = dedupeTickets([...tkts, ...prev]);
-              if (arePlacedTicketsEqual(prev, deduped)) {
+              const otherDays = prev.filter((t) => {
+                const d = extractDateStr(t.placedAt || t.createdAt);
+                return d && d !== todayStr;
+              });
+              const reconciled = dedupeTickets([...tkts, ...otherDays]);
+              if (arePlacedTicketsEqual(prev, reconciled)) {
                 return prev;
               }
-              return deduped;
+              return reconciled;
             });
           }
         } catch (err: any) {
@@ -624,17 +634,162 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     loadInitialData();
     timer = setInterval(pollLiveUpdates, 5000);
 
+    // ── Real-Time WebSocket Connection & Instant Event Handlers ──
+    let ws: WebSocket | null = null;
+    let pingInterval: any = null;
+    let reconnectTimeout: any = null;
+    let isWsMounted = true;
+
+    const connectWebSocket = () => {
+      if (!isWsMounted || typeof window === 'undefined') return;
+      try {
+        const wsUrl = getWebSocketUrl();
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+          if (reconnectTimeout) clearTimeout(reconnectTimeout);
+          // Keep-alive ping every 25 seconds
+          pingInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'PING' }));
+            }
+          }, 25000);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (!data || !data.type) return;
+
+            switch (data.type) {
+              case 'RESULTS_UPDATED': {
+                if (data.result && data.result.gameSlot) {
+                  const r = data.result;
+                  const slotKey = r.gameSlot as GameSlot;
+                  setGameResults((prev) => ({ ...prev, [slotKey]: r }));
+                  if (r.date) {
+                    const normDate = extractDateStr(r.date);
+                    if (normDate) {
+                      setAllPublishedResults((prev) => ({ ...prev, [`${normDate}_${slotKey}`]: r }));
+                    }
+                  }
+                  window.dispatchEvent(new Event('lucky10_results_updated'));
+                }
+                pollLiveUpdates();
+                break;
+              }
+
+              case 'TICKET_CREATED': {
+                if (data.ticket) {
+                  const t = data.ticket;
+                  if (isAdminLoggedIn || (currentUser && String(t.userId) === String(currentUser.id))) {
+                    setPlacedTickets((prev) => {
+                      if (prev.some((existing) => existing.id === t.id || existing.ticketId === t.id)) {
+                        return prev;
+                      }
+                      return [t, ...prev];
+                    });
+                  }
+                }
+                break;
+              }
+
+              case 'TICKET_DELETED': {
+                if (data.ticketId) {
+                  const tid = String(data.ticketId);
+                  setPlacedTickets((prev) => prev.filter((t) => String(t.id) !== tid && String(t.ticketId) !== tid));
+                }
+                break;
+              }
+
+              case 'LIMITS_UPDATED': {
+                customerService.getLimits().then((lims) => {
+                  if (lims) {
+                    if (lims.blockedNumbers) setBlockedNumbers(lims.blockedNumbers);
+                    if (lims.agencyLimits) setAgencyNumberLimits(lims.agencyLimits);
+                    if (lims.globalLimit) setGlobalLimitRule(lims.globalLimit);
+                    if (lims.maintenance) setMaintenanceState(lims.maintenance);
+                    if (lims.taken3DigitNumbers) setTaken3DigitNumbers(lims.taken3DigitNumbers);
+                  }
+                }).catch(() => {});
+                break;
+              }
+
+              case 'MAINTENANCE_UPDATED': {
+                if (data.maintenance) {
+                  setMaintenanceState(data.maintenance);
+                }
+                break;
+              }
+
+              case 'USER_DEACTIVATED': {
+                if (!isAdminLoggedIn && currentUser && (!data.userId || String(data.userId) === String(currentUser.id))) {
+                  logout();
+                  addToast('Your account is deactivated. Please contact administrator.', 'error');
+                }
+                break;
+              }
+
+              case 'USERS_UPDATED': {
+                if (isAdminLoggedIn) {
+                  adminService.getAllUsers().then((users) => {
+                    if (users) setRegisteredUsers(users);
+                  }).catch(() => {});
+                }
+                break;
+              }
+
+              default:
+                break;
+            }
+          } catch (e) {
+            console.error('[WebSocket] Message parsing error:', e);
+          }
+        };
+
+        ws.onclose = () => {
+          if (pingInterval) clearInterval(pingInterval);
+          if (isWsMounted) {
+            reconnectTimeout = setTimeout(connectWebSocket, 3000);
+          }
+        };
+
+        ws.onerror = () => {
+          try {
+            ws?.close();
+          } catch {}
+        };
+      } catch (err) {
+        if (isWsMounted) {
+          reconnectTimeout = setTimeout(connectWebSocket, 3000);
+        }
+      }
+    };
+
+    connectWebSocket();
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         lastAuthCheckTimeRef.current = 0; // force fresh auth check on tab focus
         pollLiveUpdates();
+        if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+          connectWebSocket();
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      isWsMounted = false;
       if (timer) clearInterval(timer);
+      if (pingInterval) clearInterval(pingInterval);
+      if (reconnectTimeout) clearTimeout(reconnectTimeout);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      if (ws) {
+        try {
+          ws.close();
+        } catch {}
+      }
     };
   }, [currentUser?.id, isAdminLoggedIn]);
 

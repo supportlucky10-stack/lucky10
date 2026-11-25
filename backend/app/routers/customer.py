@@ -23,6 +23,7 @@ from app.core.game_timing import (
     normalize_slot_name,
     get_all_game_slot_statuses,
 )
+from app.core.ws_manager import ws_manager
 
 
 router = APIRouter(prefix="/api/customer", tags=["Customer Domain"])
@@ -381,7 +382,13 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
 
                 db.commit()
                 db.refresh(new_ticket)
-                return format_ticket(new_ticket)
+                formatted = format_ticket(new_ticket)
+                ws_manager.broadcast_sync({
+                    "type": "TICKET_CREATED",
+                    "ticket": formatted,
+                    "userId": str(current_user.id),
+                })
+                return formatted
             except Exception as exc:
                 db.rollback()
                 if attempt < max_retries - 1 and ("unique" in str(exc).lower() or "integrity" in str(exc).lower() or "primary" in str(exc).lower()):
@@ -478,6 +485,12 @@ def delete_user_ticket(ticket_id: str, current_user: User = Depends(get_current_
 
         db.delete(ticket)
         db.commit()
+        ws_manager.broadcast_sync({
+            "type": "TICKET_DELETED",
+            "ticketId": str(ticket_id),
+            "userId": str(current_user.id),
+            "businessDate": b_date,
+        })
         return {"success": True, "message": f"Bill #{ticket_id} deleted successfully"}
     except Exception as exc:
         db.rollback()

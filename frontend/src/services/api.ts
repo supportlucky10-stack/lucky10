@@ -30,6 +30,25 @@ export function setAuthToken(token: string | null) {
   } catch {}
 }
 
+export function getWebSocketUrl(): string {
+  const token = getAuthToken();
+  const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+
+  if (API_BASE_URL.startsWith('http://')) {
+    return `${API_BASE_URL.replace('http://', 'ws://')}/api/ws${tokenQuery}`;
+  }
+  if (API_BASE_URL.startsWith('https://')) {
+    return `${API_BASE_URL.replace('https://', 'wss://')}/api/ws${tokenQuery}`;
+  }
+
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}/api/ws${tokenQuery}`;
+  }
+
+  return `ws://localhost:8000/api/ws${tokenQuery}`;
+}
+
 const inFlightGetRequests = new Map<string, Promise<any>>();
 
 export async function apiRequest<T>(
