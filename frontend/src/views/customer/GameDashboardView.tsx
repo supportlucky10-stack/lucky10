@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Menu, CheckSquare, CheckCircle2, ChevronDown, Copy, Check, AlertTriangle, Lock } from 'lucide-react';
 import type { GameSlot, BetSlipItem, PlacedTicket } from '../../types';
-import { isGameSlotOpen, getBusinessDateIST, extractDateStr } from '../../utils/dateUtils';
+import { isGameSlotOpen, getBusinessDateIST, extractDateStr, getDefaultBillingSlot } from '../../utils/dateUtils';
 import { parsePastedBillText } from '../../utils/pasteBillParser';
 import { shareBill, prepareBillFile, formatPlacedAtDate, getDisplayGame, getDisplayNumber, formatCustomerName } from '../../utils/billShareUtils';
 import { copyTextToClipboard } from '../../utils/shareUtils';
@@ -1454,6 +1454,8 @@ export const GameDashboardView: React.FC = () => {
                   setSavedBillId(null);
                   setSavedTicketData(null);
                   clearBetSlip();
+                  // Automatically redirect to the current running game slot happening right now
+                  setActiveGameSlot(getDefaultBillingSlot());
                 }}
                 className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:brightness-110 active:scale-95 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow cursor-pointer transition-all border border-emerald-400 font-mono"
               >
