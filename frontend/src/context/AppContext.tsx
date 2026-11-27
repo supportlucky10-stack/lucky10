@@ -261,6 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `${targetDate}_${slot}`,
       `${normDate}_${slot}`,
       `${todayStr}_${slot}`,
+      ...(normDate === todayStr ? [slot] : []),
     ];
 
     for (const key of keysToTry) {

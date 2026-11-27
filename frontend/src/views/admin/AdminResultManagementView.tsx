@@ -67,7 +67,7 @@ const slotThemes: Record<string, {
 type PreviewTarget = '1ST' | 'OTHER' | null;
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults, fetchDataForDate } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData, refreshResults, allPublishedResults, fetchDataForDate } = useApp();
 
   useEffect(() => {
     refreshAllData();
@@ -415,6 +415,8 @@ export const AdminResultManagementView: React.FC = () => {
     try {
       const targetSection = activePreviewTarget === '1ST' ? '1ST' : activePreviewTarget === 'OTHER' ? 'OTHER' : undefined;
       await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
+      await refreshAllData();
+      if (refreshResults) await refreshResults(todayStr);
       const isFirst = activePreviewTarget === '1ST';
       setActivePreviewTarget(null);
       setIsEditing1st(false);
@@ -453,12 +455,22 @@ export const AdminResultManagementView: React.FC = () => {
   const previewDateRef = useRef<HTMLInputElement>(null);
   const previewSlotTheme = slotThemes[previewSlot] || slotThemes['1 PM Game'];
 
-  // Fetch historical date data when admin changes preview date
+  // Fetch historical and fresh real-time data when admin switches to preview or changes date
   useEffect(() => {
-    if (fetchDataForDate && previewDate) {
-      fetchDataForDate(previewDate);
+    if (activeTab === 'preview') {
+      if (refreshResults) refreshResults(previewDate);
+      if (fetchDataForDate) fetchDataForDate(previewDate);
     }
-  }, [previewDate, fetchDataForDate]);
+  }, [activeTab, previewDate, refreshResults, fetchDataForDate]);
+
+  useEffect(() => {
+    const handleResultsUpdated = () => {
+      if (refreshResults) refreshResults(previewDate);
+      if (refreshAllData) refreshAllData();
+    };
+    window.addEventListener('lucky10_results_updated', handleResultsUpdated);
+    return () => window.removeEventListener('lucky10_results_updated', handleResultsUpdated);
+  }, [previewDate, refreshResults, refreshAllData]);
 
   const previewResult = getResultForSlotAndDate(previewSlot, previewDate);
   const previewDateParts = previewDate.split('-');
@@ -670,7 +682,13 @@ export const AdminResultManagementView: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => { setPreviewSlot(selectedSlot); setPreviewDate(todayStr); setActiveTab('preview'); }}
+            onClick={() => {
+              setPreviewSlot(selectedSlot);
+              setPreviewDate(todayStr);
+              setActiveTab('preview');
+              if (refreshResults) refreshResults(todayStr);
+              if (refreshAllData) refreshAllData();
+            }}
             className={`py-3 px-2 sm:px-4 rounded-xl font-black text-xs uppercase tracking-wider text-center cursor-pointer transition-all ${activeTab === 'preview' ? 'bg-gold-metallic text-black shadow-lg' : 'bg-transparent text-neutral-400 hover:text-white'}`}
           >
             2. RESULT PREVIEW
