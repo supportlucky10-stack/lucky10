@@ -255,7 +255,7 @@ export const getLatestPublishedOrCycleSlot = (
  *   - 8 PM Game: LOCKED at exactly 23:59:59 (midnight IST).
  */
 export const isGameResultLocked = (
-  slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game',
+  slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' | string,
   targetDateStr: string
 ): boolean => {
   try {
@@ -263,28 +263,25 @@ export const isGameResultLocked = (
     if (targetDateStr < todayIST) return true;
     if (targetDateStr > todayIST) return true;
 
-    const formatter = new Intl.DateTimeFormat('en-GB', {
-      timeZone: 'Asia/Kolkata',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-    const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
-    const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
-    const totalSeconds = hour * 3600 + minute * 60 + second;
+    // Only 1 PM Game has the 3:00 PM IST result lock cutoff
+    const s = (slot || '').toUpperCase();
+    if (s.includes('1') && s.includes('PM')) {
+      const formatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      });
+      const parts = formatter.formatToParts(new Date());
+      const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
+      const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
+      const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
+      const totalSeconds = hour * 3600 + minute * 60 + second;
+      return totalSeconds >= 15 * 3600; // 3:00:00 PM IST (15:00:00)
+    }
 
-    const slotLockSeconds: Record<string, number> = {
-      '1 PM Game': 15 * 3600,       // 3:00:00 PM IST (15:00:00)
-      '3 PM Game': 18 * 3600,       // 6:00:00 PM IST (18:00:00)
-      '6 PM Game': 20 * 3600,       // 8:00:00 PM IST (20:00:00)
-      '8 PM Game': 24 * 3600 - 1,   // 11:59:59 PM IST
-    };
-
-    const lockSec = slotLockSeconds[slot] ?? (15 * 3600);
-    return totalSeconds >= lockSec;
+    return false;
   } catch (e) {
     return false;
   }

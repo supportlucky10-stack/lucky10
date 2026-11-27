@@ -128,9 +128,6 @@ def is_game_result_locked(game_slot: str, target_date: str, now_ist: Optional[da
       - Future dates (target_date > today): LOCKED (cannot publish future results).
       - Today's date:
           - 1 PM Game: LOCKED at exactly 15:00:00 (3:00 PM IST).
-          - 3 PM Game: LOCKED at exactly 18:00:00 (6:00 PM IST).
-          - 6 PM Game: LOCKED at exactly 20:00:00 (8:00 PM IST).
-          - 8 PM Game: LOCKED at exactly 23:59:59 (midnight IST).
     """
     if now_ist is None:
         now_ist = get_ist_now()
@@ -142,8 +139,9 @@ def is_game_result_locked(game_slot: str, target_date: str, now_ist: Optional[da
         return True
 
     norm_slot = normalize_slot_name(game_slot)
-    lock_time = SLOT_RESULT_LOCK_TIMES.get(norm_slot, time(15, 0, 0))
-    return now_ist.time() >= lock_time
+    if norm_slot == "1 PM Game":
+        return now_ist.time() >= time(15, 0, 0)
+    return False
 
 def get_all_game_slot_statuses(now_ist: Optional[datetime] = None) -> Dict:
     """Returns a dictionary of all 4 slots and their open/locked status with business date."""

@@ -238,11 +238,11 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
     compliments_json = json.dumps(req.compliments or [])
 
     try:
-        # Check if result already exists for slot on target date with row-level locking for concurrency safety
+        # Check if result already exists for slot on target date
         existing = db.query(GameResult).filter(
             GameResult.date == target_date,
             (GameResult.game_slot == req.gameSlot) | (GameResult.game_slot == norm_target_slot)
-        ).with_for_update().first()
+        ).first()
 
         # 2. For past dates: strictly protect finalized historical results from modification
         if target_date < today_ist_str:
@@ -252,18 +252,11 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
                     detail=f"Cannot modify historical results for {target_date}. Historical results are locked."
                 )
         else:
-            # 3. For today's date: strictly enforce result lock cutoff (e.g. 1 PM Game locked at 3:00 PM IST)
-            if is_game_result_locked(norm_target_slot, target_date, now_ist):
+            # 3. For today's date: strictly enforce 1 PM result lock at 3:00 PM IST
+            if norm_target_slot == "1 PM Game" and is_game_result_locked(norm_target_slot, target_date, now_ist):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Results for {norm_target_slot} are LOCKED. The 3:00 PM cutoff has been reached and no further modifications are permitted."
-                )
-
-            # 4. For today's date: verify billing has closed before allowing publishing
-            if not is_game_result_publishable(norm_target_slot, target_date, now_ist):
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"Cannot publish result for {norm_target_slot} on {target_date} before game billing is closed."
+                    detail=f"Results for 1 PM Game are LOCKED. The 3:00 PM cutoff has been reached and no further modifications are permitted."
                 )
 
         p1 = (req.prize1 or "").strip()
