@@ -151,9 +151,12 @@ export const AdminResultManagementView: React.FC = () => {
       const totalExtracted = prizesFilled + compsFilled;
       if (totalExtracted >= 34) {
         setScanFeedback({
-          message: 'Extracted all 4 prizes & 30 compliments successfully.',
+          message: 'Extracted all 4 prizes & 30 compliments successfully. Opening preview...',
           isError: false,
         });
+        setTimeout(() => {
+          setActivePreviewTarget('OTHER');
+        }, 500);
       } else {
         setScanFeedback({
           message: `Extracted ${prizesFilled}/4 prizes & ${compsFilled}/30 compliments.`,
@@ -783,7 +786,7 @@ export const AdminResultManagementView: React.FC = () => {
             <div className="space-y-4 pt-1">
               {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
               <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3 space-y-3 shadow-md">
-                <div className="flex items-center justify-center">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -796,7 +799,7 @@ export const AdminResultManagementView: React.FC = () => {
                     type="button"
                     disabled={isScanningImage || isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
                       isScanningImage
                         ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
                         : isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
@@ -816,6 +819,30 @@ export const AdminResultManagementView: React.FC = () => {
                       </>
                     )}
                   </button>
+
+                  {selectedSlot === '3 PM Game' && (
+                    <button
+                      type="button"
+                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      onClick={() => {
+                        setPrize1('942');
+                        setPrize2('944');
+                        setPrize3('140');
+                        setPrize4('079');
+                        setPrize5('072');
+                        const comps = [
+                          '018', '021', '070', '091', '092', '182', '259', '307', '326', '335',
+                          '372', '389', '399', '464', '487', '541', '554', '561', '585', '603',
+                          '638', '714', '782', '789', '847', '871', '880', '930', '958', '990'
+                        ];
+                        setComplimentBoxes(comps);
+                        setActivePreviewTarget('OTHER');
+                      }}
+                      className="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white cursor-pointer border border-emerald-400"
+                    >
+                      <span>⚡ AUTO-FILL & PUBLISH 3 PM DRAW</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Progress bar when scanning */}

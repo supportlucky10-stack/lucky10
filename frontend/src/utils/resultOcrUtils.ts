@@ -348,14 +348,12 @@ export async function scanResultImage(
   file: File,
   onProgress?: (progress: number, status: string) => void
 ): Promise<ParsedLotteryResult> {
-  onProgress?.(10, 'Enhancing image for scanning...');
-  const canvas = await preprocessImageFile(file);
-
-  onProgress?.(25, 'Initializing scanner engine...');
+  onProgress?.(15, 'Initializing scanner engine...');
+  const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
   let worker;
   try {
     worker = await createWorker('eng', 1, {
-      langPath: '/tessdata',
+      langPath: origin ? `${origin}/tessdata` : '/tessdata',
       gzip: false,
       logger: (m) => {
         if (m.status === 'recognizing text') {
@@ -376,9 +374,49 @@ export async function scanResultImage(
   }
 
   try {
-    onProgress?.(65, 'Reading result numbers...');
+    onProgress?.(45, 'Scanning result image...');
+    // Pass 1: Scan pristine raw image directly (native Leptonica processing, fastest & most accurate)
+    let parsed: ParsedLotteryResult;
+    try {
+      const rawRet = await worker.recognize(file);
+      parsed = parseLotteryResultText(rawRet.data.text);
+    } catch {
+      parsed = {
+        prize1: '',
+        prize2: '',
+        prize3: '',
+        prize4: '',
+        prize5: '',
+        complimentBoxes: Array(30).fill(''),
+        extractedCount: 0,
+      };
+    }
+
+    const rawFilledComps = parsed.complimentBoxes.filter((c) => Boolean(c && c.trim().length === 3)).length;
+    const rawHasAllPrizes = Boolean(parsed.prize2 && parsed.prize3 && parsed.prize4 && parsed.prize5);
+
+    // If pristine scan extracted 4 prizes + 30 compliments, return immediately without slow canvas passes
+    if (rawHasAllPrizes && rawFilledComps >= 30) {
+      onProgress?.(100, 'Complete!');
+      return parsed;
+    }
+
+    // Pass 2: Canvas preprocessing fallback if raw scan missed any numbers
+    onProgress?.(65, 'Enhancing image for precision scan...');
+    const canvas = await preprocessImageFile(file);
     const ret = await worker.recognize(canvas);
-    let parsed = parseLotteryResultText(ret.data.text);
+    const canvasParsed = parseLotteryResultText(ret.data.text);
+
+    if (!parsed.prize1 && canvasParsed.prize1) parsed.prize1 = canvasParsed.prize1;
+    if (!parsed.prize2 && canvasParsed.prize2) parsed.prize2 = canvasParsed.prize2;
+    if (!parsed.prize3 && canvasParsed.prize3) parsed.prize3 = canvasParsed.prize3;
+    if (!parsed.prize4 && canvasParsed.prize4) parsed.prize4 = canvasParsed.prize4;
+    if (!parsed.prize5 && canvasParsed.prize5) parsed.prize5 = canvasParsed.prize5;
+    for (let i = 0; i < 30; i++) {
+      if ((!parsed.complimentBoxes[i] || parsed.complimentBoxes[i].trim().length !== 3) && canvasParsed.complimentBoxes[i]) {
+        parsed.complimentBoxes[i] = canvasParsed.complimentBoxes[i];
+      }
+    }
 
     // Pass 1.5: Precision fallback for top prize area (prizes 2-5) if any are missing
     if (!parsed.prize2 || !parsed.prize3 || !parsed.prize4 || !parsed.prize5) {
