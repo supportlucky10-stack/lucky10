@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X, Lock } from 'lucide-react';
-import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen, isGameResultLocked } from '../../utils/dateUtils';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X } from 'lucide-react';
+import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import { scanResultImage } from '../../utils/resultOcrUtils';
 
@@ -67,7 +67,7 @@ const slotThemes: Record<string, {
 type PreviewTarget = '1ST' | 'OTHER' | null;
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, refreshAllData, refreshResults, allPublishedResults, fetchDataForDate } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults, fetchDataForDate } = useApp();
 
   useEffect(() => {
     refreshAllData();
@@ -125,10 +125,7 @@ export const AdminResultManagementView: React.FC = () => {
       });
 
       let prizesFilled = 0;
-      if (parsed.prize1 && parsed.prize1.trim().length === 3) {
-        setPrize1(parsed.prize1.trim());
-        prizesFilled++;
-      }
+      // 1st Prize is strictly updated manually by the user
       if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
       if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
       if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
@@ -151,12 +148,9 @@ export const AdminResultManagementView: React.FC = () => {
       const totalExtracted = prizesFilled + compsFilled;
       if (totalExtracted >= 34) {
         setScanFeedback({
-          message: 'Extracted all 4 prizes & 30 compliments successfully. Opening preview...',
+          message: 'Extracted all 4 prizes & 30 compliments successfully.',
           isError: false,
         });
-        setTimeout(() => {
-          setActivePreviewTarget('OTHER');
-        }, 500);
       } else {
         setScanFeedback({
           message: `Extracted ${prizesFilled}/4 prizes & ${compsFilled}/30 compliments.`,
@@ -190,25 +184,9 @@ export const AdminResultManagementView: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setTimerTick((t) => t + 1);
-    }, 1000);
-    const handleUpdate = () => setTimerTick((t) => t + 1);
-    window.addEventListener('lucky10_results_updated', handleUpdate);
-    window.addEventListener('lucky10_results_locked', handleUpdate);
-    return () => {
-      clearInterval(timer);
-      window.removeEventListener('lucky10_results_updated', handleUpdate);
-      window.removeEventListener('lucky10_results_locked', handleUpdate);
-    };
+    }, 5000);
+    return () => clearInterval(timer);
   }, []);
-
-  const isSlotLocked = isGameResultLocked(selectedSlot, todayStr);
-
-  useEffect(() => {
-    if (isSlotLocked) {
-      setIsEditing1st(false);
-      setIsEditingOther(false);
-    }
-  }, [isSlotLocked]);
 
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
@@ -224,62 +202,52 @@ export const AdminResultManagementView: React.FC = () => {
     currentSlotResult.prize5.trim().length > 0
   );
 
-  const canEdit1st = !isSlotLocked && is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt1st || currentSlotResult?.publishedAt);
-  const canEditOther = !isSlotLocked && isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAtOther || currentSlotResult?.publishedAt);
+  const canEdit1st = is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt1st || currentSlotResult?.publishedAt);
+  const canEditOther = isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAtOther || currentSlotResult?.publishedAt);
 
   const prize1InputRef = useRef<HTMLInputElement | null>(null);
   const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const currentSlotRef = useRef(selectedSlot);
-
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    const slotChanged = currentSlotRef.current !== selectedSlot;
-
-    if (slotChanged) {
-      currentSlotRef.current = selectedSlot;
-      setPrize1(existing?.prize1?.trim() || '');
-      setPrize2(existing?.prize2?.trim() || '');
-      setPrize3(existing?.prize3?.trim() || '');
-      setPrize4(existing?.prize4?.trim() || '');
-      setPrize5(existing?.prize5?.trim() || '');
-      const comps = existing?.compliments ? existing.compliments.flat() : [];
-      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-    } else {
-      // While staying on the same slot: ONLY update a field if the server has a real published number.
-      // NEVER overwrite user typing, auto-filled numbers, or local edits with empty strings!
-      if (existing?.prize1?.trim() && !isEditing1st) {
-        setPrize1(existing.prize1.trim());
-      }
-      if (existing?.prize2?.trim() && !isEditingOther) {
-        setPrize2(existing.prize2.trim());
-        setPrize3(existing?.prize3?.trim() || '');
-        setPrize4(existing?.prize4?.trim() || '');
-        setPrize5(existing?.prize5?.trim() || '');
-        const comps = existing?.compliments ? existing.compliments.flat() : [];
-        if (comps.length > 0 && comps.some((c) => c && c.trim())) {
-          setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-        }
+    if (existing && existing.prize1 && existing.prize1.trim()) {
+      setPrize1(existing.prize1);
+      if (existing.prize2 && existing.prize2.trim()) {
+        setPrize2(existing.prize2);
+        setPrize3(existing.prize3 || '');
+        setPrize4(existing.prize4 || '');
+        setPrize5(existing.prize5 || '');
+        const comps = existing.compliments ? existing.compliments.flat() : [];
+        setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
       }
     }
-  }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate, isEditing1st, isEditingOther]);
+  }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate]);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
-    currentSlotRef.current = slot;
     setIsSlotDropdownOpen(false);
     setActivePreviewTarget(null);
     setIsEditing1st(false);
     setIsEditingOther(false);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
-    setPrize1(existing?.prize1?.trim() || '');
-    setPrize2(existing?.prize2?.trim() || '');
-    setPrize3(existing?.prize3?.trim() || '');
-    setPrize4(existing?.prize4?.trim() || '');
-    setPrize5(existing?.prize5?.trim() || '');
-    const comps = existing?.compliments ? existing.compliments.flat() : [];
-    setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+    if (existing && existing.prize1 && existing.prize1.trim()) {
+      setPrize1(existing.prize1);
+      setPrize2(existing.prize2 || '');
+      setPrize3(existing.prize3 || '');
+      setPrize4(existing.prize4 || '');
+      setPrize5(existing.prize5 || '');
+
+      const comps = existing.compliments ? existing.compliments.flat() : [];
+      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+    } else {
+      setPrize1('');
+      setPrize2('');
+      setPrize3('');
+      setPrize4('');
+      setPrize5('');
+      setComplimentBoxes(Array(30).fill(''));
+    }
   };
 
   // 1st Prize is completely independent - NO auto-cursor navigation
@@ -349,6 +317,13 @@ export const AdminResultManagementView: React.FC = () => {
 
   // Trigger Other Prizes (2nd to 5th) + Compliments Preview
   const handleTriggerOtherPrizesPreview = () => {
+    const p1 = (prize1 || currentSlotResult?.prize1 || '').trim();
+    if (!p1 || p1.length !== 3) {
+      setErrorMessage('Please enter and publish 1st Prize Number first before publishing other prizes.');
+      setShowErrorModal(true);
+      return;
+    }
+
     const p2 = prize2.trim();
     const p3 = prize3.trim();
     const p4 = prize4.trim();
@@ -376,7 +351,7 @@ export const AdminResultManagementView: React.FC = () => {
     setIsPublishing(true);
 
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    let p1 = existing?.prize1 || (prize1.trim().length === 3 ? prize1.trim() : '');
+    let p1 = existing?.prize1 || prize1.trim();
     let p2 = existing?.prize2 || '';
     let p3 = existing?.prize3 || '';
     let p4 = existing?.prize4 || '';
@@ -385,23 +360,13 @@ export const AdminResultManagementView: React.FC = () => {
 
     if (activePreviewTarget === '1ST') {
       p1 = prize1.trim();
-      p2 = existing?.prize2 || prize2.trim();
-      p3 = existing?.prize3 || prize3.trim();
-      p4 = existing?.prize4 || prize4.trim();
-      p5 = existing?.prize5 || prize5.trim();
-      compSets = existing?.compliments && existing.compliments.length > 0
-        ? existing.compliments
-        : (() => {
-            const hasBoxes = complimentBoxes.some(b => b.trim().length === 3);
-            if (!hasBoxes) return [];
-            const sets: string[][] = [];
-            for (let i = 0; i < complimentBoxes.length; i += 5) {
-              sets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
-            }
-            return sets;
-          })();
+      p2 = existing?.prize2 || '';
+      p3 = existing?.prize3 || '';
+      p4 = existing?.prize4 || '';
+      p5 = existing?.prize5 || '';
+      compSets = existing?.compliments ? existing.compliments : [];
     } else if (activePreviewTarget === 'OTHER') {
-      p1 = (prize1.trim().length === 3 ? prize1.trim() : existing?.prize1) || '';
+      p1 = existing?.prize1 || prize1.trim();
       p2 = prize2.trim();
       p3 = prize3.trim();
       p4 = prize4.trim();
@@ -415,14 +380,6 @@ export const AdminResultManagementView: React.FC = () => {
     try {
       const targetSection = activePreviewTarget === '1ST' ? '1ST' : activePreviewTarget === 'OTHER' ? 'OTHER' : undefined;
       await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
-      setPrize1(p1);
-      setPrize2(p2);
-      setPrize3(p3);
-      setPrize4(p4);
-      setPrize5(p5);
-      setComplimentBoxes(compSets.flat());
-      await refreshAllData();
-      if (refreshResults) await refreshResults(todayStr);
       const isFirst = activePreviewTarget === '1ST';
       setActivePreviewTarget(null);
       setIsEditing1st(false);
@@ -461,22 +418,12 @@ export const AdminResultManagementView: React.FC = () => {
   const previewDateRef = useRef<HTMLInputElement>(null);
   const previewSlotTheme = slotThemes[previewSlot] || slotThemes['1 PM Game'];
 
-  // Fetch historical and fresh real-time data when admin switches to preview or changes date
+  // Fetch historical date data when admin changes preview date
   useEffect(() => {
-    if (activeTab === 'preview') {
-      if (refreshResults) refreshResults(previewDate);
-      if (fetchDataForDate) fetchDataForDate(previewDate);
+    if (fetchDataForDate && previewDate) {
+      fetchDataForDate(previewDate);
     }
-  }, [activeTab, previewDate, refreshResults, fetchDataForDate]);
-
-  useEffect(() => {
-    const handleResultsUpdated = () => {
-      if (refreshResults) refreshResults(previewDate);
-      if (refreshAllData) refreshAllData();
-    };
-    window.addEventListener('lucky10_results_updated', handleResultsUpdated);
-    return () => window.removeEventListener('lucky10_results_updated', handleResultsUpdated);
-  }, [previewDate, refreshResults, refreshAllData]);
+  }, [previewDate, fetchDataForDate]);
 
   const previewResult = getResultForSlotAndDate(previewSlot, previewDate);
   const previewDateParts = previewDate.split('-');
@@ -545,17 +492,10 @@ export const AdminResultManagementView: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setShowSuccessModal(false);
-                setPreviewSlot(selectedSlot);
-                setPreviewDate(todayStr);
-                setActiveTab('preview');
-                if (refreshResults) refreshResults(todayStr);
-                if (refreshAllData) refreshAllData();
-              }}
+              onClick={() => setShowSuccessModal(false)}
               className="w-full py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
             >
-              OK — CONTINUE TO PREVIEW
+              OK
             </button>
           </div>
         </div>
@@ -695,13 +635,7 @@ export const AdminResultManagementView: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setPreviewSlot(selectedSlot);
-              setPreviewDate(todayStr);
-              setActiveTab('preview');
-              if (refreshResults) refreshResults(todayStr);
-              if (refreshAllData) refreshAllData();
-            }}
+            onClick={() => { setPreviewSlot(selectedSlot); setPreviewDate(todayStr); setActiveTab('preview'); }}
             className={`py-3 px-2 sm:px-4 rounded-xl font-black text-xs uppercase tracking-wider text-center cursor-pointer transition-all ${activeTab === 'preview' ? 'bg-gold-metallic text-black shadow-lg' : 'bg-transparent text-neutral-400 hover:text-white'}`}
           >
             2. RESULT PREVIEW
@@ -737,14 +671,6 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            {/* Slot Lock Banner if 3:00 PM cutoff reached */}
-            {isSlotLocked && (
-              <div className="bg-red-950/60 border border-red-500/60 rounded-xl p-3 text-center flex items-center justify-center gap-2 text-xs font-mono font-bold text-red-200 shadow-md animate-fade-in">
-                <Lock className="w-4 h-4 text-red-400 shrink-0" />
-                <span>{selectedSlot} results are LOCKED (3:00 PM IST cutoff reached). Modifications are disabled.</span>
-              </div>
-            )}
-
             {/* 1st Prize Number with Dedicated Publish Button & Edit Option */}
             <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
@@ -773,20 +699,16 @@ export const AdminResultManagementView: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {isSlotLocked ? (
-                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" />
-                      LOCKED
-                    </span>
-                  ) : is1stPrizePublished && !isEditing1st ? (
+                  {is1stPrizePublished && !isEditing1st && (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  ) : isEditing1st ? (
+                  )}
+                  {isEditing1st && (
                     <span className="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
                       EDITING
                     </span>
-                  ) : null}
+                  )}
                 </div>
                 <input
                   ref={prize1InputRef}
@@ -795,11 +717,11 @@ export const AdminResultManagementView: React.FC = () => {
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
-                  disabled={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
-                  readOnly={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
+                  disabled={is1stPrizePublished && !isEditing1st}
+                  readOnly={is1stPrizePublished && !isEditing1st}
                   onChange={handle1stPrizeChange}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
-                    isSlotLocked || (is1stPrizePublished && !isEditing1st)
+                    is1stPrizePublished && !isEditing1st
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                       : 'bg-white text-black border-gold'
                   }`}
@@ -808,17 +730,15 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="flex items-center justify-center gap-2 pt-0.5">
                 <button
                   type="button"
-                  disabled={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
+                  disabled={is1stPrizePublished && !isEditing1st}
                   onClick={handleTrigger1stPrizePreview}
                   className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                    isSlotLocked || (is1stPrizePublished && !isEditing1st)
+                    is1stPrizePublished && !isEditing1st
                       ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                       : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                   }`}
                 >
-                  {isSlotLocked
-                    ? (is1stPrizePublished ? 'PUBLISHED' : `LOCKED (${shortSlot})`)
-                    : is1stPrizePublished
+                  {is1stPrizePublished
                     ? (isEditing1st ? `UPDATE 1ST PRIZE (${shortSlot})` : 'PUBLISHED')
                     : `PUBLISH (${shortSlot})`}
                 </button>
@@ -829,23 +749,23 @@ export const AdminResultManagementView: React.FC = () => {
             <div className="space-y-4 pt-1">
               {/* ── IMAGE AUTO-FILL (OCR) CARD ── */}
               <div className="bg-neutral-900/80 border border-gold/40 rounded-2xl p-3 space-y-3 shadow-md">
-                <div className="flex items-center justify-center gap-2 flex-wrap">
+                <div className="flex items-center justify-center">
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    disabled={isScanningImage || isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
                     onChange={handleImageUpload}
                   />
                   <button
                     type="button"
-                    disabled={isScanningImage || isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={() => fileInputRef.current?.click()}
-                    className={`px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
+                    className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
                       isScanningImage
                         ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
-                        : isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                        : isOtherPrizesPublished && !isEditingOther
                         ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
                         : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
                     }`}
@@ -862,30 +782,6 @@ export const AdminResultManagementView: React.FC = () => {
                       </>
                     )}
                   </button>
-
-                  {selectedSlot === '3 PM Game' && (
-                    <button
-                      type="button"
-                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                      onClick={() => {
-                        setPrize1('942');
-                        setPrize2('944');
-                        setPrize3('140');
-                        setPrize4('079');
-                        setPrize5('072');
-                        const comps = [
-                          '018', '021', '070', '091', '092', '182', '259', '307', '326', '335',
-                          '372', '389', '399', '464', '487', '541', '554', '561', '585', '603',
-                          '638', '714', '782', '789', '847', '871', '880', '930', '958', '990'
-                        ];
-                        setComplimentBoxes(comps);
-                        setActivePreviewTarget('OTHER');
-                      }}
-                      className="px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md transition-all bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white cursor-pointer border border-emerald-400"
-                    >
-                      <span>⚡ AUTO-FILL & PUBLISH 3 PM DRAW</span>
-                    </button>
-                  )}
                 </div>
 
                 {/* Progress bar when scanning */}
@@ -957,20 +853,16 @@ export const AdminResultManagementView: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {isSlotLocked ? (
-                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" />
-                      LOCKED
-                    </span>
-                  ) : isOtherPrizesPublished && !isEditingOther ? (
+                  {isOtherPrizesPublished && !isEditingOther && (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  ) : isEditingOther ? (
+                  )}
+                  {isEditingOther && (
                     <span className="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
                       EDITING
                     </span>
-                  ) : null}
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
                   <div>
@@ -982,12 +874,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize2}
-                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      disabled={isOtherPrizesPublished && !isEditingOther}
+                      readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(0, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(0, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                        isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -1002,12 +894,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize3}
-                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      disabled={isOtherPrizesPublished && !isEditingOther}
+                      readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(1, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(1, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                        isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -1024,12 +916,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize4}
-                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      disabled={isOtherPrizesPublished && !isEditingOther}
+                      readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(2, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(2, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                        isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -1044,12 +936,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize5}
-                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      disabled={isOtherPrizesPublished && !isEditingOther}
+                      readOnly={isOtherPrizesPublished && !isEditingOther}
                       onChange={(e) => handleOtherPrizeChange(3, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(3, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                        isOtherPrizesPublished && !isEditingOther
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -1062,16 +954,11 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="space-y-3 pt-2 border-t border-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400 font-bold text-xs">Compliments (30 Numbers)</span>
-                  {isSlotLocked ? (
-                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
-                      <Lock className="w-2.5 h-2.5" />
-                      LOCKED
-                    </span>
-                  ) : isOtherPrizesPublished && !isEditingOther ? (
+                  {isOtherPrizesPublished && !isEditingOther && (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  ) : null}
+                  )}
                 </div>
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                   {Array.from({ length: 30 }, (_, cellIndex) => {
@@ -1091,13 +978,13 @@ export const AdminResultManagementView: React.FC = () => {
                           maxLength={3}
                           placeholder="000"
                           value={num}
-                          disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
-                          readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                          disabled={isOtherPrizesPublished && !isEditingOther}
+                          readOnly={isOtherPrizesPublished && !isEditingOther}
                           tabIndex={5 + compIdx}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
-                            isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                            isOtherPrizesPublished && !isEditingOther
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                               : 'bg-white text-black border-gold'
                           }`}
@@ -1111,17 +998,15 @@ export const AdminResultManagementView: React.FC = () => {
                 <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                   <button
                     type="button"
-                    disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                    disabled={isOtherPrizesPublished && !isEditingOther}
                     onClick={handleTriggerOtherPrizesPreview}
                     className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                      isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
+                      isOtherPrizesPublished && !isEditingOther
                         ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                         : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                     }`}
                   >
-                    {isSlotLocked
-                      ? (isOtherPrizesPublished ? 'PUBLISHED' : `LOCKED (${shortSlot})`)
-                      : isOtherPrizesPublished
+                    {isOtherPrizesPublished
                       ? (isEditingOther ? `UPDATE OTHER RESULTS (${shortSlot})` : 'PUBLISHED')
                       : `PUBLISH OTHER RESULTS (${shortSlot})`}
                   </button>

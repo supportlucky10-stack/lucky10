@@ -261,14 +261,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       `${targetDate}_${slot}`,
       `${normDate}_${slot}`,
       `${todayStr}_${slot}`,
-      ...(normDate === todayStr ? [slot] : []),
     ];
 
     for (const key of keysToTry) {
       if (allPublishedResults[key] && allPublishedResults[key].gameSlot === slot) {
         const res = allPublishedResults[key];
         const resDate = extractDateStr(res.date);
-        if (resDate === normDate || resDate === extractDateStr(targetDate) || normDate === todayStr) {
+        if (resDate === normDate || resDate === extractDateStr(targetDate)) {
           return res;
         }
       }
@@ -676,13 +675,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   }
                   window.dispatchEvent(new Event('lucky10_results_updated'));
                 }
-                pollLiveUpdates();
-                break;
-              }
-
-              case 'RESULTS_LOCKED': {
-                window.dispatchEvent(new Event('lucky10_results_updated'));
-                window.dispatchEvent(new Event('lucky10_results_locked'));
                 pollLiveUpdates();
                 break;
               }
@@ -1480,7 +1472,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [`${targetDate}_${slot}`]: resultToApply,
         [`${normDate}_${slot}`]: resultToApply,
-        [`${todayStr}_${slot}`]: resultToApply,
         [slot]: resultToApply,
       }));
 

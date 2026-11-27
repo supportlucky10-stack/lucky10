@@ -244,65 +244,15 @@ export const getLatestPublishedOrCycleSlot = (
 };
 
 /**
- * Determines if results for a given game slot and date are permanently LOCKED.
- * Enforces exact Asia/Kolkata (IST) time boundaries:
- * - Past dates: LOCKED (historical results cannot be modified).
- * - Future dates: LOCKED (future results cannot be published).
- * - Today's date:
- *   - 1 PM Game: LOCKED at exactly 15:00:00 (3:00 PM IST).
- *   - 3 PM Game: LOCKED at exactly 18:00:00 (6:00 PM IST).
- *   - 6 PM Game: LOCKED at exactly 20:00:00 (8:00 PM IST).
- *   - 8 PM Game: LOCKED at exactly 23:59:59 (midnight IST).
- */
-export const isGameResultLocked = (
-  slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game' | string,
-  targetDateStr: string
-): boolean => {
-  try {
-    const todayIST = getBusinessDateIST();
-    if (targetDateStr < todayIST) return true;
-    if (targetDateStr > todayIST) return true;
-
-    // Only 1 PM Game has the 3:00 PM IST result lock cutoff
-    const s = (slot || '').toUpperCase();
-    if (s.includes('1') && s.includes('PM')) {
-      const formatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-      const parts = formatter.formatToParts(new Date());
-      const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0', 10);
-      const minute = parseInt(parts.find((p) => p.type === 'minute')?.value || '0', 10);
-      const second = parseInt(parts.find((p) => p.type === 'second')?.value || '0', 10);
-      const totalSeconds = hour * 3600 + minute * 60 + second;
-      return totalSeconds >= 15 * 3600; // 3:00:00 PM IST (15:00:00)
-    }
-
-    return false;
-  } catch (e) {
-    return false;
-  }
-};
-
-/**
  * Checks if the 30-minute editing window is active for a given game slot:
- * Strictly editable for 30 minutes from the time the result was published (publishedAt),
- * AND strictly blocked once the game slot result lock cutoff is reached.
+ * Strictly editable for 30 minutes from the time the result was published (publishedAt).
  */
 export const isResultEditWindowOpen = (
-  slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game',
+  _slot: '1 PM Game' | '3 PM Game' | '6 PM Game' | '8 PM Game',
   targetDateStr: string,
   publishedAt?: string
 ): boolean => {
   try {
-    // If slot result is locked (e.g. at/after 3:00 PM for 1 PM Game), editing is strictly blocked
-    if (isGameResultLocked(slot, targetDateStr)) {
-      return false;
-    }
-
     const todayIST = getBusinessDateIST();
     if (targetDateStr !== todayIST) {
       return false; // Can only edit today's results
