@@ -42,7 +42,7 @@ interface AppContextType {
   getResultForSlotAndDate: (slot: GameSlot, dateStr: string) => GameResult;
   refreshResults: (dateStr?: string) => Promise<void>;
   fetchDataForDate: (date: string) => Promise<void>;
-  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string, targetSection?: '1ST' | 'OTHER') => Promise<GameResult>;
+  publishGameResult: (slot: GameSlot, prize1: string, prize2: string, prize3: string, prize4: string, compliments: string[][], prize5?: string, date?: string, targetSection?: '1ST' | 'OTHER') => Promise<void>;
   registerUser: (name: string, email: string, password?: string) => Promise<boolean>;
   createUser: (agencyName: string, username: string, password: string, mode: string) => Promise<boolean>;
   deleteUser: (userId: string) => Promise<void>;
@@ -1432,7 +1432,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ) => {
     const todayStr = getBusinessDateIST();
     const targetDate = date && date.trim() ? date.trim() : todayStr;
-    let savedResult: GameResult | null = null;
 
     try {
       const newRes = await adminService.publishResult(slot, prize1, prize2, prize3, prize4, compliments, prize5, targetDate, targetSection);
@@ -1457,17 +1456,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: newRes?.id || existingRes?.id || `res_${Date.now()}`,
         date: targetDate,
         gameSlot: slot,
-        prize1: (newRes?.prize1 || prize1 || existingRes?.prize1 || '').trim(),
-        prize2: (newRes?.prize2 || prize2 || existingRes?.prize2 || '').trim(),
-        prize3: (newRes?.prize3 || prize3 || existingRes?.prize3 || '').trim(),
-        prize4: (newRes?.prize4 || prize4 || existingRes?.prize4 || '').trim(),
-        prize5: (newRes?.prize5 || prize5 || existingRes?.prize5 || '').trim(),
-        compliments: (newRes?.compliments && newRes.compliments.length > 0) ? newRes.compliments : compliments,
+        prize1,
+        prize2,
+        prize3,
+        prize4,
+        prize5: prize5 || '',
+        compliments,
         publishedAt: newRes?.publishedAt || nowIso,
         publishedAt1st: pubAt1st,
         publishedAtOther: pubAtOther,
       };
-      savedResult = resultToApply;
       const normDate = extractDateStr(targetDate);
       
       setAllPublishedResults((prev) => ({
@@ -1531,8 +1529,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       }).catch(() => {});
     }
-
-    return savedResult!;
   };
 
   const createUser = async (agencyName: string, username: string, password: string, mode: string): Promise<boolean> => {

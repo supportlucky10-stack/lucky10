@@ -67,7 +67,7 @@ const slotThemes: Record<string, {
 type PreviewTarget = '1ST' | 'OTHER' | null;
 
 export const AdminResultManagementView: React.FC = () => {
-  const { publishGameResult, getResultForSlotAndDate, refreshAllData, refreshResults, allPublishedResults, fetchDataForDate } = useApp();
+  const { publishGameResult, getResultForSlotAndDate, refreshAllData, allPublishedResults, fetchDataForDate } = useApp();
 
   useEffect(() => {
     refreshAllData();
@@ -379,10 +379,7 @@ export const AdminResultManagementView: React.FC = () => {
 
     try {
       const targetSection = activePreviewTarget === '1ST' ? '1ST' : activePreviewTarget === 'OTHER' ? 'OTHER' : undefined;
-      const savedRes = await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
-      if (activePreviewTarget === 'OTHER' && (!savedRes?.prize2 || !savedRes?.prize3 || !savedRes?.prize4 || !savedRes?.prize5)) {
-        throw new Error('Server returned incomplete Other Prizes. Please try publishing again.');
-      }
+      await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
       const isFirst = activePreviewTarget === '1ST';
       setActivePreviewTarget(null);
       setIsEditing1st(false);
@@ -495,13 +492,7 @@ export const AdminResultManagementView: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={() => {
-                setShowSuccessModal(false);
-                setPreviewSlot(selectedSlot);
-                setPreviewDate(todayStr);
-                setActiveTab('preview');
-                refreshResults(todayStr);
-              }}
+              onClick={() => setShowSuccessModal(false)}
               className="w-full py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
             >
               OK
@@ -644,12 +635,7 @@ export const AdminResultManagementView: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => {
-              setPreviewSlot(selectedSlot);
-              setPreviewDate(todayStr);
-              setActiveTab('preview');
-              refreshResults(todayStr);
-            }}
+            onClick={() => { setPreviewSlot(selectedSlot); setPreviewDate(todayStr); setActiveTab('preview'); }}
             className={`py-3 px-2 sm:px-4 rounded-xl font-black text-xs uppercase tracking-wider text-center cursor-pointer transition-all ${activeTab === 'preview' ? 'bg-gold-metallic text-black shadow-lg' : 'bg-transparent text-neutral-400 hover:text-white'}`}
           >
             2. RESULT PREVIEW
