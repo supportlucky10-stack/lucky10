@@ -230,44 +230,56 @@ export const AdminResultManagementView: React.FC = () => {
   const prize1InputRef = useRef<HTMLInputElement | null>(null);
   const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  const currentSlotRef = useRef(selectedSlot);
+
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    if (existing) {
-      setPrize1(existing.prize1 || '');
-      setPrize2(existing.prize2 || '');
-      setPrize3(existing.prize3 || '');
-      setPrize4(existing.prize4 || '');
-      setPrize5(existing.prize5 || '');
-      const comps = existing.compliments ? existing.compliments.flat() : [];
+    const slotChanged = currentSlotRef.current !== selectedSlot;
+
+    if (slotChanged) {
+      currentSlotRef.current = selectedSlot;
+      setPrize1(existing?.prize1?.trim() || '');
+      setPrize2(existing?.prize2?.trim() || '');
+      setPrize3(existing?.prize3?.trim() || '');
+      setPrize4(existing?.prize4?.trim() || '');
+      setPrize5(existing?.prize5?.trim() || '');
+      const comps = existing?.compliments ? existing.compliments.flat() : [];
       setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+    } else {
+      // While staying on the same slot: ONLY update a field if the server has a real published number.
+      // NEVER overwrite user typing, auto-filled numbers, or local edits with empty strings!
+      if (existing?.prize1?.trim() && !isEditing1st) {
+        setPrize1(existing.prize1.trim());
+      }
+      if (existing?.prize2?.trim() && !isEditingOther) {
+        setPrize2(existing.prize2.trim());
+        setPrize3(existing?.prize3?.trim() || '');
+        setPrize4(existing?.prize4?.trim() || '');
+        setPrize5(existing?.prize5?.trim() || '');
+        const comps = existing?.compliments ? existing.compliments.flat() : [];
+        if (comps.length > 0 && comps.some((c) => c && c.trim())) {
+          setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
+        }
+      }
     }
-  }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate]);
+  }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate, isEditing1st, isEditingOther]);
 
   const handleSelectSlot = (slot: GameSlot) => {
     setSelectedSlot(slot);
+    currentSlotRef.current = slot;
     setIsSlotDropdownOpen(false);
     setActivePreviewTarget(null);
     setIsEditing1st(false);
     setIsEditingOther(false);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
-    if (existing) {
-      setPrize1(existing.prize1 || '');
-      setPrize2(existing.prize2 || '');
-      setPrize3(existing.prize3 || '');
-      setPrize4(existing.prize4 || '');
-      setPrize5(existing.prize5 || '');
-
-      const comps = existing.compliments ? existing.compliments.flat() : [];
-      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-    } else {
-      setPrize1('');
-      setPrize2('');
-      setPrize3('');
-      setPrize4('');
-      setPrize5('');
-      setComplimentBoxes(Array(30).fill(''));
-    }
+    setPrize1(existing?.prize1?.trim() || '');
+    setPrize2(existing?.prize2?.trim() || '');
+    setPrize3(existing?.prize3?.trim() || '');
+    setPrize4(existing?.prize4?.trim() || '');
+    setPrize5(existing?.prize5?.trim() || '');
+    const comps = existing?.compliments ? existing.compliments.flat() : [];
+    setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
   };
 
   // 1st Prize is completely independent - NO auto-cursor navigation

@@ -335,7 +335,8 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
             t_date = get_ticket_business_date(tkt)
 
             if tkt_slot == norm_target_slot and t_date == target_date:
-                if not p1:
+                effective_p1 = (target_res.prize1 or p1 or "").strip()
+                if not effective_p1:
                     tkt.win_amount = 0.0
                     tkt.status = "PENDING"
                 else:
