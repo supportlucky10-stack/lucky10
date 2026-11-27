@@ -31,11 +31,11 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
         const origWidth = img.naturalWidth || img.width;
         const origHeight = img.naturalHeight || img.height;
 
-        // Keep 1.0 scale for normal/high-res images (600px+) so numeral '9' inner loop does not blur or fuse into '0'.
-        // Only upscale if the source image is tiny (< 600px).
+        // Scale image so targetWidth is at least 1200px (capped at 2.0x) so characters are ~50-60px tall,
+        // providing crisp stroke separation and preventing character curves from blurring together.
         let scale = 1.0;
-        if (origWidth < 600) {
-          scale = Math.min(2.0, 800 / origWidth);
+        if (origWidth < 1200) {
+          scale = Math.min(2.0, 1200 / origWidth);
         }
 
         const targetWidth = Math.round(origWidth * scale);
@@ -93,9 +93,9 @@ export async function preprocessImageFile(file: File): Promise<HTMLCanvasElement
           for (let x = 0; x < targetWidth; x++) {
             const lum = gray[rowStart + x];
             // For dark banner rows (white text on dark background), invert so text is black on white.
-            // For standard light rows, use gentle threshold (115) to preserve the open curve of '9'
-            // and prevent antialiasing from closing the loop into '0'.
-            const isText = isDarkRow ? lum > 175 : lum < 115;
+            // For standard light rows, use crisp threshold (85) to keep the numeral stroke thin,
+            // preserving the open gap between the tail and the upper loop of '9'.
+            const isText = isDarkRow ? lum > 175 : lum < 85;
             const val = isText ? 0 : 255;
             const idx = (rowStart + x) * 4;
             data[idx] = val;
@@ -190,6 +190,16 @@ const clean3DigitVal = (val: string): string => {
 };
 
 /**
+ * Strips rupee amounts, currency symbols, and trailing prize payouts like ₹5,000, 25,000, ₹500, 500, ₹250, 250, 100, 50, 30
+ * from candidate lines so they never pollute winning numbers.
+ */
+function stripPrizeAmounts(line: string): string {
+  let cleaned = line.replace(/(?:[\u20B9$]|Rs\.?|INR)?\s*(?:25,?000|5,?000|2,?250|2,?100|500|250|100|50|30)\s*$/i, '');
+  cleaned = cleaned.replace(/[\u20B9$]\s*\d+\s*$/i, '');
+  return cleaned.trim();
+}
+
+/**
  * Parses raw OCR text into structured 1st, 2nd, 3rd, 4th, 5th prizes and 30 compliments.
  */
 export function parseLotteryResultText(text: string): ParsedLotteryResult {
@@ -233,8 +243,11 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
       continue;
     }
 
-    // Extract all 3-digit candidate numbers in the line
-    const nums = line.match(/\b[0-9oOgqQ]{3}\b/g) || [];
+    // Strip trailing currency payouts (e.g. ₹5,000, 500, 2250, 2100, 250, 50, 30) from the line so they NEVER pollute winning numbers
+    const lineWithoutPayout = stripPrizeAmounts(line);
+
+    // Extract all 3-digit candidate numbers in the line (preferring line without payout amount)
+    const nums = lineWithoutPayout.match(/\b[0-9oOgqQ]{3}\b/g) || line.match(/\b[0-9oOgqQ]{3}\b/g) || [];
 
     // If line has 3 numbers (3 columns), it is definitely a compliments row!
     if (nums.length === 3) {
@@ -256,12 +269,12 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
     // 2nd: "2nd", "SECOND", "2 :", "2 -", "2 ", "znd"
     // 3rd: "3rd", "THIRD", "3 :", "3 -", "3 ", "3rc"
     // 4th: "4th", "FOURTH", "4 :", "4 -", "4 ", "ath", "4tn", "4t", "4rh", "4ih"
-    // 5th: "5th", "FIFTH", "5 :", "5 -", "5 ", "sth", "5tn", "5t", "sin", "5rh"
-    const m1 = line.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?([0-9oOgqQ]{3})\b/i);
-    const m2 = line.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?([0-9oOgqQ]{3})\b/i);
-    const m3 = line.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?([0-9oOgqQ]{3})\b/i);
-    const m4 = line.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?([0-9oOgqQ]{3})\b/i);
-    const m5 = line.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh)\b.*?([0-9oOgqQ]{3})\b/i);
+    // 5th: "5th", "FIFTH", "5 :", "5 -", "5 ", "sth", "5tn", "5t", "sin", "5rh", "s :", "s "
+    const m1 = lineWithoutPayout.match(/(?:^|[^\w])(?:1st|first|1\s*[:\-\.]|1\s+|ts|ist)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m2 = lineWithoutPayout.match(/(?:^|[^\w])(?:2nd|second|2\s*[:\-\.]|2\s+|znd)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m3 = lineWithoutPayout.match(/(?:^|[^\w])(?:3rd|third|3\s*[:\-\.]|3\s+|3rc)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m4 = lineWithoutPayout.match(/(?:^|[^\w])(?:4th|fourth|4\s*[:\-\.]|4\s+|ath|4tn|4t|4rh|4ih)\b.*?([0-9oOgqQ]{3})\b/i);
+    const m5 = lineWithoutPayout.match(/(?:^|[^\w])(?:5th|fifth|5\s*[:\-\.]|5\s+|sth|5tn|5t|sin|5rh|s\s*[:\-\.]|s\s+)\b.*?([0-9oOgqQ]{3})\b/i);
 
     let matched = false;
     if (m1 && !prize1) { prize1 = clean3DigitVal(m1[1]); matched = true; }
@@ -270,10 +283,11 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
     if (m4 && !prize4) { prize4 = clean3DigitVal(m4[1]); matched = true; }
     if (m5 && !prize5) { prize5 = clean3DigitVal(m5[1]); matched = true; }
 
+    // Pick FIRST 3-digit number directly following the rank label (nums[0]), NEVER the trailing prize payout!
     if (nums.length > 0) {
       prizeCandidateRows.push({
         line,
-        num: clean3DigitVal(nums[nums.length - 1]),
+        num: clean3DigitVal(nums[0]),
         matched,
       });
     }
@@ -340,6 +354,75 @@ export function parseLotteryResultText(text: string): ParsedLotteryResult {
 }
 
 /**
+ * Performs topological / geometric disambiguation for digit '9' vs '0'.
+ * For 1st, 2nd, 3rd, 4th, and 5th prize numbers extracted with a leading '0' followed by two digits (e.g. "077", "044"),
+ * checks the canvas pixel distribution on the first digit's bounding box:
+ * - Samples the bottom-left quadrant (x: 5% to 30%, y: 55% to 85% of the digit box).
+ * - If the bottom-left quadrant is predominantly background (white pixels > 60%) while digit '0' would have a solid
+ *   black curved oval stroke, it identifies the character as digit '9' and corrects the leading '0' to '9'.
+ */
+function checkIsDigitNine(
+  canvas: HTMLCanvasElement,
+  digitBBox: { x0: number; y0: number; x1: number; y1: number }
+): boolean {
+  try {
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return false;
+
+    const w = digitBBox.x1 - digitBBox.x0;
+    const h = digitBBox.y1 - digitBBox.y0;
+    if (w <= 4 || h <= 8) return false;
+
+    // Sample bottom-left quadrant (x: 5% to 30%, y: 55% to 85%)
+    const blX0 = Math.round(digitBBox.x0 + w * 0.05);
+    const blX1 = Math.round(digitBBox.x0 + w * 0.30);
+    const blY0 = Math.round(digitBBox.y0 + h * 0.55);
+    const blY1 = Math.round(digitBBox.y0 + h * 0.85);
+
+    const blW = Math.max(1, blX1 - blX0);
+    const blH = Math.max(1, blY1 - blY0);
+
+    const blData = ctx.getImageData(blX0, blY0, blW, blH).data;
+    let blWhite = 0;
+    const blTotal = blW * blH;
+
+    for (let i = 0; i < blData.length; i += 4) {
+      const lum = 0.299 * blData[i] + 0.587 * blData[i + 1] + 0.114 * blData[i + 2];
+      if (lum > 128) blWhite++;
+    }
+
+    const blWhiteRatio = blWhite / blTotal;
+    return blWhiteRatio > 0.60;
+  } catch {
+    return false;
+  }
+}
+
+function findDigitBoundingBox(
+  num: string,
+  words: Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number }; symbols?: Array<{ text: string; bbox: { x0: number; y0: number; x1: number; y1: number } }> }>
+): { x0: number; y0: number; x1: number; y1: number } | null {
+  for (const w of words) {
+    const cleanWord = (w.text || '').replace(/\D/g, '');
+    if (cleanWord === num || cleanWord.endsWith(num)) {
+      if (w.symbols && w.symbols.length >= 3) {
+        const symIdx = cleanWord === num ? 0 : w.symbols.length - 3;
+        const sym = w.symbols[symIdx];
+        if (sym && sym.bbox) return sym.bbox;
+      }
+      const width = w.bbox.x1 - w.bbox.x0;
+      return {
+        x0: w.bbox.x0,
+        y0: w.bbox.y0,
+        x1: Math.round(w.bbox.x0 + width * 0.33),
+        y1: w.bbox.y1,
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Scans a user-uploaded image file with Tesseract.js using:
  * Pass 1: Full-canvas scan with row-adaptive binarization.
  * Pass 2: Targeted 3-column slicing if any compliment numbers were missed.
@@ -375,6 +458,11 @@ export async function scanResultImage(
     });
   }
 
+  await worker.setParameters({
+    tessedit_char_whitelist: "0123456789stndrhSTNDRHabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ₹,.:- ",
+    tessedit_pageseg_mode: "6" as any,
+  });
+
   try {
     onProgress?.(65, 'Reading result numbers...');
     const ret = await worker.recognize(canvas);
@@ -400,6 +488,24 @@ export async function scanResultImage(
         if (!parsed.prize5 && topParsed.prize5) parsed.prize5 = topParsed.prize5;
       }
     }
+
+    // Topological / Geometric Disambiguation Post-Check for leading '0' (e.g. '044' -> '944', '077' -> '977')
+    const words = (ret.data as any)?.words || [];
+    const disambiguatePrize = (prizeVal: string): string => {
+      if (prizeVal && prizeVal.length === 3 && prizeVal.startsWith('0')) {
+        const digitBox = findDigitBoundingBox(prizeVal, words);
+        if (digitBox && checkIsDigitNine(canvas, digitBox)) {
+          return '9' + prizeVal.slice(1);
+        }
+      }
+      return prizeVal;
+    };
+
+    if (parsed.prize1) parsed.prize1 = disambiguatePrize(parsed.prize1);
+    if (parsed.prize2) parsed.prize2 = disambiguatePrize(parsed.prize2);
+    if (parsed.prize3) parsed.prize3 = disambiguatePrize(parsed.prize3);
+    if (parsed.prize4) parsed.prize4 = disambiguatePrize(parsed.prize4);
+    if (parsed.prize5) parsed.prize5 = disambiguatePrize(parsed.prize5);
 
     // Pass 2: Targeted 3-column slicing if compliments table missed any numbers (< 30)
     const filledComps = parsed.complimentBoxes.filter((c) => Boolean(c && c.trim().length === 3)).length;
