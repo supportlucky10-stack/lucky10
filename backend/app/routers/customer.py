@@ -2,7 +2,7 @@ import json
 import uuid
 import threading
 from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+from typing import List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload, selectinload
 from app.core.database import get_db, get_next_ticket_id
@@ -118,6 +118,34 @@ def format_deleted_ticket(d_ticket: DeletedTicket) -> dict:
         "status": "DELETED",
     }
 
+def to_utc_iso(val: Any) -> Optional[str]:
+    """
+    Converts a datetime (timezone-naive or timezone-aware) to an ISO 8601 string
+    with an explicit UTC offset (+00:00).
+    - If val is None or empty: returns None.
+    - If val is timezone-naive: explicitly treats it as UTC.
+    - If val is timezone-aware: converts to UTC.
+    """
+    if val is None:
+        return None
+    if isinstance(val, str):
+        s = val.strip()
+        if not s:
+            return None
+        try:
+            val = datetime.fromisoformat(s)
+        except Exception:
+            return s
+
+    if hasattr(val, "tzinfo"):
+        if val.tzinfo is None:
+            val = val.replace(tzinfo=timezone.utc)
+        else:
+            val = val.astimezone(timezone.utc)
+        return val.isoformat()
+
+    return str(val) if val else None
+
 def format_result(res: GameResult) -> dict:
     compliments = []
     if res.compliments_json:
@@ -136,9 +164,9 @@ def format_result(res: GameResult) -> dict:
         "prize5": res.prize5 or "",
         "prize6": res.prize6 or "",
         "compliments": compliments,
-        "publishedAt": safe_format_dt(res.published_at, "%Y-%m-%d %H:%M:%S"),
-        "publishedAt1st": res.published_at_1st.isoformat() if getattr(res, "published_at_1st", None) and hasattr(res.published_at_1st, "isoformat") else (str(res.published_at_1st) if getattr(res, "published_at_1st", None) else None),
-        "publishedAtOther": res.published_at_other.isoformat() if getattr(res, "published_at_other", None) and hasattr(res.published_at_other, "isoformat") else (str(res.published_at_other) if getattr(res, "published_at_other", None) else None),
+        "publishedAt": to_utc_iso(res.published_at) or "",
+        "publishedAt1st": to_utc_iso(res.published_at_1st),
+        "publishedAtOther": to_utc_iso(res.published_at_other),
     }
 
 def safe_format_dt(val, fmt="%Y-%m-%d") -> str:
@@ -323,10 +351,11 @@ def place_ticket(req: TicketCreateSchema, current_user: User = Depends(require_c
             c_name = ""
 
         # Check if result is already published for today
-        today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today_str = get_business_date()
+        norm_slot = normalize_slot_name(req.gameSlot)
         existing_res = db.query(GameResult).filter(
             GameResult.date == today_str,
-            GameResult.game_slot == req.gameSlot
+            (GameResult.game_slot == req.gameSlot) | (GameResult.game_slot == norm_slot)
         ).first()
 
         status_val = "PENDING"

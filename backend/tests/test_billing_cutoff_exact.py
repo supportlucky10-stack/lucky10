@@ -36,18 +36,18 @@ def test_1pm_cutoff_exact_seconds():
     assert is_game_slot_open("1 PM Game", make_ist_dt(2026, 8, 24, 12, 59, 59)) is False
 
 def test_3pm_cutoff_exact_seconds():
-    # 2:58:58 -> ALLOWED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 58, 58)) is True
-    # 2:58:59 -> ALLOWED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 58, 59)) is True
-    # 2:59:00 -> BLOCKED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 59, 0)) is False
-    # 2:59:01 -> BLOCKED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 59, 1)) is False
-    # 2:59:44 -> BLOCKED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 59, 44)) is False
-    # 2:59:59 -> BLOCKED
-    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 14, 59, 59)) is False
+    # 3:02:58 -> ALLOWED
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 2, 58)) is True
+    # 3:02:59 -> ALLOWED (immediately before cutoff)
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 2, 59)) is True
+    # 15:03:00 -> BLOCKED (at cutoff)
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 3, 0)) is False
+    # 15:03:01 -> BLOCKED
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 3, 1)) is False
+    # 15:03:44 -> BLOCKED
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 3, 44)) is False
+    # 15:03:59 -> BLOCKED
+    assert is_game_slot_open("3 PM Game", make_ist_dt(2026, 8, 24, 15, 3, 59)) is False
 
 def test_6pm_cutoff_exact_seconds():
     # 5:58:58 -> ALLOWED

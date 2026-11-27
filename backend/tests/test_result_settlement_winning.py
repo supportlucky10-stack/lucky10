@@ -179,7 +179,7 @@ def test_previous_days_tickets_never_match_today(client, auth_customer1, auth_ad
         headers=auth_admin_user["headers"],
     )
 
-    all_tkts = client.get("/api/customer/tickets", headers=auth_customer1["headers"]).json()
+    all_tkts = client.get("/api/customer/tickets?date=all", headers=auth_customer1["headers"]).json()
     ty = next(t for t in all_tkts if t["id"] == ty_id)
     assert ty["status"] == "PENDING"
     assert ty["winAmount"] == 0.0
