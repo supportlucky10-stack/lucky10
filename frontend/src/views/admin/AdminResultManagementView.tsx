@@ -125,7 +125,10 @@ export const AdminResultManagementView: React.FC = () => {
       });
 
       let prizesFilled = 0;
-      // 1st Prize is strictly updated manually by the user
+      if (parsed.prize1 && parsed.prize1.trim().length === 3) {
+        setPrize1(parsed.prize1.trim());
+        prizesFilled++;
+      }
       if (parsed.prize2) { setPrize2(parsed.prize2); prizesFilled++; }
       if (parsed.prize3) { setPrize3(parsed.prize3); prizesFilled++; }
       if (parsed.prize4) { setPrize4(parsed.prize4); prizesFilled++; }
@@ -226,16 +229,14 @@ export const AdminResultManagementView: React.FC = () => {
 
   useEffect(() => {
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    if (existing && existing.prize1 && existing.prize1.trim()) {
-      setPrize1(existing.prize1);
-      if (existing.prize2 && existing.prize2.trim()) {
-        setPrize2(existing.prize2);
-        setPrize3(existing.prize3 || '');
-        setPrize4(existing.prize4 || '');
-        setPrize5(existing.prize5 || '');
-        const comps = existing.compliments ? existing.compliments.flat() : [];
-        setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
-      }
+    if (existing) {
+      setPrize1(existing.prize1 || '');
+      setPrize2(existing.prize2 || '');
+      setPrize3(existing.prize3 || '');
+      setPrize4(existing.prize4 || '');
+      setPrize5(existing.prize5 || '');
+      const comps = existing.compliments ? existing.compliments.flat() : [];
+      setComplimentBoxes(Array.from({ length: 30 }, (_, i) => comps[i] || ''));
     }
   }, [selectedSlot, todayStr, allPublishedResults, getResultForSlotAndDate]);
 
@@ -247,8 +248,8 @@ export const AdminResultManagementView: React.FC = () => {
     setIsEditingOther(false);
 
     const existing = getResultForSlotAndDate(slot, todayStr);
-    if (existing && existing.prize1 && existing.prize1.trim()) {
-      setPrize1(existing.prize1);
+    if (existing) {
+      setPrize1(existing.prize1 || '');
       setPrize2(existing.prize2 || '');
       setPrize3(existing.prize3 || '');
       setPrize4(existing.prize4 || '');
@@ -333,13 +334,6 @@ export const AdminResultManagementView: React.FC = () => {
 
   // Trigger Other Prizes (2nd to 5th) + Compliments Preview
   const handleTriggerOtherPrizesPreview = () => {
-    const p1 = (prize1 || currentSlotResult?.prize1 || '').trim();
-    if (!p1 || p1.length !== 3) {
-      setErrorMessage('Please enter and publish 1st Prize Number first before publishing other prizes.');
-      setShowErrorModal(true);
-      return;
-    }
-
     const p2 = prize2.trim();
     const p3 = prize3.trim();
     const p4 = prize4.trim();
@@ -367,7 +361,7 @@ export const AdminResultManagementView: React.FC = () => {
     setIsPublishing(true);
 
     const existing = getResultForSlotAndDate(selectedSlot, todayStr);
-    let p1 = existing?.prize1 || prize1.trim();
+    let p1 = existing?.prize1 || (prize1.trim().length === 3 ? prize1.trim() : '');
     let p2 = existing?.prize2 || '';
     let p3 = existing?.prize3 || '';
     let p4 = existing?.prize4 || '';
@@ -376,13 +370,23 @@ export const AdminResultManagementView: React.FC = () => {
 
     if (activePreviewTarget === '1ST') {
       p1 = prize1.trim();
-      p2 = existing?.prize2 || '';
-      p3 = existing?.prize3 || '';
-      p4 = existing?.prize4 || '';
-      p5 = existing?.prize5 || '';
-      compSets = existing?.compliments ? existing.compliments : [];
+      p2 = existing?.prize2 || prize2.trim();
+      p3 = existing?.prize3 || prize3.trim();
+      p4 = existing?.prize4 || prize4.trim();
+      p5 = existing?.prize5 || prize5.trim();
+      compSets = existing?.compliments && existing.compliments.length > 0
+        ? existing.compliments
+        : (() => {
+            const hasBoxes = complimentBoxes.some(b => b.trim().length === 3);
+            if (!hasBoxes) return [];
+            const sets: string[][] = [];
+            for (let i = 0; i < complimentBoxes.length; i += 5) {
+              sets.push(complimentBoxes.slice(i, i + 5).map((n) => n.trim()));
+            }
+            return sets;
+          })();
     } else if (activePreviewTarget === 'OTHER') {
-      p1 = existing?.prize1 || prize1.trim();
+      p1 = (prize1.trim().length === 3 ? prize1.trim() : existing?.prize1) || '';
       p2 = prize2.trim();
       p3 = prize3.trim();
       p4 = prize4.trim();
