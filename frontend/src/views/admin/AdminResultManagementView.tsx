@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { HeaderBanner } from '../../components/HeaderBanner';
 import { useApp } from '../../context/AppContext';
 import type { GameSlot } from '../../types';
-import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X } from 'lucide-react';
-import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen } from '../../utils/dateUtils';
+import { CheckCircle2, ChevronDown, Calendar, AlertTriangle, Pencil, Upload, Loader2, X, Lock } from 'lucide-react';
+import { getBusinessDateIST, getDefaultPublishSlot, isResultEditWindowOpen, isGameResultLocked } from '../../utils/dateUtils';
 import { captureAndShareElement } from '../../utils/shareUtils';
 import { scanResultImage } from '../../utils/resultOcrUtils';
 
@@ -184,9 +184,25 @@ export const AdminResultManagementView: React.FC = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       setTimerTick((t) => t + 1);
-    }, 5000);
-    return () => clearInterval(timer);
+    }, 1000);
+    const handleUpdate = () => setTimerTick((t) => t + 1);
+    window.addEventListener('lucky10_results_updated', handleUpdate);
+    window.addEventListener('lucky10_results_locked', handleUpdate);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('lucky10_results_updated', handleUpdate);
+      window.removeEventListener('lucky10_results_locked', handleUpdate);
+    };
   }, []);
+
+  const isSlotLocked = isGameResultLocked(selectedSlot, todayStr);
+
+  useEffect(() => {
+    if (isSlotLocked) {
+      setIsEditing1st(false);
+      setIsEditingOther(false);
+    }
+  }, [isSlotLocked]);
 
   const currentSlotResult = getResultForSlotAndDate(selectedSlot, todayStr);
   const is1stPrizePublished = Boolean(currentSlotResult && currentSlotResult.prize1 && currentSlotResult.prize1.trim().length > 0);
@@ -202,8 +218,8 @@ export const AdminResultManagementView: React.FC = () => {
     currentSlotResult.prize5.trim().length > 0
   );
 
-  const canEdit1st = is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt1st || currentSlotResult?.publishedAt);
-  const canEditOther = isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAtOther || currentSlotResult?.publishedAt);
+  const canEdit1st = !isSlotLocked && is1stPrizePublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAt1st || currentSlotResult?.publishedAt);
+  const canEditOther = !isSlotLocked && isOtherPrizesPublished && isResultEditWindowOpen(selectedSlot, todayStr, currentSlotResult?.publishedAtOther || currentSlotResult?.publishedAt);
 
   const prize1InputRef = useRef<HTMLInputElement | null>(null);
   const otherPrizeRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -671,6 +687,14 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
+            {/* Slot Lock Banner if 3:00 PM cutoff reached */}
+            {isSlotLocked && (
+              <div className="bg-red-950/60 border border-red-500/60 rounded-xl p-3 text-center flex items-center justify-center gap-2 text-xs font-mono font-bold text-red-200 shadow-md animate-fade-in">
+                <Lock className="w-4 h-4 text-red-400 shrink-0" />
+                <span>{selectedSlot} results are LOCKED (3:00 PM IST cutoff reached). Modifications are disabled.</span>
+              </div>
+            )}
+
             {/* 1st Prize Number with Dedicated Publish Button & Edit Option */}
             <div className="bg-neutral-900/60 p-3.5 rounded-2xl border border-gold/30 space-y-3 shadow-inner">
               <div className="text-xs">
@@ -699,16 +723,20 @@ export const AdminResultManagementView: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {is1stPrizePublished && !isEditing1st && (
+                  {isSlotLocked ? (
+                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" />
+                      LOCKED
+                    </span>
+                  ) : is1stPrizePublished && !isEditing1st ? (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  )}
-                  {isEditing1st && (
+                  ) : isEditing1st ? (
                     <span className="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
                       EDITING
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <input
                   ref={prize1InputRef}
@@ -717,11 +745,11 @@ export const AdminResultManagementView: React.FC = () => {
                   maxLength={3}
                   placeholder="000"
                   value={prize1}
-                  disabled={is1stPrizePublished && !isEditing1st}
-                  readOnly={is1stPrizePublished && !isEditing1st}
+                  disabled={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
+                  readOnly={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
                   onChange={handle1stPrizeChange}
                   className={`w-full px-3 py-2.5 font-mono font-black text-lg rounded-xl border-2 text-center shadow-inner focus:outline-none transition-all ${
-                    is1stPrizePublished && !isEditing1st
+                    isSlotLocked || (is1stPrizePublished && !isEditing1st)
                       ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                       : 'bg-white text-black border-gold'
                   }`}
@@ -730,15 +758,17 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="flex items-center justify-center gap-2 pt-0.5">
                 <button
                   type="button"
-                  disabled={is1stPrizePublished && !isEditing1st}
+                  disabled={isSlotLocked || (is1stPrizePublished && !isEditing1st)}
                   onClick={handleTrigger1stPrizePreview}
                   className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                    is1stPrizePublished && !isEditing1st
+                    isSlotLocked || (is1stPrizePublished && !isEditing1st)
                       ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                       : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                   }`}
                 >
-                  {is1stPrizePublished
+                  {isSlotLocked
+                    ? (is1stPrizePublished ? 'PUBLISHED' : `LOCKED (${shortSlot})`)
+                    : is1stPrizePublished
                     ? (isEditing1st ? `UPDATE 1ST PRIZE (${shortSlot})` : 'PUBLISHED')
                     : `PUBLISH (${shortSlot})`}
                 </button>
@@ -755,17 +785,17 @@ export const AdminResultManagementView: React.FC = () => {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                    disabled={isScanningImage || isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                     onChange={handleImageUpload}
                   />
                   <button
                     type="button"
-                    disabled={isScanningImage || (isOtherPrizesPublished && !isEditingOther)}
+                    disabled={isScanningImage || isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={() => fileInputRef.current?.click()}
                     className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all ${
                       isScanningImage
                         ? 'bg-neutral-800 text-gold border border-gold/40 cursor-wait'
-                        : isOtherPrizesPublished && !isEditingOther
+                        : isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                         ? 'bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60'
                         : 'bg-gold-metallic text-black hover:opacity-95 active:scale-95 cursor-pointer border border-gold-dark'
                     }`}
@@ -853,16 +883,20 @@ export const AdminResultManagementView: React.FC = () => {
                       </button>
                     )}
                   </div>
-                  {isOtherPrizesPublished && !isEditingOther && (
+                  {isSlotLocked ? (
+                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" />
+                      LOCKED
+                    </span>
+                  ) : isOtherPrizesPublished && !isEditingOther ? (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  )}
-                  {isEditingOther && (
+                  ) : isEditingOther ? (
                     <span className="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">
                       EDITING
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <div className="grid grid-cols-2 gap-2.5 text-xs">
                   <div>
@@ -874,12 +908,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize2}
-                      disabled={isOtherPrizesPublished && !isEditingOther}
-                      readOnly={isOtherPrizesPublished && !isEditingOther}
+                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                       onChange={(e) => handleOtherPrizeChange(0, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(0, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherPrizesPublished && !isEditingOther
+                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -894,12 +928,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize3}
-                      disabled={isOtherPrizesPublished && !isEditingOther}
-                      readOnly={isOtherPrizesPublished && !isEditingOther}
+                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                       onChange={(e) => handleOtherPrizeChange(1, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(1, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherPrizesPublished && !isEditingOther
+                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -916,12 +950,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize4}
-                      disabled={isOtherPrizesPublished && !isEditingOther}
-                      readOnly={isOtherPrizesPublished && !isEditingOther}
+                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                       onChange={(e) => handleOtherPrizeChange(2, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(2, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherPrizesPublished && !isEditingOther
+                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -936,12 +970,12 @@ export const AdminResultManagementView: React.FC = () => {
                       maxLength={3}
                       placeholder="000"
                       value={prize5}
-                      disabled={isOtherPrizesPublished && !isEditingOther}
-                      readOnly={isOtherPrizesPublished && !isEditingOther}
+                      disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                      readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                       onChange={(e) => handleOtherPrizeChange(3, e.target.value)}
                       onKeyDown={(e) => handleOtherPrizeKeyDown(3, e)}
                       className={`w-full px-3 py-2 font-mono font-black text-base rounded-md border-2 text-center shadow-inner focus:outline-none transition-all ${
-                        isOtherPrizesPublished && !isEditingOther
+                        isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                           ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                           : 'bg-white text-black border-gold'
                       }`}
@@ -954,11 +988,16 @@ export const AdminResultManagementView: React.FC = () => {
               <div className="space-y-3 pt-2 border-t border-neutral-800">
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-400 font-bold text-xs">Compliments (30 Numbers)</span>
-                  {isOtherPrizesPublished && !isEditingOther && (
+                  {isSlotLocked ? (
+                    <span className="text-[10px] bg-red-950 text-red-300 border border-red-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1">
+                      <Lock className="w-2.5 h-2.5" />
+                      LOCKED
+                    </span>
+                  ) : isOtherPrizesPublished && !isEditingOther ? (
                     <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-500/50 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                       LOCKED
                     </span>
-                  )}
+                  ) : null}
                 </div>
                 <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                   {Array.from({ length: 30 }, (_, cellIndex) => {
@@ -978,13 +1017,13 @@ export const AdminResultManagementView: React.FC = () => {
                           maxLength={3}
                           placeholder="000"
                           value={num}
-                          disabled={isOtherPrizesPublished && !isEditingOther}
-                          readOnly={isOtherPrizesPublished && !isEditingOther}
+                          disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
+                          readOnly={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                           tabIndex={5 + compIdx}
                           onChange={(e) => handleOtherPrizeChange(inputIdx, e.target.value)}
                           onKeyDown={(e) => handleOtherPrizeKeyDown(inputIdx, e)}
                           className={`w-full px-2 py-1.5 font-mono font-black text-sm rounded-lg border-2 text-center focus:outline-none transition-all ${
-                            isOtherPrizesPublished && !isEditingOther
+                            isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                               ? 'bg-neutral-800/90 text-neutral-400 border-neutral-700 cursor-not-allowed opacity-75'
                               : 'bg-white text-black border-gold'
                           }`}
@@ -998,15 +1037,17 @@ export const AdminResultManagementView: React.FC = () => {
                 <div className="flex items-center justify-center gap-2 pt-2 flex-wrap">
                   <button
                     type="button"
-                    disabled={isOtherPrizesPublished && !isEditingOther}
+                    disabled={isSlotLocked || (isOtherPrizesPublished && !isEditingOther)}
                     onClick={handleTriggerOtherPrizesPreview}
                     className={`px-6 py-2 font-black text-xs sm:text-sm rounded-full uppercase shadow-md transition-all tracking-wider border ${
-                      isOtherPrizesPublished && !isEditingOther
+                      isSlotLocked || (isOtherPrizesPublished && !isEditingOther)
                         ? 'bg-neutral-800 text-emerald-400 border-emerald-500/40 cursor-not-allowed opacity-90'
                         : 'bg-gold-metallic text-black border-gold-dark hover:opacity-95 cursor-pointer active:scale-95'
                     }`}
                   >
-                    {isOtherPrizesPublished
+                    {isSlotLocked
+                      ? (isOtherPrizesPublished ? 'PUBLISHED' : `LOCKED (${shortSlot})`)
+                      : isOtherPrizesPublished
                       ? (isEditingOther ? `UPDATE OTHER RESULTS (${shortSlot})` : 'PUBLISHED')
                       : `PUBLISH OTHER RESULTS (${shortSlot})`}
                   </button>

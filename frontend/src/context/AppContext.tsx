@@ -679,6 +679,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                 break;
               }
 
+              case 'RESULTS_LOCKED': {
+                window.dispatchEvent(new Event('lucky10_results_updated'));
+                window.dispatchEvent(new Event('lucky10_results_locked'));
+                pollLiveUpdates();
+                break;
+              }
+
               case 'TICKET_CREATED': {
                 if (data.ticket) {
                   const t = data.ticket;

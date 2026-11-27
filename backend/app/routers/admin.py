@@ -20,6 +20,8 @@ from app.core.game_timing import (
     get_ist_now,
     get_business_date,
     is_game_result_publishable,
+    is_game_result_locked,
+    get_all_game_slot_statuses,
     normalize_slot_name,
     IST_TZ,
 )
@@ -221,17 +223,48 @@ def evaluate_ticket_win(ticket: Ticket, result: GameResult) -> float:
 
 @router.post("/results")
 def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get_current_admin), db: Session = Depends(get_db)):
-    target_date = req.date.strip() if req.date and req.date.strip() else get_business_date()
+    now_ist = get_ist_now()
+    today_ist_str = get_business_date(now_ist)
+    target_date = req.date.strip() if req.date and req.date.strip() else today_ist_str
+    norm_target_slot = normalize_slot_name(req.gameSlot)
+
+    # 1. Reject future dates
+    if target_date > today_ist_str:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot publish results for future date {target_date}."
+        )
 
     compliments_json = json.dumps(req.compliments or [])
 
     try:
-        # Check if result already exists for slot on target date
-        norm_target_slot = normalize_slot_name(req.gameSlot)
+        # Check if result already exists for slot on target date with row-level locking for concurrency safety
         existing = db.query(GameResult).filter(
             GameResult.date == target_date,
             (GameResult.game_slot == req.gameSlot) | (GameResult.game_slot == norm_target_slot)
-        ).first()
+        ).with_for_update().first()
+
+        # 2. For past dates: strictly protect finalized historical results from modification
+        if target_date < today_ist_str:
+            if existing and (existing.prize1 or existing.prize2):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot modify historical results for {target_date}. Historical results are locked."
+                )
+        else:
+            # 3. For today's date: strictly enforce result lock cutoff (e.g. 1 PM Game locked at 3:00 PM IST)
+            if is_game_result_locked(norm_target_slot, target_date, now_ist):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Results for {norm_target_slot} are LOCKED. The 3:00 PM cutoff has been reached and no further modifications are permitted."
+                )
+
+            # 4. For today's date: verify billing has closed before allowing publishing
+            if not is_game_result_publishable(norm_target_slot, target_date, now_ist):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot publish result for {norm_target_slot} on {target_date} before game billing is closed."
+                )
 
         p1 = (req.prize1 or "").strip()
         p2 = (req.prize2 or "").strip()
@@ -354,6 +387,10 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
     except Exception as exc:
         db.rollback()
         raise exc
+
+@router.get("/results/slot-statuses")
+def get_slot_statuses(admin_user: User = Depends(get_current_admin)):
+    return get_all_game_slot_statuses()
 
 
 
