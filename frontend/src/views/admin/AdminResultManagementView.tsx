@@ -415,6 +415,12 @@ export const AdminResultManagementView: React.FC = () => {
     try {
       const targetSection = activePreviewTarget === '1ST' ? '1ST' : activePreviewTarget === 'OTHER' ? 'OTHER' : undefined;
       await publishGameResult(selectedSlot, p1, p2, p3, p4, compSets, p5, todayStr, targetSection);
+      setPrize1(p1);
+      setPrize2(p2);
+      setPrize3(p3);
+      setPrize4(p4);
+      setPrize5(p5);
+      setComplimentBoxes(compSets.flat());
       await refreshAllData();
       if (refreshResults) await refreshResults(todayStr);
       const isFirst = activePreviewTarget === '1ST';
@@ -539,10 +545,17 @@ export const AdminResultManagementView: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={() => setShowSuccessModal(false)}
+              onClick={() => {
+                setShowSuccessModal(false);
+                setPreviewSlot(selectedSlot);
+                setPreviewDate(todayStr);
+                setActiveTab('preview');
+                if (refreshResults) refreshResults(todayStr);
+                if (refreshAllData) refreshAllData();
+              }}
               className="w-full py-2.5 bg-gold-metallic text-black font-black text-xs sm:text-sm rounded-xl uppercase shadow-md hover:opacity-95 cursor-pointer transition-all active:scale-95 tracking-wider"
             >
-              OK
+              OK — CONTINUE TO PREVIEW
             </button>
           </div>
         </div>

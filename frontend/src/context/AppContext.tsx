@@ -268,7 +268,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (allPublishedResults[key] && allPublishedResults[key].gameSlot === slot) {
         const res = allPublishedResults[key];
         const resDate = extractDateStr(res.date);
-        if (resDate === normDate || resDate === extractDateStr(targetDate)) {
+        if (resDate === normDate || resDate === extractDateStr(targetDate) || normDate === todayStr) {
           return res;
         }
       }
@@ -1480,6 +1480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [`${targetDate}_${slot}`]: resultToApply,
         [`${normDate}_${slot}`]: resultToApply,
+        [`${todayStr}_${slot}`]: resultToApply,
         [slot]: resultToApply,
       }));
 
