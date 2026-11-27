@@ -687,11 +687,11 @@ export const AdminResultManagementView: React.FC = () => {
               )}
             </div>
 
-            {/* Slot Lock Banner if 3:00 PM cutoff reached */}
+            {/* Slot Lock Banner if cutoff reached */}
             {isSlotLocked && (
               <div className="bg-red-950/60 border border-red-500/60 rounded-xl p-3 text-center flex items-center justify-center gap-2 text-xs font-mono font-bold text-red-200 shadow-md animate-fade-in">
                 <Lock className="w-4 h-4 text-red-400 shrink-0" />
-                <span>{selectedSlot} results are LOCKED (3:00 PM IST cutoff reached). Modifications are disabled.</span>
+                <span>{selectedSlot} results are LOCKED (cutoff reached). Modifications are disabled.</span>
               </div>
             )}
 

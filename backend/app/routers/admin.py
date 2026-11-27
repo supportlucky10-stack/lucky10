@@ -252,11 +252,11 @@ def publish_results(req: GameResultPublishSchema, admin_user: User = Depends(get
                     detail=f"Cannot modify historical results for {target_date}. Historical results are locked."
                 )
         else:
-            # 3. For today's date: strictly enforce result lock cutoff (e.g. 1 PM Game locked at 3:00 PM IST)
+            # 3. For today's date: strictly enforce result lock cutoff (e.g. 1 PM Game locked at 3:00 PM IST, 3 PM Game locked at 5:00 PM IST)
             if is_game_result_locked(norm_target_slot, target_date, now_ist):
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Results for {norm_target_slot} are LOCKED. The 3:00 PM cutoff has been reached and no further modifications are permitted."
+                    detail=f"Results for {norm_target_slot} are LOCKED. The cutoff has been reached and no further modifications are permitted."
                 )
 
             # 4. For today's date: verify billing has closed before allowing publishing
