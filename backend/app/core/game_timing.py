@@ -30,12 +30,12 @@ SLOT_PUBLISH_TIMES = {
 SLOT_RESULT_LOCK_TIMES = {
     "1 PM": time(15, 0, 0),
     "1 PM Game": time(15, 0, 0),
-    "3 PM": time(17, 0, 0),
-    "3 PM Game": time(17, 0, 0),
+    "3 PM": time(18, 0, 0),
+    "3 PM Game": time(18, 0, 0),
     "6 PM": time(20, 0, 0),
     "6 PM Game": time(20, 0, 0),
-    "8 PM": time(22, 0, 0),
-    "8 PM Game": time(22, 0, 0),
+    "8 PM": time(23, 59, 59),
+    "8 PM Game": time(23, 59, 59),
 }
 
 STANDARD_SLOTS = ["1 PM Game", "3 PM Game", "6 PM Game", "8 PM Game"]

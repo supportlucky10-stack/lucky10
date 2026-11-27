@@ -278,9 +278,9 @@ export const isGameResultLocked = (
 
     const slotLockSeconds: Record<string, number> = {
       '1 PM Game': 15 * 3600,       // 3:00:00 PM IST (15:00:00)
-      '3 PM Game': 17 * 3600,       // 5:00:00 PM IST (17:00:00)
+      '3 PM Game': 18 * 3600,       // 6:00:00 PM IST (18:00:00)
       '6 PM Game': 20 * 3600,       // 8:00:00 PM IST (20:00:00)
-      '8 PM Game': 22 * 3600,       // 10:00:00 PM IST (22:00:00)
+      '8 PM Game': 24 * 3600 - 1,   // 11:59:59 PM IST
     };
 
     const lockSec = slotLockSeconds[slot] ?? (15 * 3600);
